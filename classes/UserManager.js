@@ -1,5 +1,4 @@
 const Database = require("easy-json-database")
-const fetch = require("node-fetch")
 
 const { encrypt, decrypt } = require("../utilities/encrypt.js")
 const { ParseJSON } = require("../utilities/safejsonparse.js")
@@ -10,7 +9,7 @@ const ScratchAuthURLs = {
 
 class UserManager {
     static _states = {}
-    
+
     static async serialize() {
         const db = new Database(`./users.json`)
         db.set("data", encrypt(JSON.stringify(UserManager._states)))
@@ -20,7 +19,7 @@ class UserManager {
         if (!db.get("data")) return {}
         return ParseJSON(decrypt(db.get("data")))
     }
-    
+
     static load() {
         UserManager._states = UserManager.deserialize()
     }
@@ -30,7 +29,7 @@ class UserManager {
         if (db.get(String(username))) return true
         return false
     }
-    
+
     static isCorrectCode(username, privateCode) {
         if (!privateCode) return false
         if (!UserManager._states[username]) return false
@@ -57,9 +56,9 @@ class UserManager {
     }
     static verifyCode(privateCode) {
         return new Promise((resolve, reject) => {
-            fetch(ScratchAuthURLs.verifyToken + privateCode).then(res => {
-                res.json().then(resolve).catch(reject)
-            }).catch(reject)
+            axios.get(ScratchAuthURLs.verifyToken + privateCode).then(response => {
+                resolve(response.data);
+            }).catch(reject);
         })
     }
 }

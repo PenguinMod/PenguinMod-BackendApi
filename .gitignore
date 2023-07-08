@@ -1,2 +1,6 @@
+.env
+
 runtime/
 cache/
+
+node_modules/

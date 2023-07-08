@@ -1,13 +1,13 @@
 const ApiVersions = require("../../../versions.json");
 
+const StartTime = Date.now();
+
 const TYPE = "GET";
 const FUNC = (_, res) => {
     // display details in JSON
     const content = {
         "versions": ApiVersions,
-        "testing": {
-            "main": false
-        }
+        "since": StartTime
     };
 
     res.status(200);
