@@ -1,0 +1,914 @@
+User-agent: ABCdatos BotLink
+Disallow: /
+
+User-agent: Acme.Spider
+Disallow: /
+
+User-agent: Ahoy! The Homepage Finder
+Disallow: /
+
+User-agent: Alkaline
+Disallow: /
+
+User-agent: Anthill
+Disallow: /
+
+User-agent: Walhello appie
+Disallow: /
+
+User-agent: Arachnophilia
+Disallow: /
+
+User-agent: Arale
+Disallow: /
+
+User-agent: Araneo
+Disallow: /
+
+User-agent: AraybOt
+Disallow: /
+
+User-agent: ArchitextSpider
+Disallow: /
+
+User-agent: Aretha
+Disallow: /
+
+User-agent: ARIADNE
+Disallow: /
+
+User-agent: arks
+Disallow: /
+
+User-agent: AskJeeves
+Disallow: /
+
+User-agent: ASpider (Associative Spider)
+Disallow: /
+
+User-agent: ATN Worldwide
+Disallow: /
+
+User-agent: Atomz.com Search Robot
+Disallow: /
+
+User-agent: AURESYS
+Disallow: /
+
+User-agent: BackRub
+Disallow: /
+
+User-agent: Bay Spider
+Disallow: /
+
+User-agent: Big Brother
+Disallow: /
+
+User-agent: Bjaaland
+Disallow: /
+
+User-agent: BlackWidow
+Disallow: /
+
+User-agent: Die Blinde Kuh
+Disallow: /
+
+User-agent: Bloodhound
+Disallow: /
+
+User-agent: Borg-Bot
+Disallow: /
+
+User-agent: BoxSeaBot
+Disallow: /
+
+User-agent: bright.net caching robot
+Disallow: /
+
+User-agent: BSpider
+Disallow: /
+
+User-agent: ByteSpider
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
+
+User-agent: CACTVS Chemistry Spider
+Disallow: /
+
+User-agent: Calif
+Disallow: /
+
+User-agent: Cassandra
+Disallow: /
+
+User-agent: Digimarc Marcspider/CGI
+Disallow: /
+
+User-agent: Checkbot
+Disallow: /
+
+User-agent: ChristCrawler.com
+Disallow: /
+
+User-agent: churl
+Disallow: /
+
+User-agent: cIeNcIaFiCcIoN.nEt
+Disallow: /
+
+User-agent: CMC/0.01
+Disallow: /
+
+User-agent: Collective
+Disallow: /
+
+User-agent: Combine System
+Disallow: /
+
+User-agent: Conceptbot
+Disallow: /
+
+User-agent: ConfuzzledBot
+Disallow: /
+
+User-agent: CoolBot
+Disallow: /
+
+User-agent: Web Core / Roots
+Disallow: /
+
+User-agent: XYLEME Robot
+Disallow: /
+
+User-agent: Internet Cruiser Robot
+Disallow: /
+
+User-agent: Cusco
+Disallow: /
+
+User-agent: CyberSpyder Link Test
+Disallow: /
+
+User-agent: CydralSpider
+Disallow: /
+
+User-agent: Desert Realm Spider
+Disallow: /
+
+User-agent: DeWeb(c) Katalog/Index
+Disallow: /
+
+User-agent: DienstSpider
+Disallow: /
+
+User-agent: Digger
+Disallow: /
+
+User-agent: Digital Integrity Robot
+Disallow: /
+
+User-agent: Direct Hit Grabber
+Disallow: /
+
+User-agent: DNAbot
+Disallow: /
+
+User-agent: DownLoad Express
+Disallow: /
+
+User-agent: DragonBot
+Disallow: /
+
+User-agent: DWCP (Dridus' Web Cataloging Project)
+Disallow: /
+
+User-agent: e-collector
+Disallow: /
+
+User-agent: EbiNess
+Disallow: /
+
+User-agent: EIT Link Verifier Robot
+Disallow: /
+
+User-agent: ELFINBOT
+Disallow: /
+
+User-agent: Emacs-w3 Search Engine
+Disallow: /
+
+User-agent: ananzi
+Disallow: /
+
+User-agent: esculapio
+Disallow: /
+
+User-agent: Esther
+Disallow: /
+
+User-agent: Evliya Celebi
+Disallow: /
+
+User-agent: FastCrawler
+Disallow: /
+
+User-agent: Fluid Dynamics Search Engine robot
+Disallow: /
+
+User-agent: Felix IDE
+Disallow: /
+
+User-agent: Wild Ferret Web Hopper #1, #2, #3
+Disallow: /
+
+User-agent: FetchRover
+Disallow: /
+
+User-agent: fido
+Disallow: /
+
+User-agent: HÃ¤mÃ¤hÃ¤kki
+Disallow: /
+
+User-agent: KIT-Fireball
+Disallow: /
+
+User-agent: Fish search
+Disallow: /
+
+User-agent: Fouineur
+Disallow: /
+
+User-agent: Robot Francoroute
+Disallow: /
+
+User-agent: Freecrawl
+Disallow: /
+
+User-agent: FunnelWeb
+Disallow: /
+
+User-agent: gammaSpider, FocusedCrawler
+Disallow: /
+
+User-agent: gazz
+Disallow: /
+
+User-agent: GCreep
+Disallow: /
+
+User-agent: GetBot
+Disallow: /
+
+User-agent: GetURL
+Disallow: /
+
+User-agent: Golem
+Disallow: /
+
+User-agent: Googlebot
+Disallow: /
+
+User-agent: Grapnel/0.01 Experiment
+Disallow: /
+
+User-agent: Griffon
+Disallow: /
+
+User-agent: Gromit
+Disallow: /
+
+User-agent: Northern Light Gulliver
+Disallow: /
+
+User-agent: Gulper Bot
+Disallow: /
+
+User-agent: HamBot
+Disallow: /
+
+User-agent: Harvest
+Disallow: /
+
+User-agent: havIndex
+Disallow: /
+
+User-agent: HI (HTML Index) Search
+Disallow: /
+
+User-agent: Hometown Spider Pro
+Disallow: /
+
+User-agent: ht://Dig
+Disallow: /
+
+User-agent: HTMLgobble
+Disallow: /
+
+User-agent: Hyper-Decontextualizer
+Disallow: /
+
+User-agent: iajaBot
+Disallow: /
+
+User-agent: IBM_Planetwide
+Disallow: /
+
+User-agent: Popular Iconoclast
+Disallow: /
+
+User-agent: Ingrid
+Disallow: /
+
+User-agent: Imagelock
+Disallow: /
+
+User-agent: IncyWincy
+Disallow: /
+
+User-agent: Informant
+Disallow: /
+
+User-agent: InfoSeek Robot 1.0
+Disallow: /
+
+User-agent: Infoseek Sidewinder
+Disallow: /
+
+User-agent: InfoSpiders
+Disallow: /
+
+User-agent: Inspector Web
+Disallow: /
+
+User-agent: IntelliAgent
+Disallow: /
+
+User-agent: I, Robot
+Disallow: /
+
+User-agent: Iron33
+Disallow: /
+
+User-agent: Israeli-search
+Disallow: /
+
+User-agent: JavaBee
+Disallow: /
+
+User-agent: JBot Java Web Robot
+Disallow: /
+
+User-agent: JCrawler
+Disallow: /
+
+User-agent: Jeeves
+Disallow: /
+
+User-agent: JoBo Java Web Robot
+Disallow: /
+
+User-agent: Jobot
+Disallow: /
+
+User-agent: JoeBot
+Disallow: /
+
+User-agent: The Jubii Indexing Robot
+Disallow: /
+
+User-agent: JumpStation
+Disallow: /
+
+User-agent: image.kapsi.net
+Disallow: /
+
+User-agent: Katipo
+Disallow: /
+
+User-agent: KDD-Explorer
+Disallow: /
+
+User-agent: Kilroy
+Disallow: /
+
+User-agent: KO_Yappo_Robot
+Disallow: /
+
+User-agent: LabelGrabber
+Disallow: /
+
+User-agent: larbin
+Disallow: /
+
+User-agent: legs
+Disallow: /
+
+User-agent: Link Validator
+Disallow: /
+
+User-agent: LinkScan
+Disallow: /
+
+User-agent: LinkWalker
+Disallow: /
+
+User-agent: Lockon
+Disallow: /
+
+User-agent: logo.gif Crawler
+Disallow: /
+
+User-agent: Lycos
+Disallow: /
+
+User-agent: Mac WWWWorm
+Disallow: /
+
+User-agent: Magpie
+Disallow: /
+
+User-agent: marvin/infoseek
+Disallow: /
+
+User-agent: Mattie
+Disallow: /
+
+User-agent: MediaFox
+Disallow: /
+
+User-agent: MerzScope
+Disallow: /
+
+User-agent: NEC-MeshExplorer
+Disallow: /
+
+User-agent: MindCrawler
+Disallow: /
+
+User-agent: mnoGoSearch search engine software
+Disallow: /
+
+User-agent: moget
+Disallow: /
+
+User-agent: MOMspider
+Disallow: /
+
+User-agent: Monster
+Disallow: /
+
+User-agent: Motor
+Disallow: /
+
+User-agent: MSNBot
+Disallow: /
+
+User-agent: Muncher
+Disallow: /
+
+User-agent: Muninn
+Disallow: /
+
+User-agent: Muscat Ferret
+Disallow: /
+
+User-agent: Mwd.Search
+Disallow: /
+
+User-agent: Internet Shinchakubin
+Disallow: /
+
+User-agent: NDSpider
+Disallow: /
+
+User-agent: Nederland.zoek
+Disallow: /
+
+User-agent: NetCarta WebMap Engine
+Disallow: /
+
+User-agent: NetMechanic
+Disallow: /
+
+User-agent: NetScoop
+Disallow: /
+
+User-agent: newscan-online
+Disallow: /
+
+User-agent: NHSE Web Forager
+Disallow: /
+
+User-agent: Nomad
+Disallow: /
+
+User-agent: The NorthStar Robot
+Disallow: /
+
+User-agent: nzexplorer
+Disallow: /
+
+User-agent: ObjectsSearch
+Disallow: /
+
+User-agent: Occam
+Disallow: /
+
+User-agent: HKU WWW Octopus
+Disallow: /
+
+User-agent: OntoSpider
+Disallow: /
+
+User-agent: Openfind data gatherer
+Disallow: /
+
+User-agent: Orb Search
+Disallow: /
+
+User-agent: Pack Rat
+Disallow: /
+
+User-agent: PageBoy
+Disallow: /
+
+User-agent: ParaSite
+Disallow: /
+
+User-agent: Patric
+Disallow: /
+
+User-agent: pegasus
+Disallow: /
+
+User-agent: The Peregrinator
+Disallow: /
+
+User-agent: PerlCrawler 1.0
+Disallow: /
+
+User-agent: Phantom
+Disallow: /
+
+User-agent: PhpDig
+Disallow: /
+
+User-agent: PiltdownMan
+Disallow: /
+
+User-agent: Pimptrain.com's robot
+Disallow: /
+
+User-agent: Pioneer
+Disallow: /
+
+User-agent: html_analyzer
+Disallow: /
+
+User-agent: Portal Juice Spider
+Disallow: /
+
+User-agent: PGP Key Agent
+Disallow: /
+
+User-agent: PlumtreeWebAccessor
+Disallow: /
+
+User-agent: Poppi
+Disallow: /
+
+User-agent: PortalB Spider
+Disallow: /
+
+User-agent: psbot
+Disallow: /
+
+User-agent: GetterroboPlus Puu
+Disallow: /
+
+User-agent: The Python Robot
+Disallow: /
+
+User-agent: Raven Search
+Disallow: /
+
+User-agent: RBSE Spider
+Disallow: /
+
+User-agent: Resume Robot
+Disallow: /
+
+User-agent: RoadHouse Crawling System
+Disallow: /
+
+User-agent: RixBot
+Disallow: /
+
+User-agent: Road Runner: The ImageScape Robot
+Disallow: /
+
+User-agent: Robbie the Robot
+Disallow: /
+
+User-agent: ComputingSite Robi/1.0
+Disallow: /
+
+User-agent: RoboCrawl Spider
+Disallow: /
+
+User-agent: RoboFox
+Disallow: /
+
+User-agent: Robozilla
+Disallow: /
+
+User-agent: Roverbot
+Disallow: /
+
+User-agent: RuLeS
+Disallow: /
+
+User-agent: SafetyNet Robot
+Disallow: /
+
+User-agent: Scooter
+Disallow: /
+
+User-agent: Sleek
+Disallow: /
+
+User-agent: Search.Aus-AU.COM
+Disallow: /
+
+User-agent: SearchProcess
+Disallow: /
+
+User-agent: Senrigan
+Disallow: /
+
+User-agent: SG-Scout
+Disallow: /
+
+User-agent: ShagSeeker
+Disallow: /
+
+User-agent: Shai'Hulud
+Disallow: /
+
+User-agent: Sift
+Disallow: /
+
+User-agent: Simmany Robot Ver1.0
+Disallow: /
+
+User-agent: Site Valet
+Disallow: /
+
+User-agent: Open Text Index Robot
+Disallow: /
+
+User-agent: SiteTech-Rover
+Disallow: /
+
+User-agent: Skymob.com
+Disallow: /
+
+User-agent: SLCrawler
+Disallow: /
+
+User-agent: Inktomi Slurp
+Disallow: /
+
+User-agent: Smart Spider
+Disallow: /
+
+User-agent: Snooper
+Disallow: /
+
+User-agent: Solbot
+Disallow: /
+
+User-agent: Spanner
+Disallow: /
+
+User-agent: Speedy Spider
+Disallow: /
+
+User-agent: spider_monkey
+Disallow: /
+
+User-agent: SpiderBot
+Disallow: /
+
+User-agent: Spiderline Crawler
+Disallow: /
+
+User-agent: SpiderMan
+Disallow: /
+
+User-agent: SpiderView(tm)
+Disallow: /
+
+User-agent: Spry Wizard Robot
+Disallow: /
+
+User-agent: Site Searcher
+Disallow: /
+
+User-agent: Suke
+Disallow: /
+
+User-agent: suntek search engine
+Disallow: /
+
+User-agent: Sven
+Disallow: /
+
+User-agent: Sygol
+Disallow: /
+
+User-agent: TACH Black Widow
+Disallow: /
+
+User-agent: Tarantula
+Disallow: /
+
+User-agent: tarspider
+Disallow: /
+
+User-agent: Tcl W3 Robot
+Disallow: /
+
+User-agent: TechBOT
+Disallow: /
+
+User-agent: Templeton
+Disallow: /
+
+User-agent: TeomaTechnologies
+Disallow: /
+
+User-agent: TITAN
+Disallow: /
+
+User-agent: TitIn
+Disallow: /
+
+User-agent: The TkWWW Robot
+Disallow: /
+
+User-agent: TLSpider
+Disallow: /
+
+User-agent: UCSD Crawl
+Disallow: /
+
+User-agent: UdmSearch
+Disallow: /
+
+User-agent: UptimeBot
+Disallow: /
+
+User-agent: URL Check
+Disallow: /
+
+User-agent: URL Spider Pro
+Disallow: /
+
+User-agent: Valkyrie
+Disallow: /
+
+User-agent: Verticrawl
+Disallow: /
+
+User-agent: Victoria
+Disallow: /
+
+User-agent: vision-search
+Disallow: /
+
+User-agent: void-bot
+Disallow: /
+
+User-agent: Voyager
+Disallow: /
+
+User-agent: VWbot
+Disallow: /
+
+User-agent: The NWI Robot
+Disallow: /
+
+User-agent: W3M2
+Disallow: /
+
+User-agent: WallPaper (alias crawlpaper)
+Disallow: /
+
+User-agent: the World Wide Web Wanderer
+Disallow: /
+
+User-agent: w@pSpider by wap4.com
+Disallow: /
+
+User-agent: WebBandit Web Spider
+Disallow: /
+
+User-agent: WebCatcher
+Disallow: /
+
+User-agent: WebCopy
+Disallow: /
+
+User-agent: webfetcher
+Disallow: /
+
+User-agent: The Webfoot Robot
+Disallow: /
+
+User-agent: Webinator
+Disallow: /
+
+User-agent: weblayers
+Disallow: /
+
+User-agent: WebLinker
+Disallow: /
+
+User-agent: WebMirror
+Disallow: /
+
+User-agent: The Web Moose
+Disallow: /
+
+User-agent: WebQuest
+Disallow: /
+
+User-agent: Digimarc MarcSpider
+Disallow: /
+
+User-agent: WebReaper
+Disallow: /
+
+User-agent: webs
+Disallow: /
+
+User-agent: Websnarf
+Disallow: /
+
+User-agent: WebSpider
+Disallow: /
+
+User-agent: WebVac
+Disallow: /
+
+User-agent: webwalk
+Disallow: /
+
+User-agent: WebWalker
+Disallow: /
+
+User-agent: WebWatch
+Disallow: /
+
+User-agent: Wget
+Disallow: /
+
+User-agent: whatUseek Winona
+Disallow: /
+
+User-agent: WhoWhere Robot
+Disallow: /
+
+User-agent: Wired Digital
+Disallow: /
+
+User-agent: Weblog Monitor
+Disallow: /
+
+User-agent: w3mir
+Disallow: /
+
+User-agent: WebStolperer
+Disallow: /
+
+User-agent: The Web Wombat
+Disallow: /
+
+User-agent: The World Wide Web Worm
+Disallow: /
+
+User-agent: WWWC Ver 0.2.5
+Disallow: /
+
+User-agent: WebZinger
+Disallow: /
+
+User-agent: XGET
+Disallow: /
+
+User-agent: *
+Allow: /

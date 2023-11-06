@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>PenguinMod - Logging In</title>
+    </head>
+    <body>
+        <p>Please wait...</p>
+        <script>
+            const opener = window.opener || window.parent;
+            if (!opener) {
+                throw new Error('No parents');
+            }
+            
+            setTimeout(() => {
+                // wrapper to handle errors & be easier
+                function post(data) {
+                    opener.postMessage(
+                        {
+                            a2: data,
+                        },
+                        'http://localhost:5173'
+                    );
+                }
+
+                const searchParams = new URLSearchParams(location.search);
+                const privateCode = searchParams.get("privateCode");
+                post({
+                    pv: privateCode
+                });
+            }, 500);
+        </script>
+    </body>
+</html>
