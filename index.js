@@ -57,43 +57,16 @@ app.get('/robots.txt', async function (_, res) { // more basic stuff!!!!! return
     res.sendFile(path.join(__dirname, './robots.txt'));
 });
 
-// Endpoints can ask for these
+// TODO: how are endpoints gonna get this?
 const sharedDependencies = {
     db
 };
 
-glob('./api/**').then((paths) => { // ["/api/core/index.js", "/api/v1/test/get.js"] things like that
-    // make sure these paths are usable
-    const apiPaths = paths
-        .map(path => "/" + path.replace(/\\/gmi, "/")) // makes these into valid URLs
-        .filter(path => path.endsWith('.js')) // removes folders that only have other folders inside
-        .map(path => path.endsWith('index.js') ? path.replace('/index.js', '') : path.replace('.js', '')); // index.js marks that the folder name should be the endpoint, otherwise the file name is the endpoint
-    const filePaths = paths
-        .filter(path => path.endsWith('.js')) // removes folders that only have other folders inside
-        .map(path => "./" + path.replace(/\\/gmi, "/")); // makes them just typed the same way you would type them in a require function
-    
-    // create the endpoints on the app
-    for (let i = 0; i < filePaths.length; i++) {
-        const filePath = filePaths[i];
-        const apiPath = apiPaths[i];
-        const module = require(filePath);
-        if (module.method && module.endpoint) {
-            if (!app[module.method]) {
-                console.warn('[!]', apiPath, 'has an invalid method');
-                continue;
-            }
-            app[module.method](apiPath, (req, res) => {
-                module.endpoint(req, res);
-            });
-            console.log('[-]', apiPath, 'is registered');
-        } else {
-            console.warn('[!]', apiPath, 'is missing a method and or endpoint');
-        }
-        // some modules need extra dependencies
-        if (module.setDependencies) {
-            module.setDependencies(sharedDependencies);
-        }
-    }
-});
+// routers
+const router_core = require('./api/core');
+const router_test = require('./api/v1/test');
+// "endpoints"
+app.use('/api/core', router_core);
+app.use('/api/v1/test', router_test);
 
 app.listen(port, () => console.log('[+] Started server on port ' + port));
