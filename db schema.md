@@ -1,4 +1,7 @@
+# DB Schema
+
 ## Users
+
 | Name | Datatype | Description |
 |-|-|-|
 | _id | string | The user's Scratch username. |
@@ -16,6 +19,7 @@
 | lastLogin | number | The unix epoch of when the user last logged in. |
 
 ## User Messages
+
 | Name | Datatype | Description |
 |-|-|-|
 | _id | string | The message's unique ID. |
@@ -31,6 +35,7 @@
 | read | boolean | Whether the message has been read. |
 
 ## Projects
+
 | Name | Datatype | Description |
 |-|-|-|
 | _id | string | The project's unique ID. |
