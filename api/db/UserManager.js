@@ -41,7 +41,7 @@ class UserManager {
             badges: [],
             bio: "",
             favoriteProjectType: -1,
-            favoriteProjectID: "",
+            favoriteProjectID: -1,
             cubes: 0,
             firstLogin: Date.now(),
             lastLogin: Date.now()
