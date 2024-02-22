@@ -19,7 +19,7 @@ function generateToken() {
 
 class UserManager {
     async init() {
-        this.client = new MongoClient('mongodb://localhost:27017', { useUnifiedTopology: true });
+        this.client = new MongoClient('mongodb://localhost:27017');
         await this.client.connect();
         this.db = this.client.db('pm_userdata');
         this.collection = this.db.collection('users');
@@ -57,6 +57,20 @@ class UserManager {
     async getUsernameByID(id) {
         const result = await this.collection.findOne({ id: id });
         return result.username;
+    }
+
+    async loginWithPassword(username, password) {
+        const result = await this.collection.findOne({ username: username });
+        if (!result) return false;
+        if (await bcrypt.compare(password, result.password)) {
+            return result.id;
+        } else {
+            return false;
+        }
+    }
+
+    async changeUsername(id, newUsername) {
+        await this.collection.updateOne({ id: id }, { $set: { username: newUsername } });
     }
 }
 

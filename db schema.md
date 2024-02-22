@@ -4,7 +4,7 @@
 
 | Name | Datatype | Description |
 |-|-|-|
-| id | string | ID of the user |
+| id | string | ID of the user. Usefull when storing things like a user report. |
 | username | string | The user's username. |
 | password | string | The user's hashed password. |
 | privateCode | string | The user's current private code (token). |
