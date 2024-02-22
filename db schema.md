@@ -4,8 +4,10 @@
 
 | Name | Datatype | Description |
 |-|-|-|
-| _id | string | The user's Scratch username. |
-| privateCode | string | The user's current ScratchAuth private code. |
+| id | string | ID of the user |
+| username | string | The user's username. |
+| password | string | The user's hashed password. |
+| privateCode | string | The user's current private code (token). |
 | admin | boolean | Whether the user is an admin. |
 | moderator | boolean | Whether the user is a moderator. |
 | banned | boolean | Whether the user is banned. |
@@ -23,7 +25,7 @@
 | Name | Datatype | Description |
 |-|-|-|
 | _id | string | The message's unique ID. |
-| recipient | string | The recipient's Scratch username. |
+| recipient | string | The recipient's id. |
 | type | string | The message's type. |
 | text? | string | The text content of the message. |
 | name? | string | The referenced project's name. |
