@@ -46,7 +46,7 @@ class UserManager {
             firstLogin: Date.now(),
             lastLogin: Date.now()
         });
-        return [id, token];
+        return token;
     }
 
     async getIDByUsername(username) {
@@ -63,7 +63,7 @@ class UserManager {
         const result = await this.collection.findOne({ username: username });
         if (!result) return false;
         if (await bcrypt.compare(password, result.password)) {
-            return result.id;
+            return true;
         } else {
             return false;
         }
