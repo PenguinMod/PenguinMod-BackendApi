@@ -14,7 +14,7 @@
 | rank | number | The current rank of the user. |
 | badges | array (string) | The badges the user has received. |
 | bio | string | The user's bio/about me. |
-| favoriteProjectType | number | The type of favorite project the user has. |
+| favoriteProjectLabel | string | The label on their favorite project. |
 | favoriteProjectID | string | The ID of the favorite project the user has. |
 | cubes | number | The number of cubes the user has. |
 | firstLogin | number | The unix epoch of when the user first logged in. |

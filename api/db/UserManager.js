@@ -29,7 +29,7 @@ class UserManager {
         const hash = await bcrypt.hash(password, 10);
         const id = generateId();
         const token = generateToken();
-        const result = await this.collection.insertOne({
+        await this.collection.insertOne({
             id: id,
             username: username,
             password: hash,
@@ -40,8 +40,8 @@ class UserManager {
             rank: 0,
             badges: [],
             bio: "",
-            favoriteProjectType: 0,
-            favoriteProjectID: "idfk",
+            favoriteProjectType: "",
+            favoriteProjectID: "0",
             cubes: 0,
             firstLogin: Date.now(),
             lastLogin: Date.now()
