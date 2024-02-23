@@ -254,46 +254,88 @@ class UserManager {
         await this.collection.updateOne({ username: username }, { $set: { rank: rank } });
     }
 
+    /**
+     * 
+     * @param {string} username - username of the user 
+     * @returns {Array<string>} - array of badges the user has
+     */
     async getBadges(username) {
         const result = await this.collection.findOne({ username: username });
 
         return result.badges;
     }
 
+    /**
+     * 
+     * @param {string} username - username of the user 
+     * @param {string} badge - the badge to add
+     */
     async addBadge(username, badge) {
         await this.collection.updateOne({ username: username }, { $push: { badges: badge } });
     }
 
+    /**
+     * 
+     * @param {string} username - username of the user 
+     * @param {string} badge - the badge to remove 
+     */
     async removeBadge(username, badge) {
         await this.collection.updateOne({ username: username }, { $pull: { badges: badge } });
     }
 
+    /**
+     * 
+     * @param {string} username 
+     * @returns {boolean} - true if the user is an admin, false if not
+     */
     async isAdmin(username) {
         const result = await this.collection.findOne({ username: username });
 
         return result.admin;
     }
 
+    /**
+     * @param {string} username - username of the user 
+     * @param {boolean} admin - true if setting to admin, false if not 
+     */
     async setAdmin(username, admin) {
         await this.collection.updateOne({ username: username }, { $set: { admin: admin } });
     }
 
+    /**
+     * @param {string} username - username of the user
+     * @returns {boolean} - true if the user is a moderator, false if not
+     * @async
+     */
     async isModerator(username) {
         const result = await this.collection.findOne({ username: username });
 
         return result.moderator;
     }
 
+    /**
+     * @param {string} username - username of the user
+     * @param {boolean} moderator - true if setting to moderator, false if not
+     */
     async setModerator(username, moderator) {
         await this.collection.updateOne({ username: username }, { $set: { moderator: moderator } });
     }
 
+    /**
+     * @param {string} username - username of the user
+     * @returns {boolean} - true if the user is banned, false if not
+     * @async
+     */
     async isBanned(username) {
         const result = await this.collection.findOne({ username: username });
 
         return result.banned;
     }
 
+    /**
+     * @param {string} username - username of the user
+     * @param {boolean} banned - true if banning, false if unbanning
+     */
     async setBanned(username, banned) {
         await this.collection.updateOne({ username: username }, { $set: { banned: banned } });
     }
