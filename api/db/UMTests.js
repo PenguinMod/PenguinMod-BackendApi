@@ -42,4 +42,4 @@ async function tests() {
     }
     console.log("[ FAIL ]".red, "Tests failed");
     process.exit(1);
-})
+})();
