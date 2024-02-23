@@ -1,6 +1,8 @@
 const { randomBytes } = require('node:crypto');
 const bcrypt = require('bcrypt');
 const { MongoClient } = require('mongodb');
+var prompt = require('prompt-sync')();
+
 
 function generateId() {
     const rn = [
@@ -32,13 +34,21 @@ class UserManager {
         this.collection = this.db.collection('users');
     }
 
+    async reset() {
+        if (prompt("This deletes ALL USER DATA. Are you sure? (y/n) ") !== "y") return;
+        await this.collection.deleteMany({});
+    }
+
     /*/
     Account creation + login
     /*/
 
     async createAccount(username, password) {
         const result = await this.collection.findOne({ username: username });
-        if (result) return false;
+        if (result) {
+            console.log(result);
+            return false;
+        }
 
         const hash = await bcrypt.hash(password, 10);
         const id = generateId();

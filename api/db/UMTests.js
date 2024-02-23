@@ -5,6 +5,8 @@ async function tests() {
     const manager = new UserManager();
     await manager.init();
 
+    await manager.reset();
+
     let createAccountSuccess = await manager.createAccount('test', 'password');
     if (!createAccountSuccess) {
         console.log("[ FAIL ]".red, "Failed to create account");
@@ -32,6 +34,8 @@ async function tests() {
         return false;
     }
     console.log("[ PASS ]".green, "Logged in with wrong password");
+
+    return true;
 } 
 
 (async () => {
