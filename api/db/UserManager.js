@@ -34,8 +34,11 @@ class UserManager {
         this.collection = this.db.collection('users');
     }
 
-    async reset() {
-        if (prompt("This deletes ALL USER DATA. Are you sure? (y/n) ") !== "y") return;
+    async reset(understands = false) {
+        if (!understands) {
+            if (prompt("This deletes ALL USER DATA. Are you sure? (y/n) ") !== "y")
+            return;
+        }
         await this.collection.deleteMany({});
     }
 

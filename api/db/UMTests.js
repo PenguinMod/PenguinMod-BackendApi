@@ -5,7 +5,7 @@ async function tests() {
     const manager = new UserManager();
     await manager.init();
 
-    await manager.reset();
+    await manager.reset(true);
 
     let createAccountSuccess = await manager.createAccount('test', 'password');
     if (!createAccountSuccess) {
