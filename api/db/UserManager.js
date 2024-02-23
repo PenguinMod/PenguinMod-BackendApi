@@ -18,6 +18,13 @@ function generateToken() {
 }
 
 class UserManager {
+    static loginInvalidationTime = 
+    1000 *  // second
+    60 * // minute
+    60 * // hour
+    24 * // day
+    3; // 3 days
+
     async init() {
         this.client = new MongoClient('mongodb://localhost:27017');
         await this.client.connect();
@@ -63,6 +70,26 @@ class UserManager {
         const result = await this.collection.findOne({ username: username });
         if (!result) return false;
         if (await bcrypt.compare(password, result.password)) {
+            this.collection.updateOne({ username: username }, { $set: { lastLogin: Date.now() } });
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    async loginWithToken(username, token) {
+        const result = await this.collection.findOne({ username: username });
+
+        if (!result) return false;
+
+        // login invalid if more than the time
+        if (result.lastLogin + UserManager.loginInvalidationTime < Date.now()) {
+            return false;
+        }
+
+        // check that the tokens are equal
+        if (result.privateCode === token) {
+            this.collection.updateOne({ username: username }, { $set: { lastLogin: Date.now() } });
             return true;
         } else {
             return false;
