@@ -18,8 +18,5 @@ Please report any security vulnerabilities using GitHub's security tab on the re
     - [Windows](https://docs.mongodb.com/manual/tutorial/install-mongodb-on-windows/)
     - [Mac](https://docs.mongodb.com/manual/tutorial/install-mongodb-on-os-x/)
     - [Linux](https://docs.mongodb.com/manual/administration/install-on-linux/)
-2. run `mongosh` in your terminal to start the MongoDB shell
-    1. run `use pm_userdata` to create the database
-    2. run `db.createCollection('users')` to create the users collection & save the new db
-3. Run `npm i`. if this doesn't work run it with --force
-4. Run `npm run dev` to start the server in development mode.
+2. Run `npm i`. if this doesn't work run it with --force
+3. Run `npm run dev` to start the server in development mode.

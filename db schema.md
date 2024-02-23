@@ -36,6 +36,16 @@
 | moderator | boolean | Whether the message was sent by a moderator. |
 | read | boolean | Whether the message has been read. |
 
+## Reports
+
+| Name | Datatype | Description |
+|-|-|-|
+| type | number | The type of report. 0 for user report, 1 for project report. |
+| reportee | string | The reportee's id. can be a project id or a user id |
+| reason | string | The reason for the report. |
+| reporter | string | The reporter's id. |
+| id | string | The report's unique ID. |
+
 ## Projects
 
 | Name | Datatype | Description |

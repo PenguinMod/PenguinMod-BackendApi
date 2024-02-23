@@ -31,7 +31,8 @@ class UserManager {
         this.client = new MongoClient('mongodb://localhost:27017');
         await this.client.connect();
         this.db = this.client.db('pm_userdata');
-        this.collection = this.db.collection('users');
+        this.users = this.db.collection('users');
+        this.reports = this.db.collection('reports');
     }
 
     /**
@@ -42,12 +43,9 @@ class UserManager {
             if (prompt("This deletes ALL USER DATA. Are you sure? (y/n) ") !== "y")
             return;
         }
-        await this.collection.deleteMany({});
+        await this.users.deleteMany({});
+        await this.reports.deleteMany({});
     }
-
-    /*/
-    Account creation + login
-    /*/
 
     /**
      * @param {string} username - new username of the user
@@ -56,7 +54,7 @@ class UserManager {
      * @async
      */
     async createAccount(username, password) {
-        const result = await this.collection.findOne({ username: username });
+        const result = await this.users.findOne({ username: username });
         if (result) {
             return false;
         }
@@ -64,7 +62,7 @@ class UserManager {
         const hash = await bcrypt.hash(password, 10);
         const id = generateId();
         const token = generateToken();
-        await this.collection.insertOne({
+        await this.users.insertOne({
             id: id,
             username: username,
             password: hash,
@@ -91,10 +89,10 @@ class UserManager {
      * @async
      */
     async loginWithPassword(username, password) {
-        const result = await this.collection.findOne({ username: username });
+        const result = await this.users.findOne({ username: username });
         if (!result) return false;
         if (await bcrypt.compare(password, result.password)) {
-            this.collection.updateOne({ username: username }, { $set: { lastLogin: Date.now() } });
+            this.users.updateOne({ username: username }, { $set: { lastLogin: Date.now() } });
             return result.privateCode;
         } else {
             return false;
@@ -108,7 +106,7 @@ class UserManager {
      * @async
      */ 
     async loginWithToken(username, token) {
-        const result = await this.collection.findOne({ username: username });
+        const result = await this.users.findOne({ username: username });
 
         if (!result) return false;
 
@@ -119,16 +117,12 @@ class UserManager {
 
         // check that the tokens are equal
         if (result.privateCode === token) {
-            this.collection.updateOne({ username: username }, { $set: { lastLogin: Date.now() } });
+            this.users.updateOne({ username: username }, { $set: { lastLogin: Date.now() } });
             return true;
         } else {
             return false;
         }
     }
-
-    /*/
-    Account management
-    /*/
 
     /**
      * @param {string} username - username of the user 
@@ -136,7 +130,7 @@ class UserManager {
      * @async
      */
     async existsByUsername(username) {
-        const result = await this.collection.findOne({ username: username });
+        const result = await this.users.findOne({ username: username });
         if (result) return true;
         return false;
     }
@@ -147,7 +141,7 @@ class UserManager {
      * @async
      */
     async existsByID(id) {
-        const result = await this.collection.findOne({ id: id });
+        const result = await this.users.findOne({ id: id });
         if (result) return true;
         return false;
     }
@@ -158,7 +152,7 @@ class UserManager {
      * @async
      */
     async getIDByUsername(username) {
-        const result = await this.collection.findOne({ username: username });
+        const result = await this.users.findOne({ username: username });
         return result.id;
     }
 
@@ -168,7 +162,7 @@ class UserManager {
      * @async
      */
     async getUsernameByID(id) {
-        const result = await this.collection.findOne({ id: id });
+        const result = await this.users.findOne({ id: id });
         return result.username;
     }
 
@@ -177,7 +171,7 @@ class UserManager {
      * @param {string} newUsername - new username of the user
      */
     async changeUsername(id, newUsername) {
-        await this.collection.updateOne({ id: id }, { $set: { username: newUsername } });
+        await this.users.updateOne({ id: id }, { $set: { username: newUsername } });
     }
 
     /**
@@ -186,7 +180,7 @@ class UserManager {
      */
     async changePassword(username, newPassword) {
         const hash = await bcrypt.hash(newPassword, 10);
-        await this.collection.updateOne({ username: username }, { $set: { password: hash } });
+        await this.users.updateOne({ username: username }, { $set: { password: hash, lastLogin: 0 } }); // sets password and invalidates token
     }
 
     /**
@@ -195,7 +189,7 @@ class UserManager {
      * @async
      */
     async getBio(username) {
-        const result = await this.collection.findOne({ username: username });
+        const result = await this.users.findOne({ username: username });
         return result.bio;
     }
 
@@ -204,7 +198,7 @@ class UserManager {
      * @param {string} newBio - new bio of the user
      */
     async setBio(username, newBio) {
-        await this.collection.updateOne({ username: username }, { $set: { bio: newBio } });
+        await this.users.updateOne({ username: username }, { $set: { bio: newBio } });
     }
 
     /**
@@ -213,7 +207,7 @@ class UserManager {
      * @param {number} id - id of the project
      */
     async changeFavoriteProject(username, type, id) {
-        await this.collection.updateOne({ username: username }, { $set: { favoriteProjectType: type, favoriteProjectID: id } });
+        await this.users.updateOne({ username: username }, { $set: { favoriteProjectType: type, favoriteProjectID: id } });
     }
     
     /**
@@ -222,7 +216,7 @@ class UserManager {
      * @async
      */
     async getCubes(username) {
-        const result = await this.collection.findOne({ username: username });
+        const result = await this.users.findOne({ username: username });
 
         return result.cubes;
     }
@@ -232,7 +226,7 @@ class UserManager {
      * @param {number} amount - amount of cubes the user has
      */
     async setCubes(username, amount) {
-        await this.collection.updateOne({ username: username }, { $set: { cubes: amount } });
+        await this.users.updateOne({ username: username }, { $set: { cubes: amount } });
     }
 
     /**
@@ -241,7 +235,7 @@ class UserManager {
      * @async
      */
     async getRank(username) {
-        const result = await this.collection.findOne({ username: username });
+        const result = await this.users.findOne({ username: username });
 
         return result.rank;
     }
@@ -251,7 +245,7 @@ class UserManager {
      * @param {number} rank - new rank of the user
      */
     async setRank(username, rank) {
-        await this.collection.updateOne({ username: username }, { $set: { rank: rank } });
+        await this.users.updateOne({ username: username }, { $set: { rank: rank } });
     }
 
     /**
@@ -260,7 +254,7 @@ class UserManager {
      * @returns {Array<string>} - array of badges the user has
      */
     async getBadges(username) {
-        const result = await this.collection.findOne({ username: username });
+        const result = await this.users.findOne({ username: username });
 
         return result.badges;
     }
@@ -271,7 +265,7 @@ class UserManager {
      * @param {string} badge - the badge to add
      */
     async addBadge(username, badge) {
-        await this.collection.updateOne({ username: username }, { $push: { badges: badge } });
+        await this.users.updateOne({ username: username }, { $push: { badges: badge } });
     }
 
     /**
@@ -280,7 +274,7 @@ class UserManager {
      * @param {string} badge - the badge to remove 
      */
     async removeBadge(username, badge) {
-        await this.collection.updateOne({ username: username }, { $pull: { badges: badge } });
+        await this.users.updateOne({ username: username }, { $pull: { badges: badge } });
     }
 
     /**
@@ -289,7 +283,7 @@ class UserManager {
      * @returns {boolean} - true if the user is an admin, false if not
      */
     async isAdmin(username) {
-        const result = await this.collection.findOne({ username: username });
+        const result = await this.users.findOne({ username: username });
 
         return result.admin;
     }
@@ -299,7 +293,7 @@ class UserManager {
      * @param {boolean} admin - true if setting to admin, false if not 
      */
     async setAdmin(username, admin) {
-        await this.collection.updateOne({ username: username }, { $set: { admin: admin } });
+        await this.users.updateOne({ username: username }, { $set: { admin: admin } });
     }
 
     /**
@@ -308,7 +302,7 @@ class UserManager {
      * @async
      */
     async isModerator(username) {
-        const result = await this.collection.findOne({ username: username });
+        const result = await this.users.findOne({ username: username });
 
         return result.moderator;
     }
@@ -318,7 +312,7 @@ class UserManager {
      * @param {boolean} moderator - true if setting to moderator, false if not
      */
     async setModerator(username, moderator) {
-        await this.collection.updateOne({ username: username }, { $set: { moderator: moderator } });
+        await this.users.updateOne({ username: username }, { $set: { moderator: moderator } });
     }
 
     /**
@@ -327,7 +321,7 @@ class UserManager {
      * @async
      */
     async isBanned(username) {
-        const result = await this.collection.findOne({ username: username });
+        const result = await this.users.findOne({ username: username });
 
         return result.banned;
     }
@@ -337,7 +331,67 @@ class UserManager {
      * @param {boolean} banned - true if banning, false if unbanning
      */
     async setBanned(username, banned) {
-        await this.collection.updateOne({ username: username }, { $set: { banned: banned } });
+        await this.users.updateOne({ username: username }, { $set: { banned: banned } });
+    }
+
+    /**
+     * @param {string} username - username of the user
+     */
+    async logout(username) {
+        await this.users.updateOne({ username: username }, { $set: { lastLogin: 0 } }); // makes the token invalid
+    }
+
+    /**
+     * 
+     * @param {number} type - Type of report. 0 = user, 1 = project 
+     * @param {string} reportee - ID of the person/project being reported 
+     * @param {string} reason - Reason for the report 
+     * @param {string} reporter - ID of the person reporting 
+     */
+    async report(type, reportee, reason, reporter) {
+        await this.reports.insertOne({
+            type: type,
+            reportee: reportee,
+            reason: reason,
+            reporter: reporter,
+            id: generateId()
+        })
+    }
+
+    /**
+     * @param {number} type - The type of reports to get 
+     * @returns {Array<object>} - Array of reports of the specified type
+     */
+    async getReportsByType(type) {
+        const result = await this.reports.find({ type: type }).toArray();
+        return result;
+    }
+
+    /**
+     * @param {string} reportee - ID of the person/project being reported
+     * @returns {Array<object>} - Array of reports on the specified reportee
+     * @async
+     */
+    async getReportsByReportee(reportee) {
+        const result = await this.reports.find({ reportee: reportee }).toArray();
+        return result;
+    }
+
+    /**
+     * @param {string} reporter - ID of the person reporting
+     * @returns {Array<object>} - Array of reports by the specified reporter
+     * @async 
+     */
+    async getReportsByReporter(reporter) {
+        const result = await this.reports.find({ reporter: reporter }).toArray();
+        return result;
+    }
+
+    /**
+     * @param {string} id - ID of the report to delete
+     */
+    async deleteReport(id) {
+        await this.reports.deleteOne({ id: id });
     }
 }
 

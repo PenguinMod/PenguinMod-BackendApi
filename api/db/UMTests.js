@@ -7,6 +7,10 @@ async function tests() {
 
     await manager.reset(true);
 
+    ////////////////////
+    // Create account //
+    ////////////////////
+
     let createAccountSuccess = await manager.createAccount('test', 'password');
     if (!createAccountSuccess) {
         console.log("[ FAIL ]".red, "Failed to create account");
@@ -20,6 +24,10 @@ async function tests() {
         return false;
     }
     console.log("[ PASS ]".green, "Failed to create account with same username");
+
+    ////////////////////
+    // Password Login //
+    ////////////////////
 
     let passwordLoginSuccess = await manager.loginWithPassword('test', 'password');
     if (!passwordLoginSuccess) {
@@ -37,6 +45,10 @@ async function tests() {
 
     let token = await manager.loginWithPassword('test', 'password');
 
+    /////////////////
+    // Token Login //
+    /////////////////
+
     let tokenLoginSuccess = await manager.loginWithToken('test', token);
     if (!tokenLoginSuccess) {
         console.log("[ FAIL ]".red, "Failed to login with token");
@@ -51,12 +63,27 @@ async function tests() {
     }
     console.log("[ PASS ]".green, "Failed to login with wrong token");
 
+    /////////////////////
+    // Get ID/Username //
+    /////////////////////
+
     let getID = await manager.getIDByUsername('test');
     if (!getID) {
         console.log("[ FAIL ]".red, "Failed to get ID by username");
         return false;
     }
     console.log("[ PASS ]".green, "Got ID by username");
+
+    let getUsernameByID = await manager.getUsernameByID(getID);
+    if (getUsernameByID !== 'test') {
+        console.log("[ FAIL ]".red, "Failed to get username by ID");
+        return false;
+    }
+    console.log("[ PASS ]".green, "Got username by ID");
+
+    /////////////////
+    // User Exists //
+    /////////////////
 
     let existsByUsername = await manager.existsByUsername('test');
     if (!existsByUsername) {
@@ -72,12 +99,9 @@ async function tests() {
     }
     console.log("[ PASS ]".green, "Checked if user exists by ID");
 
-    let getUsernameByID = await manager.getUsernameByID(getID);
-    if (getUsernameByID !== 'test') {
-        console.log("[ FAIL ]".red, "Failed to get username by ID");
-        return false;
-    }
-    console.log("[ PASS ]".green, "Got username by ID");
+    //////////////////////
+    // Change User Data //
+    //////////////////////
 
     let changeUsername = await manager.changeUsername(getID, 'newtest');
     if (!await manager.existsByUsername("newtest")) {
@@ -85,6 +109,13 @@ async function tests() {
         return false;
     }
     console.log("[ PASS ]".green, "Changed username");
+
+    let logout = await manager.logout('newtest');
+    if (await manager.loginWithToken('newtest', token)) {
+        console.log("[ FAIL ]".red, "Failed to logout");
+        return false;
+    }
+    console.log("[ PASS ]".green, "Logged out");
 
     let changePassword = await manager.changePassword('newtest', 'newpassword');
     token = await manager.loginWithPassword('newtest', 'newpassword');
@@ -157,6 +188,43 @@ async function tests() {
         return false;
     }
     console.log("[ PASS ]".green, "Set/get banned");
+
+    ///////////////
+    // Reporting //
+    ///////////////
+
+    let userToReport = await manager.createAccount('imstupid', 'password');
+
+    let report = await manager.report(
+        0,
+        await manager.getIDByUsername("imstupid"),
+        "they are stupid",
+        await manager.getIDByUsername("newtest")
+    );
+
+    let getReportsByType = await manager.getReportsByType(0);
+    if (getReportsByType.length !== 1) {
+        console.log("[ FAIL ]".red, "Failed to get reports by type");
+        return false;
+    }
+
+    let getReportsByReporter = await manager.getReportsByReporter(await manager.getIDByUsername("newtest"));
+    if (getReportsByReporter.length !== 1) {
+        console.log("[ FAIL ]".red, "Failed to get reports by reporter");
+        return false;
+    }
+
+    let getReportsByReported = await manager.getReportsByReportee(await manager.getIDByUsername("imstupid"));
+    if (getReportsByReported.length !== 1) {
+        console.log("[ FAIL ]".red, "Failed to get reports by reportee");
+        return false;
+    }
+
+    let deleteReport = await manager.deleteReport(getReportsByType[0].id);
+    if ((await manager.getReportsByType(0)).length !== 0) {
+        console.log("[ FAIL ]".red, "Failed to delete report");
+        return false;
+    }
 
     return true;
 } 
