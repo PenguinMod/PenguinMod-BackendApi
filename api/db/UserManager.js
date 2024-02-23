@@ -32,7 +32,14 @@ class UserManager {
         this.collection = this.db.collection('users');
     }
 
+    /*/
+    Account creation + login
+    /*/
+
     async createAccount(username, password) {
+        const result = await this.collection.findOne({ username: username });
+        if (result) return false;
+
         const hash = await bcrypt.hash(password, 10);
         const id = generateId();
         const token = generateToken();
@@ -54,16 +61,6 @@ class UserManager {
             lastLogin: Date.now()
         });
         return token;
-    }
-
-    async getIDByUsername(username) {
-        const result = await this.collection.findOne({ username: username });
-        return result.id;
-    }
-
-    async getUsernameByID(id) {
-        const result = await this.collection.findOne({ id: id });
-        return result.username;
     }
 
     async loginWithPassword(username, password) {
@@ -96,8 +93,99 @@ class UserManager {
         }
     }
 
+    /*/
+    Account management
+    /*/
+
+    async getIDByUsername(username) {
+        const result = await this.collection.findOne({ username: username });
+        return result.id;
+    }
+
+    async getUsernameByID(id) {
+        const result = await this.collection.findOne({ id: id });
+        return result.username;
+    }
+
     async changeUsername(id, newUsername) {
         await this.collection.updateOne({ id: id }, { $set: { username: newUsername } });
+    }
+
+    async changePassword(username, newPassword) {
+        const hash = await bcrypt.hash(newPassword, 10);
+        await this.collection.updateOne({ username: username }, { $set: { password: hash } });
+    }
+
+    async setBio(username, newBio) {
+        await this.collection.updateOne({ username: username }, { $set: { bio: newBio } });
+    }
+
+    async changeFavoriteProject(username, type, id) {
+        await this.collection.updateOne({ username: username }, { $set: { favoriteProjectType: type, favoriteProjectID: id } });
+    }
+    
+    async getCubes(username) {
+        const result = await this.collection.findOne({ username: username });
+
+        return result.cubes;
+    }
+
+    async setCubes(username, amount) {
+        await this.collection.updateOne({ username: username }, { $set: { cubes: amount } });
+    }
+
+    async getRank(username) {
+        const result = await this.collection.findOne({ username: username });
+
+        return result.rank;
+    }
+
+    async setRank(username, rank) {
+        await this.collection.updateOne({ username: username }, { $set: { rank: rank } });
+    }
+
+    async getBadges(username) {
+        const result = await this.collection.findOne({ username: username });
+
+        return result.badges;
+    }
+
+    async addBadge(username, badge) {
+        await this.collection.updateOne({ username: username }, { $push: { badges: badge } });
+    }
+
+    async removeBadge(username, badge) {
+        await this.collection.updateOne({ username: username }, { $pull: { badges: badge } });
+    }
+
+    async isAdmin(username) {
+        const result = await this.collection.findOne({ username: username });
+
+        return result.admin;
+    }
+
+    async setAdmin(username, admin) {
+        await this.collection.updateOne({ username: username }, { $set: { admin: admin } });
+    }
+
+    async isModerator(username) {
+        const result = await this.collection.findOne({ username: username });
+
+        return result.moderator;
+    }
+
+    async setModerator(username, moderator) {
+        await this.collection.updateOne({ username: username }, { $set: { moderator: moderator } });
+    }
+
+    async isBanned(username) {
+        const result = await this.collection.findOne({ username: username });
+
+        return result.banned;
+    }
+
+    async setBanned(username, banned) {
+        await this.collection.updateOne({ username: username }, { $set: { banned: banned } });
     }
 }
 
