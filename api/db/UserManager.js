@@ -34,6 +34,9 @@ class UserManager {
         this.collection = this.db.collection('users');
     }
 
+    /**
+     * @param {boolean} understands - skip the prompt if true
+     */
     async reset(understands = false) {
         if (!understands) {
             if (prompt("This deletes ALL USER DATA. Are you sure? (y/n) ") !== "y")
@@ -46,6 +49,12 @@ class UserManager {
     Account creation + login
     /*/
 
+    /**
+     * @param {string} username - new username of the user
+     * @param {string} password - new password of the user
+     * @returns {string|boolean} - token if successful, false if not
+     * @async
+     */
     async createAccount(username, password) {
         const result = await this.collection.findOne({ username: username });
         if (result) {
@@ -75,6 +84,12 @@ class UserManager {
         return token;
     }
 
+    /**
+     * @param {string} username - username of the user
+     * @param {string} password - password of the user
+     * @returns {string|boolean} - token if successful, false if not
+     * @async
+     */
     async loginWithPassword(username, password) {
         const result = await this.collection.findOne({ username: username });
         if (!result) return false;
@@ -86,6 +101,12 @@ class UserManager {
         }
     }
 
+    /**
+     * @param {string} username - username of the user
+     * @param {string} token - token of the user
+     * @returns {boolean} - true if successful, false if not
+     * @async
+     */ 
     async loginWithToken(username, token) {
         const result = await this.collection.findOne({ username: username });
 
@@ -109,66 +130,126 @@ class UserManager {
     Account management
     /*/
 
+    /**
+     * @param {string} username - username of the user 
+     * @returns {boolean} - true if the user exists, false if not
+     * @async
+     */
     async existsByUsername(username) {
         const result = await this.collection.findOne({ username: username });
         if (result) return true;
         return false;
     }
 
+    /**
+     * @param {string} id - id of the user
+     * @returns {boolean} - true if the user exists, false if not
+     * @async
+     */
     async existsByID(id) {
         const result = await this.collection.findOne({ id: id });
         if (result) return true;
         return false;
     }
 
+    /**
+     * @param {string} username - username of the user
+     * @returns {string} - id of the user
+     * @async
+     */
     async getIDByUsername(username) {
         const result = await this.collection.findOne({ username: username });
         return result.id;
     }
 
+    /**
+     * @param {string} id - id of the user
+     * @returns {string} - username of the user
+     * @async
+     */
     async getUsernameByID(id) {
         const result = await this.collection.findOne({ id: id });
         return result.username;
     }
 
+    /**
+     * @param {string} id - id of the user
+     * @param {string} newUsername - new username of the user
+     */
     async changeUsername(id, newUsername) {
         await this.collection.updateOne({ id: id }, { $set: { username: newUsername } });
     }
 
+    /**
+     * @param {string} username - username of the user
+     * @param {string} newPassword - new password of the user
+     */
     async changePassword(username, newPassword) {
         const hash = await bcrypt.hash(newPassword, 10);
         await this.collection.updateOne({ username: username }, { $set: { password: hash } });
     }
 
+    /**
+     * @param {string} username - username of the user
+     * @returns {string} - bio of the user
+     * @async
+     */
     async getBio(username) {
         const result = await this.collection.findOne({ username: username });
         return result.bio;
     }
 
+    /**
+     * @param {string} username - username of the user
+     * @param {string} newBio - new bio of the user
+     */
     async setBio(username, newBio) {
         await this.collection.updateOne({ username: username }, { $set: { bio: newBio } });
     }
 
+    /**
+     * @param {string} username - username of the user
+     * @param {number} type - type of the project (the description that will be shown)
+     * @param {number} id - id of the project
+     */
     async changeFavoriteProject(username, type, id) {
         await this.collection.updateOne({ username: username }, { $set: { favoriteProjectType: type, favoriteProjectID: id } });
     }
     
+    /**
+     * @param {string} username - username of the user
+     * @returns {number} - amount of cubes the user has
+     * @async
+     */
     async getCubes(username) {
         const result = await this.collection.findOne({ username: username });
 
         return result.cubes;
     }
 
+    /**
+     * @param {string} username - username of the user
+     * @param {number} amount - amount of cubes the user has
+     */
     async setCubes(username, amount) {
         await this.collection.updateOne({ username: username }, { $set: { cubes: amount } });
     }
 
+    /**
+     * @param {string} username - username of the user
+     * @returns {number} - rank of the user
+     * @async
+     */
     async getRank(username) {
         const result = await this.collection.findOne({ username: username });
 
         return result.rank;
     }
 
+    /**
+     * @param {string} username - username of the user
+     * @param {number} rank - new rank of the user
+     */
     async setRank(username, rank) {
         await this.collection.updateOne({ username: username }, { $set: { rank: rank } });
     }
