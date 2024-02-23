@@ -46,7 +46,6 @@ class UserManager {
     async createAccount(username, password) {
         const result = await this.collection.findOne({ username: username });
         if (result) {
-            console.log(result);
             return false;
         }
 
@@ -107,6 +106,18 @@ class UserManager {
     Account management
     /*/
 
+    async existsByUsername(username) {
+        const result = await this.collection.findOne({ username: username });
+        if (result) return true;
+        return false;
+    }
+
+    async existsByID(id) {
+        const result = await this.collection.findOne({ id: id });
+        if (result) return true;
+        return false;
+    }
+
     async getIDByUsername(username) {
         const result = await this.collection.findOne({ username: username });
         return result.id;
@@ -124,6 +135,11 @@ class UserManager {
     async changePassword(username, newPassword) {
         const hash = await bcrypt.hash(newPassword, 10);
         await this.collection.updateOne({ username: username }, { $set: { password: hash } });
+    }
+
+    async getBio(username) {
+        const result = await this.collection.findOne({ username: username });
+        return result.bio;
     }
 
     async setBio(username, newBio) {
