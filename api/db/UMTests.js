@@ -35,6 +35,22 @@ async function tests() {
     }
     console.log("[ PASS ]".green, "Logged in with wrong password");
 
+    let token = await manager.loginWithPassword('test', 'password');
+
+    let tokenLoginSuccess = await manager.loginWithToken('test', token);
+    if (!tokenLoginSuccess) {
+        console.log("[ FAIL ]".red, "Failed to login with token");
+        return false;
+    }
+    console.log("[ PASS ]".green, "Logged in with token");
+
+    let tokenLoginFail = await manager.loginWithToken('test', 'notyourtoken');
+    if (tokenLoginFail) {
+        console.log("[ FAIL ]".red, "Logged in with wrong token");
+        return false;
+    }
+    console.log("[ PASS ]".green, "Failed to login with wrong token");
+
     return true;
 } 
 

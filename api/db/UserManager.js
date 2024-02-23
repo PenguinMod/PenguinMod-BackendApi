@@ -78,7 +78,7 @@ class UserManager {
         if (!result) return false;
         if (await bcrypt.compare(password, result.password)) {
             this.collection.updateOne({ username: username }, { $set: { lastLogin: Date.now() } });
-            return true;
+            return result.privateCode;
         } else {
             return false;
         }
