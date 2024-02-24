@@ -20,3 +20,7 @@ Please report any security vulnerabilities using GitHub's security tab on the re
     - [Linux](https://docs.mongodb.com/manual/administration/install-on-linux/)
 2. Run `npm i`. if this doesn't work run it with --force
 3. Run `npm run dev` to start the server in development mode.
+
+## Deployment
+
+1. idk man follow [this](https://www.mongodb.com/docs/manual/administration/security-checklist/#std-label-security-checklist)

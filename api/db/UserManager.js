@@ -37,7 +37,9 @@ class UserManager {
         this.db = this.client.db('pm_userdata');
         this.users = this.db.collection('users');
         this.reports = this.db.collection('reports');
+        this.projects = this.db.collection('projects');
         this.uploadsDisabled = false;
+        return true;
     }
 
     /**
@@ -56,7 +58,7 @@ class UserManager {
      */
     async reset(understands = false) {
         if (!understands) {
-            if (prompt("This deletes ALL USER DATA. Are you sure? (y/n) ") !== "y")
+            if (prompt("This deletes ALL USER DATA. Are you sure? (Y/n) ") === "n")
             return;
         }
         await this.users.deleteMany({});

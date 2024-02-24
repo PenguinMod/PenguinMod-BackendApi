@@ -1,11 +1,15 @@
 const UserManager = require('./UserManager');
 const colors = require('colors');
 
+
+const understands = process.argv.includes("-u") || 
+                    process.argv.includes("--understands");
+
 async function tests() {
     const manager = new UserManager();
     await manager.init();
 
-    await manager.reset(true);
+    await manager.reset(understands);
 
     ////////////////////
     // Create account //
@@ -228,6 +232,7 @@ async function tests() {
 
     return true;
 } 
+
 
 (async () => {
     let result = await tests();
