@@ -50,5 +50,10 @@
 
 | Name | Datatype | Description |
 |-|-|-|
-| id | string | The project's unique ID. |
-| name | string | The project's name |
+| id | string | The project's unique ID, this is also what the name of the file will be. |
+| author | string | The author's ID. |
+| title | string | The project's name. |
+| image | string | ID of the image file. |
+| instructions | string | The project instructions. |
+| notes | string | The project notes. |
+| remix | string | Project ID it's a remix of, if it's not a remix then undefined. |

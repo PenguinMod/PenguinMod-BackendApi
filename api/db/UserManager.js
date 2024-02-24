@@ -58,11 +58,12 @@ class UserManager {
      */
     async reset(understands = false) {
         if (!understands) {
-            if (prompt("This deletes ALL USER DATA. Are you sure? (Y/n) ") === "n")
+            if (prompt("This deletes ALL DATA. Are you sure? (Y/n) ") === "n")
             return;
         }
         await this.users.deleteMany({});
         await this.reports.deleteMany({});
+        await this.projects.deleteMany({});
     }
 
     /**
