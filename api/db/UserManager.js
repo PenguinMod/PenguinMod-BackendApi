@@ -37,6 +37,16 @@ class UserManager {
         this.db = this.client.db('pm_userdata');
         this.users = this.db.collection('users');
         this.reports = this.db.collection('reports');
+        this.uploadsDisabled = false;
+    }
+
+    /**
+     * Disable or enable uploads
+     * @param {boolean} value - True is disabling, false if enabling
+     * @async
+     */
+    async disableUploads(value) {
+        this.uploadsDisabled = value
     }
 
     /**

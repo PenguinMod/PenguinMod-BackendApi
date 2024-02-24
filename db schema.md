@@ -50,4 +50,5 @@
 
 | Name | Datatype | Description |
 |-|-|-|
-| _id | string | The project's unique ID. |
+| id | string | The project's unique ID. |
+| name | string | The project's name |
