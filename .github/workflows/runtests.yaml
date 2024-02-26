@@ -35,4 +35,4 @@ jobs:
 
     - run: npm ci
     - run: npm run build --if-present
-    - run: node ./api/db/UMTests.js
+    - run: node ./api/db/UMTests.js -u
