@@ -31,4 +31,4 @@ illegalwords.js
 cache/*
 
 # Projects
-projects/*
+api/db/projects/*
