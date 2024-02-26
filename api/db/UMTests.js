@@ -1,11 +1,13 @@
 const UserManager = require('./UserManager');
+const prompt = require('prompt-sync')();
 const colors = require('colors');
 
 
-const understands = process.argv.includes("-u") || 
+let understands = process.argv.includes("-u") || 
                     process.argv.includes("--understands");
 
 async function tests() {
+
     const manager = new UserManager();
     await manager.init();
 
@@ -393,6 +395,16 @@ async function tests() {
 
 
 (async () => {
+    if (!understands) {
+        let pmt = prompt("This will reset the database, are you sure? (Y/n) ");
+        if (typeof pmt !== "string" ||
+            pmt === "n"
+        ) {
+            process.exit(0);
+        }
+        understands = true;
+    }
+
     let result = await tests();
     if (result) {
         console.log("[ PASS ]".green, "All tests passed");

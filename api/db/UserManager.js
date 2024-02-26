@@ -55,14 +55,21 @@ class UserManager {
      */
     async reset(understands = false) {
         if (!understands) {
-            if (prompt("This deletes ALL DATA. Are you sure? (Y/n) ") === "n")
-            return;
+            let unde = prompt("This deletes ALL DATA. Are you sure? (Y/n) ")
+            if (
+                typeof unde !== "string"
+            ) {
+                return;
+            }
+            console.log(typeof unde)
         }
         await this.users.deleteMany({});
         await this.reports.deleteMany({});
         await this.projects.deleteMany({});
-        fs.rmSync(path.join(__dirname, "projects/files"), { recursive: true, force: true });
-        fs.rmSync(path.join(__dirname, "projects/images"), { recursive: true, force: true });
+        if (fs.existsSync(path.join(__dirname, "projects/files")) && fs.existsSync(path.join(__dirname, "projects/images"))) {
+            fs.rmSync(path.join(__dirname, "projects/files"), { recursive: true, force: true });
+            fs.rmSync(path.join(__dirname, "projects/images"), { recursive: true, force: true });
+        }
         fs.mkdirSync(path.join(__dirname, "projects/files"));
         fs.mkdirSync(path.join(__dirname, "projects/images"));
     }
