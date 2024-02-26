@@ -486,6 +486,16 @@ class UserManager {
         });
     }
 
+    async updateProject(id, projectBuffer, title, image, instructions, notes, rating) {
+        await this.projects.updateOne({id: id}, {$set: {title: title, instructions: instructions, notes: notes, rating: rating}});
+        fs.writeFileSync(path.join(__dirname, `./projects/files/project_${id}.pmp`), projectBuffer, (err) => {
+            if (err) console.log("Error saving project:", err);
+        });
+        fs.writeFileSync(path.join(__dirname, `./projects/images/project_${id}.png`), image, (err) => {
+            if (err) console.log("Error saving thumbnail:", err);
+        });
+    }
+
     /**
      * get projects
      * @param {number} page - page of projects to get

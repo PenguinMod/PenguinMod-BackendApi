@@ -274,7 +274,6 @@ async function tests() {
         getProjectData.remix        !== null   ||
         getProjectData.rating       !== "E"
     ) {
-        console.log(getProjectData.author, getID)
         console.log("[ FAIL ]".red, "Failed to get project data");
         return false;
     }
@@ -356,6 +355,36 @@ async function tests() {
         return false;
     }
     console.log("[ PASS ]".green, "Featured/got projects");
+
+    let updateProject = await manager.updateProject(
+        getProjects[0].id,
+        Buffer.from("new file"),
+        "new project",
+        Buffer.from("new image"),
+        "new inst",
+        "new notes",
+        "E"
+    );
+    let getUpdatedProjectData = await manager.getProjectData(getProjects[0].id);
+    if (
+        getUpdatedProjectData.title        !== "new project" ||
+        getUpdatedProjectData.instructions !== "new inst"    ||
+        getUpdatedProjectData.notes        !== "new notes"   ||
+        getUpdatedProjectData.rating       !== "E"
+    ) {
+        console.log("[ FAIL ]".red, "Failed to update project");
+        return false;
+    }
+    if ((await manager.getProjectFile(getProjects[0].id)).toString() !== "new file") {
+        console.log("[ FAIL ]".red, "Failed to update project file");
+        return false;
+    }
+    if ((await manager.getProjectImage(getProjects[0].id)).toString() !== "new image") {
+        console.log("[ FAIL ]".red, "Failed to update project image");
+        return false;
+    }
+    console.log("[ PASS ]".green, "Updated project");
+
 
     await manager.reset(true); // will have already asked so
 
