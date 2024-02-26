@@ -244,12 +244,17 @@ async function tests() {
         undefined,
         "E"
     );
-    console.log((await manager.getProjects(0, 2))[0].data);
+    let getProjects = (await manager.getProjects(0, 2))[0].data;
+    if (getProjects.length !== 1) {
+        console.log("[ FAIL ]".red, "Failed to publish/get projects");
+        return false;
+    }
+    console.log("[ PASS ]".green, "Published/got projects");
 
-    await manager.reset(understands);
+    await manager.reset(true); // will have already asked so
 
     return true;
-} 
+}
 
 
 (async () => {
