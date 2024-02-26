@@ -446,7 +446,7 @@ class UserManager {
 
     /**
      * @param {Buffer} projectBuffer The file buffer for the project. This is a zip.
-     * @param {string} author The author of the project.
+     * @param {string} author The ID of the author of the project.
      * @param {string} title Title of the project.
      * @param {Buffer} image The file buffer for the thumbnail.
      * @param {string} instructions The instructions for the project.
@@ -458,11 +458,12 @@ class UserManager {
     async publishProject(projectBuffer, author, title, image, instructions, notes, remix, rating) {
         let id = projectID();
         // have you never been like... whimsical
-        do {
+        while (await this.projects.findOne({id: id})) {
             id = projectID();
-        } while (await this.projects.findOne({id: id}));
+        }
         
-        this.projects.insertOne({
+        
+        await this.projects.insertOne({
             id: id,
             author: author,
             title: title,
@@ -489,6 +490,7 @@ class UserManager {
      * get projects
      * @param {number} page - page of projects to get
      * @param {number} pageSize - amount of projects to get
+     * @returns {Promise<Array<Object>>} - Projects in the specified amount
      * @async
      */
     async getProjects(page, pageSize) {
@@ -512,7 +514,7 @@ class UserManager {
      * @async
      */
     async getProjectFile(id) {
-        const file = fs.readFileSync(`./projects/files/project_${id}.pmp`);
+        const file = fs.readFileSync(path.join(__dirname, `./projects/files/project_${id}.pmp`));
 
         return file;
     }
@@ -522,7 +524,7 @@ class UserManager {
      * @returns {Promise<Buffer>} - The project image file.
      */
     async getProjectImage(id) {
-        const file = fs.readFileSync(`./projects/images/project_${id}.png`);
+        const file = fs.readFileSync(path.join(__dirname, `./projects/images/project_${id}.png`));
 
         return file;
     }
@@ -543,12 +545,12 @@ class UserManager {
      * 
      * @param {number} id - ID of the project. 
      * @param {string} ip - IP of the person seeing the project. 
-     * @returns {Promise<Boolean>} - True if they have seen the project, false if not. 
+     * @returns {Promise<boolean>} - True if they have seen the project, false if not. 
      */
     async hasSeenProject(id, ip) {
         const result = await this.projects.findOne({id: id});
 
-        return result.views.includes(encrypt(ip));
+        return result.views.find((view) => decrypt(view) === ip) !== undefined;
     }
 
     /**
@@ -557,62 +559,59 @@ class UserManager {
      * @async
      */
     async projectView(id, ip) {
-        this.projects.updateOne({id: id}, {$push: {views: encrypt(ip)}})
+        await this.projects.updateOne({id: id}, {$push: {views: encrypt(ip)}})
+    }
+
+    /**
+     * @param {number} id - ID of the project.
+     * @param {string} userId - ID of the person loving the project.
+     * @async
+     * @returns {Promise<boolean>} - True if they have loved the project, false if not.
+     */
+    async hasLovedProject(id, userId) {
+        const result = await this.projects.findOne({id: id});
+
+        return result.loves.find((love) => decrypt(love) === userId) !== undefined;
     }
 
     /**
      * @param {number} id - ID of the project.
      * @param {string} ip - IP of the person loving the project.
+     * @param {boolean} love - True if loving, false if unloving.
      * @async
-     * @returns {Promise<Boolean>} - True if they have loved the project, false if not.
      */
-    async hasLovedProject(id, ip) {
+    async loveProject(id, ip, love) {
+        if (love) {
+           await this.projects.updateOne({id: id}, {$push: {loves: encrypt(ip)}});
+           return;
+        }
+        await this.projects.updateOne({id: id}, {$pull: {loves: encrypt(ip)}});
+    }
+
+    /**
+     * @param {number} id - ID of the project.
+     * @param {string} userId - ID of the person voting on the project.
+     * @returns {Promise<boolean>} - True if they have voted on the project, false if not.
+     * @async
+     */
+    async hasVotedProject(id, userId) {
         const result = await this.projects.findOne({id: id});
 
-        return result.loves.includes(encrypt(ip));
-    }
-
-    /**
-     * @param {number} id - ID of the project.
-     * @param {string} ip - IP of the person loving the project.
-     * @async
-     */
-    async loveProject(id, ip) {
-        this.projects.updateOne({id: id}, {$push: {loves: encrypt(ip)}});
-    }
-
-    /**
-     * @param {number} id - ID of the project.
-     * @param {string} ip - IP of the person unloving the project.
-     * @async
-     */
-    async unloveProject(id, ip) {
-        this.projects.updateOne({id: id}, {$pull: {loves: encrypt(ip)}});
+        return result.votes.find((vote) => decrypt(vote) === userId) !== undefined;
     }
 
     /**
      * @param {number} id - ID of the project.
      * @param {string} ip - IP of the person voting on the project.
-     * @returns {Promise<Boolean>} - True if they have voted on the project, false if not.
-     * @async
-     */
-    async hasVotedProject(id, ip) {
-        const result = await this.projects.findOne({id: id});
-
-        return result.votes.includes(encrypt(ip));
-    }
-
-    /**
-     * @param {number} id - ID of the project.
-     * @param {string} ip - IP of the person voting on the project.
+     * @param {boolean} vote - True if voting, false if unvoting.
      * @async
      */
     async voteProject(id, ip, vote) {
         if (vote) {
-            this.projects.updateOne({id: id}, {$push: {votes: encrypt(ip)}});
+            await this.projects.updateOne({id: id}, {$push: {votes: encrypt(ip)}});
             return;
         }
-        this.projects.updateOne({id: id}, {$pull: {votes: encrypt(ip)}});
+        await this.projects.updateOne({id: id}, {$pull: {votes: encrypt(ip)}});
     }
 
     /**
@@ -626,10 +625,11 @@ class UserManager {
 
     /**
      * @param {number} id - ID of the project.
+     * @param {boolean} feature - True if featuring, false if unfeaturing.
      * @async
      */
     async featureProject(id, feature) {
-        this.projects.updateOne({id: id}, {$set: {featured: feature}});
+        await this.projects.updateOne({id: id}, {$set: {featured: feature}});
     }
 }
 

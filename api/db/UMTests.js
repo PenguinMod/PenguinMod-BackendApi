@@ -235,10 +235,10 @@ async function tests() {
     console.log("[ PASS ]".green, "Deleted report");
 
     let publishProject = await manager.publishProject(
-        Buffer.from("hello world"),
-        "newtest",
+        Buffer.from("test file"),
+        await manager.getIDByUsername("newtest"),
         "testproject",
-        Buffer.from("image"),
+        Buffer.from("test image"),
         "testinst",
         "testnotes",
         undefined,
@@ -250,6 +250,112 @@ async function tests() {
         return false;
     }
     console.log("[ PASS ]".green, "Published/got projects");
+
+    let getProjectFile = (await manager.getProjectFile(getProjects[0].id)).toString();
+    if (getProjectFile !== "test file") {
+        console.log("[ FAIL ]".red, "Failed to get project file");
+        return false;
+    }
+    console.log("[ PASS ]".green, "Got project file");
+
+    let getProjectThumbnail = (await manager.getProjectImage(getProjects[0].id)).toString();
+    if (getProjectThumbnail !== "test image") {
+        console.log("[ FAIL ]".red, "Failed to get project thumbnail");
+        return false;
+    }
+    console.log("[ PASS ]".green, "Got project thumbnail");
+
+    let getProjectData = await manager.getProjectData(getProjects[0].id);
+    if (
+        getProjectData.author       !== getID         ||
+        getProjectData.title        !== "testproject" ||
+        getProjectData.instructions !== "testinst"    ||
+        getProjectData.notes        !== "testnotes"   ||
+        getProjectData.remix        !== null   ||
+        getProjectData.rating       !== "E"
+    ) {
+        console.log(getProjectData.author, getID)
+        console.log("[ FAIL ]".red, "Failed to get project data");
+        return false;
+    }
+    console.log("[ PASS ]".green, "Got project data");
+
+    let hasSeenProjectFalse = await manager.hasSeenProject(getProjects[0].id, "myipfrfr");
+    if (hasSeenProjectFalse) {
+        console.log("[ FAIL ]".red, "Failed to check if seen project");
+        return false;
+    }
+    console.log("[ PASS ]".green, "Checked if seen project");
+
+    let projectView = await manager.projectView(getProjects[0].id, "myipfrfr");
+
+    let hasSeenProjectTrue = await manager.hasSeenProject(getProjects[0].id, "myipfrfr");
+    if (!hasSeenProjectTrue) {
+        console.log("[ FAIL ]".red, "Failed to check if seen project/Failed to view project");
+        return false;
+    }
+    console.log("[ PASS ]".green, "Checked if seen project/Viewed project");
+
+    let getProjectViews = await manager.getProjectData(getProjects[0].id);
+    if (getProjectViews.views.length !== 1) {
+        console.log("[ FAIL ]".red, "Failed to get project views");
+        return false;
+    }
+    console.log("[ PASS ]".green, "Got project views");
+
+    let hasLovedProjectFalse = await manager.hasLovedProject(getProjects[0].id, getID);
+    if (hasLovedProjectFalse) {
+        console.log("[ FAIL ]".red, "Failed to check if loved project");
+        return false;
+    }
+    console.log("[ PASS ]".green, "Checked if loved project");
+
+    let projectLove = await manager.loveProject(getProjects[0].id, getID, true);
+
+    let hasLovedProjectTrue = await manager.hasLovedProject(getProjects[0].id, getID);
+    if (!hasLovedProjectTrue) {
+        console.log("[ FAIL ]".red, "Failed to check if loved project/Failed to love project");
+        return false;
+    }
+    console.log("[ PASS ]".green, "Checked if loved project/Loved project");
+
+    let getProjectLoves = await manager.getProjectData(getProjects[0].id);
+    if (getProjectLoves.loves.length !== 1) {
+        console.log("[ FAIL ]".red, "Failed to get project loves");
+        return false;
+    }
+    console.log("[ PASS ]".green, "Got project loves");
+
+    let hasVotedProjectFalse = await manager.hasVotedProject(getProjects[0].id, getID);
+    if (hasVotedProjectFalse) {
+        console.log("[ FAIL ]".red, "Failed to check if voted project");
+        return false;
+    }
+    console.log("[ PASS ]".green, "Checked if voted project");
+
+    let projectVote = await manager.voteProject(getProjects[0].id, getID, true);
+
+    let hasVotedProjectTrue = await manager.hasVotedProject(getProjects[0].id, getID);
+    if (!hasVotedProjectTrue) {
+        console.log("[ FAIL ]".red, "Failed to check if voted project/Failed to vote project");
+        return false;
+    }
+    console.log("[ PASS ]".green, "Checked if voted project/Voted project");
+
+    let getProjectVotes = await manager.getProjectData(getProjects[0].id);
+    if (getProjectVotes.votes.length !== 1) {
+        console.log("[ FAIL ]".red, "Failed to get project votes");
+        return false;
+    }
+    console.log("[ PASS ]".green, "Got project votes");
+
+    let featureProject = await manager.featureProject(getProjects[0].id, true);
+    let getFeaturedProjects = await manager.getFeaturedProjects();
+    if (getFeaturedProjects.length !== 1) {
+        console.log("[ FAIL ]".red, "Failed to feature/get projects");
+        return false;
+    }
+    console.log("[ PASS ]".green, "Featured/got projects");
 
     await manager.reset(true); // will have already asked so
 
