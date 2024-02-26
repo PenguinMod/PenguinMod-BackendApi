@@ -211,24 +211,40 @@ async function tests() {
         console.log("[ FAIL ]".red, "Failed to get reports by type");
         return false;
     }
+    console.log("[ PASS ]".green, "Got reports by type");
 
     let getReportsByReporter = await manager.getReportsByReporter(await manager.getIDByUsername("newtest"));
     if (getReportsByReporter.length !== 1) {
         console.log("[ FAIL ]".red, "Failed to get reports by reporter");
         return false;
     }
+    console.log("[ PASS ]".green, "Got reports by reporter");
 
     let getReportsByReported = await manager.getReportsByReportee(await manager.getIDByUsername("imstupid"));
     if (getReportsByReported.length !== 1) {
         console.log("[ FAIL ]".red, "Failed to get reports by reportee");
         return false;
     }
+    console.log("[ PASS ]".green, "Got reports by reportee");
 
     let deleteReport = await manager.deleteReport(getReportsByType[0].id);
     if ((await manager.getReportsByType(0)).length !== 0) {
         console.log("[ FAIL ]".red, "Failed to delete report");
         return false;
     }
+    console.log("[ PASS ]".green, "Deleted report");
+
+    let publishProject = await manager.publishProject(
+        Buffer.from("hello world"),
+        "newtest",
+        "testproject",
+        Buffer.from("image"),
+        "testinst",
+        "testnotes",
+        undefined,
+        "E"
+    );
+    console.log((await manager.getProjects(0, 2))[0].data);
 
     return true;
 } 

@@ -2,6 +2,7 @@ const { randomBytes } = require('node:crypto');
 const bcrypt = require('bcrypt');
 const { MongoClient } = require('mongodb');
 const { encrypt, decrypt } = require("../../utils/encrypt.js");
+const path = require('path');
 const fs = require('fs');
 var prompt = require('prompt-sync')();
 
@@ -60,6 +61,10 @@ class UserManager {
         await this.users.deleteMany({});
         await this.reports.deleteMany({});
         await this.projects.deleteMany({});
+        fs.rmSync(path.join(__dirname, "projects/files"), { recursive: true, force: true });
+        fs.rmSync(path.join(__dirname, "projects/images"), { recursive: true, force: true });
+        fs.mkdirSync(path.join(__dirname, "projects/files"));
+        fs.mkdirSync(path.join(__dirname, "projects/images"));
     }
 
     /**
@@ -440,22 +445,22 @@ class UserManager {
     }
 
     /**
-     * @param {Buffer} projectBuffer - The file buffer for the project. This is a zip.
-     * @param {string} author - The author of the project.
-     * @param {string} title - Title of the project.
-     * @param {Buffer} image - The file buffer for the thumbnail.
-     * @param {string} instructions - The instructions for the project.
-     * @param {string} notes - The notes for the project
-     * @param {number} remix - ID of the project this is a remix of. Undefined if not a remix.
-     * @param {string} rating - Rating of the project.
+     * @param {Buffer} projectBuffer The file buffer for the project. This is a zip.
+     * @param {string} author The author of the project.
+     * @param {string} title Title of the project.
+     * @param {Buffer} image The file buffer for the thumbnail.
+     * @param {string} instructions The instructions for the project.
+     * @param {string} notes The notes for the project
+     * @param {number} remix ID of the project this is a remix of. Undefined if not a remix.
+     * @param {string} rating Rating of the project.
      * @async
      */
     async publishProject(projectBuffer, author, title, image, instructions, notes, remix, rating) {
-        let id;
+        let id = projectID();
         // have you never been like... whimsical
         do {
             id = projectID();
-        } while (this.projects.findOne({id: id}));
+        } while (await this.projects.findOne({id: id}));
         
         this.projects.insertOne({
             id: id,
@@ -472,12 +477,33 @@ class UserManager {
             rating: rating
         });
 
-        fs.writeFile(`./projects/files/project_${id}.pmp`, projectBuffer, (err) => {
+        fs.writeFileSync(path.join(__dirname, `./projects/files/project_${id}.pmp`), projectBuffer, (err) => {
             if (err) console.log("Error saving project:", err);
         });
-        fs.writeFile(`./projects/images/project_${id}.png`, image, (err) => {
+        fs.writeFileSync(path.join(__dirname, `./projects/images/project_${id}.png`), image, (err) => {
             if (err) console.log("Error saving thumbnail:", err);
         });
+    }
+
+    /**
+     * get projects
+     * @param {number} page - page of projects to get
+     * @param {number} pageSize - amount of projects to get
+     * @async
+     */
+    async getProjects(page, pageSize) {
+        const result = await this.projects.aggregate([
+            {
+                $facet: {
+                    metadata: [{ $count: "count" }],
+                    data: [{ $skip: page * pageSize }, { $limit: pageSize }]
+                }
+            }
+        ])
+        .sort({ date: -1 })
+        .toArray();
+
+        return result;
     }
 
     /**
@@ -525,8 +551,85 @@ class UserManager {
         return result.views.includes(encrypt(ip));
     }
 
+    /**
+     * @param {number} id - ID of the project.
+     * @param {string} ip - IP of the person seeing the project.
+     * @async
+     */
     async projectView(id, ip) {
         this.projects.updateOne({id: id}, {$push: {views: encrypt(ip)}})
+    }
+
+    /**
+     * @param {number} id - ID of the project.
+     * @param {string} ip - IP of the person loving the project.
+     * @async
+     * @returns {Promise<Boolean>} - True if they have loved the project, false if not.
+     */
+    async hasLovedProject(id, ip) {
+        const result = await this.projects.findOne({id: id});
+
+        return result.loves.includes(encrypt(ip));
+    }
+
+    /**
+     * @param {number} id - ID of the project.
+     * @param {string} ip - IP of the person loving the project.
+     * @async
+     */
+    async loveProject(id, ip) {
+        this.projects.updateOne({id: id}, {$push: {loves: encrypt(ip)}});
+    }
+
+    /**
+     * @param {number} id - ID of the project.
+     * @param {string} ip - IP of the person unloving the project.
+     * @async
+     */
+    async unloveProject(id, ip) {
+        this.projects.updateOne({id: id}, {$pull: {loves: encrypt(ip)}});
+    }
+
+    /**
+     * @param {number} id - ID of the project.
+     * @param {string} ip - IP of the person voting on the project.
+     * @returns {Promise<Boolean>} - True if they have voted on the project, false if not.
+     * @async
+     */
+    async hasVotedProject(id, ip) {
+        const result = await this.projects.findOne({id: id});
+
+        return result.votes.includes(encrypt(ip));
+    }
+
+    /**
+     * @param {number} id - ID of the project.
+     * @param {string} ip - IP of the person voting on the project.
+     * @async
+     */
+    async voteProject(id, ip, vote) {
+        if (vote) {
+            this.projects.updateOne({id: id}, {$push: {votes: encrypt(ip)}});
+            return;
+        }
+        this.projects.updateOne({id: id}, {$pull: {votes: encrypt(ip)}});
+    }
+
+    /**
+     * @returns {Promise<Array<Object>>} - Array of all projects
+     */
+    async getFeaturedProjects() {
+        const result = await this.projects.find({featured: true}).toArray();
+
+        return result;
+    }
+
+    /**
+     * @param {number} id - ID of the project.
+     * @async
+     */
+    async featureProject(id, feature) {
+        this.projects.updateOne({id: id}, {$set: {featured: feature}});
     }
 }
 
