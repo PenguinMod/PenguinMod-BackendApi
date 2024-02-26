@@ -1,6 +1,8 @@
 const { randomBytes } = require('node:crypto');
 const bcrypt = require('bcrypt');
 const { MongoClient } = require('mongodb');
+const { encrypt, decrypt } = require("../../utils/encrypt.js");
+const fs = require('fs');
 var prompt = require('prompt-sync')();
 
 
@@ -19,6 +21,10 @@ function generateToken() {
     return randomBytes(32).toString('base64');
 }
 
+function projectID() {
+    return Math.round(100000 + (Math.random() * 9999999999999));
+}
+
 class UserManager {
     static loginInvalidationTime = 
     1000 *  // second
@@ -34,21 +40,11 @@ class UserManager {
     async init() {
         this.client = new MongoClient('mongodb://localhost:27017');
         await this.client.connect();
-        this.db = this.client.db('pm_userdata');
+        this.db = this.client.db('pm_apidata');
         this.users = this.db.collection('users');
         this.reports = this.db.collection('reports');
         this.projects = this.db.collection('projects');
-        this.uploadsDisabled = false;
         return true;
-    }
-
-    /**
-     * Disable or enable uploads
-     * @param {boolean} value - True is disabling, false if enabling
-     * @async
-     */
-    async disableUploads(value) {
-        this.uploadsDisabled = value
     }
 
     /**
@@ -441,6 +437,96 @@ class UserManager {
      */
     async deleteReport(id) {
         await this.reports.deleteOne({ id: id });
+    }
+
+    /**
+     * @param {Buffer} projectBuffer - The file buffer for the project. This is a zip.
+     * @param {string} author - The author of the project.
+     * @param {string} title - Title of the project.
+     * @param {Buffer} image - The file buffer for the thumbnail.
+     * @param {string} instructions - The instructions for the project.
+     * @param {string} notes - The notes for the project
+     * @param {number} remix - ID of the project this is a remix of. Undefined if not a remix.
+     * @param {string} rating - Rating of the project.
+     * @async
+     */
+    async publishProject(projectBuffer, author, title, image, instructions, notes, remix, rating) {
+        let id;
+        // have you never been like... whimsical
+        do {
+            id = projectID();
+        } while (this.projects.findOne({id: id}));
+        
+        this.projects.insertOne({
+            id: id,
+            author: author,
+            title: title,
+            instructions: instructions,
+            notes: notes,
+            remix: remix,
+            featured: false,
+            date: Date.now(),
+            views: [],
+            loves: [],
+            votes: [],
+            rating: rating
+        });
+
+        fs.writeFile(`./projects/files/project_${id}.pmp`, projectBuffer, (err) => {
+            if (err) console.log("Error saving project:", err);
+        });
+        fs.writeFile(`./projects/images/project_${id}.png`, image, (err) => {
+            if (err) console.log("Error saving thumbnail:", err);
+        });
+    }
+
+    /**
+     * @param {number} id - ID of the project wanted.
+     * @returns {Promise<Buffer>} - The project file.
+     * @async
+     */
+    async getProjectFile(id) {
+        const file = fs.readFileSync(`./projects/files/project_${id}.pmp`);
+
+        return file;
+    }
+
+    /**
+     * @param {number} id - ID of the project image wanted. 
+     * @returns {Promise<Buffer>} - The project image file.
+     */
+    async getProjectImage(id) {
+        const file = fs.readFileSync(`./projects/images/project_${id}.png`);
+
+        return file;
+    }
+
+    /**
+     * Get project data for a specified project
+     * @param {number} id - ID of the project wanted.
+     * @returns {Promise} - The project data.
+     * @async
+     */
+    async getProjectData(id) {
+        const result = await this.projects.findOne({id: id})
+
+        return result;
+    }
+
+    /**
+     * 
+     * @param {number} id - ID of the project. 
+     * @param {string} ip - IP of the person seeing the project. 
+     * @returns {Promise<Boolean>} - True if they have seen the project, false if not. 
+     */
+    async hasSeenProject(id, ip) {
+        const result = await this.projects.findOne({id: id});
+
+        return result.views.includes(encrypt(ip));
+    }
+
+    async projectView(id, ip) {
+        this.projects.updateOne({id: id}, {$push: {views: encrypt(ip)}})
     }
 }
 

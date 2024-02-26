@@ -12,7 +12,7 @@
 | moderator | boolean | Whether the user is a moderator. |
 | banned | boolean | Whether the user is banned. |
 | rank | number | The current rank of the user. |
-| badges | array (string) | The badges the user has received. |
+| badges | array\<string> | The badges the user has received. |
 | bio | string | The user's bio/about me. |
 | favoriteProjectType | number | The type of favorite project the user has. |
 | favoriteProjectID | number | The ID of the favorite project the user has. |
@@ -50,10 +50,15 @@
 
 | Name | Datatype | Description |
 |-|-|-|
-| id | string | The project's unique ID, this is also what the name of the file will be. |
+| id | number | The project's unique ID. This is also what the name of the files will be. |
 | author | string | The author's ID. |
 | title | string | The project's name. |
-| image | string | ID of the image file. |
 | instructions | string | The project instructions. |
 | notes | string | The project notes. |
-| remix | string | Project ID it's a remix of, if it's not a remix then undefined. |
+| remix | number/undefined  | Project ID it's a remix of, if it's not a remix then undefined. |
+| featured | boolean | True if the project is featured, false if not. |
+| date | number | Unix timestamp that the project was published |
+| views | Array\<IP(string)> | An array of IPs that have seen the project. The IPs are encrypted. |
+| loves | Array\<string> | An array of people that loved the project. The usernames are encrypted. |
+| votes | Array\<string> | An array of people that voted for the project. The usernames are encrypted |
+| rating | string | Rating of the project. |

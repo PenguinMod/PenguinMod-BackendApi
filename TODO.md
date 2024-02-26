@@ -2,10 +2,12 @@
 
 ## API
 
-- [x] Endpoints should be seperate files
+- [ ] Endpoints should be seperate files
 - [ ] Literally just remake all of the endpoints lmao
 - [ ] Use MongoDB Database
-  - [ ] Make a login system
+  - [x] Make a login system
+  - [ ] Projects stuff
+  - [ ] Reports stuff
 
 ## Projects
 
