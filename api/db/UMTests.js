@@ -246,6 +246,8 @@ async function tests() {
     );
     console.log((await manager.getProjects(0, 2))[0].data);
 
+    await manager.reset(understands);
+
     return true;
 } 
 
