@@ -66,6 +66,9 @@ class UserManager {
         await this.users.deleteMany({});
         await this.reports.deleteMany({});
         await this.projects.deleteMany({});
+        if (!fs.existsSync(path.join(__dirname, "projects"))) {
+            fs.mkdirSync(path.join(__dirname, "projects"));
+        }
         if (fs.existsSync(path.join(__dirname, "projects/files")) && fs.existsSync(path.join(__dirname, "projects/images"))) {
             fs.rmSync(path.join(__dirname, "projects/files"), { recursive: true, force: true });
             fs.rmSync(path.join(__dirname, "projects/images"), { recursive: true, force: true });
