@@ -103,6 +103,8 @@ class UserManager {
             banned: false,
             rank: 0,
             badges: [],
+            following: [],
+            followers: [],
             bio: "",
             favoriteProjectType: -1,
             favoriteProjectID: -1,
@@ -447,6 +449,27 @@ class UserManager {
     }
 
     /**
+     * @param {number} page - page of reports to get
+     * @param {number} pageSize - amount of reports to get
+     * @returns {Promise<Array<object>>} - Reports in the specified amount
+     * @async
+     */
+    async getReports(page, pageSize) {
+        const result = await this.reports.aggregate([
+            {
+                $facet: {
+                    metadata: [{ $count: "count" }],
+                    data: [{ $skip: page * pageSize }, { $limit: pageSize }]
+                }
+            }
+        ])
+        .sort({ date: -1 })
+        .toArray();
+
+        return result;
+    }
+
+    /**
      * @param {string} id - ID of the report to delete
      * @async
      */
@@ -650,6 +673,55 @@ class UserManager {
      */
     async featureProject(id, feature) {
         await this.projects.updateOne({id: id}, {$set: {featured: feature}});
+    }
+
+    /**
+     * @param {number} id - ID of the project
+     * @async
+     */
+    async deleteProject(id) {
+        await this.projects.deleteOne({id: id});
+        fs.rmSync(path.join(__dirname, `./projects/files/project_${id}.pmp`));
+        fs.rmSync(path.join(__dirname, `./projects/images/project_${id}.png`));
+    }
+
+    /**
+     * @param {string} follower - ID of the person following 
+     * @param {string} followee - ID of the person being followed
+     * @param {boolean} follow - True if following, false if unfollowing
+     * @async
+     */
+    async followUser(follower, followee, follow) {
+        if (follow) {
+            await this.users.updateOne({id: follower}, {$push: {following: followee}});
+            await this.users.updateOne({id: followee}, {$push: {followers: follower}});
+            return;
+        }
+        await this.users.updateOne({id: follower}, {$pull: {following: followee}});
+        await this.users.updateOne({id: followee}, {$pull: {followers: follower}});
+    }
+
+    /**
+     * @param {string} follower - ID of the person following
+     * @param {string} followee - ID of the person being followed
+     * @returns {Promise<boolean>} - True if they are following, false if not
+     * @async
+     */
+    async isFollowing(follower, followee) {
+        const result = await this.users.findOne({id: followee});
+
+        return result.followers.includes(follower);
+    }
+
+    /**
+     * @param {string} id - ID of the person
+     * @returns {Promise<Array<string>>} - Array of the people the person is following
+     * @async
+     */
+    async getFollowers(id) {
+        const result = await this.users.findOne({id: id});
+
+        return result.followers;
     }
 }
 

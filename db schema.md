@@ -19,6 +19,7 @@
 | cubes | number | The number of cubes the user has. |
 | firstLogin | number | The unix epoch of when the user first logged in. |
 | lastLogin | number | The unix epoch of when the user last logged in. |
+| followers | array\<string> | The IDs of the users that follow the user. |
 
 ## User Messages
 

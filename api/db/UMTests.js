@@ -229,6 +229,13 @@ async function tests() {
     }
     console.log("[ PASS ]".green, "Got reports by reportee");
 
+    let getReports = await manager.getReports(0, 2);
+    if (getReports[0].data.length !== 1) {
+        console.log("[ FAIL ]".red, "Failed to get reports");
+        return false;
+    }
+    console.log("[ PASS ]".green, "Got reports");
+
     let deleteReport = await manager.deleteReport(getReportsByType[0].id);
     if ((await manager.getReportsByType(0)).length !== 0) {
         console.log("[ FAIL ]".red, "Failed to delete report");
@@ -386,6 +393,33 @@ async function tests() {
         return false;
     }
     console.log("[ PASS ]".green, "Updated project");
+
+    let deleteProject = await manager.deleteProject(getProjects[0].id);
+    let getDeletedProject = await manager.getProjectData(getProjects[0].id);
+    if (getDeletedProject !== null) {
+        console.log("[ FAIL ]".red, "Failed to delete project");
+        return false;
+    }
+    console.log("[ PASS ]".green, "Deleted project");
+
+    let stupidPerson = await manager.createAccount('stupid', 'password');
+    let stupidPersonID = await manager.getIDByUsername('stupid');
+
+    let follow = await manager.followUser(stupidPersonID, getID, true);
+    let isFollowing = await manager.isFollowing(stupidPersonID, getID);
+    if (!isFollowing) {
+        console.log("[ FAIL ]".red, "Failed to follow user/check if following user");
+        return false;
+    }
+    console.log("[ PASS ]".green, "Followed user and checked if following user");
+
+    let getFollowers = await manager.getFollowers(getID);
+    if (getFollowers.length !== 1) {
+        console.log("[ FAIL ]".red, "Failed to get followers");
+        return false;
+    }
+    console.log("[ PASS ]".green, "Got followers");
+
 
 
     await manager.reset(true); // will have already asked so
