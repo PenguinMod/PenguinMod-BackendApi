@@ -110,7 +110,8 @@ class UserManager {
             favoriteProjectID: -1,
             cubes: 0,
             firstLogin: Date.now(),
-            lastLogin: Date.now()
+            lastLogin: Date.now(),
+            lastUpload: 0
         });
         return token;
     }
@@ -505,6 +506,7 @@ class UserManager {
             remix: remix,
             featured: false,
             date: Date.now(),
+            lastUpdate: Date.now(),
             views: [],
             loves: [],
             votes: [],
@@ -520,7 +522,14 @@ class UserManager {
     }
 
     async updateProject(id, projectBuffer, title, image, instructions, notes, rating) {
-        await this.projects.updateOne({id: id}, {$set: {title: title, instructions: instructions, notes: notes, rating: rating}});
+        await this.projects.updateOne({id: id},
+            {$set: {
+                title: title,
+                instructions: instructions,
+                notes: notes,
+                rating: rating,
+                lastUpdate: Date.now()
+            }});
         fs.writeFileSync(path.join(__dirname, `./projects/files/project_${id}.pmp`), projectBuffer, (err) => {
             if (err) console.log("Error saving project:", err);
         });

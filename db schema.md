@@ -20,6 +20,7 @@
 | firstLogin | number | The unix epoch of when the user first logged in. |
 | lastLogin | number | The unix epoch of when the user last logged in. |
 | followers | array\<string> | The IDs of the users that follow the user. |
+| last upload | number | The unix time of when the user last uploaded a project. |
 
 ## User Messages
 
@@ -59,6 +60,7 @@
 | remix | number/undefined  | Project ID it's a remix of, if it's not a remix then undefined. |
 | featured | boolean | True if the project is featured, false if not. |
 | date | number | Unix timestamp that the project was published |
+| lastUpdate | number | Unix timestamp that the project was last updated |
 | views | Array\<IP(string)> | An array of IPs that have seen the project. The IPs are encrypted. |
 | loves | Array\<string> | An array of people that loved the project. The usernames are encrypted. |
 | votes | Array\<string> | An array of people that voted for the project. The usernames are encrypted |
