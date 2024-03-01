@@ -26,7 +26,7 @@
 
 | Name | Datatype | Description |
 |-|-|-|
-| _id | string | The message's unique ID. |
+| id | string | The message's unique ID. |
 | recipient | string | The recipient's id. |
 | type | string | The message's type. |
 | text? | string | The text content of the message. |
@@ -37,6 +37,7 @@
 | disputable? | boolean | Whether the referenced moderation action is disputable. |
 | moderator | boolean | Whether the message was sent by a moderator. |
 | read | boolean | Whether the message has been read. |
+| date | number | The unix timestamp of when the message was sent. |
 
 ## Reports
 

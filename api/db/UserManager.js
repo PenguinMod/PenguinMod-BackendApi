@@ -45,6 +45,7 @@ class UserManager {
         this.users = this.db.collection('users');
         this.reports = this.db.collection('reports');
         this.projects = this.db.collection('projects');
+        this.messages = this.db.collection('messages');
         return true;
     }
 
@@ -374,6 +375,26 @@ class UserManager {
     }
 
     /**
+     * @returns {Promise<Array<object>>} - Array of all admins
+     * @async
+     */
+    async getAllAdmins() {
+        const result = await this.users.find({ admin: true }).toArray();
+
+        return result;
+    }
+
+    /**
+     * @returns {Promise<Array<object>>} - Array of all moderators
+     * @async
+     */
+    async getAllModerators() {
+        const result = await this.users.find({ moderator: true }).toArray();
+
+        return result;
+    }
+
+    /**
      * @param {string} username - username of the user
      * @returns {Promise<boolean>} - true if the user is banned, false if not
      * @async
@@ -521,6 +542,17 @@ class UserManager {
         });
     }
 
+    /**
+     * @param {number} id 
+     * @returns {Promise<Array<Object>>} - Array of remixes of the specified project
+     * @async
+     */
+    async getRemixes(id) {
+        const result = await this.projects.find({remix: id}).toArray();
+
+        return result;
+    }
+
     async updateProject(id, projectBuffer, title, image, instructions, notes, rating) {
         await this.projects.updateOne({id: id},
             {$set: {
@@ -556,6 +588,17 @@ class UserManager {
         ])
         .sort({ date: -1 })
         .toArray();
+
+        return result;
+    }
+
+    /**
+     * @param {string} author - ID of the author
+     * @returns {Promise<Array<Object>>} - Array of projects by the specified author
+     * @async
+     */
+    async getProjectsByAuthor(author) {
+        const result = await this.projects.find({author: author}).toArray();
 
         return result;
     }
@@ -685,6 +728,16 @@ class UserManager {
     }
 
     /**
+     * @returns {Promise<number>} - Amount of projects
+     * @async
+     */
+    async getProjectCount() {
+        const result = await this.projects.countDocuments();
+
+        return result;
+    }
+
+    /**
      * @param {number} id - ID of the project
      * @async
      */
@@ -731,6 +784,71 @@ class UserManager {
         const result = await this.users.findOne({id: id});
 
         return result.followers;
+    }
+
+    /**
+     * @param {string} id - ID of the person
+     * @returns {Promise<Array<string>>} - Array of the people following the person
+     * @async
+     */
+    async getFollowing(id) {
+        const result = await this.users.findOne({id: id});
+
+        return result.following;
+    }
+
+    /**
+     * @param {string} sender - ID of the person sending the message
+     * @param {string} receiver - ID of the person receiving the message
+     * @param {string} message - The message - should follow the format specified in the schema
+     * @async
+     */
+    async sendMessage(receiver, message) {
+        await this.messages.insertOne({
+            receiver: receiver,
+            message: message,
+            date: Date.now()
+        });
+    }
+
+    /**
+     * @param {string} receiver - ID of the person receiving the message
+     * @returns {Promise<Array<Object>>} - Array of the messages sent to the person
+     * @async
+     */
+    async getMessages(receiver) {
+        const result = await this.messages.find({receiver: receiver}).toArray();
+
+        return result;
+    }
+
+    /**
+     * @param {string} receiver - ID of the person you're getting the messages from
+     * @returns {Promise<Array<Object>>} - Array of the unread messages sent to the person
+     */
+    async getUnreadMessages(receiver) {
+        const result = await this.messages.find({receiver: receiver, read: false}).toArray();
+
+        return result;
+    }
+
+    /**
+     * @param {string} id - ID of the message
+     * @param {function} modifierFunction - the function that modifies the message
+     * @async
+     */
+    async modifyMessage(id, modifierFunction) {
+        const result = await this.messages.findOne({id: id});
+
+        await this.messages.updateOne({id: id}, modifierFunction(result));
+    }
+
+    /**
+     * @param {string} id - ID of the message
+     * @async
+     */
+    async deleteMessage(id) {
+        await this.messages.deleteOne({id: id});
     }
 }
 
