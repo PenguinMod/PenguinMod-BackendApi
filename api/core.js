@@ -1,12 +1,11 @@
-const express = require('express');
-const router = express.Router();
+const express = require("express");
+const v1Router = require("./v1/routes");
 
-// basic information endpoint
-const path = require('path');
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-router.get('/', (_, res) => {
-    res.status(200);
-    res.sendFile(path.join(__dirname, '../../metadata.json'));
+app.use("/api/v1", v1Router);
+
+app.listen(PORT, () => {
+  console.log(`API is listening on port ${PORT}`);
 });
-
-module.exports = router;

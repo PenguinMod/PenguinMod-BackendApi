@@ -3,11 +3,8 @@ const router = express.Router();
 
 // basic endpoints to test saving data in the database
 // should get removed eventually
-router.get('/get', (_, res) => {
-    res.send('dah');
-});
-router.post('/set', (_, res) => {
-    res.send('dooh');
+router.get('/', (req, res) => {
+    res.send('Hello World!');
 });
 
 module.exports = router;
