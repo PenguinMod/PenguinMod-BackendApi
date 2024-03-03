@@ -850,6 +850,16 @@ class UserManager {
     async deleteMessage(id) {
         await this.messages.deleteOne({id: id});
     }
+
+    /**
+     * @param {string} id - ID of the project
+     * @returns {Promise<boolean>} - True if the project exists, false if not
+     */
+    async projectExists(id) {
+        const result = await this.projects.findOne({id: id});
+
+        return result !== undefined;
+    }
 }
 
 module.exports = UserManager;

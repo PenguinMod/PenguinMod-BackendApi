@@ -31,12 +31,32 @@ app.use(rateLimit({
 }));
 
 const UserManager = new um();
+UserManager.init();
 
-endpointLoader(app, 'v1/routes', {
-    UserManager: UserManager,
-    homeDir: path.join(__dirname, "../")
-});
+function escapeXML(unsafe) {
+    unsafe = String(unsafe);
+    return unsafe.replace(/[<>&'"\n]/g, c => {
+        switch (c) {
+            case '<': return '&lt;';
+            case '>': return '&gt;';
+            case '&': return '&amp;';
+            case '\'': return '&apos;';
+            case '"': return '&quot;';
+            case '\n': return '&#10;'
+        }
+    });
+};
 
-app.listen(PORT, () => {
-  console.log(`API is listening on port ${PORT}`);
-});
+(async () => {
+    await UserManager.init();
+
+    endpointLoader(app, 'v1/routes', {
+        UserManager: UserManager,
+        homeDir: path.join(__dirname, "../"),
+        escapeXML: escapeXML
+    });
+
+    app.listen(PORT, () => {
+        console.log(`API is listening on port ${PORT}`);
+    });
+})();
