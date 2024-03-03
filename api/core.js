@@ -1,9 +1,8 @@
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const path = require('path');
 const rateLimit = require('express-rate-limit');
 const express = require("express");
-const v1Router = require("./v1/routes");
+const endpointLoader = require("./endpointLoader");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -28,7 +27,7 @@ app.use(rateLimit({
     legacyHeaders: false,
 }));
 
-app.use("/api/v1", v1Router);
+endpointLoader(app, 'v1/routes');
 
 app.listen(PORT, () => {
   console.log(`API is listening on port ${PORT}`);
