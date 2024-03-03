@@ -18,8 +18,9 @@ Please report any security vulnerabilities using GitHub's security tab on the re
     - [Windows](https://docs.mongodb.com/manual/tutorial/install-mongodb-on-windows/)
     - [Mac](https://docs.mongodb.com/manual/tutorial/install-mongodb-on-os-x/)
     - [Linux](https://docs.mongodb.com/manual/administration/install-on-linux/)
-2. Run `npm i`. if this doesn't work run it with --force
-3. Run `npm run dev` to start the server in development mode.
+2. Run `mongod` to start mongodb
+3. Run `npm i`. if this doesn't work run it with --force
+4. Run `npm run dev` to start the server in development mode.
 
 ## Deployment
 
