@@ -1,8 +1,11 @@
 const bodyParser = require('body-parser');
+require('dotenv').config();
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const express = require("express");
 const endpointLoader = require("./endpointLoader");
+const um = require('./db/UserManager');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -27,7 +30,12 @@ app.use(rateLimit({
     legacyHeaders: false,
 }));
 
-endpointLoader(app, 'v1/routes');
+const UserManager = new um();
+
+endpointLoader(app, 'v1/routes', {
+    UserManager: UserManager,
+    homeDir: path.join(__dirname, "../")
+});
 
 app.listen(PORT, () => {
   console.log(`API is listening on port ${PORT}`);

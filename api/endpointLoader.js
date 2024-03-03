@@ -27,13 +27,13 @@ function readFiles(path) {
     return flat;
 }
 
-function loadEndpoints(app, dir) {
+function loadEndpoints(app, dir, options = {}) {
     let endpointDir = path.join(__dirname, dir);
     
     readFiles(endpointDir).forEach(file => {
         const endpointPath = path.join(endpointDir, file);
         const endpoint = require(endpointPath);
-        endpoint(app);
+        endpoint(app, options);
     });
 }
 module.exports = loadEndpoints;
