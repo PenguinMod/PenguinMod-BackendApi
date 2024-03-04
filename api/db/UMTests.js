@@ -413,7 +413,7 @@ async function tests() {
     }
     console.log("[ PASS ]".green, "Followed user and checked if following user");
 
-    let getFollowers = await manager.getFollowers(getID);
+    let getFollowers = await manager.getFollowers("newtest");
     if (getFollowers.length !== 1) {
         console.log("[ FAIL ]".red, "Failed to get followers");
         return false;
