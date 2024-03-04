@@ -5,14 +5,16 @@ const rateLimit = require('express-rate-limit');
 const express = require("express");
 const endpointLoader = require("./endpointLoader");
 const um = require('./db/UserManager');
+const cast = require("../utils/Cast");
 const path = require('path');
+const functions = require('../utils/functions');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors({
     origin: '*',
-    optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+    utilsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
 }));
 app.use(bodyParser.urlencoded({
     limit: process.env.ServerSize,
@@ -30,22 +32,9 @@ app.use(rateLimit({
     legacyHeaders: false,
 }));
 
+const Cast = new cast();
 const UserManager = new um();
 UserManager.init();
-
-function escapeXML(unsafe) {
-    unsafe = String(unsafe);
-    return unsafe.replace(/[<>&'"\n]/g, c => {
-        switch (c) {
-            case '<': return '&lt;';
-            case '>': return '&gt;';
-            case '&': return '&amp;';
-            case '\'': return '&apos;';
-            case '"': return '&quot;';
-            case '\n': return '&#10;'
-        }
-    });
-};
 
 (async () => {
     await UserManager.init();
@@ -53,7 +42,10 @@ function escapeXML(unsafe) {
     endpointLoader(app, 'v1/routes', {
         UserManager: UserManager,
         homeDir: path.join(__dirname, "../"),
-        escapeXML: escapeXML
+        Cast: Cast,
+        escapeXML: functions.escapeXML,
+        generateProfileJSON: functions.generateProfileJSON,
+        safeZipParse: functions.safeZipParse
     });
 
     app.listen(PORT, () => {

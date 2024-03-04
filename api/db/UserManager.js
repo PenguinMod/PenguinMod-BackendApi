@@ -259,6 +259,16 @@ class UserManager {
     async changeFavoriteProject(username, type, id) {
         await this.users.updateOne({ username: username }, { $set: { favoriteProjectType: type, favoriteProjectID: id } });
     }
+
+    async getFirstLogin(username) {
+        const result = await this.users.findOne({ username: username });
+
+        return result.firstLogin;
+    }
+
+    async getLastLogin(username) {
+        const result = await this.users.findOne({ username: username });
+    }
     
     /**
      * Get the amount of cubes a user has
@@ -332,6 +342,34 @@ class UserManager {
      */
     async removeBadge(username, badge) {
         await this.users.updateOne({ username: username }, { $pull: { badges: badge } });
+    }
+
+    async getFeaturedProject(username) {
+        const result = await this.users.findOne({ username: username });
+
+        return result.myFeaturedProject;
+    }
+
+    async setFeaturedProject(username, id) {
+        await this.users.updateOne({
+            username: username
+        }, {
+            $set: { myFeaturedProject: id }
+        });
+    }
+
+    async getFeaturedProjectTitle(username) {
+        const result = await this.users.findOne({ username: username });
+
+        return result.myFeaturedProjectTitle;
+    }
+
+    async setFeaturedProjectTitle(username, title) {
+        await this.users.updateOne({
+            username: username
+        }, {
+            $set: { myFeaturedProjectTitle: title }
+        });
     }
 
     /**
@@ -776,23 +814,23 @@ class UserManager {
     }
 
     /**
-     * @param {string} id - ID of the person
+     * @param {string} username - username of the person
      * @returns {Promise<Array<string>>} - Array of the people the person is following
      * @async
      */
-    async getFollowers(id) {
-        const result = await this.users.findOne({id: id});
+    async getFollowers(username) {
+        const result = await this.users.findOne({username: username});
 
         return result.followers;
     }
 
     /**
-     * @param {string} id - ID of the person
+     * @param {string} id - username of the person
      * @returns {Promise<Array<string>>} - Array of the people following the person
      * @async
      */
-    async getFollowing(id) {
-        const result = await this.users.findOne({id: id});
+    async getFollowing(username) {
+        const result = await this.users.findOne({username: username});
 
         return result.following;
     }
