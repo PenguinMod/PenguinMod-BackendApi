@@ -260,14 +260,26 @@ class UserManager {
         await this.users.updateOne({ username: username }, { $set: { favoriteProjectType: type, favoriteProjectID: id } });
     }
 
+    /**
+     * 
+     * @param {string} username - Username of the user
+     * @returns {Promise<number>} - When the user first logged in - Unix time
+     */
     async getFirstLogin(username) {
         const result = await this.users.findOne({ username: username });
 
         return result.firstLogin;
     }
 
+    /**
+     * @param {string} username - Username of the user
+     * @returns {Promise<number>} - Last time the user logged in - Unix time
+     * @async
+     */
     async getLastLogin(username) {
         const result = await this.users.findOne({ username: username });
+
+        return result.lastLogin;
     }
     
     /**
@@ -344,12 +356,22 @@ class UserManager {
         await this.users.updateOne({ username: username }, { $pull: { badges: badge } });
     }
 
+    /**
+     * 
+     * @param {string} username - Username of the user
+     * @returns {Promise<number>} - ID of the user's favorite project
+     */
     async getFeaturedProject(username) {
         const result = await this.users.findOne({ username: username });
 
         return result.myFeaturedProject;
     }
 
+    /**
+     * @param {string} username - Username of the user 
+     * @param {number} id - ID of the project
+     * @async
+     */
     async setFeaturedProject(username, id) {
         await this.users.updateOne({
             username: username
@@ -358,12 +380,23 @@ class UserManager {
         });
     }
 
+    /**
+     * @param {string} username - Username of the user
+     * @returns {Promise<number>} - Index of the title in the array of titles
+     * @async
+     */
     async getFeaturedProjectTitle(username) {
         const result = await this.users.findOne({ username: username });
 
         return result.myFeaturedProjectTitle;
     }
 
+    /**
+     * 
+     * @param {string} username - Username of the user 
+     * @param {number} title - Index of the title in the array of titles
+     * @async
+     */
     async setFeaturedProjectTitle(username, title) {
         await this.users.updateOne({
             username: username
@@ -591,6 +624,16 @@ class UserManager {
         return result;
     }
 
+    /**
+     * @param {number} id - ID of the project 
+     * @param {Buffer} projectBuffer - The file buffer for the project. This is a zip.
+     * @param {string} title - Title of the project.
+     * @param {Buffer} image - The file buffer for the thumbnail.
+     * @param {string} instructions - The instructions for the project.
+     * @param {string} notes - The notes for the project 
+     * @param {string} rating - Rating of the project. 
+     * @async
+     */
     async updateProject(id, projectBuffer, title, image, instructions, notes, rating) {
         await this.projects.updateOne({id: id},
             {$set: {
@@ -600,12 +643,8 @@ class UserManager {
                 rating: rating,
                 lastUpdate: Date.now()
             }});
-        fs.writeFileSync(path.join(__dirname, `./projects/files/project_${id}.pmp`), projectBuffer, (err) => {
-            if (err) console.log("Error saving project:", err);
-        });
-        fs.writeFileSync(path.join(__dirname, `./projects/images/project_${id}.png`), image, (err) => {
-            if (err) console.log("Error saving thumbnail:", err);
-        });
+        fs.writeFileSync(path.join(__dirname, `./projects/files/project_${id}.pmp`), projectBuffer);
+        fs.writeFileSync(path.join(__dirname, `./projects/images/project_${id}.png`), image);
     }
 
     /**
