@@ -47,14 +47,15 @@ class UserManager {
         this.projects = this.db.collection('projects');
         this.messages = this.db.collection('messages');
         this.illegalList = this.db.collection('illegalList');
-        this.illegalList.insertMany([
-            { id: "illegalWords", items: [] },
-            { id: "illegalWebsites", items: [] },
-            { id: "spacedOutWordsOnly", items: [] },
-            { id: "potentiallyUnsafeWords", items: [] },
-            { id: "potentiallyUnsafeWordsSpacedOut", items: [] }
-        ])
-        return true;
+        if (!this.illegalList.findOne({ id: "illegalWords" })) {
+            this.illegalList.insertMany([
+                { id: "illegalWords", items: [] },
+                { id: "illegalWebsites", items: [] },
+                { id: "spacedOutWordsOnly", items: [] },
+                { id: "potentiallyUnsafeWords", items: [] },
+                { id: "potentiallyUnsafeWordsSpacedOut", items: [] }
+            ]);
+        }
     }
 
     /**
@@ -75,6 +76,15 @@ class UserManager {
         await this.users.deleteMany({});
         await this.reports.deleteMany({});
         await this.projects.deleteMany({});
+        await this.messages.deleteMany({});
+        await this.illegalList.deleteMany({});
+        this.illegalList.insertMany([
+            { id: "illegalWords", items: [] },
+            { id: "illegalWebsites", items: [] },
+            { id: "spacedOutWordsOnly", items: [] },
+            { id: "potentiallyUnsafeWords", items: [] },
+            { id: "potentiallyUnsafeWordsSpacedOut", items: [] }
+        ])
         if (!fs.existsSync(path.join(__dirname, "projects"))) {
             fs.mkdirSync(path.join(__dirname, "projects"));
         }
@@ -944,6 +954,99 @@ class UserManager {
         const result = await this.projects.findOne({id: id});
 
         return result !== undefined;
+    }
+
+    /**
+     * @param {string} text - The text to check for illegal wording 
+     * @returns {Promise<boolean>} - True if the text contains illegal wording, false if not
+     * @async
+     */
+    async checkForIllegalWording(text) {
+        const illegalWords = await this.illegalList.findOne
+            ({ id: "illegalWords" }).items;
+        const illegalWebsites = await this.illegalList.findOne
+            ({ id: "illegalWebsites" }).items;
+        const spacedOutWordsOnly = await this.illegalList.findOne
+            ({ id: "spacedOutWordsOnly" }).items;
+        const joined = illegalWords.concat(illegalWebsites, spacedOutWordsOnly);
+        
+        for (const item in joined) {
+            if (text.includes(item)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @param {string} text - The text to check for slightly illegal wording
+     * @returns {Promise<boolean>} - True if the text contains slightly illegal wording, false if not
+     */
+    async checkForSlightlyIllegalWording(text) {
+        const potentiallyUnsafeWords = await this.illegalList.findOne
+            ({ id: "potentiallyUnsafeWords" }).items;
+        const potentiallyUnsafeWordsSpacedOut = await this.illegalList.findOne
+            ({ id: "potentiallyUnsafeWordsSpacedOut" }).items;
+        const joined = potentiallyUnsafeWords.concat(potentiallyUnsafeWordsSpacedOut);
+        
+        for (const item in joined) {
+            if (text.includes(item)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @param {Array<string>} words - The new list of illegal words
+     * @param {string} type - The type of the illegal item
+     * @async
+     */
+    async setIllegalWords(words, type) {
+        await this.illegalList.updateOne({id: type}, {$set: {items: words}});
+    }
+
+    /**
+     * @param {string} word - The item to add
+     * @param {string} type - The type of the illegal item
+     * @async
+     */
+    async addIllegalWord(word, type) {
+        await this.illegalList.updateOne({id: type}, {$push: {items: word}});
+    }
+
+    /**
+     * @param {string} word - The item to remove 
+     * @param {string} type - The type of the illegal item
+     * @async
+     */
+    async removeIllegalWord(word, type) {
+        await this.illegalList.updateOne({id: type}, {$pull: {items: word}});
+    }
+
+    /**
+     * @returns {Promise<Object>} - Object containing all the illegal words
+     * @async
+     */
+    async getIllegalWords() {
+        const illegalWords = await this.illegalList.findOne
+            ({ id: "illegalWords" }).items;
+        const illegalWebsites = await this.illegalList.findOne
+            ({ id: "illegalWebsites" }).items;
+        const spacedOutWordsOnly = await this.illegalList.findOne
+            ({ id: "spacedOutWordsOnly" }).items;
+        const potentiallyUnsafeWords = await this.illegalList.findOne
+            ({ id: "potentiallyUnsafeWords" }).items;
+        const potentiallyUnsafeWordsSpacedOut = await this.illegalList.findOne
+            ({ id: "potentiallyUnsafeWordsSpacedOut" }).items;
+
+        return {
+            illegalWords: illegalWords,
+            illegalWebsites: illegalWebsites,
+            spacedOutWordsOnly: spacedOutWordsOnly,
+            potentiallyUnsafeWords: potentiallyUnsafeWords,
+            potentiallyUnsafeWordsSpacedOut: potentiallyUnsafeWordsSpacedOut
+        }
     }
 }
 
