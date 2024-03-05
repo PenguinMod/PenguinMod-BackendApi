@@ -46,6 +46,14 @@ class UserManager {
         this.reports = this.db.collection('reports');
         this.projects = this.db.collection('projects');
         this.messages = this.db.collection('messages');
+        this.illegalList = this.db.collection('illegalList');
+        this.illegalList.insertMany([
+            { id: "illegalWords", items: [] },
+            { id: "illegalWebsites", items: [] },
+            { id: "spacedOutWordsOnly", items: [] },
+            { id: "potentiallyUnsafeWords", items: [] },
+            { id: "potentiallyUnsafeWordsSpacedOut", items: [] }
+        ])
         return true;
     }
 
