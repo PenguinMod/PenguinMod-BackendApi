@@ -1,44 +1,25 @@
-require('dotenv').config();
-
-const BlockedIPs = require("./blockedips.json"); // if you are cloning this, make sure to make this file
-
-const express = require('express');
-const { MongoClient, ServerApiVersion } = require("mongodb");
 const bodyParser = require('body-parser');
-const { glob } = require("glob");
+require('dotenv').config();
 const cors = require('cors');
-const path = require('path');
 const rateLimit = require('express-rate-limit');
-const app = express();
-const port = 8080;
-const maxSize = '50mb';
+const express = require("express");
+const endpointLoader = require("./api/endpointLoader");
+const um = require('./api/db/UserManager');
+const cast = require("./utils/Cast");
+const path = require('path');
+const functions = require('./utils/functions');
 
-// connect to MongoDB
-const dbClient = new MongoClient("mongodb://127.0.0.1:27017", {
-    serverApi: {
-        version: ServerApiVersion.v1,
-        strict: true,
-        deprecationErrors: true,
-    }
-});
-await dbClient.connect();
-const db = dbClient.db("penguinmod");
-await db.command({ ping: 1 });
+const app = express();
+const PORT = process.env.PORT || 3000;
 
 app.use(cors({
     origin: '*',
     utilsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
 }));
 app.use(bodyParser.urlencoded({
-    limit: maxSize,
+    limit: process.env.ServerSize,
     extended: false
 }));
-app.use(bodyParser.json({ limit: maxSize }));
-app.use((req, res, next) => {
-    if (BlockedIPs.includes(req.ip)) return res.sendStatus(403);
-    console.log(`${req.ip}: ${req.originalUrl}`);
-    next();
-});
 app.set('trust proxy', 1);
 app.use(rateLimit({
     validate: {
@@ -50,23 +31,23 @@ app.use(rateLimit({
     standardHeaders: 'draft-7',
     legacyHeaders: false,
 }));
-app.get('/', async function (_, res) { // just basic stuff. returns the home page
-    res.redirect('https://penguinmod.com');
-});
-app.get('/robots.txt', async function (_, res) { // more basic stuff!!!!! returns robots.txt
-    res.sendFile(path.join(__dirname, './robots.txt'));
-});
 
-// TODO: how are endpoints gonna get this?
-const sharedDependencies = {
-    db
-};
+const Cast = new cast();
+const UserManager = new um();
 
-// routers
-const router_core = require('./api/core');
-const router_test = require('./api/v1/test');
-// "endpoints"
-app.use('/api/core', router_core);
-app.use('/api/v1/test', router_test);
+(async () => {
+    await UserManager.init();
 
-app.listen(port, () => console.log('[+] Started server on port ' + port));
+    endpointLoader(app, 'v1/routes', {
+        UserManager: UserManager,
+        homeDir: path.join(__dirname, "./"),
+        Cast: Cast,
+        escapeXML: functions.escapeXML,
+        generateProfileJSON: functions.generateProfileJSON,
+        safeZipParse: functions.safeZipParse
+    });
+
+    app.listen(PORT, () => {
+        console.log(`API is listening on port ${PORT}`);
+    });
+})();
