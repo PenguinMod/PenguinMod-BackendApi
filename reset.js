@@ -9,4 +9,5 @@ const UserManager = new um();
     console.log("Resetting database...")
     await UserManager.reset();
     console.log("Database reset complete.")
+    process.exit(0);
 })();
