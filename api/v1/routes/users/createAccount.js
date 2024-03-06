@@ -1,6 +1,7 @@
 module.exports = (app, utils) => {
-    app.get("/api/v1/users/createAccount", async function (req, res) {
-        const packet = req.query;
+    app.post("/api/v1/users/createAccount", async function (req, res) {
+        const packet = req.body;
+        
         if (!packet.username || !packet.password) {
             utils.error(res, 400, "InvalidData");
             return;
@@ -17,7 +18,7 @@ module.exports = (app, utils) => {
             return;
         }
 
-        if (await utils.UserManager.accountExists(packet.username)) {
+        if (await utils.UserManager.existsByUsername(packet.username)) {
             utils.error(res, 400, "AccountExists");
             return;
         }

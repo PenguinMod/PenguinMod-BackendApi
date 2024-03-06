@@ -66,12 +66,9 @@ class UserManager {
     async reset(understands = false) {
         if (!understands) {
             let unde = prompt("This deletes ALL DATA. Are you sure? (Y/n) ")
-            if (
-                typeof unde !== "string"
-            ) {
+            if (typeof unde !== "string") {
                 return;
             }
-            console.log(typeof unde)
         }
         await this.users.deleteMany({});
         await this.reports.deleteMany({});

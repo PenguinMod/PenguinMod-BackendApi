@@ -1,4 +1,3 @@
-const bodyParser = require('body-parser');
 require('dotenv').config();
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
@@ -16,9 +15,12 @@ app.use(cors({
     origin: '*',
     utilsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
 }));
-app.use(bodyParser.urlencoded({
+app.use(express.urlencoded({
     limit: process.env.ServerSize,
     extended: false
+}));
+app.use(express.json({
+    limit: process.env.ServerSize
 }));
 app.set('trust proxy', 1);
 app.use(rateLimit({
@@ -32,11 +34,21 @@ app.use(rateLimit({
     legacyHeaders: false,
 }));
 
+function error(res, code, message) {
+    res.status(code);
+    res.header("Content-Type", 'application/json');
+    res.json({ "error": message });
+}
+
 const Cast = new cast();
 const UserManager = new um();
 
 (async () => {
     await UserManager.init();
+
+    app.get("/test", (req, res) => {
+        res.sendFile(path.join(__dirname, 'test.html'));
+    });
 
     endpointLoader(app, 'v1/routes', {
         UserManager: UserManager,
@@ -44,7 +56,8 @@ const UserManager = new um();
         Cast: Cast,
         escapeXML: functions.escapeXML,
         generateProfileJSON: functions.generateProfileJSON,
-        safeZipParse: functions.safeZipParse
+        safeZipParse: functions.safeZipParse,
+        error: error
     });
 
     app.listen(PORT, () => {

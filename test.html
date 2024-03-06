@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <input id="username" type="text" placeholder="Username">
+    <input id="password" type="password" placeholder="Password">
+    <button onclick="createAccount()">Create Account</button>
+
+    <script>
+        function createAccount() {
+            var username = document.getElementById('username').value;
+            var password = document.getElementById('password').value;
+
+            console.log(username, password);
+
+            (async () => {
+                fetch("/api/v1/users/createAccount", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password
+                    })
+                })
+                .then(res => res.json())
+                .then(res => {
+                    console.log(res);
+                    alert(res);
+                })
+            })();
+        }
+    </script>
+</body>
+</html>

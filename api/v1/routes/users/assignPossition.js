@@ -1,6 +1,6 @@
 module.exports = (app, utils) => {
-    app.get('/api/v1/users/assignPossition', async function (req, res) {
-        const packet = req.query;
+    app.post('/api/v1/users/assignPossition', async function (req, res) {
+        const packet = req.body;
         if (!await utils.UserManager.loginWithToken(packet.user, packet.token)) {
             utils.error(res, 400, "Reauthenticate");
             return;
