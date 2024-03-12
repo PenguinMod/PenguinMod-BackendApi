@@ -6,7 +6,7 @@
 - [ ] Literally just remake all of the endpoints lmao
 - [ ] Use MongoDB Database
   - [x] Make a login system
-  - [ ] Projects stuff
+  - [x] Projects stuff
   - [x] Reports stuff
 - [ ] OAuth2
   - [ ] Scratch Auth
