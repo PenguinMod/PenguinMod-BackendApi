@@ -36,7 +36,7 @@
 ## Reporting
 
 - [x] Add reporting projects and users with reasons
-- [x] Save multiple reports from same user but don't count them
+- [ ] Save multiple reports from same user but don't count them
 - [ ] Add report to user if they report too much content too quickly
 - [ ] Add report to user if they report the same content more than 3 times
 - [ ] Automatically add a report to projects with auto-detected content(?)
@@ -44,4 +44,4 @@
 ## Ranking
 
 - [x] Rank users based on if they have more than 3 projects and signed in 5 days ago
-- [x] Only ranked users should be able to use Custom Extensions, Files, iframe, HTTP, Website Requests, Network, etc.
+- [ ] Only ranked users should be able to use Custom Extensions, Files, iframe, HTTP, Website Requests, Network, etc.
