@@ -11,6 +11,8 @@
 - [ ] OAuth2
   - [ ] Scratch Auth
   - [ ] Github Auth?
+  - [ ] Google Auth???
+  - [ ] Be able to connect an account with oauth (e.g. you want to sign in with a password and oauth)
 
 ## Projects
 
