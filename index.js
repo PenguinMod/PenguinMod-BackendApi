@@ -57,7 +57,8 @@ const UserManager = new um();
         escapeXML: functions.escapeXML,
         generateProfileJSON: functions.generateProfileJSON,
         safeZipParse: functions.safeZipParse,
-        error: error
+        error: error,
+        env: process.env
     });
 
     app.listen(PORT, () => {

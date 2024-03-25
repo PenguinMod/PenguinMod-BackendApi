@@ -1,3 +1,4 @@
+require('dotenv').config();
 const { randomBytes } = require('node:crypto');
 const bcrypt = require('bcrypt');
 const { MongoClient } = require('mongodb');
@@ -6,6 +7,8 @@ const path = require('path');
 const fs = require('fs');
 var prompt = require('prompt-sync')();
 
+// scratch oauth name: Penguinmod-BA-Ianyourgod-Dev
+// scratch oauth redir: http://localhost:8080/api/v1/users/login
 
 function generateId() {
     const rn = [
@@ -46,6 +49,7 @@ class UserManager {
         this.reports = this.db.collection('reports');
         this.projects = this.db.collection('projects');
         this.messages = this.db.collection('messages');
+        this.oauthStates = this.db.collection('oauthStates');
         this.illegalList = this.db.collection('illegalList');
         if (!this.illegalList.findOne({ id: "illegalWords" })) {
             this.illegalList.insertMany([
@@ -74,6 +78,7 @@ class UserManager {
         await this.reports.deleteMany({});
         await this.projects.deleteMany({});
         await this.messages.deleteMany({});
+        await this.oauthStates.deleteMany({});
         await this.illegalList.deleteMany({});
         this.illegalList.insertMany([
             { id: "illegalWords", items: [] },
@@ -127,7 +132,8 @@ class UserManager {
             cubes: 0,
             firstLogin: Date.now(),
             lastLogin: Date.now(),
-            lastUpload: 0
+            lastUpload: 0,
+            OAuth2State: generateId()
         });
         return token;
     }
@@ -1043,6 +1049,39 @@ class UserManager {
             spacedOutWordsOnly: spacedOutWordsOnly,
             potentiallyUnsafeWords: potentiallyUnsafeWords,
             potentiallyUnsafeWordsSpacedOut: potentiallyUnsafeWordsSpacedOut
+        }
+    }
+
+    async verifyOAuth2State(state) {
+        const result = await this.oauthStates.findOne({ state: state });
+
+        return result ? true : false;
+    }
+
+    async generateOAuth2State() {
+        const state = generateId();
+
+        await this.oauthStates.insertOne({ state: state });
+
+        return state;
+    }
+
+    async makeOAuth2Request(code, method) {
+        switch (method) {
+            case "scratch":
+                const response = await fetch(`https://oauth2.scratch-wiki.info/w/rest.php/soa2/v0/tokens`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        client_id: Number(process.env.ScratchOauth2ClientID),
+                        client_secret: process.env.ScratchOauth2ClientSecret,
+                        code: code,
+                        scopes: ["identify"]
+                    })
+                }).then(res => res.json());
+                return response;
         }
     }
 }
