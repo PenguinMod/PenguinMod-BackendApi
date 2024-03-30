@@ -1,33 +1,15 @@
 require('dotenv').config();
-const { randomBytes } = require('node:crypto');
+const { randomInt } = require('node:crypto');
 const bcrypt = require('bcrypt');
 const { MongoClient } = require('mongodb');
 const { encrypt, decrypt } = require("../../utils/encrypt.js");
 const path = require('path');
 const fs = require('fs');
+const ULID = require('ulid');
 var prompt = require('prompt-sync')();
 
-// scratch oauth name: Penguinmod-BA-Ianyourgod-Dev
-// scratch oauth redir: http://localhost:8080/api/v1/users/login
-
-function generateId() {
-    const rn = [
-        Math.random() * 100000,
-        Math.random() * 100000,
-        Math.random() * 100000,
-        Math.random() * 100000
-    ];
-    const raw = rn.join('.');
-    return Buffer.from(raw).toString("base64");
-};
-
-function generateToken() {
-    return randomBytes(32).toString('base64');
-}
-
-function projectID() {
-    return Math.round(100000 + (Math.random() * 9999999999999));
-}
+// scratch oauth redir: http://localhost:8080/api/v1/users/loginlocal
+//                      https://projects.penguinmod.com/api/v1/users/login
 
 class UserManager {
     static loginInvalidationTime = 
@@ -112,8 +94,8 @@ class UserManager {
         }
 
         const hash = await bcrypt.hash(password, 10);
-        const id = generateId();
-        const token = generateToken();
+        const id = ULID.ulid();
+        const token = ULID.ulid();
         await this.users.insertOne({
             id: id,
             username: username,
@@ -133,7 +115,7 @@ class UserManager {
             firstLogin: Date.now(),
             lastLogin: Date.now(),
             lastUpload: 0,
-            OAuth2State: generateId()
+            OAuth2State: ULID.ulid(),
         });
         return token;
     }
@@ -528,7 +510,7 @@ class UserManager {
             reportee: reportee,
             reason: reason,
             reporter: reporter,
-            id: generateId()
+            id: ULID.ulid()
         })
     }
 
@@ -603,11 +585,12 @@ class UserManager {
      * @async
      */
     async publishProject(projectBuffer, author, title, image, instructions, notes, remix, rating) {
-        let id = projectID();
-        // have you never been like... whimsical
-        while (await this.projects.findOne({id: id})) {
-            id = projectID();
-        }
+        let id;
+        // i love being whimsical ^^
+        do {
+            id = randomInt(0, 9999999999).toString();
+            id = "0".repeat(10 - id.length) + id;
+        } while (await this.projects.findOne({id: id}));
         
         
         await this.projects.insertOne({
@@ -1059,7 +1042,7 @@ class UserManager {
     }
 
     async generateOAuth2State() {
-        const state = generateId();
+        const state = ULID.ulid();
 
         await this.oauthStates.insertOne({ state: state });
 
