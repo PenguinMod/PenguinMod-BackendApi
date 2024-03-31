@@ -304,8 +304,8 @@ async function tests() {
     }
     console.log("[ PASS ]".green, "Checked if seen project/Viewed project");
 
-    let getProjectViews = await manager.getProjectData(getProjects[0].id);
-    if (getProjectViews.views.length !== 1) {
+    let getProjectViews = await manager.getProjectViews(getProjects[0].id);
+    if (getProjectViews !== 1) {
         console.log("[ FAIL ]".red, "Failed to get project views");
         return false;
     }
@@ -327,8 +327,8 @@ async function tests() {
     }
     console.log("[ PASS ]".green, "Checked if loved project/Loved project");
 
-    let getProjectLoves = await manager.getProjectData(getProjects[0].id);
-    if (getProjectLoves.loves.length !== 1) {
+    let getProjectLoves = await manager.getProjectLoves(getProjects[0].id);
+    if (getProjectLoves !== 1) {
         console.log("[ FAIL ]".red, "Failed to get project loves");
         return false;
     }
@@ -350,8 +350,8 @@ async function tests() {
     }
     console.log("[ PASS ]".green, "Checked if voted project/Voted project");
 
-    let getProjectVotes = await manager.getProjectData(getProjects[0].id);
-    if (getProjectVotes.votes.length !== 1) {
+    let getProjectVotes = await manager.getProjectVotes(getProjects[0].id);
+    if (getProjectVotes !== 1) {
         console.log("[ FAIL ]".red, "Failed to get project votes");
         return false;
     }

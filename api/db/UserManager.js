@@ -749,6 +749,12 @@ class UserManager {
         this.views.push({id: id, ip: ip});
     }
 
+    async getProjectViews(id) {
+        const result = this.views.filter((view) => view.id === id);
+
+        return result.length;
+    }
+
     /**
      * @param {number} id - ID of the project.
      * @param {string} userId - ID of the person loving the project.
@@ -784,6 +790,12 @@ class UserManager {
         });
     }
 
+    async getProjectLoves(id) {
+        const result = await this.projectStats.find({projectId: id}).toArray();
+
+        return result.length;
+    }
+
     /**
      * @param {number} id - ID of the project.
      * @param {string} userId - ID of the person voting on the project.
@@ -817,6 +829,12 @@ class UserManager {
             projectId: id,
             userId: userId
         });
+    }
+
+    async getProjectVotes(id) {
+        const result = await this.projectStats.find({projectId: id}).toArray();
+
+        return result.length;
     }
 
     /**
