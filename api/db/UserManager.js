@@ -30,6 +30,7 @@ class UserManager {
         this.users = this.db.collection('users');
         this.reports = this.db.collection('reports');
         this.projects = this.db.collection('projects');
+        this.projectStats = this.db.collection('projectStats');
         this.messages = this.db.collection('messages');
         this.oauthStates = this.db.collection('oauthStates');
         this.illegalList = this.db.collection('illegalList');
@@ -59,6 +60,7 @@ class UserManager {
         await this.users.deleteMany({});
         await this.reports.deleteMany({});
         await this.projects.deleteMany({});
+        await this.projectStats.deleteMany({});
         await this.messages.deleteMany({});
         await this.oauthStates.deleteMany({});
         await this.illegalList.deleteMany({});
@@ -603,9 +605,6 @@ class UserManager {
             featured: false,
             date: Date.now(),
             lastUpdate: Date.now(),
-            views: [],
-            loves: [],
-            votes: [],
             rating: rating
         });
 
@@ -745,23 +744,32 @@ class UserManager {
      * @returns {Promise<boolean>} - True if they have loved the project, false if not.
      */
     async hasLovedProject(id, userId) {
-        const result = await this.projects.findOne({id: id});
+        const result = await this.projectStats.findOne({
+            projectId: id,
+            userId: userId
+        });
 
-        return result.loves.find((love) => decrypt(love) === userId) !== undefined;
+        return result ? true : false
     }
 
     /**
      * @param {number} id - ID of the project.
-     * @param {string} ip - IP of the person loving the project.
+     * @param {string} userId - ID of the person loving the project.
      * @param {boolean} love - True if loving, false if unloving.
      * @async
      */
-    async loveProject(id, ip, love) {
+    async loveProject(id, userId, love) {
         if (love) {
-           await this.projects.updateOne({id: id}, {$push: {loves: encrypt(ip)}});
-           return;
+            await this.projectStats.insertOne({
+                projectId: id,
+                userId: userId
+            });
+            return;
         }
-        await this.projects.updateOne({id: id}, {$pull: {loves: encrypt(ip)}});
+        await this.projectStats.deleteOne({
+            projectId: id,
+            userId: userId
+        });
     }
 
     /**
@@ -771,23 +779,32 @@ class UserManager {
      * @async
      */
     async hasVotedProject(id, userId) {
-        const result = await this.projects.findOne({id: id});
+        const result = await this.projectStats.findOne({
+            projectId: id,
+            userId: userId
+        });
 
-        return result.votes.find((vote) => decrypt(vote) === userId) !== undefined;
+        return result ? true : false;
     }
 
     /**
      * @param {number} id - ID of the project.
-     * @param {string} ip - IP of the person voting on the project.
+     * @param {string} userId - ID of the person voting on the project.
      * @param {boolean} vote - True if voting, false if unvoting.
      * @async
      */
-    async voteProject(id, ip, vote) {
+    async voteProject(id, userId, vote) {
         if (vote) {
-            await this.projects.updateOne({id: id}, {$push: {votes: encrypt(ip)}});
+            await this.projectStats.insertOne({
+                projectId: id,
+                userId: userId
+            });
             return;
         }
-        await this.projects.updateOne({id: id}, {$pull: {votes: encrypt(ip)}});
+        await this.projectStats.deleteOne({
+            projectId: id,
+            userId: userId
+        });
     }
 
     /**
