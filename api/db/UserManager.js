@@ -769,7 +769,8 @@ class UserManager {
     async hasLovedProject(id, userId) {
         const result = await this.projectStats.findOne({
             projectId: id,
-            userId: userId
+            userId: userId,
+            type: "love"
         });
 
         return result ? true : false
@@ -785,18 +786,20 @@ class UserManager {
         if (love) {
             await this.projectStats.insertOne({
                 projectId: id,
-                userId: userId
+                userId: userId,
+                type: "love"
             });
             return;
         }
         await this.projectStats.deleteOne({
             projectId: id,
-            userId: userId
+            userId: userId,
+            type: "love"
         });
     }
 
     async getProjectLoves(id) {
-        const result = await this.projectStats.find({projectId: id}).toArray();
+        const result = await this.projectStats.find({projectId: id, type: "love"}).toArray();
 
         return result.length;
     }
@@ -810,7 +813,8 @@ class UserManager {
     async hasVotedProject(id, userId) {
         const result = await this.projectStats.findOne({
             projectId: id,
-            userId: userId
+            userId: userId,
+            type: "vote"
         });
 
         return result ? true : false;
@@ -826,18 +830,20 @@ class UserManager {
         if (vote) {
             await this.projectStats.insertOne({
                 projectId: id,
-                userId: userId
+                userId: userId,
+                type: "vote"
             });
             return;
         }
         await this.projectStats.deleteOne({
             projectId: id,
-            userId: userId
+            userId: userId,
+            type: "vote"
         });
     }
 
     async getProjectVotes(id) {
-        const result = await this.projectStats.find({projectId: id}).toArray();
+        const result = await this.projectStats.find({projectId: id, type: "vote"}).toArray();
 
         return result.length;
     }
