@@ -718,6 +718,11 @@ class UserManager {
     async getProjectData(id) {
         const result = await this.projects.findOne({id: id})
 
+        // add the views, loves, and votes
+        result.views = await this.getProjectViews(id);
+        result.loves = await this.getProjectLoves(id);
+        result.votes = await this.getProjectVotes(id);
+
         return result;
     }
 
