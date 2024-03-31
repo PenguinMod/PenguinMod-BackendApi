@@ -608,6 +608,7 @@ class UserManager {
             notes: notes,
             remix: remix,
             featured: false,
+            views: 0,
             date: Date.now(),
             lastUpdate: Date.now(),
             rating: rating
@@ -716,6 +717,8 @@ class UserManager {
      * @async
      */
     async getProjectData(id) {
+        if (!await this.projectExists(id)) return false;
+        
         const tempresult = await this.projects.findOne({id: id})
 
         // add the views, loves, and votes
@@ -755,6 +758,7 @@ class UserManager {
         }
 
         this.views.push({id: id, ip: ip});
+        await this.projects.updateOne({id: id}, {$inc: {views: 1}});
     }
 
     async getProjectViews(id) {
@@ -885,6 +889,10 @@ class UserManager {
      */
     async deleteProject(id) {
         await this.projects.deleteOne({id: id});
+
+        // remove the loves and votes
+        await this.projectStats.deleteMany({projectId: id});
+
         fs.rmSync(path.join(__dirname, `./projects/files/project_${id}.pmp`));
         fs.rmSync(path.join(__dirname, `./projects/images/project_${id}.png`));
     }
@@ -1000,7 +1008,7 @@ class UserManager {
     async projectExists(id) {
         const result = await this.projects.findOne({id: id});
 
-        return result !== undefined;
+        return result ? true : false;
     }
 
     /**

@@ -396,7 +396,8 @@ async function tests() {
 
     let deleteProject = await manager.deleteProject(getProjects[0].id);
     let getDeletedProject = await manager.getProjectData(getProjects[0].id);
-    if (getDeletedProject !== null) {
+    if (getDeletedProject) {
+        console.log(getDeletedProject);
         console.log("[ FAIL ]".red, "Failed to delete project");
         return false;
     }
