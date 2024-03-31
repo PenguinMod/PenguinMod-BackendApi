@@ -23,7 +23,7 @@ class UserManager {
      * Initialize the database
      * @async
      */
-    async init() {
+    async init(maxviews, viewresetrate) {
         this.client = new MongoClient('mongodb://localhost:27017');
         await this.client.connect();
         this.db = this.client.db('pm_apidata');
@@ -43,6 +43,11 @@ class UserManager {
                 { id: "potentiallyUnsafeWordsSpacedOut", items: [] }
             ]);
         }
+        this.prevReset = Date.now();
+        this.views = [];
+
+        this.maxviews = maxviews ? maxviews : 10000;
+        this.viewresetrate = viewresetrate ? viewresetrate : 1000 * 60 * 60;
     }
 
     /**
@@ -723,9 +728,9 @@ class UserManager {
      * @returns {Promise<boolean>} - True if they have seen the project, false if not. 
      */
     async hasSeenProject(id, ip) {
-        const result = await this.projects.findOne({id: id});
+        const result = this.views.find((view) => view.id === id && view.ip === ip);
 
-        return result.views.find((view) => decrypt(view) === ip) !== undefined;
+        return result ? true : false;
     }
 
     /**
@@ -734,7 +739,14 @@ class UserManager {
      * @async
      */
     async projectView(id, ip) {
-        await this.projects.updateOne({id: id}, {$push: {views: encrypt(ip)}})
+        if (this.views.length >= this.maxviews ||
+            Date.now() - this.prevReset >= this.viewresetrate
+        ) {
+            this.views = [];
+            this.prevReset = Date.now();
+        }
+
+        this.views.push({id: id, ip: ip});
     }
 
     /**

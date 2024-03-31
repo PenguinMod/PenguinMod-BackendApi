@@ -10,6 +10,8 @@ const functions = require('./utils/functions');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const MAXVIEWS = process.env.MAXVIEWS || 10000; // it will take up to 10000 views then reset after
+const VIEWRESETRATE = process.env.VIEWRESETRATE || 1000 * 60 * 60; // reset every hour
 
 app.use(cors({
     origin: '*',
