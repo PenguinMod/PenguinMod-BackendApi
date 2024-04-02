@@ -4,7 +4,7 @@ const path = require('path');
 module.exports = (app, utils) => {
     const projectTemplate = fs.readFileSync(path.join(utils.homeDir, 'project.html')).toString();
     app.get('/:id', async function (req, res) {
-        const json = await utils.UserManager.getProjectData(String(req.params.id));
+        const json = await utils.UserManager.getProjectMetadata(String(req.params.id));
     
         if (!json) {
             res.status(404);

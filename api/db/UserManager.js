@@ -91,10 +91,11 @@ class UserManager {
      * Create an account
      * @param {string} username - new username of the user
      * @param {string} password - new password of the user
+     * @param {string|undefined} email - email of the user, if provided
      * @returns {Promise<string|boolean>} - token if successful, false if not
      * @async
      */
-    async createAccount(username, password) {
+    async createAccount(username, password, email) {
         const result = await this.users.findOne({ username: username });
         if (result) {
             return false;
@@ -123,6 +124,7 @@ class UserManager {
             lastLogin: Date.now(),
             lastUpload: 0,
             OAuth2State: ULID.ulid(),
+            email: email
         });
         return token;
     }
@@ -271,7 +273,7 @@ class UserManager {
     }
 
     /**
-     * 
+     * Get the user's first login
      * @param {string} username - Username of the user
      * @returns {Promise<number>} - When the user first logged in - Unix time
      */
@@ -282,6 +284,7 @@ class UserManager {
     }
 
     /**
+     * Get the user's last login
      * @param {string} username - Username of the user
      * @returns {Promise<number>} - Last time the user logged in - Unix time
      * @async
@@ -315,6 +318,7 @@ class UserManager {
     }
 
     /**
+     * Get the rank of a user
      * @param {string} username - username of the user
      * @returns {Promise<number>} - rank of the user
      * @async
@@ -326,6 +330,7 @@ class UserManager {
     }
 
     /**
+     * Set the rank of a user
      * @param {string} username - username of the user
      * @param {number} rank - new rank of the user
      * @async
@@ -335,7 +340,7 @@ class UserManager {
     }
 
     /**
-     * 
+     * Get the badges of a user
      * @param {string} username - username of the user 
      * @returns {Promise<Array<string>>} - array of badges the user has
      * @async
@@ -347,7 +352,7 @@ class UserManager {
     }
 
     /**
-     * 
+     * Add a badge to a user
      * @param {string} username - username of the user 
      * @param {string} badge - the badge to add
      * @async
@@ -357,7 +362,7 @@ class UserManager {
     }
 
     /**
-     * 
+     * Remove a badge from a user
      * @param {string} username - username of the user 
      * @param {string} badge - the badge to remove 
      * @async
@@ -367,7 +372,7 @@ class UserManager {
     }
 
     /**
-     * 
+     * Get a user's featured project
      * @param {string} username - Username of the user
      * @returns {Promise<number>} - ID of the user's favorite project
      */
@@ -378,6 +383,7 @@ class UserManager {
     }
 
     /**
+     * Set a user's featured project
      * @param {string} username - Username of the user 
      * @param {number} id - ID of the project
      * @async
@@ -391,6 +397,7 @@ class UserManager {
     }
 
     /**
+     * Get a user's featured project title
      * @param {string} username - Username of the user
      * @returns {Promise<number>} - Index of the title in the array of titles
      * @async
@@ -402,7 +409,7 @@ class UserManager {
     }
 
     /**
-     * 
+     * Set a user's featured project title
      * @param {string} username - Username of the user 
      * @param {number} title - Index of the title in the array of titles
      * @async
@@ -416,6 +423,7 @@ class UserManager {
     }
 
     /**
+     * Check if a user is an admin
      * @param {string} username 
      * @returns {Promise<boolean>} - true if the user is an admin, false if not
      * @async
@@ -427,6 +435,7 @@ class UserManager {
     }
 
     /**
+     * Set a user as an admin
      * @param {string} username - username of the user 
      * @param {boolean} admin - true if setting to admin, false if not 
      * @async
@@ -436,6 +445,7 @@ class UserManager {
     }
 
     /**
+     * Check if a user is a moderator
      * @param {string} username - username of the user
      * @returns {Promise<boolean>} - true if the user is a moderator, false if not
      * @async
@@ -447,6 +457,7 @@ class UserManager {
     }
 
     /**
+     * Set a user as a moderator
      * @param {string} username - username of the user
      * @param {boolean} moderator - true if setting to moderator, false if not
      * @async
@@ -456,6 +467,7 @@ class UserManager {
     }
 
     /**
+     * Get all admins
      * @returns {Promise<Array<object>>} - Array of all admins
      * @async
      */
@@ -466,6 +478,7 @@ class UserManager {
     }
 
     /**
+     * Get all moderators
      * @returns {Promise<Array<object>>} - Array of all moderators
      * @async
      */
@@ -476,6 +489,7 @@ class UserManager {
     }
 
     /**
+     * Check if a user is banned
      * @param {string} username - username of the user
      * @returns {Promise<boolean>} - true if the user is banned, false if not
      * @async
@@ -487,6 +501,7 @@ class UserManager {
     }
 
     /**
+     * Ban/unban a user
      * @param {string} username - username of the user
      * @param {boolean} banned - true if banning, false if unbanning
      * @async
@@ -496,6 +511,29 @@ class UserManager {
     }
 
     /**
+     * Get the email of a user
+     * @param {string} username - username of the user
+     * @returns {string} - email of the user
+     * @async
+     */
+    async getEmail(username) {
+        const result = await this.users.findOne({ username: username });
+
+        return result.email;
+    }
+
+    /**
+     * Set the email of a user
+     * @param {string} username - username of the user
+     * @param {string} email - email of the user
+     * @async
+     */
+    async setEmail(username, email) {
+        await this.users.updateOne({ username: username }, { $set: { email: email } });
+    }
+
+    /**
+     * Logout a user
      * @param {string} username - username of the user
      * @async
      */
@@ -504,7 +542,7 @@ class UserManager {
     }
 
     /**
-     * 
+     * Report something
      * @param {number} type - Type of report. 0 = user, 1 = project 
      * @param {string} reportee - ID of the person/project being reported 
      * @param {string} reason - Reason for the report 
@@ -522,6 +560,7 @@ class UserManager {
     }
 
     /**
+     * Get reports by type
      * @param {number} type - The type of reports to get 
      * @returns {Promise<Array<object>>} - Array of reports of the specified type
      * @async
@@ -532,6 +571,7 @@ class UserManager {
     }
 
     /**
+     * Get reports by reportee
      * @param {string} reportee - ID of the person/project being reported
      * @returns {Promise<Array<object>>} - Array of reports on the specified reportee
      * @async
@@ -542,6 +582,7 @@ class UserManager {
     }
 
     /**
+     * Get reports by reporter
      * @param {string} reporter - ID of the person reporting
      * @returns {Promise<Array<object>>} - Array of reports by the specified reporter
      * @async 
@@ -552,6 +593,7 @@ class UserManager {
     }
 
     /**
+     * Get reports to a specified size
      * @param {number} page - page of reports to get
      * @param {number} pageSize - amount of reports to get
      * @returns {Promise<Array<object>>} - Reports in the specified amount
@@ -573,6 +615,7 @@ class UserManager {
     }
 
     /**
+     * Delete a report
      * @param {string} id - ID of the report to delete
      * @async
      */
@@ -581,6 +624,7 @@ class UserManager {
     }
 
     /**
+     * Publish a project
      * @param {Buffer} projectBuffer The file buffer for the project. This is a zip.
      * @param {string} author The ID of the author of the project.
      * @param {string} title Title of the project.
@@ -611,7 +655,8 @@ class UserManager {
             views: 0,
             date: Date.now(),
             lastUpdate: Date.now(),
-            rating: rating
+            rating: rating,
+            public: true
         });
 
         fs.writeFileSync(path.join(__dirname, `./projects/files/project_${id}.pmp`), projectBuffer, (err) => {
@@ -623,17 +668,19 @@ class UserManager {
     }
 
     /**
+     * Get remixes of a project
      * @param {number} id 
      * @returns {Promise<Array<Object>>} - Array of remixes of the specified project
      * @async
      */
     async getRemixes(id) {
-        const result = await this.projects.find({remix: id}).toArray();
+        const result = await this.projects.find({remix: id, public: true}).toArray();
 
         return result;
     }
 
     /**
+     * Update a project
      * @param {number} id - ID of the project 
      * @param {Buffer} projectBuffer - The file buffer for the project. This is a zip.
      * @param {string} title - Title of the project.
@@ -657,7 +704,7 @@ class UserManager {
     }
 
     /**
-     * get projects
+     * get projects to a specified size
      * @param {number} page - page of projects to get
      * @param {number} pageSize - amount of projects to get
      * @returns {Promise<Array<Object>>} - Projects in the specified amount
@@ -679,6 +726,7 @@ class UserManager {
     }
 
     /**
+     * Get projects by a specified author
      * @param {string} author - ID of the author
      * @returns {Promise<Array<Object>>} - Array of projects by the specified author
      * @async
@@ -690,6 +738,7 @@ class UserManager {
     }
 
     /**
+     * Get a project file
      * @param {number} id - ID of the project wanted.
      * @returns {Promise<Buffer>} - The project file.
      * @async
@@ -701,6 +750,7 @@ class UserManager {
     }
 
     /**
+     * Get a project image
      * @param {number} id - ID of the project image wanted. 
      * @returns {Promise<Buffer>} - The project image file.
      */
@@ -711,12 +761,12 @@ class UserManager {
     }
 
     /**
-     * Get project data for a specified project
+     * Get project metadata for a specified project
      * @param {number} id - ID of the project wanted.
      * @returns {Promise} - The project data.
      * @async
      */
-    async getProjectData(id) {
+    async getProjectMetadata(id) {
         if (!await this.projectExists(id)) return false;
         
         const tempresult = await this.projects.findOne({id: id})
@@ -733,10 +783,11 @@ class UserManager {
     }
 
     /**
-     * 
+     * Check if a user has seen a project
      * @param {number} id - ID of the project. 
-     * @param {string} ip - IP of the person seeing the project. 
+     * @param {string} ip - IP we are checking
      * @returns {Promise<boolean>} - True if they have seen the project, false if not. 
+     * @async
      */
     async hasSeenProject(id, ip) {
         const result = this.views.find((view) => view.id === id && view.ip === ip);
@@ -745,6 +796,7 @@ class UserManager {
     }
 
     /**
+     * Add a view to a project
      * @param {number} id - ID of the project.
      * @param {string} ip - IP of the person seeing the project.
      * @async
@@ -761,6 +813,11 @@ class UserManager {
         await this.projects.updateOne({id: id}, {$inc: {views: 1}});
     }
 
+    /**
+     * Get the amount of views a project has
+     * @param {number} id - ID of the project
+     * @returns {number} - The number of views the project has
+     */
     async getProjectViews(id) {
         const result = this.views.filter((view) => view.id === id);
 
@@ -768,10 +825,11 @@ class UserManager {
     }
 
     /**
+     * Check if a user has loved a project
      * @param {number} id - ID of the project.
      * @param {string} userId - ID of the person loving the project.
-     * @async
      * @returns {Promise<boolean>} - True if they have loved the project, false if not.
+     * @async
      */
     async hasLovedProject(id, userId) {
         const result = await this.projectStats.findOne({

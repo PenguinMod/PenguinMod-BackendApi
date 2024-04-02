@@ -274,7 +274,7 @@ async function tests() {
     }
     console.log("[ PASS ]".green, "Got project thumbnail");
 
-    let getProjectData = await manager.getProjectData(getProjects[0].id);
+    let getProjectData = await manager.getProjectMetadata(getProjects[0].id);
     if (
         getProjectData.author       !== getID         ||
         getProjectData.title        !== "testproject" ||
@@ -374,7 +374,7 @@ async function tests() {
         "new notes",
         "E"
     );
-    let getUpdatedProjectData = await manager.getProjectData(getProjects[0].id);
+    let getUpdatedProjectData = await manager.getProjectMetadata(getProjects[0].id);
     if (
         getUpdatedProjectData.title        !== "new project" ||
         getUpdatedProjectData.instructions !== "new inst"    ||
@@ -395,7 +395,7 @@ async function tests() {
     console.log("[ PASS ]".green, "Updated project");
 
     let deleteProject = await manager.deleteProject(getProjects[0].id);
-    let getDeletedProject = await manager.getProjectData(getProjects[0].id);
+    let getDeletedProject = await manager.getProjectMetadata(getProjects[0].id);
     if (getDeletedProject) {
         console.log(getDeletedProject);
         console.log("[ FAIL ]".red, "Failed to delete project");
