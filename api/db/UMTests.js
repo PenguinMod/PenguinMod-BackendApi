@@ -358,7 +358,7 @@ async function tests() {
     console.log("[ PASS ]".green, "Got project votes");
 
     let featureProject = await manager.featureProject(getProjects[0].id, true);
-    let getFeaturedProjects = await manager.getFeaturedProjects();
+    let getFeaturedProjects = await manager.getFeaturedProjects(0, 2);
     if (getFeaturedProjects.length !== 1) {
         console.log("[ FAIL ]".red, "Failed to feature/get projects");
         return false;
