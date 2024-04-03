@@ -842,6 +842,7 @@ class UserManager {
     }
 
     /**
+     * Love/unlove a project
      * @param {number} id - ID of the project.
      * @param {string} userId - ID of the person loving the project.
      * @param {boolean} love - True if loving, false if unloving.
@@ -863,6 +864,11 @@ class UserManager {
         });
     }
 
+    /**
+     * Get the amount of loves a project has
+     * @param {number} id - ID of the project
+     * @returns {number} - Amount of loves the project has
+     */
     async getProjectLoves(id) {
         const result = await this.projectStats.find({projectId: id, type: "love"}).toArray();
 
@@ -870,6 +876,7 @@ class UserManager {
     }
 
     /**
+     * Check if a user has voted on a project
      * @param {number} id - ID of the project.
      * @param {string} userId - ID of the person voting on the project.
      * @returns {Promise<boolean>} - True if they have voted on the project, false if not.
@@ -886,6 +893,7 @@ class UserManager {
     }
 
     /**
+     * Vote/unvote a project
      * @param {number} id - ID of the project.
      * @param {string} userId - ID of the person voting on the project.
      * @param {boolean} vote - True if voting, false if unvoting.
@@ -907,6 +915,12 @@ class UserManager {
         });
     }
 
+    /**
+     * Get the amount of votes a project has
+     * @param {number} id - ID of the project
+     * @returns {number} - Amount of votes the project has
+     * @async
+     */
     async getProjectVotes(id) {
         const result = await this.projectStats.find({projectId: id, type: "vote"}).toArray();
 
@@ -914,15 +928,32 @@ class UserManager {
     }
 
     /**
+     * Get a list of featured projects to a specified size
+     * @param {number} page - page of projects to get
+     * @param {number} pagesize - amount of projects to get
      * @returns {Promise<Array<Object>>} - Array of all projects
+     * @async
      */
-    async getFeaturedProjects() {
-        const result = await this.projects.find({featured: true}).toArray();
+    async getFeaturedProjects(page, pagesize) {
+        const result = await this.projects.aggregate([
+            {
+                $match: { featured: true }
+            },
+            {
+                $facet: {
+                    metadata: [{ $count: "count" }],
+                    data: [{ $skip: page * pagesize }, { $limit: pagesize }]
+                }
+            }
+        ])
+        .sort({ date: -1 })
+        .toArray();
 
         return result;
     }
 
     /**
+     * Feature/unfeature a project
      * @param {number} id - ID of the project.
      * @param {boolean} feature - True if featuring, false if unfeaturing.
      * @async
@@ -932,6 +963,7 @@ class UserManager {
     }
 
     /**
+     * Get the amount of projects
      * @returns {Promise<number>} - Amount of projects
      * @async
      */
@@ -942,6 +974,7 @@ class UserManager {
     }
 
     /**
+     * delete a project
      * @param {number} id - ID of the project
      * @async
      */
@@ -956,6 +989,7 @@ class UserManager {
     }
 
     /**
+     * Follow/unfollow a user
      * @param {string} follower - ID of the person following 
      * @param {string} followee - ID of the person being followed
      * @param {boolean} follow - True if following, false if unfollowing
@@ -972,6 +1006,7 @@ class UserManager {
     }
 
     /**
+     * Check if a user is following another user
      * @param {string} follower - ID of the person following
      * @param {string} followee - ID of the person being followed
      * @returns {Promise<boolean>} - True if they are following, false if not
@@ -984,8 +1019,9 @@ class UserManager {
     }
 
     /**
+     * Get the people a person is being followed by
      * @param {string} username - username of the person
-     * @returns {Promise<Array<string>>} - Array of the people the person is following
+     * @returns {Promise<Array<string>>} - Array of the people the person is being followed by
      * @async
      */
     async getFollowers(username) {
@@ -995,8 +1031,9 @@ class UserManager {
     }
 
     /**
+     * Get the people a person is following
      * @param {string} id - username of the person
-     * @returns {Promise<Array<string>>} - Array of the people following the person
+     * @returns {Promise<Array<string>>} - Array of the people the person is following
      * @async
      */
     async getFollowing(username) {
@@ -1006,6 +1043,7 @@ class UserManager {
     }
 
     /**
+     * Send a message
      * @param {string} sender - ID of the person sending the message
      * @param {string} receiver - ID of the person receiving the message
      * @param {string} message - The message - should follow the format specified in the schema
@@ -1020,6 +1058,7 @@ class UserManager {
     }
 
     /**
+     * Get messages sent to a person
      * @param {string} receiver - ID of the person receiving the message
      * @returns {Promise<Array<Object>>} - Array of the messages sent to the person
      * @async
@@ -1031,8 +1070,10 @@ class UserManager {
     }
 
     /**
+     * Get unread messages sent to a person
      * @param {string} receiver - ID of the person you're getting the messages from
      * @returns {Promise<Array<Object>>} - Array of the unread messages sent to the person
+     * @async
      */
     async getUnreadMessages(receiver) {
         const result = await this.messages.find({receiver: receiver, read: false}).toArray();
@@ -1041,6 +1082,7 @@ class UserManager {
     }
 
     /**
+     * Modify a message
      * @param {string} id - ID of the message
      * @param {function} modifierFunction - the function that modifies the message
      * @async
@@ -1052,6 +1094,7 @@ class UserManager {
     }
 
     /**
+     * Delete a message
      * @param {string} id - ID of the message
      * @async
      */
@@ -1060,8 +1103,10 @@ class UserManager {
     }
 
     /**
+     * Check if a project exists
      * @param {string} id - ID of the project
      * @returns {Promise<boolean>} - True if the project exists, false if not
+     * @async
      */
     async projectExists(id) {
         const result = await this.projects.findOne({id: id});
@@ -1070,6 +1115,7 @@ class UserManager {
     }
 
     /**
+     * Check for illegal wording on text
      * @param {string} text - The text to check for illegal wording 
      * @returns {Promise<boolean>} - True if the text contains illegal wording, false if not
      * @async
@@ -1092,8 +1138,10 @@ class UserManager {
     }
 
     /**
+     * Check for slightly illegal wording on text
      * @param {string} text - The text to check for slightly illegal wording
      * @returns {Promise<boolean>} - True if the text contains slightly illegal wording, false if not
+     * @async
      */
     async checkForSlightlyIllegalWording(text) {
         const potentiallyUnsafeWords = await this.illegalList.findOne
@@ -1111,6 +1159,7 @@ class UserManager {
     }
 
     /**
+     * Set a new list of illegal words
      * @param {Array<string>} words - The new list of illegal words
      * @param {string} type - The type of the illegal item
      * @async
@@ -1120,6 +1169,7 @@ class UserManager {
     }
 
     /**
+     * Add an illegal word
      * @param {string} word - The item to add
      * @param {string} type - The type of the illegal item
      * @async
@@ -1129,6 +1179,7 @@ class UserManager {
     }
 
     /**
+     * Remove an illegal word
      * @param {string} word - The item to remove 
      * @param {string} type - The type of the illegal item
      * @async
@@ -1138,6 +1189,7 @@ class UserManager {
     }
 
     /**
+     * Get all illegal words
      * @returns {Promise<Object>} - Object containing all the illegal words
      * @async
      */
@@ -1162,12 +1214,22 @@ class UserManager {
         }
     }
 
+    /**
+     * Verify the state from an OAuth2 request
+     * @param {string} state - The state to verify 
+     * @returns {Promise<boolean>} - True if the state is valid, false if not
+     * @async
+     */
     async verifyOAuth2State(state) {
         const result = await this.oauthStates.findOne({ state: state });
 
         return result ? true : false;
     }
 
+    /**
+     * Generate a new OAuth2 state and save it for verification
+     * @returns {Promise<string>} - The state
+     */
     async generateOAuth2State() {
         const state = ULID.ulid();
 
@@ -1176,6 +1238,12 @@ class UserManager {
         return state;
     }
 
+    /**
+     * Make an OAuth2 request
+     * @param {string} code - The from the original OAuth2 request
+     * @param {string} method - The method of OAuth2 request
+     * @returns 
+     */
     async makeOAuth2Request(code, method) {
         switch (method) {
             case "scratch":
