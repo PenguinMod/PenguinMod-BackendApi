@@ -37,9 +37,9 @@ jobs:
     - name: Minio Deploy
       uses: lovellfelix/minio-deploy-action@v1
       with:
-        endpoint: ${{ secrets.MINIO_ENDPOINT }}
-        access_key: ${{ secrets.MINIO_ACCESS_KEY }}
-        secret_key: ${{ secrets.MINIO_SECRET_KEY }}
+        endpoint: "http://localhost:9000"
+        access_key: "default"
+        secret_key: "default"
         bucket: 'projects,project-thumbnails'
         # Optional inputs with their defaults:
         source_dir: 'public'
