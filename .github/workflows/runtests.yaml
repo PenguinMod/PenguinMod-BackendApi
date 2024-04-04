@@ -34,4 +34,4 @@ jobs:
       with:
         mongodb-version: ${{ matrix.mongodb-version }}
 
-    - run: "echo 'Aint working because minio and im too lazy to fix it rn"
+    - run: "echo 'Aint working because minio and im too lazy to fix it rn'"
