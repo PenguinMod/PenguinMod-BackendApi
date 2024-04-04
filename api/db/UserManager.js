@@ -6,6 +6,8 @@ const { encrypt, decrypt } = require("../../utils/encrypt.js");
 const path = require('path');
 const fs = require('fs');
 const ULID = require('ulid');
+const Minio = require('minio');
+const { resolve } = require('node:path');
 var prompt = require('prompt-sync')();
 
 // scratch oauth redir: http://localhost:8080/api/v1/users/loginlocal
@@ -48,6 +50,71 @@ class UserManager {
 
         this.maxviews = maxviews ? maxviews : 10000;
         this.viewresetrate = viewresetrate ? viewresetrate : 1000 * 60 * 60;
+
+        // Setup minio
+
+        this.minioClient = new Minio.Client({
+            endPoint: 'localhost',
+            port: 9000,
+            useSSL: false,
+            accessKey: process.env.MinioClientID,
+            secretKey: process.env.MinioClientSecret
+        });
+        // project bucket
+        this.minioClient.bucketExists('projects', (err, exists) => {
+            if (err) {
+                console.log("Error checking if bucket exists:", err);
+                return;
+            }
+            if (!exists) {
+                this.minioClient.makeBucket('projects', (err) => {
+                    if (err) {
+                        console.log("Error making bucket:", err);
+                        return;
+                    }
+                });
+            }
+        });
+        // project thumbnails bucket
+        this.minioClient.bucketExists('project-thumbnails', (err, exists) => {
+            if (err) {
+                console.log("Error checking if bucket exists:", err);
+                return;
+            }
+            if (!exists) {
+                this.minioClient.makeBucket('project-thumbnails', (err) => {
+                    if (err) {
+                        console.log("Error making bucket:", err);
+                        return;
+                    }
+                });
+            }
+        });
+    }
+
+    async resetBucket(bucketName) {
+        const objectsStream = this.minioClient.listObjects(bucketName);
+
+        // convert to array
+        const objectsArray = [];
+
+        objectsStream.on('data', function (obj) {
+            objectsArray.push(obj.name)
+        });
+        
+        objectsStream.on('error', function (e) {
+            console.log("Error while deleting bucket:", e);
+        });
+        
+        objectsStream.on('end', function () {
+            objectsArray.forEach((object) => {
+                this.minioClient.removeObject(bucketName, object, (err) => {
+                    if (err) {
+                        console.log("Error deleting object:", err);
+                    }
+                });
+            });
+        });
     }
 
     /**
@@ -75,16 +142,11 @@ class UserManager {
             { id: "spacedOutWordsOnly", items: [] },
             { id: "potentiallyUnsafeWords", items: [] },
             { id: "potentiallyUnsafeWordsSpacedOut", items: [] }
-        ])
-        if (!fs.existsSync(path.join(__dirname, "projects"))) {
-            fs.mkdirSync(path.join(__dirname, "projects"));
-        }
-        if (fs.existsSync(path.join(__dirname, "projects/files")) && fs.existsSync(path.join(__dirname, "projects/images"))) {
-            fs.rmSync(path.join(__dirname, "projects/files"), { recursive: true, force: true });
-            fs.rmSync(path.join(__dirname, "projects/images"), { recursive: true, force: true });
-        }
-        fs.mkdirSync(path.join(__dirname, "projects/files"));
-        fs.mkdirSync(path.join(__dirname, "projects/images"));
+        ]);
+
+        // reset minio buckets
+        await this.resetBucket("projects");
+        await this.resetBucket("project-thumbnails");
     }
 
     /**
@@ -628,15 +690,16 @@ class UserManager {
      * @param {Buffer} projectBuffer The file buffer for the project. This is a zip.
      * @param {string} author The ID of the author of the project.
      * @param {string} title Title of the project.
-     * @param {Buffer} image The file buffer for the thumbnail.
+     * @param {Buffer} imageBuffer The file buffer for the thumbnail.
      * @param {string} instructions The instructions for the project.
      * @param {string} notes The notes for the project
      * @param {number} remix ID of the project this is a remix of. Undefined if not a remix.
      * @param {string} rating Rating of the project.
      * @async
      */
-    async publishProject(projectBuffer, author, title, image, instructions, notes, remix, rating) {
+    async publishProject(projectBuffer, author, title, imageBuffer, instructions, notes, remix, rating) {
         let id;
+        // TODO: replace this with a ulid somehow
         // i love being whimsical ^^
         do {
             id = randomInt(0, 9999999999).toString();
@@ -659,12 +722,9 @@ class UserManager {
             public: true
         });
 
-        fs.writeFileSync(path.join(__dirname, `./projects/files/project_${id}.pmp`), projectBuffer, (err) => {
-            if (err) console.log("Error saving project:", err);
-        });
-        fs.writeFileSync(path.join(__dirname, `./projects/images/project_${id}.png`), image, (err) => {
-            if (err) console.log("Error saving thumbnail:", err);
-        });
+        // minio bucket shit
+        await this.minioClient.putObject("projects", id, projectBuffer);
+        await this.minioClient.putObject("project-thumbnails", id, imageBuffer);
     }
 
     /**
@@ -684,13 +744,13 @@ class UserManager {
      * @param {number} id - ID of the project 
      * @param {Buffer} projectBuffer - The file buffer for the project. This is a zip.
      * @param {string} title - Title of the project.
-     * @param {Buffer} image - The file buffer for the thumbnail.
+     * @param {Buffer} imageBuffer - The file buffer for the thumbnail.
      * @param {string} instructions - The instructions for the project.
      * @param {string} notes - The notes for the project 
      * @param {string} rating - Rating of the project. 
      * @async
      */
-    async updateProject(id, projectBuffer, title, image, instructions, notes, rating) {
+    async updateProject(id, projectBuffer, title, imageBuffer, instructions, notes, rating) {
         await this.projects.updateOne({id: id},
             {$set: {
                 title: title,
@@ -698,9 +758,12 @@ class UserManager {
                 notes: notes,
                 rating: rating,
                 lastUpdate: Date.now()
-            }});
-        fs.writeFileSync(path.join(__dirname, `./projects/files/project_${id}.pmp`), projectBuffer);
-        fs.writeFileSync(path.join(__dirname, `./projects/images/project_${id}.png`), image);
+            }}
+        );
+
+        // minio bucket shit
+        await this.minioClient.putObject("projects", id, projectBuffer);
+        await this.minioClient.putObject("project-thumbnails", id, imageBuffer);
     }
 
     /**
@@ -738,13 +801,31 @@ class UserManager {
     }
 
     /**
+     * Read an object from a bucket
+     * @param {string} bucketName - Name of the bucket
+     * @param {string} objectName - Name of the object
+     * @returns {Promise<Buffer>} - The object
+     */
+    async readObjectFromBucket(bucketName, objectName) {
+        const stream = await this.minioClient.getObject(bucketName, objectName);
+
+        const chunks = [];
+
+        return new Promise((resolve, reject) => {
+            stream.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
+            stream.on("end", () => resolve(Buffer.concat(chunks)));
+            stream.on("error", (err) => reject(err));
+        });
+    }
+
+    /**
      * Get a project file
      * @param {number} id - ID of the project wanted.
      * @returns {Promise<Buffer>} - The project file.
      * @async
      */
     async getProjectFile(id) {
-        const file = fs.readFileSync(path.join(__dirname, `./projects/files/project_${id}.pmp`));
+        const file = await this.readObjectFromBucket("projects", id);
 
         return file;
     }
@@ -755,7 +836,7 @@ class UserManager {
      * @returns {Promise<Buffer>} - The project image file.
      */
     async getProjectImage(id) {
-        const file = fs.readFileSync(path.join(__dirname, `./projects/images/project_${id}.png`));
+        const file = await this.readObjectFromBucket("project-thumbnails", id);
 
         return file;
     }
@@ -984,8 +1065,9 @@ class UserManager {
         // remove the loves and votes
         await this.projectStats.deleteMany({projectId: id});
 
-        fs.rmSync(path.join(__dirname, `./projects/files/project_${id}.pmp`));
-        fs.rmSync(path.join(__dirname, `./projects/images/project_${id}.png`));
+        // remove the project file
+        await this.minioClient.removeObject("projects", id);
+        await this.minioClient.removeObject("project-thumbnails", id);
     }
 
     /**
