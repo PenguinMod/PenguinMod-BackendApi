@@ -20,7 +20,25 @@ Please report any security vulnerabilities using GitHub's security tab on the re
     - [Linux](https://docs.mongodb.com/manual/administration/install-on-linux/)
 2. Run `mongod` to start mongodb
 3. Run `npm i`. if this doesn't work run it with --force
-4. Run `npm run dev` to start the server in development mode.
+4. Install minio and add a few buckets in the web api (should be localhost:9001)
+   - [Minio](https://docs.min.io/docs/minio-quickstart-guide.html)
+   - Add a `projects` bucket
+   - Add a `project-thumbnails` bucket
+5. Add a `.env` file with the following:
+
+    ```env
+    EncryptKey=yourkeyhere
+
+    PORT=8080
+
+    ScratchOauth2ClientID=yourclientid
+    ScratchOauth2ClientSecret=yourclientsecret
+
+    MinioClientID=yourclientid
+    MinioClientSecret=yourclientsecret
+    ```
+
+6. Run `npm run dev` to start the server in development mode.
 
 ## Deployment
 
