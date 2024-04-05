@@ -260,14 +260,14 @@ async function tests() {
     }
     console.log("[ PASS ]".green, "Published/got projects");
 
-    let getProjectFile = (await manager.getProjectFile(getProjects[0].id)).toString();
+    let getProjectFile = (await manager.getProjectFile(getProjects[0].id));
     if (getProjectFile !== "test file") {
         console.log("[ FAIL ]".red, "Failed to get project file");
         return false;
     }
     console.log("[ PASS ]".green, "Got project file");
 
-    let getProjectThumbnail = (await manager.getProjectImage(getProjects[0].id)).toString();
+    let getProjectThumbnail = (await manager.getProjectImage(getProjects[0].id));
     if (getProjectThumbnail !== "test image") {
         console.log("[ FAIL ]".red, "Failed to get project thumbnail");
         return false;
@@ -384,11 +384,11 @@ async function tests() {
         console.log("[ FAIL ]".red, "Failed to update project");
         return false;
     }
-    if ((await manager.getProjectFile(getProjects[0].id)).toString() !== "new file") {
+    if ((await manager.getProjectFile(getProjects[0].id)) !== "new file") {
         console.log("[ FAIL ]".red, "Failed to update project file");
         return false;
     }
-    if ((await manager.getProjectImage(getProjects[0].id)).toString() !== "new image") {
+    if ((await manager.getProjectImage(getProjects[0].id)) !== "new image") {
         console.log("[ FAIL ]".red, "Failed to update project image");
         return false;
     }

@@ -821,7 +821,7 @@ class UserManager {
      * @async
      */
     async getProjectFile(id) {
-        const file = await this.readObjectFromBucket("projects", id);
+        const file = (await this.readObjectFromBucket("projects", id)).toString();
 
         return file;
     }
@@ -832,7 +832,7 @@ class UserManager {
      * @returns {Promise<Buffer>} - The project image file.
      */
     async getProjectImage(id) {
-        const file = await this.readObjectFromBucket("project-thumbnails", id);
+        const file = (await this.readObjectFromBucket("project-thumbnails", id)).toString();
 
         return file;
     }
