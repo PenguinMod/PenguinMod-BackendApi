@@ -7,7 +7,7 @@ module.exports = (app, utils) => {
     ]), async (req, res) => {
         const packet = req.body;
 
-        if (!await utils.UserManager.checkUser(packet.username, packet.password)) {
+        if (!await utils.UserManager.loginWithToken(packet.username, packet.password)) {
             return utils.error(res, 401, "Invalid credentials");
         }
 
@@ -34,6 +34,8 @@ module.exports = (app, utils) => {
         }
 
         // upload the project
-        // utils.UserManager.publishProject();
+        utils.UserManager.publishProject(
+            jsonFile,
+        );
     });
 }

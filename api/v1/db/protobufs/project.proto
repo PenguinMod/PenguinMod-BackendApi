@@ -1,0 +1,14 @@
+package project;
+syntax = "proto3";
+
+import "sprite.proto";
+
+message Project {
+    repeated Sprite sprites = 1;
+    // monitors
+    // extension data
+    // extensions
+    string metaSemver = 5;
+    string metaVm = 6;
+    string agent = 7;
+}
