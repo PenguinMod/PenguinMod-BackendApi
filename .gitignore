@@ -3,32 +3,9 @@
 
 # Node
 node_modules
-package-lock.json
 
 # macOS
 .DS_Store
 
 # Windows
 System Volume Information
-
-# Database Files
-cooldown.json
-banned.json
-users.json
-usermessages.json
-userdata.json
-userfeed.json
-following.json
-hadfollowing.json
-
-userreports.json
-projectreports.json
-
-# Extra
-blockedips.json
-globalsettings.json
-illegalwords.js
-cache/*
-
-# Projects
-api/db/projects/*

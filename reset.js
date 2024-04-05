@@ -1,4 +1,4 @@
-const um = require('./api/db/UserManager');
+const um = require('./api/v1/db/UserManager');
 
 const UserManager = new um();
 

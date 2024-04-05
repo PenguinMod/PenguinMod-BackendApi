@@ -3,7 +3,7 @@ const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const express = require("express");
 const endpointLoader = require("./api/endpointLoader");
-const um = require('./api/db/UserManager');
+const um = require('./api/v1/db/UserManager');
 const cast = require("./utils/Cast");
 const path = require('path');
 const functions = require('./utils/functions');
@@ -13,7 +13,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const MAXVIEWS = process.env.MAXVIEWS || 10000; // it will take up to 10000 views then reset after
 const VIEWRESETRATE = process.env.VIEWRESETRATE || 1000 * 60 * 60; // reset every hour
-const upload = multer({ dest: 'uploads/' });
+const upload = multer({ dest: 'tmp/uploads/' });
 
 app.use(cors({
     origin: '*',
@@ -38,12 +38,6 @@ app.use(rateLimit({
     legacyHeaders: false,
 }));
 
-function error(res, code, message) {
-    res.status(code);
-    res.header("Content-Type", 'application/json');
-    res.json({ "error": message });
-}
-
 const Cast = new cast();
 const UserManager = new um();
 
@@ -59,8 +53,9 @@ const UserManager = new um();
         homeDir: path.join(__dirname, "./"),
         Cast: Cast,
         escapeXML: functions.escapeXML,
-        error: error,
-        env: process.env
+        error: functions.error,
+        env: process.env,
+        upload: upload
     });
 
     app.listen(PORT, () => {
