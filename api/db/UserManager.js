@@ -57,8 +57,8 @@ class UserManager {
             endPoint: 'localhost',
             port: 9000,
             useSSL: false,
-            accessKey: process.env.MinioClientID || "default",
-            secretKey: process.env.MinioClientSecret || "default"
+            accessKey: process.env.MinioClientID,
+            secretKey: process.env.MinioClientSecret
         });
         // project bucket
         this.minioClient.bucketExists('projects', (err, exists) => {
