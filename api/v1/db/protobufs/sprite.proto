@@ -11,12 +11,16 @@ message _listValue {
     repeated string value = 2;
 }
 
+message json {
+    string jsonValue = 1;
+}
+
 message block {
     string opcode = 1;
     string next = 2;
     string parent = 3;
-    // map<string, ...> inputs = 4;
-    // map<string, ...> fields = 5;
+    map<string, json> inputs = 4; // im lazy and these are weird
+    map<string, json> fields = 5; // ^^^^^^^^^^^^^^^^^^^^^^^^^^^
     bool shadow = 6;
     bool topLevel = 7; 
 }
