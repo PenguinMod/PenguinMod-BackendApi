@@ -59,7 +59,7 @@ const UserManager = new um();
         env: process.env,
         upload: upload,
         MAXASSETS: MAXASSETS,
-        projectProto: protobuf.loadSync('api/v1/db/project.proto')
+        projectProto: protobuf.loadSync('api/v1/db/protobufs/project.proto')
     });
 
     app.listen(PORT, () => {
