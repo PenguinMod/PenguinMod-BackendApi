@@ -2,12 +2,8 @@ require('dotenv').config();
 const { randomInt } = require('node:crypto');
 const bcrypt = require('bcrypt');
 const { MongoClient } = require('mongodb');
-const { encrypt, decrypt } = require("../../utils/encrypt.js");
-const path = require('path');
-const fs = require('fs');
 const ULID = require('ulid');
 const Minio = require('minio');
-const { resolve } = require('node:path');
 var prompt = require('prompt-sync')();
 
 // scratch oauth redir: http://localhost:8080/api/v1/users/loginlocal

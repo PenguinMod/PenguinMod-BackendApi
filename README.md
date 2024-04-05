@@ -27,8 +27,6 @@ Please report any security vulnerabilities using GitHub's security tab on the re
 5. Add a `.env` file with the following:
 
     ```env
-    EncryptKey=yourkeyhere
-
     PORT=8080
 
     ScratchOauth2ClientID=yourclientid
