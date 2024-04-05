@@ -59,8 +59,6 @@ const UserManager = new um();
         homeDir: path.join(__dirname, "./"),
         Cast: Cast,
         escapeXML: functions.escapeXML,
-        generateProfileJSON: functions.generateProfileJSON,
-        safeZipParse: functions.safeZipParse,
         error: error,
         env: process.env
     });
