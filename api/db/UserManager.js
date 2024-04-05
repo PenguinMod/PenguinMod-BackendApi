@@ -90,6 +90,11 @@ class UserManager {
         });
     }
 
+    /**
+     * Reset a minio bucket
+     * @param {string} bucketName - Name of the bucket
+     * @async
+     */
     async resetBucket(bucketName) {
         const objectsStream = this.minioClient.listObjects(bucketName);
 

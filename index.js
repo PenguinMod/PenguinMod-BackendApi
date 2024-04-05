@@ -7,11 +7,13 @@ const um = require('./api/db/UserManager');
 const cast = require("./utils/Cast");
 const path = require('path');
 const functions = require('./utils/functions');
+const multer = require('multer');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const MAXVIEWS = process.env.MAXVIEWS || 10000; // it will take up to 10000 views then reset after
 const VIEWRESETRATE = process.env.VIEWRESETRATE || 1000 * 60 * 60; // reset every hour
+const upload = multer({ dest: 'uploads/' });
 
 app.use(cors({
     origin: '*',
@@ -46,7 +48,7 @@ const Cast = new cast();
 const UserManager = new um();
 
 (async () => {
-    await UserManager.init();
+    await UserManager.init(MAXVIEWS, VIEWRESETRATE);
 
     app.get("/test", (req, res) => {
         res.sendFile(path.join(__dirname, 'test.html'));
