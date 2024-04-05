@@ -19,6 +19,8 @@ class UserManager {
 
     /**
      * Initialize the database
+     * @param {number} maxviews - maximum amount of views before the view counter resets
+     * @param {number} viewresetrate - time in milliseconds before the view counter resets
      * @async
      */
     async init(maxviews, viewresetrate) {
