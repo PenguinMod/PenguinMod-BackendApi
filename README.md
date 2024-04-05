@@ -24,6 +24,7 @@ Please report any security vulnerabilities using GitHub's security tab on the re
    - [Minio](https://docs.min.io/docs/minio-quickstart-guide.html)
    - Add a `projects` bucket
    - Add a `project-thumbnails` bucket
+   - Add a `project-assets` bucket
 5. Add a `.env` file with the following:
 
     ```env
@@ -34,6 +35,11 @@ Please report any security vulnerabilities using GitHub's security tab on the re
 
     MinioClientID=yourclientid
     MinioClientSecret=yourclientsecret
+
+    MaxViews=howmanyviewsbeforebotcheckresets
+    ViewResetRate=timebeforebotcheckresets
+
+    MaxAssets=maxassetsyouwantinaproject
     ```
 
 6. Run `npm run dev` to start the server in development mode.

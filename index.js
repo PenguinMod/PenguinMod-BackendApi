@@ -8,11 +8,13 @@ const cast = require("./utils/Cast");
 const path = require('path');
 const functions = require('./utils/functions');
 const multer = require('multer');
+const protobuf = require('protobufjs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const MAXVIEWS = process.env.MAXVIEWS || 10000; // it will take up to 10000 views then reset after
-const VIEWRESETRATE = process.env.VIEWRESETRATE || 1000 * 60 * 60; // reset every hour
+const MAXVIEWS = process.env.MaxViews || 10000; // it will take up to 10000 views then reset after
+const VIEWRESETRATE = process.env.ViewResetRate || 1000 * 60 * 60; // reset every hour
+const MAXASSETS = process.env.MaxAssets || 40;
 const upload = multer({ dest: 'tmp/uploads/' });
 
 app.use(cors({
@@ -55,7 +57,9 @@ const UserManager = new um();
         escapeXML: functions.escapeXML,
         error: functions.error,
         env: process.env,
-        upload: upload
+        upload: upload,
+        MAXASSETS: MAXASSETS,
+        projectProto: protobuf.loadSync('api/v1/db/project.proto')
     });
 
     app.listen(PORT, () => {

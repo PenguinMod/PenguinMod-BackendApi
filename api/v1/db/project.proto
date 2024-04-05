@@ -1,0 +1,6 @@
+package project;
+syntax = "proto3";
+
+message Project {
+    // TODO :revolving_hearts:
+}

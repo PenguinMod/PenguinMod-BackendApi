@@ -59,28 +59,21 @@ class UserManager {
             secretKey: process.env.MinioClientSecret
         });
         // project bucket
-        this.minioClient.bucketExists('projects', (err, exists) => {
+        this._makeBucket("projects");
+        // project thumbnail bucket
+        this._makeBucket("project-thumbnails");
+        // project asset bucket
+        this._makeBucket("project-assets");
+    }
+
+    async _makeBucket(bucketName) {
+        this.minioClient.bucketExists(bucketName, (err, exists) => {
             if (err) {
                 console.log("Error checking if bucket exists:", err);
                 return;
             }
             if (!exists) {
-                this.minioClient.makeBucket('projects', (err) => {
-                    if (err) {
-                        console.log("Error making bucket:", err);
-                        return;
-                    }
-                });
-            }
-        });
-        // project thumbnails bucket
-        this.minioClient.bucketExists('project-thumbnails', (err, exists) => {
-            if (err) {
-                console.log("Error checking if bucket exists:", err);
-                return;
-            }
-            if (!exists) {
-                this.minioClient.makeBucket('project-thumbnails', (err) => {
+                this.minioClient.makeBucket(bucketName, (err) => {
                     if (err) {
                         console.log("Error making bucket:", err);
                         return;
@@ -150,6 +143,7 @@ class UserManager {
         // reset minio buckets
         await this.resetBucket("projects");
         await this.resetBucket("project-thumbnails");
+        await this.resetBucket("project-assets");
     }
 
     /**
@@ -690,7 +684,8 @@ class UserManager {
 
     /**
      * Publish a project
-     * @param {Buffer} projectBuffer The file buffer for the project. This is a zip.
+     * @param {Buffer} projectBuffer The json file buffer for the project.
+     * @param {Array<Object>} assetBuffers Objects containing the 1. id of the asset and 2. the buffer of the asset.
      * @param {string} author The ID of the author of the project.
      * @param {string} title Title of the project.
      * @param {Buffer} imageBuffer The file buffer for the thumbnail.
@@ -700,7 +695,7 @@ class UserManager {
      * @param {string} rating Rating of the project.
      * @async
      */
-    async publishProject(projectBuffer, author, title, imageBuffer, instructions, notes, remix, rating) {
+    async publishProject(projectBuffer, assetBuffers, author, title, imageBuffer, instructions, notes, remix, rating) {
         let id;
         // TODO: replace this with a ulid somehow
         // i love being whimsical ^^
@@ -728,6 +723,9 @@ class UserManager {
         // minio bucket shit
         await this.minioClient.putObject("projects", id, projectBuffer);
         await this.minioClient.putObject("project-thumbnails", id, imageBuffer);
+        for (const asset in assetBuffers) {
+            await this.minioClient.putObject("project-assets", `${id}_${asset.id}`, asset.buffer);
+        }
     }
 
     /**

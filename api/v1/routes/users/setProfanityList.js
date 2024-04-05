@@ -1,7 +1,7 @@
 module.exports = (app, utils) => {
     app.get('/api/v1/users/setProfanityList', async function (req, res) {
         const packet = req.query;
-        if (!await UserManager.isCorrectCode(packet.user, packet.passcode)) {
+        if (!await UserManager.loginWithToken(packet.user, packet.passcode)) {
             utils.error(res, 400, "Reauthenticate")
             return;
         }

@@ -1,5 +1,7 @@
 # DB Schema
 
+NOTE: a lot of this shit is wrong and im just too lazy to change it. Especially with project stuff, we decided to change it and i am too lazy to correct this rn.
+
 ## Users
 
 | Name | Datatype | Description |
