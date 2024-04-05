@@ -3,12 +3,30 @@ syntax = "proto3";
 
 import "sprite.proto";
 
+message monitor {
+    string id = 1;
+    string mode = 2;
+    string opcode = 3;
+    map<string, string> params = 4;
+    string spriteName = 5;
+    string value = 6;
+    int32 width = 7;
+    int32 height = 8;
+    int32 x = 9;
+    int32 y = 10;
+    bool visible = 11;
+    int32 sliderMin = 12;
+    int32 sliderMax = 13;
+    bool isDiscrete = 14;
+}
+
 message Project {
     repeated Sprite sprites = 1;
-    // monitors
-    // extension data
-    // extensions
-    string metaSemver = 5;
-    string metaVm = 6;
-    string agent = 7;
+    repeated monitor monitors = 2;
+    map<string, string> extensionData = 3; // just store a string because the ext can give arbitrary data
+    repeated string extensions = 4;
+    map<string, string> extensionURLs = 5;
+    string metaSemver = 6;
+    string metaVm = 7;
+    string agent = 8;
 }
