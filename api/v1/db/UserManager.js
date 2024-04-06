@@ -4,6 +4,8 @@ const bcrypt = require('bcrypt');
 const { MongoClient } = require('mongodb');
 const ULID = require('ulid');
 const Minio = require('minio');
+const protobuf = require('protobufjs');
+const fs = require("fs");
 var prompt = require('prompt-sync')();
 
 // scratch oauth redir: http://localhost:8080/api/v1/users/loginlocal
@@ -40,7 +42,8 @@ class UserManager {
                 { id: "illegalWebsites", items: [] },
                 { id: "spacedOutWordsOnly", items: [] },
                 { id: "potentiallyUnsafeWords", items: [] },
-                { id: "potentiallyUnsafeWordsSpacedOut", items: [] }
+                { id: "potentiallyUnsafeWordsSpacedOut", items: [] },
+                { id: "legalExtensions", items: []}
             ]);
         }
         this.prevReset = Date.now();
@@ -137,7 +140,8 @@ class UserManager {
             { id: "illegalWebsites", items: [] },
             { id: "spacedOutWordsOnly", items: [] },
             { id: "potentiallyUnsafeWords", items: [] },
-            { id: "potentiallyUnsafeWordsSpacedOut", items: [] }
+            { id: "potentiallyUnsafeWordsSpacedOut", items: [] },
+            { id: "legalExtensions", items: []}
         ]);
 
         // reset minio buckets
@@ -1345,6 +1349,207 @@ class UserManager {
                 return response;
         }
     }
+
+    /**
+     * Convert a project json to protobuf format
+     * @param {Object} json - The project json 
+     * @returns {Buffer} - The project protobuf
+     */
+    projectJsonToProtobuf(json) {
+        // get the protobuf schema
+        let file = protobuf.loadSync("/home/ianyourgod/Documents/code/projects/penguinmod/PenguinMod-BackendApi/api/v1/db/protobufs/project.proto");
+        const schema = file.lookupType("Project");
+
+        let newjson = {
+            targets: [],
+            monitors: [],
+            extensionData: {},
+            extensions: json.extensions,
+            extensionURLs: {},
+            metaSemver: "",
+            metaVm: "",
+            metaAgent: ""
+        }
+
+        newjson.metaSemver = json.meta.semver;
+        newjson.metaVm = json.meta.vm;
+        newjson.metaAgent = json.meta.agent;
+
+        console.log(json);
+
+        for (const target in json.targets) {
+
+            let newtarget = {
+                id: json.targets[target].id,
+                isStage: json.targets[target].isStage,
+                name: json.targets[target].name,
+                variables: {},
+                lists: {},
+                broadcasts: {},
+                customVars: [],
+                comments: {},
+                currentCostume: json.targets[target].currentCostume,
+                costumes: [],
+                sounds: [],
+                volume: json.targets[target].volume,
+                layerOrder: json.targets[target].layerOrder,
+                x: json.targets[target].x,
+                y: json.targets[target].y,
+                size: json.targets[target].size,
+                direction: json.targets[target].direction,
+                draggable: json.targets[target].draggable,
+                rotationStyle: json.targets[target].rotationStyle
+            }
+
+            // loop over the variables
+            for (const variable in target.variables) {
+                newtarget.variables[variable] = {
+                    name: target.variables[variable].name,
+                    value: String(target.variables[variable].value)
+                }
+            }
+
+            // loop over the lists
+            for (const list in target.lists) {
+                newtarget.lists[list] = {
+                    name: target.lists[list].name,
+                    value: target.lists[list].value.map(x => String(x))
+                }
+            }
+
+            // loop over the broadcasts
+            for (const broadcast in target.broadcasts) {
+                newtarget.broadcasts[broadcast] = target.broadcasts[broadcast];
+            }
+
+            // loop over the customVars
+            // TODO: make this :skullington:
+
+            // loop over the comments
+            for (const comment in target.comments) {
+                newtarget.comments[comment] = {
+                    blockId: target.comments[comment].blockId,
+                    x: target.comments[comment].x,
+                    y: target.comments[comment].y,
+                    width: target.comments[comment].width,
+                    height: target.comments[comment].height,
+                    minimized: target.comments[comment].minimized,
+                    text: target.comments[comment].text
+                }
+            }
+
+            // loop over the costumes
+            for (const costume in target.costumes) {
+                newtarget.costumes[costume] = {
+                    assetId: target.costumes[costume].assetId,
+                    name: target.costumes[costume].name,
+                    bitmapResolution: target.costumes[costume].bitmapResolution,
+                    rotationCenterX: target.costumes[costume].rotationCenterX,
+                    rotationCenterY: target.costumes[costume].rotationCenterY
+                }
+            }
+
+            // loop over the sounds
+            for (const sound in target.sounds) {
+                newtarget.sounds[sound] = {
+                    assetId: target.sounds[sound].assetId,
+                    name: target.sounds[sound].name,
+                    dataFormat: target.sounds[sound].format,
+                    rate: target.sounds[sound].rate,
+                    sampleCount: target.sounds[sound].sampleCount,
+                    md5ext: target.sounds[sound].md5ext
+                }
+            }
+
+            console.log(newtarget);
+
+            newjson.targets.push(newtarget);
+        }
+
+        // loop over the monitors
+        for (const monitor in json.monitors) {
+            newjson.monitors.push({
+                id: json.monitors[monitor].id,
+                mode: json.monitors[monitor].mode,
+                opcode: json.monitors[monitor].opcode,
+                params: json.monitors[monitor].params,
+                spriteName: String(json.monitors[monitor].spriteName),
+                value: String(json.monitors[monitor].value),
+                width: json.monitors[monitor].width,
+                height: json.monitors[monitor].height,
+                x: json.monitors[monitor].x,
+                y: json.monitors[monitor].y,
+                visible: json.monitors[monitor].visible,
+                sliderMin: json.monitors[monitor].sliderMin,
+                sliderMax: json.monitors[monitor].sliderMax,
+                isDiscrete: json.monitors[monitor].isDiscrete,
+            });
+        }
+
+        // loop over the extensionData
+        for (const extensionData in json.extensionData) {
+            newjson.extensionData[extensionData] = this.castToString(json.extensionData[extensionData]);
+        }
+
+        // loop over the extensionURLs
+        for (const extensionURL in json.extensionURLs) {
+            newjson.extensionURLs[extensionURL] = json.extensionURLs[extensionURL];
+        }
+
+        // encode the json
+        let buffer = schema.encode(newjson).finish();
+
+        return buffer;
+    }
+
+    /**
+     * Convert a project protobuf to json format
+     * @param {Buffer} buffer - The project protobuf
+     * @returns {Object} - The project json
+     */
+    protobufToProjectJson(buffer) {
+        // get the protobuf schema
+        let file = protobuf.loadSync("/home/ianyourgod/Documents/code/projects/penguinmod/PenguinMod-BackendApi/api/v1/db/protobufs/project.proto");
+        const schema = file.lookupType("Project");
+
+        // decode the buffer
+        let json = JSON.parse(schema.decode(buffer));
+
+        return json;
+    }
+    
+    /**
+     * Cast a value to a string
+     * @param {any} value - The value to cast 
+     * @returns {string} - The value as a string
+     */
+    castToString(value) {
+        if (typeof value !== "object")
+        return String(value);
+
+        return JSON.stringify(value);
+    }
+
+    async setLegalExtensions(extensions) {
+        await this.illegalList.updateOne({id: "legalExtensions"}, {$set: {items: extensions}});
+    }
+
+    async addLegalExtension(extension) {
+        await this.illegalList.updateOne({id: "legalExtensions"}, {$push: {items: extension}});
+    }
+
+    async removeLegalExtension(extension) {
+        await this.illegalList.updateOne({id: "legalExtensions"}, {$pull: {items: extension}});
+    }
+
+    async checkExtensionIsAllowed(extension) {
+        if (!extension) return true;
+
+        const extensionsConfig = await this.illegalList.findOne({id: "legalExtensions"});
+        const isIncluded = extensionsConfig.items.includes(extension);
+
+        return isIncluded;
+    };
 }
 
 module.exports = UserManager;

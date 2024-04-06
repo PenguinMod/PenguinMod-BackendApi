@@ -21,7 +21,7 @@ message monitor {
 }
 
 message Project {
-    repeated Sprite sprites = 1;
+    repeated Sprite.Sprite targets = 1;
     repeated monitor monitors = 2;
     map<string, string> extensionData = 3; // just store a string because the ext can give arbitrary data
     repeated string extensions = 4;

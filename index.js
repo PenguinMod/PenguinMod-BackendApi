@@ -8,7 +8,7 @@ const cast = require("./utils/Cast");
 const path = require('path');
 const functions = require('./utils/functions');
 const multer = require('multer');
-const protobuf = require('protobufjs');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -44,7 +44,11 @@ const Cast = new cast();
 const UserManager = new um();
 
 (async () => {
+    let file = JSON.parse(fs.readFileSync("pretty.json"));
+
     await UserManager.init(MAXVIEWS, VIEWRESETRATE);
+
+    UserManager.projectJsonToProtobuf(file);
 
     app.get("/test", (req, res) => {
         res.sendFile(path.join(__dirname, 'test.html'));
@@ -59,7 +63,7 @@ const UserManager = new um();
         env: process.env,
         upload: upload,
         MAXASSETS: MAXASSETS,
-        projectProto: protobuf.loadSync('api/v1/db/protobufs/project.proto')
+        allowedSources: process.env.AllowedSources.split(",") || ["https://extensions.penguinmod.com", "https://extensions.turbowarp.org"],
     });
 
     app.listen(PORT, () => {

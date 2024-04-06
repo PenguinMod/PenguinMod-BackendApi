@@ -20,7 +20,51 @@ module.exports = (app, utils) => {
         }
 
         // the jsonfile is in protobuf format so convert it to json
-        const jsonFile = utils.projectProto.decode(req.files.jsonFile[0]).toJSON()
+        const protobufFile = req.files.jsonFile[0];
+        const jsonFile = utils.UserManager.protobufToProjectJson(protobufFile);
+
+        // check the extensions
+        const userRank = await utils.UserManager.getRank(packet.username);
+        if (userRank < 1) {
+            const isUrlExtension = (extId) => {
+                if (!jsonFile.extensionURLs) return false;
+                return (extId in jsonFile.extensionURLs);
+            };
+
+            for (let extension of jsonFile.extensions) {
+                if (isUrlExtension(extension)) { // url extension names can be faked (if not trusted source)
+                    for (let source of utils.allowedSources) {
+                        if (!projectCodeJSON.extensionURLs[extension].startsWith(source)) {
+                            return utils.error(res, 400, "Extension not allowed");
+                        }
+                    }
+                }
+                
+                if (!await utils.UserManager.checkExtensionIsAllowed(extension)) {
+                    return utils.error(res, 400, "Extension not allowed");
+                }
+            }
+        }
+
+        if (!packet.title || typeof packet.title !== "string") {
+            return utils.error(res, 400, "Invalid title");
+        }
+
+        if (!packet.instructions || typeof packet.instructions !== "string") {
+            return utils.error(res, 400, "Invalid instructions");
+        }
+
+        if (!packet.notes || typeof packet.notes !== "string") {
+            return utils.error(res, 400, "Invalid notes");
+        }
+
+        if (!packet.remix || typeof packet.remix !== "number") {
+            return utils.error(res, 400, "Invalid remix");
+        }
+
+        if (!packet.rating || typeof packet.rating !== "string") {
+            return utils.error(res, 400, "Invalid rating");
+        }
 
         const thumbnail = req.files.thumbnail[0];
 
@@ -35,7 +79,15 @@ module.exports = (app, utils) => {
 
         // upload the project
         utils.UserManager.publishProject(
-            jsonFile,
+            protobufFile,
+            assets,
+            await utils.UserManager.getIDByUsername(packet.username),
+            packet.title,
+            thumbnail,
+            packet.instructions,
+            packet.notes,
+            packet.remix,
+            packet.rating
         );
     });
 }
