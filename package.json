@@ -22,6 +22,7 @@
   "scripts": {
     "dev": "nodemon index.js",
     "reset": "node reset.js",
-    "test": "node api/v1/db/UMTests.js"
+    "test": "node api/v1/db/UMTests.js",
+    "start": "node index.js"
   }
 }

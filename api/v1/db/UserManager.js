@@ -5,7 +5,6 @@ const { MongoClient } = require('mongodb');
 const ULID = require('ulid');
 const Minio = require('minio');
 const protobuf = require('protobufjs');
-const fs = require("fs");
 var prompt = require('prompt-sync')();
 
 // scratch oauth redir: http://localhost:8080/api/v1/users/loginlocal
@@ -1405,7 +1404,7 @@ class UserManager {
      */
     projectJsonToProtobuf(json) {
         // get the protobuf schema
-        let file = protobuf.loadSync("/home/ianyourgod/Documents/code/projects/penguinmod/PenguinMod-BackendApi/api/v1/db/protobufs/project.proto");
+        let file = protobuf.loadSync("./api/v1/db/protobufs/project.proto");
         const schema = file.lookupType("Project");
 
         let newjson = {
@@ -1433,6 +1432,7 @@ class UserManager {
                 lists: {},
                 broadcasts: {},
                 customVars: [],
+                blocks: {},
                 comments: {},
                 currentCostume: json.targets[target].currentCostume,
                 costumes: [],
@@ -1444,66 +1444,98 @@ class UserManager {
                 size: json.targets[target].size,
                 direction: json.targets[target].direction,
                 draggable: json.targets[target].draggable,
-                rotationStyle: json.targets[target].rotationStyle
+                rotationStyle: json.targets[target].rotationStyle,
+                tempo: json.targets[target].tempo,
+                videoTransparency: json.targets[target].videoTransparency,
+                videoState: json.targets[target].videoState,
+                textToSpeechLanguage: json.targets[target].textToSpeechLanguage,
+                visible: json.targets[target].visible,
             }
 
             // loop over the variables
-            for (const variable in target.variables) {
+            for (const variable in json.targets[target].variables) {
                 newtarget.variables[variable] = {
-                    name: target.variables[variable].name,
-                    value: String(target.variables[variable].value)
+                    name: json.targets[target].variables[variable][0],
+                    value: this.castToString(json.targets[target].variables[variable][1])
                 }
             }
 
             // loop over the lists
-            for (const list in target.lists) {
+            for (const list in json.targets[target].lists) {
                 newtarget.lists[list] = {
-                    name: target.lists[list].name,
-                    value: target.lists[list].value.map(x => String(x))
+                    name: json.targets[target].lists[list].name,
+                    value: json.targets[target].lists[list].value.map(x => this.castToString(x))
                 }
             }
 
             // loop over the broadcasts
-            for (const broadcast in target.broadcasts) {
-                newtarget.broadcasts[broadcast] = target.broadcasts[broadcast];
+            for (const broadcast in json.targets[target].broadcasts) {
+                newtarget.broadcasts[broadcast] = json.targets[target].broadcasts[broadcast];
             }
 
             // loop over the customVars
             // TODO: make this :skullington:
 
+            // loop over the blocks
+            for (const block in json.targets[target].blocks) {
+                newtarget.blocks[block] = {
+                    opcode: json.targets[target].blocks[block].opcode,
+                    next: json.targets[target].blocks[block].next,
+                    parent: json.targets[target].blocks[block].parent,
+                    inputs: {},
+                    fields: {},
+                    shadow: json.targets[target].blocks[block].shadow,
+                    topLevel: json.targets[target].blocks[block].topLevel,
+                    x: json.targets[target].blocks[block].x,
+                    y: json.targets[target].blocks[block].y,
+                }
+
+                // loop over the inputs
+                for (const input in json.targets[target].blocks[block].inputs) {
+                    newtarget.blocks[block].inputs[input] = JSON.stringify(json.targets[target].blocks[block].inputs[input]);
+                }
+
+                // loop over the fields
+                for (const field in json.targets[target].blocks[block].fields) {
+                    newtarget.blocks[block].fields[field] = JSON.stringify(json.targets[target].blocks[block].fields[field]);
+                }
+            }
+
             // loop over the comments
-            for (const comment in target.comments) {
+            for (const comment in json.targets[target].comments) {
                 newtarget.comments[comment] = {
-                    blockId: target.comments[comment].blockId,
-                    x: target.comments[comment].x,
-                    y: target.comments[comment].y,
-                    width: target.comments[comment].width,
-                    height: target.comments[comment].height,
-                    minimized: target.comments[comment].minimized,
-                    text: target.comments[comment].text
+                    blockId: json.targets[target].comments[comment].blockId,
+                    x: json.targets[target].comments[comment].x,
+                    y: json.targets[target].comments[comment].y,
+                    width: json.targets[target].comments[comment].width,
+                    height: json.targets[target].comments[comment].height,
+                    minimized: json.targets[target].comments[comment].minimized,
+                    text: json.targets[target].comments[comment].text
                 }
             }
 
             // loop over the costumes
-            for (const costume in target.costumes) {
+            for (const costume in json.targets[target].costumes) {
                 newtarget.costumes[costume] = {
-                    assetId: target.costumes[costume].assetId,
-                    name: target.costumes[costume].name,
-                    bitmapResolution: target.costumes[costume].bitmapResolution,
-                    rotationCenterX: target.costumes[costume].rotationCenterX,
-                    rotationCenterY: target.costumes[costume].rotationCenterY
+                    assetId: json.targets[target].costumes[costume].assetId,
+                    name: json.targets[target].costumes[costume].name,
+                    bitmapResolution: json.targets[target].costumes[costume].bitmapResolution,
+                    rotationCenterX: json.targets[target].costumes[costume].rotationCenterX,
+                    rotationCenterY: json.targets[target].costumes[costume].rotationCenterY,
+                    md5ext: json.targets[target].costumes[costume].md5ext,
+                    dataFormat: json.targets[target].costumes[costume].dataFormat,
                 }
             }
 
             // loop over the sounds
-            for (const sound in target.sounds) {
+            for (const sound in json.targets[target].sounds) {
                 newtarget.sounds[sound] = {
-                    assetId: target.sounds[sound].assetId,
-                    name: target.sounds[sound].name,
-                    dataFormat: target.sounds[sound].format,
-                    rate: target.sounds[sound].rate,
-                    sampleCount: target.sounds[sound].sampleCount,
-                    md5ext: target.sounds[sound].md5ext
+                    assetId: json.targets[target].sounds[sound].assetId,
+                    name: json.targets[target].sounds[sound].name,
+                    dataFormat: json.targets[target].sounds[sound].dataFormat,
+                    rate: json.targets[target].sounds[sound].rate,
+                    sampleCount: json.targets[target].sounds[sound].sampleCount,
+                    md5ext: json.targets[target].sounds[sound].md5ext
                 }
             }
 
@@ -1517,7 +1549,7 @@ class UserManager {
                 mode: json.monitors[monitor].mode,
                 opcode: json.monitors[monitor].opcode,
                 params: json.monitors[monitor].params,
-                spriteName: String(json.monitors[monitor].spriteName),
+                spriteName: json.monitors[monitor].spriteName,
                 value: String(json.monitors[monitor].value),
                 width: json.monitors[monitor].width,
                 height: json.monitors[monitor].height,
@@ -1557,9 +1589,131 @@ class UserManager {
         const schema = file.lookupType("Project");
 
         // decode the buffer
-        let json = schema.toObject(schema.decode(buffer));
+        const json = schema.toObject(schema.decode(buffer));
 
-        return json;
+        const newJson = {
+            targets: [],
+            monitors: [],
+            extensionData: {},
+            extensions: json.extensions,
+            extensionURLs: {},
+            meta: {
+                semver: json.metaSemver,
+                vm: json.metaVm,
+                agent: json.metaAgent || ""
+            }
+        };
+
+        for (const target of json.targets) {
+            let newTarget = {
+                isStage: target.isStage,
+                name: target.name,
+                variables: {},
+                lists: {},
+                broadcasts: {},
+                customVars: [],
+                blocks: {},
+                comments: {},
+                currentCostume: target.currentCostume,
+                costumes: [],
+                sounds: [],
+                id: target.id,
+                volume: target.volume,
+                layerOrder: target.layerOrder,
+                tempo: target.tempo,
+                videoTransparency: target.videoTransparency,
+                videoState: target.videoState,
+                textToSpeechLanguage: target.textToSpeechLanguage || null,
+                visible: target.visible,
+                x: target.x,
+                y: target.y,
+                size: target.size,
+                direction: target.direction,
+                draggable: target.draggable,
+                rotationStyle: target.rotationStyle
+            };
+
+            for (const variable in target.variables) {
+                newTarget.variables[variable] = [target.variables[variable].name, target.variables[variable].value];
+            }
+
+            for (const list in target.lists) {
+                newTarget.lists[list] = [target.lists[list].name, target.lists[list].value];
+            }
+
+            for (const broadcast in target.broadcasts) {
+                newTarget.broadcasts[broadcast] = target.broadcasts[broadcast];
+            }
+
+            // customvars
+
+            for (const block in target.blocks) {
+                newTarget.blocks[block] = {
+                    opcode: target.blocks[block].opcode,
+                    next: target.blocks[block].next || null,
+                    parent: target.blocks[block].parent || null,
+                    inputs: {},
+                    fields: {},
+                    shadow: target.blocks[block].shadow,
+                    topLevel: target.blocks[block].topLevel,
+                    x: target.blocks[block].x,
+                    y: target.blocks[block].y
+                }
+
+                for (const input in target.blocks[block].inputs) {
+                    newTarget.blocks[block].inputs[input] = JSON.parse(target.blocks[block].inputs[input]);
+                }
+
+                for (const field in target.blocks[block].fields) {
+                    newTarget.blocks[block].fields[field] = JSON.parse(target.blocks[block].fields[field]);
+                }
+            }
+
+            for (const comment in target.comments) {
+                newTarget.comments[comment] = target.comments[comment];
+            }
+
+            for (const costume in target.costumes) {
+                newTarget.costumes[costume] = target.costumes[costume];
+            }
+
+            for (const sound in target.sounds) {
+                newTarget.sounds[sound] = target.sounds[sound];
+            }
+
+            newJson.targets.push(newTarget);
+        }
+
+        for (const monitor in json.monitors) {
+            let newMonitor = {
+                id: json.monitors[monitor].id,
+                mode: json.monitors[monitor].mode,
+                opcode: json.monitors[monitor].opcode,
+                params: json.monitors[monitor].params,
+                spriteName: json.monitors[monitor].spriteName || null,
+                value: json.monitors[monitor].value,
+                width: json.monitors[monitor].width,
+                height: json.monitors[monitor].height,
+                x: json.monitors[monitor].x,
+                y: json.monitors[monitor].y,
+                visible: json.monitors[monitor].visible,
+                sliderMin: json.monitors[monitor].sliderMin,
+                sliderMax: json.monitors[monitor].sliderMax,
+                isDiscrete: json.monitors[monitor].isDiscrete
+            }
+
+            newJson.monitors.push(newMonitor);
+        }
+
+        for (const extensionData in json.extensionData) {
+            newJson.extensionData[extensionData] = JSON.parse(json.extensionData[extensionData]);
+        }
+
+        for (const extensionURL in json.extensionURLs) {
+            newJson.extensionURLs[extensionURL] = json.extensionURLs[extensionURL];
+        }
+
+        return newJson;
     }
     
     /**
@@ -1568,8 +1722,9 @@ class UserManager {
      * @returns {string} - The value as a string
      */
     castToString(value) {
-        if (typeof value !== "object")
-        return String(value);
+        if (typeof value !== "object") {
+            return String(value);
+        }
 
         return JSON.stringify(value);
     }
