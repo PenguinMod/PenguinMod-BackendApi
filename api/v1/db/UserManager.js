@@ -112,7 +112,7 @@ class UserManager {
                     }
                 });
             });
-        });
+        }.bind(this));
     }
 
     /**
