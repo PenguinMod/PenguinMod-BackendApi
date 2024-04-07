@@ -1,26 +1,27 @@
+const fs = require('fs');
+
 module.exports = (app, utils) => {
     app.post('/api/v1/projects/uploadProject', utils.upload.fields([
         { name: 'jsonFile', maxCount: 1 },
         { name: 'thumbnail', maxCount: 1 },
         // assets
-        { name: 'assets', maxCount: utils.MAXASSETS }
+        { name: 'assets' }
     ]), async (req, res) => {
-        const packet = req.body;
+        const packet = req.query; // because body is used for the files i think
 
-        if (!await utils.UserManager.loginWithToken(packet.username, packet.password)) {
+        if (!await utils.UserManager.loginWithToken(packet.username, packet.token)) {
             return utils.error(res, 401, "Invalid credentials");
         }
 
-        if (req.files.assets.length > utils.MAXASSETS) {
-            return utils.error(res, 400, "Too many assets");
+        // make sure its been 8 minutes since last upload
+        if (await utils.UserManager.getLastUpload(packet.username) > Date.now() - utils.uploadCooldown) {
+            return utils.error(res, 400, "Uploaded in the last 8 minutes");
         }
 
-        if (req.files.assets.length !== packet.assets.length) {
-            return utils.error(res, 400, "Assets count mismatch");
-        }
+        utils.UserManager.setLastUpload(packet.username, Date.now());
 
         // the jsonfile is in protobuf format so convert it to json
-        const protobufFile = req.files.jsonFile[0];
+        const protobufFile = fs.readFileSync(req.files.jsonFile[0].path);
         const jsonFile = utils.UserManager.protobufToProjectJson(protobufFile);
 
         // check the extensions
@@ -31,49 +32,51 @@ module.exports = (app, utils) => {
                 return (extId in jsonFile.extensionURLs);
             };
 
-            for (let extension of jsonFile.extensions) {
-                if (isUrlExtension(extension)) { // url extension names can be faked (if not trusted source)
-                    for (let source of utils.allowedSources) {
-                        if (!projectCodeJSON.extensionURLs[extension].startsWith(source)) {
-                            return utils.error(res, 400, "Extension not allowed");
+            if (jsonFile.extensions) {
+                for (let extension of jsonFile.extensions) {
+                    if (isUrlExtension(extension)) { // url extension names can be faked (if not trusted source)
+                        for (let source of utils.allowedSources) {
+                            if (!projectCodeJSON.extensionURLs[extension].startsWith(source)) {
+                                return utils.error(res, 400, "Extension not allowed");
+                            }
                         }
                     }
-                }
-                
-                if (!await utils.UserManager.checkExtensionIsAllowed(extension)) {
-                    return utils.error(res, 400, "Extension not allowed");
+                    
+                    if (!await utils.UserManager.checkExtensionIsAllowed(extension)) {
+                        return utils.error(res, 400, "Extension not allowed");
+                    }
                 }
             }
         }
 
         if (!packet.title || typeof packet.title !== "string") {
-            return utils.error(res, 400, "Invalid title");
+            packet.title = "";
         }
 
         if (!packet.instructions || typeof packet.instructions !== "string") {
-            return utils.error(res, 400, "Invalid instructions");
+            packet.instructions = "";
         }
 
         if (!packet.notes || typeof packet.notes !== "string") {
-            return utils.error(res, 400, "Invalid notes");
+            packet.notes = "";
         }
 
         if (!packet.remix || typeof packet.remix !== "number") {
-            return utils.error(res, 400, "Invalid remix");
+            packet.remix = 0;
         }
 
         if (!packet.rating || typeof packet.rating !== "string") {
-            return utils.error(res, 400, "Invalid rating");
+            packet.rating = "";
         }
 
-        const thumbnail = req.files.thumbnail[0];
+        const thumbnail = fs.readFileSync(req.files.thumbnail[0].path);
 
         // get the assets and their ids
         const assets = [];
 
         for (let i = 0; i < req.files.assets.length; i++) {
-            const asset = req.files.assets[i];
-            const id = packet.assets[i];
+            const asset = fs.readFileSync(req.files.assets[i].path);
+            const id = req.files.assets[i].filename;
             assets.push({id: id, buffer: asset});
         }
 
@@ -89,5 +92,11 @@ module.exports = (app, utils) => {
             packet.remix,
             packet.rating
         );
+
+        await utils.unlinkAsync(req.files.jsonFile[0].path);
+        await utils.unlinkAsync(req.files.thumbnail[0].path);
+        for (let asset of req.files.assets) {
+            await utils.unlinkAsync(asset.path);
+        }
     });
 }

@@ -12,6 +12,13 @@
 
     <a href="/api/v1/users/oauthlocal?method=scratch">Login with Scratch</a>
 
+    <div>
+        <input type="file" id="assetsInput[]" multiple/> assets <br>
+        <input type="file" id="jsonInput"/> json <br>
+        <input type="file" id="thumbnailInput"/> thumbnail <br>
+        <button onclick="uploadFileButton()">Upload</button>
+    </div>
+
     <script>
         function createAccount() {
             var username = document.getElementById('username').value;
@@ -37,6 +44,55 @@
                 })
             })();
         }
+
+        function uploadFileButton() {
+            let json = document.getElementById("jsonInput").files[0];
+            let thumbnail = document.getElementById("thumbnailInput").files[0];
+            let assets = document.getElementById("assetsInput[]").files;
+
+            if (json && thumbnail && assets) {
+                uploadFile([json, thumbnail, ...assets]);
+            } else {
+                alert("Please select all files");
+            }
+        }
+
+        const uploadFile = async (files) => {
+            let token = await fetch("/api/v1/users/createAccount", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        username: "test",
+                        password: "password"
+                    })
+                })
+                .then(res => res.json())
+                .then(res => res.token);
+
+            console.log("Uploading file...");
+            const API_ENDPOINT = `/api/v1/projects/uploadProject?username=test&token=${token}`;
+            const request = new XMLHttpRequest();
+            const formData = new FormData();
+
+            request.open("POST", API_ENDPOINT, true);
+            request.onreadystatechange = () => {
+                if (request.readyState === 4 && request.status === 200) {
+                    console.log(request.responseText);
+                }
+            };
+            
+            for (let i = 0; i < files.length; i++) {
+                formData.append("assets", files[i+2])
+            }
+
+            formData.append("jsonFile", files[0]);
+            formData.append("thumbnail", files[1]);
+
+            request.send(formData);
+        };
+
     </script>
 </body>
 </html>

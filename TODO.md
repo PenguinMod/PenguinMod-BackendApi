@@ -3,12 +3,14 @@
 ## API
 
 - [x] Endpoints should be seperate files
-- [ ] Literally just remake all of the endpoints lmao
-- [ ] Use MongoDB Database
+- [ ] Literally just remake all of the endpoints lamo
+- [x] Use MongoDB Database
   - [x] Make a login system
   - [x] Projects stuff
   - [x] Reports stuff
-- [ ] OAuth2
+- [x] Use minio to store project shit (json and assets)
+  - [x] Use protobufs to store project jsons
+- [ ] OAuth2 (Someone please do this😭)
   - [ ] Scratch Auth
   - [ ] Github Auth?
   - [ ] Google Auth???
@@ -16,7 +18,7 @@
 
 ## Projects
 
-- [ ] Store project assets seperately
+- [x] Store project assets seperately
 - [ ] Moderator removed projects should be "under review" (only accessible by ID) unless specified to fully delete
 
 ## Studios
@@ -46,4 +48,4 @@
 ## Ranking
 
 - [x] Rank users based on if they have more than 3 projects and signed in 5 days ago
-- [ ] Only ranked users should be able to use Custom Extensions, Files, iframe, HTTP, Website Requests, Network, etc.
+- [x] Only ranked users should be able to use Custom Extensions, Files, iframe, HTTP, Website Requests, Network, etc.

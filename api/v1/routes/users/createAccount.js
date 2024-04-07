@@ -24,6 +24,7 @@ module.exports = (app, utils) => {
         }
 
         let token = await utils.UserManager.createAccount(packet.username, packet.password);
+
         res.status(200);
         res.header("Content-Type", 'application/json');
         res.json({ "token": token });

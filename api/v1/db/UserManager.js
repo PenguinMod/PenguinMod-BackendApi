@@ -403,6 +403,28 @@ class UserManager {
     }
 
     /**
+     * Get the last upload time of a user
+     * @param {string} username - username of the user
+     * @returns {Promise<number>} - time of the last upload
+     * @async
+     */
+    async getLastUpload(username) {
+        const result = await this.users.findOne({ username: username });
+
+        return result.lastUpload;
+    }
+
+    /**
+     * Set the last upload time of a user
+     * @param {string} username - username of the user
+     * @param {number} lastUpload - time of the last upload
+     * @async
+     */
+    async setLastUpload(username, lastUpload) {
+        await this.users.updateOne({ username: username }, { $set: { lastUpload: lastUpload } });
+    }
+
+    /**
      * Get the badges of a user
      * @param {string} username - username of the user 
      * @returns {Promise<Array<string>>} - array of badges the user has
@@ -727,7 +749,7 @@ class UserManager {
         // minio bucket shit
         await this.minioClient.putObject("projects", id, projectBuffer);
         await this.minioClient.putObject("project-thumbnails", id, imageBuffer);
-        for (const asset in assetBuffers) {
+        for (const asset of assetBuffers) {
             await this.minioClient.putObject("project-assets", `${id}_${asset.id}`, asset.buffer);
         }
     }
@@ -779,7 +801,7 @@ class UserManager {
      * @async
      */
     async getProjects(page, pageSize) {
-        const result = await this.projects.aggregate([
+        const _result = await this.projects.aggregate([
             {
                 $facet: {
                     metadata: [{ $count: "count" }],
@@ -789,6 +811,8 @@ class UserManager {
         ])
         .sort({ date: -1 })
         .toArray();
+
+        const result = _result.map(x => {let v = x.data[0];delete v._id;return v;});
 
         return result;
     }
@@ -830,7 +854,7 @@ class UserManager {
      * @async
      */
     async getProjectFile(id) {
-        const file = (await this.readObjectFromBucket("projects", id)).toString();
+        const file = await this.readObjectFromBucket("projects", id);
 
         return file;
     }
@@ -841,15 +865,39 @@ class UserManager {
      * @returns {Promise<Buffer>} - The project image file.
      */
     async getProjectImage(id) {
-        const file = (await this.readObjectFromBucket("project-thumbnails", id)).toString();
+        const file = await this.readObjectFromBucket("project-thumbnails", id);
 
         return file;
+    }
+
+    async getProjectAssets(id) {
+        const stream = await this.minioClient.listObjects("project-assets", id);
+
+        // deal with the object stream :sob:
+
+        const chunks = [];
+
+        // :canny:
+        const items = await new Promise((resolve, reject) => {
+            stream.on("data", (chunk) => chunks.push(chunk.name));
+            stream.on("end", () => resolve(chunks));
+            stream.on("error", (err) => reject(err));
+        });
+
+        const result = [];
+
+        for (const item of items) {
+            const file = await this.readObjectFromBucket("project-assets", item);
+            result.push({id: item.split("_")[1], buffer: file});
+        }
+
+        return result;
     }
 
     /**
      * Get project metadata for a specified project
      * @param {number} id - ID of the project wanted.
-     * @returns {Promise} - The project data.
+     * @returns {Promise<Object>} - The project data.
      * @async
      */
     async getProjectMetadata(id) {
@@ -1375,8 +1423,6 @@ class UserManager {
         newjson.metaVm = json.meta.vm;
         newjson.metaAgent = json.meta.agent;
 
-        console.log(json);
-
         for (const target in json.targets) {
 
             let newtarget = {
@@ -1461,8 +1507,6 @@ class UserManager {
                 }
             }
 
-            console.log(newtarget);
-
             newjson.targets.push(newtarget);
         }
 
@@ -1513,7 +1557,7 @@ class UserManager {
         const schema = file.lookupType("Project");
 
         // decode the buffer
-        let json = JSON.parse(schema.decode(buffer));
+        let json = schema.toObject(schema.decode(buffer));
 
         return json;
     }

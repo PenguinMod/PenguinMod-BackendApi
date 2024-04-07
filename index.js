@@ -6,15 +6,35 @@ const endpointLoader = require("./api/endpointLoader");
 const um = require('./api/v1/db/UserManager');
 const cast = require("./utils/Cast");
 const path = require('path');
-const functions = require('./utils/functions');
 const multer = require('multer');
 const fs = require('fs');
+const requestIp = require('request-ip');
+const { promisify } = require('util');
+
+function escapeXML(unsafe) {
+    unsafe = String(unsafe);
+    return unsafe.replace(/[<>&'"\n]/g, c => {
+        switch (c) {
+            case '<': return '&lt;';
+            case '>': return '&gt;';
+            case '&': return '&amp;';
+            case '\'': return '&apos;';
+            case '"': return '&quot;';
+            case '\n': return '&#10;'
+        }
+    });
+};
+
+function error(res, code, error) {
+    res.status(code);
+    res.header("Content-Type", 'application/json');
+    res.json({ "error": error });
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const MAXVIEWS = process.env.MaxViews || 10000; // it will take up to 10000 views then reset after
 const VIEWRESETRATE = process.env.ViewResetRate || 1000 * 60 * 60; // reset every hour
-const MAXASSETS = process.env.MaxAssets || 40;
 const upload = multer({ dest: 'tmp/uploads/' });
 
 app.use(cors({
@@ -39,16 +59,13 @@ app.use(rateLimit({
     standardHeaders: 'draft-7',
     legacyHeaders: false,
 }));
+app.use(requestIp.mw());
 
 const Cast = new cast();
 const UserManager = new um();
 
 (async () => {
-    let file = JSON.parse(fs.readFileSync("pretty.json"));
-
     await UserManager.init(MAXVIEWS, VIEWRESETRATE);
-
-    UserManager.projectJsonToProtobuf(file);
 
     app.get("/test", (req, res) => {
         res.sendFile(path.join(__dirname, 'test.html'));
@@ -58,12 +75,13 @@ const UserManager = new um();
         UserManager: UserManager,
         homeDir: path.join(__dirname, "./"),
         Cast: Cast,
-        escapeXML: functions.escapeXML,
-        error: functions.error,
+        escapeXML: escapeXML,
+        error: error,
         env: process.env,
         upload: upload,
-        MAXASSETS: MAXASSETS,
-        allowedSources: process.env.AllowedSources.split(",") || ["https://extensions.penguinmod.com", "https://extensions.turbowarp.org"],
+        allowedSources: ["https://extensions.penguinmod.com", "https://extensions.turbowarp.org"],
+        uploadCooldown: process.env.uploadCooldown || 1000 * 60 * 8,
+        unlinkAsync: promisify(fs.unlink)
     });
 
     app.listen(PORT, () => {
