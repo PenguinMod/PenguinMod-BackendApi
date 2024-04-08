@@ -28,17 +28,24 @@ Please report any security vulnerabilities using GitHub's security tab on the re
 5. Add a `.env` file with the following:
 
     ```env
+    # General
     PORT=8080
 
+    # Oauth
     ScratchOauth2ClientID=yourclientid
     ScratchOauth2ClientSecret=yourclientsecret
+    GithubOauthId=yourid
+    GithubOauthSecret=yoursecret
 
+    # Minio
     MinioClientID=yourclientid
     MinioClientSecret=yourclientsecret
 
+    # Bot
     MaxViews=howmanyviewsbeforebotcheckresets
     ViewResetRate=timebeforebotcheckresets
 
+    # Others
     MaxAssets=maxassetsyouwantinaproject
     ```
 
