@@ -41,9 +41,9 @@ Please report any security vulnerabilities using GitHub's security tab on the re
     MinioClientID=yourclientid
     MinioClientSecret=yourclientsecret
 
-    # Bot
-    MaxViews=howmanyviewsbeforebotcheckresets
-    ViewResetRate=timebeforebotcheckresets
+    # Project Views
+    MaxViews=howmanyviewsbeforeviewcheckresets
+    ViewResetRate=timebeforeviewcheckresets
 
     # Others
     MaxAssets=maxassetsyouwantinaproject
