@@ -11,7 +11,7 @@
 - [x] Use minio to store project shit (json and assets)
   - [x] Use protobufs to store project jsons
 - [ ] OAuth2 (Someone please do this😭)
-  - [ ] Scratch Auth
+  - [x] Scratch Auth
   - [ ] Github Auth?
   - [ ] Google Auth???
   - [ ] Be able to connect an account with oauth (e.g. you want to sign in with a password and oauth)
