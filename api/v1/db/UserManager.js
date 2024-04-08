@@ -1749,11 +1749,6 @@ class UserManager {
 
         return isIncluded;
     };
-
-    async getProtobufSchema() {
-        
-    }
-
 }
 
 module.exports = UserManager;
