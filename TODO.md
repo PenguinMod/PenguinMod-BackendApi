@@ -12,8 +12,8 @@
   - [x] Use protobufs to store project jsons
 - [ ] OAuth2 (Someone please do this😭)
   - [ ] Scratch Auth
-  - [ ] Github Auth?
-  - [ ] Google Auth???
+  - [x] Github Auth?
+  - [ ] Google Auth??? (why this shit so difficult)
   - [ ] Be able to connect an account with oauth (e.g. you want to sign in with a password and oauth)
 
 ## Projects
