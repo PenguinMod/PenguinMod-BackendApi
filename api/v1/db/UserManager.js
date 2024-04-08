@@ -134,7 +134,7 @@ class UserManager {
         await this.messages.deleteMany({});
         await this.oauthStates.deleteMany({});
         await this.illegalList.deleteMany({});
-        this.illegalList.insertMany([
+        await this.illegalList.insertMany([
             { id: "illegalWords", items: [] },
             { id: "illegalWebsites", items: [] },
             { id: "spacedOutWordsOnly", items: [] },
@@ -1749,11 +1749,6 @@ class UserManager {
 
         return isIncluded;
     };
-
-    async getProtobufSchema() {
-        
-    }
-
 }
 
 module.exports = UserManager;
