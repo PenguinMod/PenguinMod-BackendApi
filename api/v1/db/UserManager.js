@@ -1463,8 +1463,8 @@ class UserManager {
             // loop over the lists
             for (const list in json.targets[target].lists) {
                 newtarget.lists[list] = {
-                    name: json.targets[target].lists[list].name,
-                    value: json.targets[target].lists[list].value.map(x => this.castToString(x))
+                    name: list,
+                    value: json.targets[target].lists[list].map(x => this.castToString(x))
                 }
             }
 
@@ -1585,7 +1585,7 @@ class UserManager {
      */
     protobufToProjectJson(buffer) {
         // get the protobuf schema
-        let file = protobuf.loadSync("/home/ianyourgod/Documents/code/projects/penguinmod/PenguinMod-BackendApi/api/v1/db/protobufs/project.proto");
+        let file = protobuf.loadSync("api/v1/db/protobufs/project.proto");
         const schema = file.lookupType("Project");
 
         // decode the buffer
@@ -1749,6 +1749,11 @@ class UserManager {
 
         return isIncluded;
     };
+
+    async getProtobufSchema() {
+        
+    }
+
 }
 
 module.exports = UserManager;

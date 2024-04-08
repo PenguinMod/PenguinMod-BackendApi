@@ -1,5 +1,5 @@
-package Sprite;
 syntax = "proto3";
+package Sprite;
 
 message _varValue {
     string name = 1;

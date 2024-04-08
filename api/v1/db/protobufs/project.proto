@@ -1,5 +1,5 @@
-package project;
 syntax = "proto3";
+package project;
 
 import "sprite.proto";
 

@@ -81,7 +81,8 @@ const UserManager = new um();
         upload: upload,
         allowedSources: ["https://extensions.penguinmod.com", "https://extensions.turbowarp.org"],
         uploadCooldown: process.env.uploadCooldown || 1000 * 60 * 8,
-        unlinkAsync: promisify(fs.unlink)
+        unlinkAsync: promisify(fs.unlink),
+        path: path
     });
 
     app.listen(PORT, () => {

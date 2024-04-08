@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <script src="/api/v1/projects/protobufSchema.js"></script>
 </head>
 <body>
     <input id="username" type="text" placeholder="Username">
@@ -20,6 +21,8 @@
     </div>
 
     <script>
+        // protobuf object is "Project"
+
         function createAccount() {
             var username = document.getElementById('username').value;
             var password = document.getElementById('password').value;
@@ -93,6 +96,9 @@
             request.send(formData);
         };
 
+        function getProject() {
+            // get the id of whatever project, get the protobuf, turn it to json, get the assets, zip it all up, then download
+        }
     </script>
 </body>
 </html>
