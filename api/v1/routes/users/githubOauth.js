@@ -14,8 +14,8 @@ module.exports = (app, utils) => {
           accept: 'application/json'
         },
         body: JSON.stringify({
-          client_id: 'ID',
-          client_secret: 'SECRET',
+          client_id: utils.env.GithubOauthId,
+          client_secret: utils.env.GithubOauthSecret,
           code: code,
           redirect_uri: 'http://localhost:8080/api/v1/users/githubCallback',
           state: state
@@ -41,7 +41,7 @@ module.exports = (app, utils) => {
   app.get('/api/v1/users/githubOauth', (req, res) => {
     const endpoint = 'https://github.com/login/oauth/authorize';
     const params = new URLSearchParams({
-      client_id: 'ID',
+      client_id: utils.env.GithubOauthId,
       redirect_uri: 'http://localhost:8080/api/v1/users/githubCallback',
       scope: 'read:user user:email', // what to doxx from person
       state: // I forgot what to do here
