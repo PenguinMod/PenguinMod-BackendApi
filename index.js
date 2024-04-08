@@ -71,6 +71,10 @@ const UserManager = new um();
         res.sendFile(path.join(__dirname, 'test.html'));
     });
 
+    app.get("/robots.txt", (req, res) => {
+        res.sendFile(path.join(__dirname, 'robots.txt'));
+    });
+
     endpointLoader(app, 'v1/routes', {
         UserManager: UserManager,
         homeDir: path.join(__dirname, "./"),
