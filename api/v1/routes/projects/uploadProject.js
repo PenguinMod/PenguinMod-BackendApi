@@ -98,5 +98,7 @@ module.exports = (app, utils) => {
         for (let asset of req.files.assets) {
             await utils.unlinkAsync(asset.path);
         }
+
+        res.sendStatus(200);
     });
 }

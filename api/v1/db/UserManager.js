@@ -809,9 +809,9 @@ class UserManager {
             }
         ])
         .sort({ date: -1 })
-        .toArray();
+        .toArray()
 
-        const result = _result.map(x => {let v = x.data[0];delete v._id;return v;});
+        const result = _result[0].data.map(x => {let v = x;delete v._id;return v;})
 
         return result;
     }

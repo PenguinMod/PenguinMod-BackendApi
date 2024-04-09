@@ -7,6 +7,10 @@ module.exports = (app, utils) => {
             return;
         }
 
+        if (typeof packet.username !== "string" && typeof packet.password !== "string") {
+            utils.error(res, 400, "InvalidData")
+        }
+
         // TODO: this is currently pretty basic. we should add a few more requirements
         if (packet.username.length < 3 || packet.username.length > 20) {
             utils.error(res, 400, "InvalidData");

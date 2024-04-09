@@ -39,12 +39,12 @@
 
     <script>
         // protobuf object is "Project"
+        let token = "";
+        let username = "";
 
         function createAccount() {
-            var username = document.getElementById('username').value;
-            var password = document.getElementById('password').value;
-
-            console.log(username, password);
+            username = document.getElementById('username').value;
+            let password = document.getElementById('password').value;
 
             (async () => {
                 fetch("/api/v1/users/createAccount", {
@@ -59,8 +59,8 @@
                 })
                 .then(res => res.json())
                 .then(res => {
-                    console.log(res);
-                    alert(res);
+                    token = res.token;
+                    console.log("created account");
                 })
             })();
         }
@@ -86,29 +86,19 @@
         }
 
         const uploadFile = async (files) => {
-            let token = await fetch("/api/v1/users/createAccount", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        username: "test",
-                        password: "password"
-                    })
-                })
-                .then(res => res.json())
-                .then(res => res.token);
+            if (!token) {
+                alert("Please create an account first");
+                return;
+            }
 
             console.log("Uploading file...");
-            const API_ENDPOINT = `/api/v1/projects/uploadProject?username=test&token=${token}`;
+            const API_ENDPOINT = `/api/v1/projects/uploadProject?username=${username}&token=${token}`;
             const request = new XMLHttpRequest();
             const formData = new FormData();
 
             request.open("POST", API_ENDPOINT, true);
             request.onreadystatechange = () => {
-                if (request.readyState === 4 && request.status === 200) {
-                    console.log(request.responseText);
-                }
+                console.log("success probably");
             };
             
             for (let i = 0; i < files.length; i++) {
@@ -119,6 +109,7 @@
             formData.append("thumbnail", files[1]);
 
             request.send(formData);
+            console.log("sent");
         };
 
         function jsonToProtobuf(json) {
@@ -461,8 +452,6 @@
                 let reader = new FileReader();
                 reader.onload = function(e) {
                     let json = JSON.parse(e.target.result);
-
-                    console.log(json);
 
                     let protobuf = jsonToProtobuf(json);
 
