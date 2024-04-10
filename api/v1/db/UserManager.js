@@ -91,28 +91,7 @@ class UserManager {
      * @async
      */
     async resetBucket(bucketName) {
-        const objectsStream = this.minioClient.listObjects(bucketName);
-
-        // convert to array
-        const objectsArray = [];
-
-        objectsStream.on('data', function (obj) {
-            objectsArray.push(obj.name)
-        });
-        
-        objectsStream.on('error', function (e) {
-            console.log("Error while deleting bucket:", e);
-        });
-        
-        objectsStream.on('end', function () {
-            objectsArray.forEach((object) => {
-                this.minioClient.removeObject(bucketName, object, (err) => {
-                    if (err) {
-                        console.log("Error deleting object:", err);
-                    }
-                });
-            });
-        }.bind(this));
+        this.deleteMultipleObjects(bucketName, "");
     }
 
     /**
@@ -127,6 +106,7 @@ class UserManager {
                 return;
             }
         }
+
         await this.users.deleteMany({});
         await this.reports.deleteMany({});
         await this.projects.deleteMany({});
@@ -869,6 +849,22 @@ class UserManager {
         return file;
     }
 
+    async deleteMultipleObjects(bucketName, prefix) {
+        const stream = this.minioClient.listObjects(bucketName, prefix);
+
+        const chunks = [];
+
+        stream.on("data", (chunk) => chunks.push(chunk.name));
+        stream.on("error", (err) => console.log("Error listing objects:", err));
+        stream.on("end", () => {
+            this.minioClient.removeObjects(bucketName, chunks, (err) => {
+                if (err) {
+                    console.log("Error removing objects:", err);
+                }
+            });
+        });
+    }
+
     async getProjectAssets(id) {
         const stream = await this.minioClient.listObjects("project-assets", id);
 
@@ -1120,6 +1116,7 @@ class UserManager {
         // remove the project file
         await this.minioClient.removeObject("projects", id);
         await this.minioClient.removeObject("project-thumbnails", id);
+        this.deleteMultipleObjects("project-assets", id);
     }
 
     /**
