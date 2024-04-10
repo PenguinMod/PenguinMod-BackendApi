@@ -2,7 +2,7 @@ module.exports = (app, utils) => {
     app.get('/api/v1/users/githubCallback', async (req, res) => {
         const { code, state } = req.query;
 
-        if (!code || !state || !utils.verifyState(state)) {
+        if (!code || !state) {
             return res.status(400).send('State mismatch or missing code');
         }
 
