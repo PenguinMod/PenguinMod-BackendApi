@@ -2,8 +2,8 @@ module.exports = (app, utils) => {
     app.get('/api/v1/users/githubCallback', async (req, res) => {
         const { code, state } = req.query;
 
-        if (!code || !state || !utils.verifyState(state)) {
-            return res.status(400).send('State mismatch or missing code');
+        if (!code || !state || !utils.UserManager.verifyOAuth2State(state)) {
+            return utils.error(res, 400, "Invalid state");
         }
 
         const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
