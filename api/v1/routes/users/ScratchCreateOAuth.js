@@ -1,5 +1,5 @@
 module.exports = (app, utils) => {
-    app.get("/api/v1/users/oauthlogin", async function (req, res) {
+    app.get("/api/v1/users/scratchcreateoauth", async function (req, res) {
         const packet = req.query;
 
         const state = packet.state;
@@ -32,7 +32,10 @@ module.exports = (app, utils) => {
             return;
         }
 
+        // create the user
+        const token = await utils.UserManager.makeOAuth2Account("scratch", username.user)
+
         res.status(200);
-        res.send(JSON.stringify(username));
+        res.send({ token: token });
     });
 }

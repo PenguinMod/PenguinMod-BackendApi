@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { randomInt } = require('node:crypto');
+const { randomInt, randomBytes } = require('node:crypto');
 const bcrypt = require('bcrypt');
 const { MongoClient } = require('mongodb');
 const ULID = require('ulid');
@@ -166,6 +166,7 @@ class UserManager {
             lastLogin: Date.now(),
             lastUpload: 0,
             OAuth2State: ULID.ulid(),
+            oauthMethods: [],
             email: email
         });
         return token;
@@ -280,6 +281,35 @@ class UserManager {
     async changePassword(username, newPassword) {
         const hash = await bcrypt.hash(newPassword, 10);
         await this.users.updateOne({ username: username }, { $set: { password: hash, lastLogin: 0 } }); // sets password and invalidates token
+    }
+
+    /**
+     * Get a user's oauth login methods
+     * @param {string} username - Username of the user
+     * @returns {Promise<Array<string>>} - Array of the user's followers
+     */
+    async getOAuthMethods(username) {
+        const result = await this.users.findOne({ username: username });
+
+        return result.oauthMethods;
+    }
+
+    /**
+     * Add an oauth login method to a user
+     * @param {string} username - Username of the user
+     * @param {string} method - Method to add
+     */
+    async addOAuthMethod(username, method) {
+        await this.users.updateOne({ username: username }, { $push: { oauthMethods: method } });
+    }
+
+    /**
+     * Remove an oauth login method from a user
+     * @param {string} username - Username of the user 
+     * @param {string} method - Method to remove
+     */
+    async removeOAuthMethod(username, method) {
+        await this.users.updateOne({ username: username }, { $pull: { oauthMethods: method } });
     }
 
     /**
@@ -484,6 +514,15 @@ class UserManager {
         }, {
             $set: { myFeaturedProjectTitle: title }
         });
+    }
+
+    /**
+     * Set the ID of the user. FOR INTERNAL USE ONLY!!!!
+     * @param {string} username - Username of the user 
+     * @param {*} newID - New ID of the user
+     */
+    async _setId(username, newID) {
+        await this.users.updateOne({ username: username }, { $set: { id: newID } });
     }
 
     /**
@@ -1391,6 +1430,23 @@ class UserManager {
                     })
                 }).then(res => res.json());
                 return response;
+        }
+    }
+
+    async makeOAuth2Account(method, data) {
+        switch (method) {
+            case "scratch":
+                const username = data.user_name;
+                const id = data.user_id;
+                const token = await this.createAccount(username, randomBytes(32).toString(), "")
+
+                await this._setId(username, id);
+
+                // set their password HASH to nothing so cant login with a password
+                await this.users.updateOne({ username: username }, { $set: { password: "" } });
+
+                await this.addOAuthMethod(username, method);
+                return token;
         }
     }
 
