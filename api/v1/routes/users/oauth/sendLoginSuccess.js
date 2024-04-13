@@ -12,7 +12,6 @@ module.exports = (app, utils) => {
 
         res.status(200);
         res.header("Content-Type", "text/html");
-        res.send("hi");
-        //res.sendFile(path.join(utils.homeDir, 'success_local.html')); // TODO: in prod send the non local file
+        res.sendFile(path.join(utils.homeDir, 'success_local.html')); // TODO: in prod send the non local file
     });
 }
