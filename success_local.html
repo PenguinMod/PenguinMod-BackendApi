@@ -20,14 +20,16 @@
                         {
                             a2: data,
                         },
-                        'http://localhost:5173'
+                        `http://localhost:5173`
                     );
                 }
 
                 const searchParams = new URLSearchParams(location.search);
-                const privateCode = searchParams.get("privateCode");
+                const token = searchParams.get("token");
+                const username = searchParams.get("username");
                 post({
-                    pv: privateCode
+                    token: token,
+                    username: username
                 });
             }, 500);
         </script>

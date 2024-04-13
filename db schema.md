@@ -9,7 +9,7 @@ NOTE: a lot of this shit is wrong and im just too lazy to change it. Especially 
 | id | string | ID of the user. Usefull when storing things like a user report. |
 | username | string | The user's username. |
 | password | string | The user's hashed password. |
-| privateCode | string | The user's current private code (token). |
+| token | string | The user's current private code (token). |
 | admin | boolean | Whether the user is an admin. |
 | moderator | boolean | Whether the user is a moderator. |
 | banned | boolean | Whether the user is banned. |

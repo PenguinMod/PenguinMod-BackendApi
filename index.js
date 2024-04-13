@@ -32,7 +32,7 @@ function error(res, code, error) {
 }
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 const MAXVIEWS = process.env.MaxViews || 10000; // it will take up to 10000 views then reset after
 const VIEWRESETRATE = process.env.ViewResetRate || 1000 * 60 * 60; // reset every hour
 const upload = multer({ dest: 'tmp/uploads/' });
@@ -86,7 +86,8 @@ const UserManager = new um();
         allowedSources: ["https://extensions.penguinmod.com", "https://extensions.turbowarp.org"],
         uploadCooldown: process.env.uploadCooldown || 1000 * 60 * 8,
         unlinkAsync: promisify(fs.unlink),
-        path: path
+        path: path,
+        PORT: PORT
     });
 
     app.listen(PORT, () => {

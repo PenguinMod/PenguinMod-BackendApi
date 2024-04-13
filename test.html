@@ -14,7 +14,18 @@
     <input id="password" type="password" placeholder="Password">
     <button onclick="createAccount()">Create Account</button>
 
-    <a href="/api/v1/users/createoauthaccountlocal?method=scratch">Login with Scratch</a>
+    <a href="/api/v1/users/createoauthaccountlocal?method=scratch">Create account with Scratch</a>
+    
+    <a href="/api/v1/users/loginoauthaccountlocal?method=scratch">Login with Scratch</a>
+
+    <button onclick="addScratchMethod()">Add scratch login method</button>
+
+    <br>
+
+    <input type="text" id="usrname"> username <br>
+    <input type="text" id="token"> token <br>
+
+    <button onclick="verifyTokenAndUsername()">Verify</button>
 
     <br>
 
@@ -41,6 +52,30 @@
         // protobuf object is "Project"
         let token = "";
         let username = "";
+    
+        async function verifyTokenAndUsername() {
+            let usrnm = document.getElementById('usrname').value;
+            let tkn = document.getElementById('token').value;
+
+            console.log(usrnm);
+
+            let res = await fetch(`/api/v1/users/tokenlogin?username=${usrnm}&token=${tkn}`)
+
+            if (res.status === 200) {
+                alert("Token and username are valid");
+            } else {
+                alert("Token and username are invalid");
+            }
+        }
+
+        function addScratchMethod() {
+            if (!token || !username) {
+                alert("Please create an account first");
+                return;
+            }
+
+            window.location.href = `/api/v1/users/addoauthmethodlocal?method=scratch&username=${username}&token=${token}`
+        }
 
         function createAccount() {
             username = document.getElementById('username').value;

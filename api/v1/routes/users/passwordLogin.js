@@ -1,6 +1,6 @@
 module.exports = (app, utils) => {
     app.get("/api/v1/users/passwordLogin", async function (req, res) {
-        const packet = req.params;
+        const packet = req.query;
 
         if (!packet.username || !packet.password) {
             utils.error(res, 400, "InvalidData");

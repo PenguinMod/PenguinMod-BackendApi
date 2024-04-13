@@ -7,7 +7,7 @@ const Minio = require('minio');
 const protobuf = require('protobufjs');
 var prompt = require('prompt-sync')();
 
-// scratch oauth redir: http://localhost:8080/api/v1/users/loginlocal
+// scratch oauth redir: http://localhost:PORT/api/v1/users/loginlocal
 //                      https://projects.penguinmod.com/api/v1/users/login
 
 class UserManager {
@@ -150,7 +150,7 @@ class UserManager {
             id: id,
             username: username,
             password: hash,
-            privateCode: token,
+            token: token,
             admin: false,
             moderator: false,
             banned: false,
@@ -167,6 +167,7 @@ class UserManager {
             lastUpload: 0,
             OAuth2State: ULID.ulid(),
             oauthMethods: [],
+            oauthCodes: [], // index of method should match up with index of code
             email: email
         });
         return token;
@@ -183,8 +184,7 @@ class UserManager {
         const result = await this.users.findOne({ username: username });
         if (!result) return false;
         if (await bcrypt.compare(password, result.password)) {
-            this.users.updateOne({ username: username }, { $set: { lastLogin: Date.now() } });
-            return result.privateCode;
+            return await this.newTokenGen(username);
         } else {
             return false;
         }
@@ -207,8 +207,10 @@ class UserManager {
             return false;
         }
 
+        console.log(result.token, "lwt");
+
         // check that the tokens are equal
-        if (result.privateCode === token) {
+        if (result.token === token) {
             this.users.updateOne({ username: username }, { $set: { lastLogin: Date.now() } });
             return true;
         } else {
@@ -258,6 +260,8 @@ class UserManager {
      * @async
      */
     async getUsernameByID(id) {
+        console.log(id, "gubi");
+
         const result = await this.users.findOne({ id: id });
         return result.username;
     }
@@ -294,13 +298,19 @@ class UserManager {
         return result.oauthMethods;
     }
 
+    async getOAuthCode(username, method) {
+        const result = await this.users.findOne({ username: username });
+
+        return result.oauthCodes[result.oauthMethods.indexOf(method)];
+    }
+
     /**
      * Add an oauth login method to a user
      * @param {string} username - Username of the user
      * @param {string} method - Method to add
      */
-    async addOAuthMethod(username, method) {
-        await this.users.updateOne({ username: username }, { $push: { oauthMethods: method } });
+    async addOAuthMethod(username, method, code) {
+        await this.users.updateOne({ username: username }, { $push: { oauthMethods: method, oauthCodes: code } });
     }
 
     /**
@@ -309,7 +319,11 @@ class UserManager {
      * @param {string} method - Method to remove
      */
     async removeOAuthMethod(username, method) {
-        await this.users.updateOne({ username: username }, { $pull: { oauthMethods: method } });
+        const result = await this.users.findOne({ username: username });
+
+        const index = result.oauthMethods.indexOf(method);
+
+        await this.users.updateOne({ username: username }, { $pull: { oauthMethods: method, oauthCodes: result.oauthCodes[index] } });
     }
 
     /**
@@ -514,15 +528,6 @@ class UserManager {
         }, {
             $set: { myFeaturedProjectTitle: title }
         });
-    }
-
-    /**
-     * Set the ID of the user. FOR INTERNAL USE ONLY!!!!
-     * @param {string} username - Username of the user 
-     * @param {*} newID - New ID of the user
-     */
-    async _setId(username, newID) {
-        await this.users.updateOne({ username: username }, { $set: { id: newID } });
     }
 
     /**
@@ -1393,6 +1398,11 @@ class UserManager {
     async verifyOAuth2State(state) {
         const result = await this.oauthStates.findOne({ state: state });
 
+        // now get rid of the state cuz uh we dont need it anymore
+
+        if (result)
+        await this.oauthStates.deleteOne({ state: state })
+
         return result ? true : false;
     }
 
@@ -1400,8 +1410,8 @@ class UserManager {
      * Generate a new OAuth2 state and save it for verification
      * @returns {Promise<string>} - The state
      */
-    async generateOAuth2State() {
-        const state = ULID.ulid();
+    async generateOAuth2State(extra="") {
+        const state = ULID.ulid() + extra;
 
         await this.oauthStates.insertOne({ state: state });
 
@@ -1423,8 +1433,8 @@ class UserManager {
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        client_id: Number(process.env.ScratchOauth2ClientID),
-                        client_secret: process.env.ScratchOauth2ClientSecret,
+                        client_id: Number(process.env.ScratchOAuthClientID),
+                        client_secret: process.env.ScratchOAuthClientSecret,
                         code: code,
                         scopes: ["identify"]
                     })
@@ -1438,14 +1448,13 @@ class UserManager {
             case "scratch":
                 const username = data.user_name;
                 const id = data.user_id;
-                const token = await this.createAccount(username, randomBytes(32).toString(), "")
 
-                await this._setId(username, id);
+                const token = await this.createAccount(username, randomBytes(32).toString(), "")
 
                 // set their password HASH to nothing so cant login with a password
                 await this.users.updateOne({ username: username }, { $set: { password: "" } });
 
-                await this.addOAuthMethod(username, method);
+                await this.addOAuthMethod(username, method, id);
                 return token;
         }
     }
@@ -1802,6 +1811,18 @@ class UserManager {
 
         return isIncluded;
     };
+
+    async newTokenGen(username) {
+        const token = ULID.ulid();
+        
+        await this.users.updateOne({ username: username }, { $set: { token: token, lastLogin: Date.now() } });
+
+        // check
+        const result = await this.users.findOne({ username: username });
+        console.log(result.token, "token gen");
+
+        return token;
+    }
 }
 
 module.exports = UserManager;

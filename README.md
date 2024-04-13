@@ -32,8 +32,8 @@ Please report any security vulnerabilities using GitHub's security tab on the re
     PORT=8080
 
     # Oauth
-    ScratchOauth2ClientID=yourclientid
-    ScratchOauth2ClientSecret=yourclientsecret
+    ScratchOAuthClientID=yourclientid
+    ScratchOAuthClientSecret=yourclientsecret
     GithubOauthId=yourid
     GithubOauthSecret=yoursecret
 

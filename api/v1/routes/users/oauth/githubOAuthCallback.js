@@ -1,4 +1,5 @@
 module.exports = (app, utils) => {
+    /*
     app.get('/api/v1/users/githubCallback', async (req, res) => {
         const { code, state } = req.query;
 
@@ -32,4 +33,5 @@ module.exports = (app, utils) => {
 
         res.send(`Hello, ${userData.login}`);
     });
+    */
 };

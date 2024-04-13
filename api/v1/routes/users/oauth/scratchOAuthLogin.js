@@ -1,5 +1,5 @@
 module.exports = (app, utils) => {
-    app.get("/api/v1/users/scratchcreateoauth", async function (req, res) {
+    app.get("/api/v1/users/scratchoauthlogin", async function (req, res) {
         const packet = req.query;
 
         const state = packet.state;
@@ -32,10 +32,16 @@ module.exports = (app, utils) => {
             return;
         }
 
-        // create the user
-        const token = await utils.UserManager.makeOAuth2Account("scratch", username.user)
+        const methods = await utils.UserManager.getOAuthMethods(username.user);
+
+        if (!methods.includes("scratch")) {
+            utils.error(res, 400, "InvalidData");
+            return;
+        }
+
+        const token = await utils.UserManager.newTokenGen()
 
         res.status(200);
-        res.send({ token: token });
+        res.redirect(`/api/v1/users/sendloginsuccess?token=${token}&username=${username.user.user_name}`);
     });
 }
