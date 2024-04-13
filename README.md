@@ -36,6 +36,12 @@ Please report any security vulnerabilities using GitHub's security tab on the re
     ScratchOAuthClientSecret=yourclientsecret
     GithubOauthId=yourid
     GithubOauthSecret=yoursecret
+    ScratchOauth2ClientID=yourclientid
+    ScratchOauth2ClientSecret=yourclientsecret
+    GithubOauthId=yourgithubappid
+    GithubOauthSecret=yourgithubappsecret
+    GoogleOauthId=yourgoogleoauthid
+    GoogleOauthSecret=yourgoogleoauthsecret
 
     # Minio
     MinioClientID=yourclientid
