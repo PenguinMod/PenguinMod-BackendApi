@@ -22,5 +22,6 @@ module.exports = (app, utils) => {
 
         res.status(200);
         res.redirect(`http://localhost:5173/oauthchangepassword?method=scratch&at=${response.access_token}`); //TODO: add page to on main site or smth for this 
+        // TODO: in prod change this to penguinmod.com
     });
 }
