@@ -101,8 +101,8 @@
   - [ ] assign possition
   - [ ] get site mods
   - [ ] login
-    - [ ] login with password
-    - [ ] login with token
+    - [x] login with password
+    - [x] login with token
     - [ ] oauth
       - [ ] all methods
         - [x] scratch
@@ -113,6 +113,7 @@
       - [x] link account
       - [ ] unlink account
       - [x] add password
+    - [x] change password
   - [ ] logout
   - [ ] get id by username
   - [ ] get username by id
