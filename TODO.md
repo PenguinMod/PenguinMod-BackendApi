@@ -75,6 +75,24 @@
   - [ ] get featured projects (sorted by newest) (page + page count) (meta)
   - [ ] get remixes of a project (page + page count) (meta)
   - [ ] get your projects (page + page count) (meta)
+  - [ ] "remove" project
+    - [ ] dispute
+    - [ ] respond to dispute
+    - [ ] download
+    - [ ] restore
+  - [ ] delete project (admin/creator only)
+  - [ ] manually feature (admin only)
+  - [ ] vote toggle
+  - [ ] get if user voted (only check yourself/admin can check anyone)
+  - [ ] get all votes (just count)
+  - [ ] love toggle
+  - [ ] get if user loved (only check yourself/admin can check anyone)
+  - [ ] get people who voted (admin only)
+  - [ ] get people who loved (admin only)
+  - [ ] upload project
+  - [ ] update project
+  - [ ] search projects (page + page count) (meta)
+  - [ ] front page (just to make it easier to get all the projects on there)
 
 - [ ] Users
   - [ ] get profile json
@@ -117,7 +135,9 @@
 
 - [ ] Reports
   - [ ] get reports (page + page count)
+  - [ ] get reports on a certain user (page + page count (just in case theres a shit ton))
   - [ ] delete report
+  - [ ] send report
 
 - [ ] Badges
   - [ ] get badges
