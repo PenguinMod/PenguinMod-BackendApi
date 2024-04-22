@@ -1,6 +1,5 @@
 module.exports = (app, utils) => {
-    app.get("/api/v1/users/addoauthmethod", async function (req, res) {
-        // get the method
+    app.get("/api/v1/users/addpasswordtooauth", async function (req, res) {
         const packet = req.query;
 
         const method = packet.method;
@@ -12,28 +11,24 @@ module.exports = (app, utils) => {
             return;
         }
 
-        if (!await utils.UserManager.loginWithToken(token, username)) {
+        if (!await utils.UserManager.loginWithToken(username, token)) {
             utils.error(res, 401, "InvalidToken");
             return;
         }
 
         const methods = await utils.UserManager.getOAuthMethods(username);
 
-        if (methods.includes(method)) {
+        if (!methods.includes(method)) {
             utils.error(res, 400, "InvalidData");
             return;
         }
-
-        const userid = await utils.UserManager.getUserID(username);
         
         // using switch case cuz erm i like it
         switch (method) {
             case "scratch":
-                let state = await utils.UserManager.generateOAuth2State(`_${userid}`);
-                // add _${userid} to the state
-                state = `${state}_${userid}`;
-
-                res.redirect(`https://oauth2.scratch-wiki.info/wiki/Special:ScratchOAuth2/authorize?client_id=${utils.env.ScratchOAuthClientID}&redirect_uri=https://projects.penguinmod.com/api/v1/users/addscratchlogin&scopes=identify&state=${state}`);
+                let state = await utils.UserManager.generateOAuth2State();
+                
+                res.redirect(`https://oauth2.scratch-wiki.info/wiki/Special:ScratchOAuth2/authorize?client_id=${utils.env.ScratchOAuthClientID}&redirect_uri=http://localhost:8080/api/v1/users/scratchaddpassword&scopes=identify&state=${state}`);
                 break;
             default:
                 utils.error(res, 400, "InvalidData");

@@ -2,8 +2,6 @@ module.exports = (app, utils) => {
     app.get("/api/v1/users/tokenlogin", async function (req, res) {
         const packet = req.query;
 
-        console.log(packet);
-
         if (!packet.username || !packet.token) {
             utils.error(res, 400, "InvalidData");
             return;
@@ -13,8 +11,7 @@ module.exports = (app, utils) => {
             utils.error(res, 401, "InvalidCredentials");
             return;
         }
-
-        console.log(packet.token, "tl");
+        
         if (!await utils.UserManager.loginWithToken(packet.username, packet.token)) {
             utils.error(res, 401, "InvalidCredentials");
             return;

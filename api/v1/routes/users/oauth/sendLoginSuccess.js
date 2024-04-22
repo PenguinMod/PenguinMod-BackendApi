@@ -1,3 +1,5 @@
+const path = require('path');
+
 module.exports = (app, utils) => {
     app.get("/api/v1/users/sendloginsuccess", async function (req, res) {
         const packet = req.query;

@@ -20,12 +20,18 @@
 
     <button onclick="addScratchMethod()">Add scratch login method</button>
 
-    <br>
+    <br><br>
+
+    <input id="vp-username" type="text" placeholder="Username">
+    <input id="vp-password" type="password" placeholder="Password">
+    <button onclick="verifyPasswordAndUsername()">Verify password</button>
+
+    <br><br>
 
     <input type="text" id="usrname"> username <br>
     <input type="text" id="token"> token <br>
 
-    <button onclick="verifyTokenAndUsername()">Verify</button>
+    <button onclick="verifyTokenAndUsername()">Verify token</button>
 
     <br>
 
@@ -48,6 +54,13 @@
     <input type="number" id="projectId" placeholder="Project ID">
     <button onclick="getProject()">Get Project</button>
 
+    <br><br>
+
+    <!-- add password to oauth account -->
+    <input type="text" id="apoa-username"> username <br>
+    <input type="text" id="apoa-token"> token <br>
+    <button onclick="addPasswordToOAuthAccount()">Add password to OAuth account</button>
+
     <script>
         // protobuf object is "Project"
         let token = "";
@@ -65,6 +78,19 @@
                 alert("Token and username are valid");
             } else {
                 alert("Token and username are invalid");
+            }
+        }
+
+        async function verifyPasswordAndUsername() {
+            let usrnm = document.getElementById('vp-username').value;
+            let password = document.getElementById('vp-password').value;
+
+            let res = await fetch(`/api/v1/users/passwordlogin?username=${usrnm}&password=${password}`)
+
+            if (res.status === 200) {
+                alert("Password and username are valid");
+            } else {
+                alert("Password and username are invalid");
             }
         }
 
@@ -497,6 +523,13 @@
             } else {
                 alert("Please select a file");
             }
+        }
+
+        function addPasswordToOAuthAccount() {
+            let usrnm = document.getElementById('apoa-username').value;
+            let tkn = document.getElementById('apoa-token').value;
+
+            window.location.href = `/api/v1/users/addpasswordtooauth?method=scratch&username=${usrnm}&token=${tkn}`;
         }
     </script>
 </body>

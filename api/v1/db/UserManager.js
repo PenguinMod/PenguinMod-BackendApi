@@ -29,6 +29,7 @@ class UserManager {
         await this.client.connect();
         this.db = this.client.db('pm_apidata');
         this.users = this.db.collection('users');
+        this.oauthIDs = this.db.collection('oauthIDs');
         this.reports = this.db.collection('reports');
         this.projects = this.db.collection('projects');
         this.projectStats = this.db.collection('projectStats');
@@ -108,6 +109,7 @@ class UserManager {
         }
 
         await this.users.deleteMany({});
+        await this.oauthIDs.deleteMany({});
         await this.reports.deleteMany({});
         await this.projects.deleteMany({});
         await this.projectStats.deleteMany({});
@@ -165,9 +167,6 @@ class UserManager {
             firstLogin: Date.now(),
             lastLogin: Date.now(),
             lastUpload: 0,
-            OAuth2State: ULID.ulid(),
-            oauthMethods: [],
-            oauthCodes: [], // index of method should match up with index of code
             email: email
         });
         return token;
@@ -206,8 +205,6 @@ class UserManager {
         if (result.lastLogin + UserManager.loginInvalidationTime < Date.now()) {
             return false;
         }
-
-        console.log(result.token, "lwt");
 
         // check that the tokens are equal
         if (result.token === token) {
@@ -260,7 +257,6 @@ class UserManager {
      * @async
      */
     async getUsernameByID(id) {
-        console.log(id, "gubi");
 
         const result = await this.users.findOne({ id: id });
         return result.username;
@@ -293,15 +289,21 @@ class UserManager {
      * @returns {Promise<Array<string>>} - Array of the user's followers
      */
     async getOAuthMethods(username) {
-        const result = await this.users.findOne({ username: username });
+        const id = await this.getIDByUsername(username);
 
-        return result.oauthMethods;
+        const result = (await this.oauthIDs.find({ id: id })
+        .toArray())
+        .map(x => x.method);
+
+        return result;
     }
 
     async getOAuthCode(username, method) {
-        const result = await this.users.findOne({ username: username });
+        const id = await this.getIDByUsername(username);
 
-        return result.oauthCodes[result.oauthMethods.indexOf(method)];
+        const result = await this.oauthIDs.findOne({ id: id, method: method });
+
+        return result.code;
     }
 
     /**
@@ -310,7 +312,9 @@ class UserManager {
      * @param {string} method - Method to add
      */
     async addOAuthMethod(username, method, code) {
-        await this.users.updateOne({ username: username }, { $push: { oauthMethods: method, oauthCodes: code } });
+        const id = await this.getIDByUsername(username);
+
+        await this.oauthIDs.insertOne({ id: id, method: method, code: code })
     }
 
     /**
@@ -319,11 +323,21 @@ class UserManager {
      * @param {string} method - Method to remove
      */
     async removeOAuthMethod(username, method) {
-        const result = await this.users.findOne({ username: username });
+        const id = await this.getIDByUsername(username);
 
-        const index = result.oauthMethods.indexOf(method);
+        await this.oauthIDs.deleteOne({ id: id, method: method });
+    }
 
-        await this.users.updateOne({ username: username }, { $pull: { oauthMethods: method, oauthCodes: result.oauthCodes[index] } });
+    /**
+     * Get the ID of a user by their oauth ID
+     * @param {string} method - The oauth method the id is from
+     * @param {string} id - The id from the oauth service
+     * @returns {Promise<string>} - The id of the user
+     */
+    async getUserIDByOAuthID(method, id) {
+        const result = await this.oauthIDs.findOne({ method: method, code: id });
+
+        return result.id;
     }
 
     /**
@@ -1446,8 +1460,14 @@ class UserManager {
     async makeOAuth2Account(method, data) {
         switch (method) {
             case "scratch":
-                const username = data.user_name;
+                let username = data.user_name;
                 const id = data.user_id;
+
+                let n = 1;
+                while (await this.existsByUsername(username)) {
+                    username = data.user_name + n;
+                    n++;
+                }
 
                 const token = await this.createAccount(username, randomBytes(32).toString(), "")
 
@@ -1819,7 +1839,6 @@ class UserManager {
 
         // check
         const result = await this.users.findOne({ username: username });
-        console.log(result.token, "token gen");
 
         return token;
     }
