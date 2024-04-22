@@ -49,3 +49,83 @@
 
 - [x] Rank users based on if they have more than 3 projects and signed in 5 days ago
 - [x] Only ranked users should be able to use Custom Extensions, Files, iframe, HTTP, Website Requests, Network, etc.
+
+## Endpoints
+
+- [x] dist
+  - [x] JSZip (for loading projects on frontend)
+  - [x] getProtobufSchema (for loading projects on frontend)
+  - [x] pbf (for loading projects on frontend)
+
+- [x] meta
+  - [x] api
+  - [x] home (redirs to home when you get /)
+  - [x] pingpong (take a guess...)
+  - [x] robots.txt (get those damn robs out of here!!E2!!11)
+
+- [ ] projects
+  - [x] get project metadata
+  - [x] get project protobuf
+  - [x] get project assets
+  - [x] get project thumbnail
+  - [x] redir
+  - [ ] Turn off getting projects
+  - [ ] Turn off posting projects
+  - [ ] get project page (sorted by newest) (page + page count) (meta)
+  - [ ] get featured projects (sorted by newest) (page + page count) (meta)
+  - [ ] get remixes of a project (page + page count) (meta)
+  - [ ] get your projects (page + page count) (meta)
+
+- [ ] Users
+  - [ ] get profile json
+  - [ ] request rank up
+  - [ ] check if banned
+  - [ ] assign possition
+  - [ ] get site mods
+  - [ ] login
+    - [ ] login with password
+    - [ ] login with token
+    - [ ] oauth
+      - [ ] all methods
+        - [x] scratch
+        - [ ] github
+        - [ ] google
+      - [x] create account
+      - [x] login
+      - [x] link account
+      - [ ] unlink account
+      - [x] add password
+  - [ ] logout
+  - [ ] get id by username
+  - [ ] get username by id
+  - [ ] is admin, is mod, etc
+  - [ ] set my featured project
+  - [ ] set bio
+  - [ ] set a users bio (admin)
+  - [ ] get follower count
+  - [ ] is following
+  - [ ] follow toggle
+  - [ ] get my feed?
+  - [ ] ban toggle
+  - [ ] is banned
+
+- [ ] Messages
+  - [ ] get messages (page + page count)
+  - [ ] add message
+  - [ ] get message count
+  - [ ] mark messages as read
+
+- [ ] Reports
+  - [ ] get reports (page + page count)
+  - [ ] delete report
+
+- [ ] Badges
+  - [ ] get badges
+  - [ ] set badges
+
+- [ ] Misc
+  - [ ] get profanity list
+  - [ ] set profanity list
+  - [ ] get site stats
+  - [ ] get last tos, privacy policy, and uploading guidelines update
+  - [ ] update tos, privacy policy, or uploading guidelines
