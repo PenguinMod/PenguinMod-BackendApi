@@ -69,9 +69,8 @@
   - [x] get project assets
   - [x] get project thumbnail
   - [x] redir
-  - [ ] Turn off getting projects
-  - [ ] Turn off posting projects
-  - [ ] get project page (sorted by newest) (page + page count) (meta)
+  - [x] toggle getting projects
+  - [x] toggle posting projects
   - [ ] get featured projects (sorted by newest) (page + page count) (meta)
   - [ ] get remixes of a project (page + page count) (meta)
   - [ ] get your projects (page + page count) (meta)
@@ -89,16 +88,18 @@
   - [ ] get if user loved (only check yourself/admin can check anyone)
   - [ ] get people who voted (admin only)
   - [ ] get people who loved (admin only)
-  - [ ] upload project
+  - [x] upload project
   - [ ] update project
   - [ ] search projects (page + page count) (meta)
   - [ ] front page (just to make it easier to get all the projects on there)
+  - [ ] get projects by author (page + page count) (meta)
 
 - [ ] Users
-  - [ ] get profile json
+  - [x] get profile json
+  - [ ] user from code (no idea why this is used but wtv)
   - [ ] request rank up
-  - [ ] check if banned
-  - [ ] assign possition
+  - [x] check if banned
+  - [x] assign possition
   - [ ] get site mods
   - [ ] login
     - [x] login with password
@@ -111,10 +112,10 @@
       - [x] create account
       - [x] login
       - [x] link account
-      - [ ] unlink account
+      - [x] unlink account
       - [x] add password
     - [x] change password
-  - [ ] logout
+  - [x] logout
   - [ ] get id by username
   - [ ] get username by id
   - [ ] is admin, is mod, etc

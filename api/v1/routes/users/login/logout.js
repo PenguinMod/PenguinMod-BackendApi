@@ -17,6 +17,6 @@ module.exports = (app, utils) => {
 
         await utils.UserManager.logout(username);
 
-        res.sendStatus(200);
+        res.send({ success: true });
     });
 }

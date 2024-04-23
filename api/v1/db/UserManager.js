@@ -730,7 +730,7 @@ class UserManager {
                 }
             }
         ])
-        .sort({ date: -1 })
+        .sort({ lastUpdate: -1 })
         .toArray();
 
         return result;
@@ -846,7 +846,7 @@ class UserManager {
                 }
             }
         ])
-        .sort({ date: -1 })
+        .sort({ lastUpdate: -1 })
         .toArray()
 
         const result = _result[0].data.map(x => {let v = x;delete v._id;return v;})
@@ -860,8 +860,19 @@ class UserManager {
      * @returns {Promise<Array<Object>>} - Array of projects by the specified author
      * @async
      */
-    async getProjectsByAuthor(author) {
-        const result = await this.projects.find({author: author}).toArray();
+    async getProjectsByAuthor(page, pageSize, author) {
+        const _result = await this.projects.aggregate([
+            {
+                $facet: {
+                    metadata: [{ $count: "count" }],
+                    data: [{ $match: { author: author } }, { $skip: page * pageSize }, { $limit: pageSize }]
+                }
+            }
+        ])
+        .sort({ lastUpdate: -1 })
+        .toArray()
+
+        const result = _result[0].data.map(x => {let v = x;delete v._id;return v;})
 
         return result;
     }
@@ -1133,7 +1144,7 @@ class UserManager {
                 }
             }
         ])
-        .sort({ date: -1 })
+        .sort({ lastUpdate: -1 })
         .toArray();
 
         return result;

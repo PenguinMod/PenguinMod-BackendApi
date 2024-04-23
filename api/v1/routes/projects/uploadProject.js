@@ -7,6 +7,10 @@ module.exports = (app, utils) => {
         // assets
         { name: 'assets' }
     ]), async (req, res) => {
+        if (!utils.env.UploadingEnabled) {
+            return utils.error(res, 503, "Uploading is disabled");
+        }
+
         const packet = req.query; // because body is used for the files i think
 
         if (!await utils.UserManager.loginWithToken(packet.username, packet.token)) {
@@ -99,6 +103,6 @@ module.exports = (app, utils) => {
             await utils.unlinkAsync(asset.path);
         }
 
-        res.sendStatus(200);
+        res.send({ success: true });
     });
 }

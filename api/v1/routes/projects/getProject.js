@@ -1,5 +1,9 @@
 module.exports = (app, utils) => {
     app.get('/api/v1/projects/getProject', async (req, res) => {
+        if (!utils.env.ViewingEnabled) {
+            return utils.error(res, 503, "Viewing is disabled");
+        }
+
         const packet = req.query;
         
         const requestType = packet.requestType;

@@ -53,6 +53,12 @@ Please report any security vulnerabilities using GitHub's security tab on the re
 
     # Others
     MaxAssets=maxassetsyouwantinaproject
+
+    PageSize=howmanypagesyouwant
+    MaxPageSize=howmanypagesyouwant
+
+    UploadingEnabled=true
+    ViewingEnabled=true
     ```
 
 6. Run `npm run dev` to start the server in development mode.

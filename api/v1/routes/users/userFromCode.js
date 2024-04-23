@@ -12,13 +12,10 @@ module.exports = (app, utils) => {
             return;
         }
 
-        if (await utils.UserManager.isBanned(username)) {
-            utils.error(res, 404, "NotFound")
-            return;
-        }
-
         const badges = await utils.UserManager.getBadges(username);
         const isDonator = badges.includes('donator');
+
+        const isBanned = await utils.UserManager.isBanned(username);
 
         const rank = await utils.UserManager.getRank(username);
 
@@ -35,16 +32,14 @@ module.exports = (app, utils) => {
         const myFeaturedProject = await utils.UserManager.getFeaturedProject(username);
         const myFeaturedProjectTitle = await utils.UserManager.getFeaturedProjectTitle(username);
 
-        const bio = await UserManager.getBio(username);
-
         return {
             username,
             admin: AdminAccountUsernames.get(username),
             approver: ApproverUsernames.get(username),
+            isBanned: isBanned,
             badges,
             donator: isDonator,
             rank,
-            bio,
             myFeaturedProject,
             myFeaturedProjectTitle,
             followers: followers.length,
