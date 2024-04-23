@@ -96,11 +96,11 @@
 
 - [ ] Users
   - [x] get profile json
-  - [ ] user from code (no idea why this is used but wtv)
+  - [x] user from code (no idea why this is used but wtv)
   - [ ] request rank up
   - [x] check if banned
   - [x] assign possition
-  - [ ] get site mods
+  - [ ] get site mods (admin only)
   - [ ] login
     - [x] login with password
     - [x] login with token
@@ -118,16 +118,17 @@
   - [x] logout
   - [ ] get id by username
   - [ ] get username by id
-  - [ ] is admin, is mod, etc
+  - [ ] is admin, is mod, etc (admin only)
   - [ ] set my featured project
   - [ ] set bio
+  - [ ] set a users featured project (admin)
   - [ ] set a users bio (admin)
   - [ ] get follower count
   - [ ] is following
   - [ ] follow toggle
   - [ ] get my feed?
   - [ ] ban toggle
-  - [ ] is banned
+  - [x] is banned
 
 - [ ] Messages
   - [ ] get messages (page + page count)
