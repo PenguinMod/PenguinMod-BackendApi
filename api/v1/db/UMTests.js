@@ -251,7 +251,7 @@ async function tests() {
         Buffer.from("test image"),
         "testinst",
         "testnotes",
-        undefined,
+        0,
         "E"
     );
     let getProjects = (await manager.getProjects(0, 2));
@@ -281,7 +281,7 @@ async function tests() {
         getProjectData.title        !== "testproject" ||
         getProjectData.instructions !== "testinst"    ||
         getProjectData.notes        !== "testnotes"   ||
-        getProjectData.remix        !== null   ||
+        getProjectData.remix        !== 0             ||
         getProjectData.rating       !== "E"
     ) {
         console.log("[ FAIL ]".red, "Failed to get project data");
@@ -369,6 +369,7 @@ async function tests() {
     let updateProject = await manager.updateProject(
         getProjects[0].id,
         Buffer.from("new file"),
+        [],
         "new project",
         Buffer.from("new image"),
         "new inst",

@@ -829,6 +829,10 @@ class UserManager {
         // minio bucket shit
         await this.minioClient.putObject("projects", id, projectBuffer);
         await this.minioClient.putObject("project-thumbnails", id, imageBuffer);
+
+        await this.deleteMultipleObjects("project-assets", id) // delete all the old assets
+        // TODO: instead of doing this just replace the ones that were edited
+
         for (const asset of assetBuffers) {
             await this.minioClient.putObject("project-assets", `${id}_${asset.id}`, asset.buffer);
         }

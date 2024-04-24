@@ -28,6 +28,12 @@ module.exports = (app, utils) => {
         const protobufFile = fs.readFileSync(req.files.jsonFile[0].path);
         const jsonFile = utils.UserManager.protobufToProjectJson(protobufFile);
 
+        if (packet.remix) {
+            if (!await utils.UserManager.projectExists(packet.remix)) {
+                return utils.error(res, 400, "Remix project does not exist");
+            }
+        }
+
         // check the extensions
         const userRank = await utils.UserManager.getRank(packet.username);
         if (userRank < 1) {
