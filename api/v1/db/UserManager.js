@@ -625,7 +625,7 @@ class UserManager {
     /**
      * Ban/unban a user
      * @param {string} username - username of the user
-     * @param {boolean} banned - true if banning, false if unbanning
+     * @param {Promise<boolean>} banned - true if banning, false if unbanning
      * @async
      */
     async setBanned(username, banned) {
@@ -635,7 +635,7 @@ class UserManager {
     /**
      * Get the email of a user
      * @param {string} username - username of the user
-     * @returns {string} - email of the user
+     * @returns {Promise<string>} - email of the user
      * @async
      */
     async getEmail(username) {
@@ -868,17 +868,17 @@ class UserManager {
      * @returns {Promise<Array<Object>>} - Array of projects by the specified author
      * @async
      */
-    async getProjectsByAuthor(page, pageSize, author) {
+    async getProjectsByAuthor(author, page, pageSize) {
         const _result = await this.projects.aggregate([
             {
                 $facet: {
                     metadata: [{ $count: "count" }],
-                    data: [{ $match: { author: author } }, { $skip: page * pageSize }, { $limit: pageSize }]
+                    data: [{ $match: { author: author, public: true } }, { $skip: page * pageSize }, { $limit: pageSize }]
                 }
             }
         ])
         .sort({ lastUpdate: -1 })
-        .toArray()
+        .toArray();
 
         const result = _result[0].data.map(x => {let v = x;delete v._id;return v;})
 
@@ -926,6 +926,11 @@ class UserManager {
         return file;
     }
 
+    /**
+     * Delete objects from a bucket with a specified prefix
+     * @param {string} bucketName - Name of the bucket 
+     * @param {*} prefix - Prefix to search
+     */
     async deleteMultipleObjects(bucketName, prefix) {
         const stream = this.minioClient.listObjects(bucketName, prefix);
 
@@ -942,6 +947,11 @@ class UserManager {
         });
     }
 
+    /**
+     * Get a projects assets
+     * @param {string} id - ID of the project
+     * @returns {Array<Object>} - Array of project assets
+     */
     async getProjectAssets(id) {
         const stream = await this.minioClient.listObjects("project-assets", id);
 
@@ -1022,7 +1032,7 @@ class UserManager {
     /**
      * Get the amount of views a project has
      * @param {number} id - ID of the project
-     * @returns {number} - The number of views the project has
+     * @returns {Promise<number>} - The number of views the project has
      */
     async getProjectViews(id) {
         const result = this.views.filter((view) => view.id === id);
@@ -1073,7 +1083,7 @@ class UserManager {
     /**
      * Get the amount of loves a project has
      * @param {number} id - ID of the project
-     * @returns {number} - Amount of loves the project has
+     * @returns {Promise<number>} - Amount of loves the project has
      */
     async getProjectLoves(id) {
         const result = await this.projectStats.find({projectId: id, type: "love"}).toArray();
@@ -1124,7 +1134,7 @@ class UserManager {
     /**
      * Get the amount of votes a project has
      * @param {number} id - ID of the project
-     * @returns {number} - Amount of votes the project has
+     * @returns {Promise<number>} - Amount of votes the project has
      * @async
      */
     async getProjectVotes(id) {
@@ -1143,7 +1153,7 @@ class UserManager {
     async getFeaturedProjects(page, pagesize) {
         const result = await this.projects.aggregate([
             {
-                $match: { featured: true }
+                $match: { featured: true, public: true }
             },
             {
                 $facet: {
@@ -1830,18 +1840,35 @@ class UserManager {
         return JSON.stringify(value);
     }
 
+    /**
+     * Set the legal extensions
+     * @param {Array<string>} extensions - Array of extension IDs to set the legal list to
+     */
     async setLegalExtensions(extensions) {
         await this.illegalList.updateOne({id: "legalExtensions"}, {$set: {items: extensions}});
     }
 
+    /**
+     * Add an extension to the legal list
+     * @param {string} extension - Extension ID
+     */
     async addLegalExtension(extension) {
         await this.illegalList.updateOne({id: "legalExtensions"}, {$push: {items: extension}});
     }
 
+    /**
+     * Remove an extension from the legal list
+     * @param {string} extension - Extension ID
+     */
     async removeLegalExtension(extension) {
         await this.illegalList.updateOne({id: "legalExtensions"}, {$pull: {items: extension}});
     }
 
+    /**
+     * Check if an extension is allowed
+     * @param {string} extension - The extension to check
+     * @returns {Promise<boolean>} - True if the extension is allowed, false if not
+     */
     async checkExtensionIsAllowed(extension) {
         if (!extension) return true;
 
@@ -1851,15 +1878,42 @@ class UserManager {
         return isIncluded;
     };
 
+    /**
+     * Make a token for a user
+     * @param {string} username - Username of the user to make the token for
+     * @returns {Promise<string>} - the new token
+     */
     async newTokenGen(username) {
         const token = ULID.ulid();
         
         await this.users.updateOne({ username: username }, { $set: { token: token, lastLogin: Date.now() } });
 
-        // check
-        const result = await this.users.findOne({ username: username });
-
         return token;
+    }
+
+    /**
+     * 
+     * @param {string} query - Query to search for
+     * @param {number} page - Page of projects to get 
+     * @param {number} pageSize - Amount of projects to get 
+     * @returns 
+     */
+    async searchProjects(query, page, pageSize) {
+        const result = await this.projects.aggregate([
+            {
+                $match: { $text: { $search: query } }
+            },
+            {
+                $facet: {
+                    metadata: [{ $count: "count" }],
+                    data: [{ $skip: page * pageSize }, { $limit: pageSize }]
+                }
+            }
+        ])
+        .sort({ score: { $meta: "textScore" } })
+        .toArray();
+
+        return result;
     }
 }
 

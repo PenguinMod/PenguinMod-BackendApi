@@ -90,9 +90,9 @@
   - [ ] get people who loved (admin only)
   - [x] upload project
   - [x] update project
-  - [ ] search projects (page + page count) (meta)
+  - [x] search projects (page + page count) (meta)
   - [ ] front page (just to make it easier to get all the projects on there)
-  - [ ] get projects by author (page + page count) (meta)
+  - [x] get projects by author (page + page count) (meta)
 
 - [ ] Users
   - [x] get profile json
