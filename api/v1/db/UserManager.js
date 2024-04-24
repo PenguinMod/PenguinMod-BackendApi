@@ -765,7 +765,7 @@ class UserManager {
         do {
             id = randomInt(0, 9999999999).toString();
             id = "0".repeat(10 - id.length) + id;
-        } while (await this.projects.findOne({id: id}));
+        } while (id !== 0 && await this.projects.findOne({id: id}));
         
         
         await this.projects.insertOne({
@@ -807,6 +807,7 @@ class UserManager {
      * Update a project
      * @param {number} id - ID of the project 
      * @param {Buffer} projectBuffer - The file buffer for the project. This is a zip.
+     * @param {Array<Object>} assetBuffers - asset buffers
      * @param {string} title - Title of the project.
      * @param {Buffer} imageBuffer - The file buffer for the thumbnail.
      * @param {string} instructions - The instructions for the project.
@@ -814,7 +815,7 @@ class UserManager {
      * @param {string} rating - Rating of the project. 
      * @async
      */
-    async updateProject(id, projectBuffer, title, imageBuffer, instructions, notes, rating) {
+    async updateProject(id, projectBuffer, assetBuffers, title, imageBuffer, instructions, notes, rating) {
         await this.projects.updateOne({id: id},
             {$set: {
                 title: title,
@@ -828,6 +829,9 @@ class UserManager {
         // minio bucket shit
         await this.minioClient.putObject("projects", id, projectBuffer);
         await this.minioClient.putObject("project-thumbnails", id, imageBuffer);
+        for (const asset of assetBuffers) {
+            await this.minioClient.putObject("project-assets", `${id}_${asset.id}`, asset.buffer);
+        }
     }
 
     /**

@@ -89,7 +89,7 @@
   - [ ] get people who voted (admin only)
   - [ ] get people who loved (admin only)
   - [x] upload project
-  - [ ] update project
+  - [x] update project
   - [ ] search projects (page + page count) (meta)
   - [ ] front page (just to make it easier to get all the projects on there)
   - [ ] get projects by author (page + page count) (meta)
