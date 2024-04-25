@@ -797,8 +797,20 @@ class UserManager {
      * @returns {Promise<Array<Object>>} - Array of remixes of the specified project
      * @async
      */
-    async getRemixes(id) {
-        const result = await this.projects.find({remix: id, public: true}).toArray();
+    async getRemixes(id, page, pageSize) {
+        const result = await this.projects.aggregate([
+            {
+                $match: { remix: id, public: true }
+            },
+            {
+                $facet: {
+                    metadata: [{ $count: "count" }],
+                    data: [{ $skip: page * pageSize }, { $limit: pageSize }]
+                }
+            }
+        ])
+        .sort({ lastUpdate: -1 })
+        .toArray();
 
         return result;
     }
@@ -1146,11 +1158,11 @@ class UserManager {
     /**
      * Get a list of featured projects to a specified size
      * @param {number} page - page of projects to get
-     * @param {number} pagesize - amount of projects to get
+     * @param {number} pageSize - amount of projects to get
      * @returns {Promise<Array<Object>>} - Array of all projects
      * @async
      */
-    async getFeaturedProjects(page, pagesize) {
+    async getFeaturedProjects(page, pageSize) {
         const result = await this.projects.aggregate([
             {
                 $match: { featured: true, public: true }
@@ -1158,7 +1170,7 @@ class UserManager {
             {
                 $facet: {
                     metadata: [{ $count: "count" }],
-                    data: [{ $skip: page * pagesize }, { $limit: pagesize }]
+                    data: [{ $skip: page * pageSize }, { $limit: pageSize }]
                 }
             }
         ])
@@ -1176,6 +1188,15 @@ class UserManager {
      */
     async featureProject(id, feature) {
         await this.projects.updateOne({id: id}, {$set: {featured: feature}});
+    }
+
+    /**
+     * Set a projects metadata
+     * @param {string} id - ID of the project
+     * @param {Object} data - Data to set
+     */
+    async setProjectMetadata(id, data) {
+        await this.projects.updateOne({id: id}, {$set: data});
     }
 
     /**
@@ -1326,8 +1347,8 @@ class UserManager {
      * @returns {Promise<boolean>} - True if the project exists, false if not
      * @async
      */
-    async projectExists(id) {
-        const result = await this.projects.findOne({id: id});
+    async projectExists(id, nonPublic) {
+        const result = await this.projects.findOne({id: id, public: !nonPublic});
 
         return result ? true : false;
     }

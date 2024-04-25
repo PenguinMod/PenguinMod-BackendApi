@@ -16,7 +16,13 @@ module.exports = (app, utils) => {
             return utils.error(res, 400, "Missing projectId");
         }
 
-        if (!await utils.UserManager.projectExists(packet.projectId)) {
+        if (!await utils.UserManager.projectExists(packet.projectId, true)) {
+            return utils.error(res, 404, "Project not found");
+        }
+
+        const metadata = await utils.UserManager.getProjectMetadata(packet.projectId);
+
+        if (metadata.author !== packet.username && !metadata.public) {
             return utils.error(res, 404, "Project not found");
         }
 
