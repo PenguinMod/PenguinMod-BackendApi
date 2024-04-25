@@ -85,8 +85,8 @@
   - [x] get all votes (just count)
   - [x] love toggle
   - [x] get if user loved (only check yourself/admin can check anyone)
-  - [ ] get people who voted (admin only)
-  - [ ] get people who loved (admin only)
+  - [x] get people who voted (admin only)
+  - [x] get people who loved (admin only)
   - [x] upload project
   - [x] update project
   - [x] search projects (page + page count) (meta)

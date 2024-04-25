@@ -1104,6 +1104,56 @@ class UserManager {
     }
 
     /**
+     * Get who loved a project
+     * @param {string} projectID - ID of the project
+     * @param {number} page - Page to get
+     * @param {number} pageSize - Page size
+     * @returns {Array<string>} - Array of user ids
+     */
+    async getWhoLoved(projectID, page, pageSize) {
+        const result = await this.projectStats.aggregate([
+            {
+                $match: { projectId: projectID, type: "love" }
+            },
+            {
+                $facet: {
+                    metadata: [{ $count: "count" }],
+                    data: [{ $skip: page * pageSize }, { $limit: pageSize }]
+                }
+            }
+        ])
+        .sort({ lastUpdate: -1 })
+        .toArray();
+
+        return result;
+    }
+
+    /**
+     * Get who voted for a project
+     * @param {string} projectID - ID of the project
+     * @param {number} page - Page to get
+     * @param {number} pageSize - Page size
+     * @returns {Array<string>} - Array of user ids
+     */
+    async getWhoVoted(projectID, page, pageSize) {
+        const result = await this.projectStats.aggregate([
+            {
+                $match: { projectId: projectID, type: "vote" }
+            },
+            {
+                $facet: {
+                    metadata: [{ $count: "count" }],
+                    data: [{ $skip: page * pageSize }, { $limit: pageSize }]
+                }
+            }
+        ])
+        .sort({ lastUpdate: -1 })
+        .toArray();
+
+        return result;
+    }
+
+    /**
      * Check if a user has voted on a project
      * @param {number} id - ID of the project.
      * @param {string} userId - ID of the person voting on the project.
