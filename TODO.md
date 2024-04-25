@@ -83,8 +83,8 @@
   - [x] vote toggle
   - [x] get if user voted (only check yourself/admin can check anyone)
   - [x] get all votes (just count)
-  - [ ] love toggle
-  - [ ] get if user loved (only check yourself/admin can check anyone)
+  - [x] love toggle
+  - [x] get if user loved (only check yourself/admin can check anyone)
   - [ ] get people who voted (admin only)
   - [ ] get people who loved (admin only)
   - [x] upload project
