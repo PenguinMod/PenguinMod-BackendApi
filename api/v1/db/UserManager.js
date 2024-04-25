@@ -1979,9 +1979,58 @@ class UserManager {
                     metadata: [{ $count: "count" }],
                     data: [{ $skip: page * pageSize }, { $limit: pageSize }]
                 }
-            }
+            },
+            { score: { $meta: "textScore" } }
         ])
         .sort({ score: { $meta: "textScore" } })
+        .toArray();
+
+        return result;
+    }
+
+    /**
+     * Search for a tag
+     * @param {string} tag - tag to search for
+     * @param {*} page - page of projects to get
+     * @param {*} pageSize - amount of projects to get
+     * @returns {Array<Object>} - Array of projects
+     */
+    async searchForTag(tag, page, pageSize) {
+        const result = await this.projects.aggregate([
+            {
+                $match: { $text: { $search: tag } }
+            },
+            {
+                $facet: {
+                    metadata: [{ $count: "count" }],
+                    data: [{ $skip: page * pageSize }, { $limit: pageSize }]
+                }
+            }
+        ])
+        .sort({ lastUpdate: -1 })
+        .toArray();
+
+        return result;
+    }
+
+    /**
+     * Specialized search for a query, like { author: abc } or another metadata item
+     * @param {Object} query - Query to search for 
+     * @param {number} page - Page of projects to get
+     * @param {number} pageSize - Amount of projects to get
+     * @returns {Array<Object>} - Array of projects
+     */
+    async specializedSearch(query, page, pageSize) {
+        const result = await this.projects.aggregate([
+            query,
+            {
+                $facet: {
+                    metadata: [{ $count: "count" }],
+                    data: [{ $skip: page * pageSize }, { $limit: pageSize }]
+                }
+            }
+        ])
+        .sort({ lastUpdate: -1 })
         .toArray();
 
         return result;

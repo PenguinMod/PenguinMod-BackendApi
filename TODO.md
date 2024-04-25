@@ -90,7 +90,7 @@
   - [x] upload project
   - [x] update project
   - [x] search projects (page + page count) (meta)
-  - [ ] front page (just to make it easier to get all the projects on there)
+  - [x] front page (just to make it easier to get all the projects on there)
   - [x] get projects by author (page + page count) (meta)
 
 - [ ] Users
