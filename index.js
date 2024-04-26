@@ -31,6 +31,32 @@ function error(res, code, error) {
     res.json({ "error": error });
 }
 
+function sendHeatLog(text, type, location, color="\x1b[0m") {
+    const body = JSON.stringify({
+        embeds: [{
+            title: `Filter Triggered`,
+            color: 0xff0000,
+            description: `\`\`\`${text}\n\`\`\``,
+            fields: [
+                {
+                    name: "Type",
+                    value: `\`${type}\``
+                },
+                {
+                    name: "Location",
+                    value: `${JSON.stringify(location)}`
+                }
+            ],
+            timestamp: new Date().toISOString()
+        }]
+    });
+    fetch(process.env.HeatWebhook, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body
+    });
+}
+
 const app = express();
 const PORT = process.env.PORT || 8080;
 const MAXVIEWS = process.env.MaxViews || 10000; // it will take up to 10000 views then reset after

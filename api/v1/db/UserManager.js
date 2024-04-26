@@ -1501,6 +1501,28 @@ class UserManager {
     }
 
     /**
+     * Get the index of illegal wording
+     * @param {string} text - Text to get the index from
+     * @returns {Promise<number>} - Index of the illegal wording
+     */
+    async getIndexOfIllegalWording(text) {
+        const illegalWords = await this.illegalList.findOne
+            ({ id: "illegalWords" }).items;
+        const illegalWebsites = await this.illegalList.findOne
+            ({ id: "illegalWebsites" }).items;
+        const spacedOutWordsOnly = await this.illegalList.findOne
+            ({ id: "spacedOutWordsOnly" }).items;
+        const joined = illegalWords.concat(illegalWebsites, spacedOutWordsOnly);
+        
+        for (const item in joined) {
+            const index = text.indexOf(item)
+            if (index + 1) {
+                return [index, index+item.length];
+            }
+        }
+    }
+
+    /**
      * Check for slightly illegal wording on text
      * @param {string} text - The text to check for slightly illegal wording
      * @returns {Promise<boolean>} - True if the text contains slightly illegal wording, false if not
@@ -1519,6 +1541,26 @@ class UserManager {
             }
         }
         return false;
+    }
+
+    /**
+     * Get the index of slightly illegal wording
+     * @param {string} text - Text to get the index from
+     * @returns {Promise<number>} - Index of the slightly illegal wording
+     */
+    async getIndexOfSlightlyIllegalWording(text) {
+        const potentiallyUnsafeWords = await this.illegalList.findOne
+            ({ id: "potentiallyUnsafeWords" }).items;
+        const potentiallyUnsafeWordsSpacedOut = await this.illegalList.findOne
+            ({ id: "potentiallyUnsafeWordsSpacedOut" }).items;
+        const joined = potentiallyUnsafeWords.concat(potentiallyUnsafeWordsSpacedOut);
+        
+        for (const item in joined) {
+            const index = text.indexOf(item)
+            if (index + 1) {
+                return [index, index+item.length];
+            }
+        }
     }
 
     /**
