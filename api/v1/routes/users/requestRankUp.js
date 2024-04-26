@@ -1,22 +1,24 @@
 module.exports = (app, utils) => {
-    app.get('/api/v1/users/requestRankUp', async function (req, res) {
+    app.get('/api/v1/users/requestrankup', async function (req, res) {
         const packet = req.body;
 
-        if (!UserManager.loginWithToken(packet.username, packet.token)) {
+        const username = packet.username;
+        const token = packet.token;
+
+        if (!await UserManager.loginWithToken(username, token)) {
             utils.error(res, 400, "Reauthenticate");
             return;
         }
 
-        const username = utils.Cast.toString(packet.username);
-        const badges = utils.UserManager.getBadges(username);
+        const badges = await utils.UserManager.getBadges(username);
 
-        let rank = utils.UserManager.getRank(username);
+        const rank = await utils.UserManager.getRank(username);
         if (rank !== 0) {
             utils.error(res, 400, "AlreadyRankedHighest");
             return;
         }
 
-        const signInDate = utils.UserManager.getFirstLogin(username);
+        const signInDate = await utils.UserManager.getFirstLogin(username);
         const userProjects = await utils.UserManager.getProjectsByAuthor(username);
 
         const canRequestRankUp = (userProjects.length > 3 // if we have 3 projects and
@@ -28,7 +30,8 @@ module.exports = (app, utils) => {
             return;
         }
 
-        await utils.UserManager.getRank(username);
+        await utils.UserManager.setRank(username, 1); // 1 is normal penguin
+
         res.status(200);
         res.header("Content-Type", 'application/json');
         res.json({ "success": true });

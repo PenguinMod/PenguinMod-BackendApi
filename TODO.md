@@ -11,10 +11,10 @@
 - [x] Use minio to store project shit (json and assets)
   - [x] Use protobufs to store project jsons
 - [ ] OAuth2 (Someone please do this😭)
-  - [ ] Scratch Auth
+  - [x] Scratch Auth
   - [ ] Github Auth?
   - [ ] Google Auth??? (why this shit so difficult)
-  - [ ] Be able to connect an account with oauth (e.g. you want to sign in with a password and oauth)
+  - [x] Be able to connect an account with oauth (e.g. you want to sign in with a password and oauth)
 
 ## Projects
 
@@ -49,6 +49,10 @@
 
 - [x] Rank users based on if they have more than 3 projects and signed in 5 days ago
 - [x] Only ranked users should be able to use Custom Extensions, Files, iframe, HTTP, Website Requests, Network, etc.
+
+## Extra
+
+- [ ] Make sure changing password is secure. (should require login right before, make sure to verify that it does actually happen)
 
 ## Endpoints
 
@@ -96,7 +100,7 @@
 - [ ] Users
   - [x] get profile json
   - [x] user from code (no idea why this is used but wtv)
-  - [ ] request rank up
+  - [x] request rank up
   - [x] check if banned
   - [x] assign possition
   - [ ] get site mods (admin only)
@@ -128,6 +132,8 @@
   - [ ] get my feed?
   - [ ] ban toggle
   - [x] is banned
+  - [ ] get badges
+  - [ ] set badges (admin only/automated on some endpoints)
 
 - [ ] Messages
   - [ ] get messages (page + page count)
@@ -141,13 +147,9 @@
   - [ ] delete report
   - [ ] send report
 
-- [ ] Badges
-  - [ ] get badges
-  - [ ] set badges
-
 - [ ] Misc
-  - [ ] get profanity list
-  - [ ] set profanity list
+  - [x] get profanity list
+  - [x] set profanity list
   - [ ] get site stats
   - [ ] get last tos, privacy policy, and uploading guidelines update
   - [ ] update tos, privacy policy, or uploading guidelines

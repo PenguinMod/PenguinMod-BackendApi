@@ -1,16 +1,21 @@
 module.exports = (app, utils) => {
     app.get('/api/v1/users/setProfanityList', async function (req, res) {
         const packet = req.query;
-        if (!await UserManager.loginWithToken(packet.user, packet.passcode)) {
+
+        const username = packet.username;
+        const token = packet.token;
+
+        if (!await UserManager.loginWithToken(username, token)) {
             utils.error(res, 400, "Reauthenticate")
             return;
         }
-        if (!await utils.UserManager.isAdmin(Cast.toString(packet.user))) {
+        if (!await utils.UserManager.isAdmin(username)) {
             utils.error(res, 403, "FeatureDisabledForThisAccount")
             return;
         }
 
         const words = packet.json;
+
         if (typeof words !== 'object') {
             utils.error(res, 400, "InvalidData");
             return;
@@ -27,7 +32,9 @@ module.exports = (app, utils) => {
                 utils.error(res, 400, "InvalidData");
                 return;
             }
+        }
 
+        for (const key in words) {
             await utils.UserManager.setIllegalWords(words[key], key);
         }
         

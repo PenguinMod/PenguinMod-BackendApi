@@ -1,12 +1,9 @@
 module.exports = (app, utils) => {
-    app.get('/api/v1/users/userFromCode', async function (req, res) {
-        const username = utils.Cast.toString(req.query.username);
-    
-        if (typeof username !== "string") {
-            utils.error(res, 400, "NoUserSpecified")
-            return;
-        }
+    app.get('/api/v1/users/userfromcode', async function (req, res) {
+        const packet = req.query;
 
+        const username = packet.username;
+    
         if (!await utils.UserManager.existsByUsername(username)) {
             utils.error(res, 404, "NotFound")
             return;
