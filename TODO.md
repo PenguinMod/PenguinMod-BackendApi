@@ -118,9 +118,9 @@
       - [x] add password
     - [x] change password
   - [x] logout
-  - [ ] get id by username
-  - [ ] get username by id
-  - [ ] is admin, is mod, etc (admin only)
+  - [x] get id by username
+  - [x] get username by id
+  - [x] is admin, is mod, etc (admin only)
   - [ ] set my featured project
   - [ ] set bio
   - [ ] set a users featured project (admin)
