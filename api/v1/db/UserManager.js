@@ -1359,11 +1359,25 @@ class UserManager {
     /**
      * Get messages sent to a person
      * @param {string} receiver - ID of the person receiving the message
+     * @param {number} page - page of messages to get
+     * @param {number} pageSize - amount of messages to get
      * @returns {Promise<Array<Object>>} - Array of the messages sent to the person
      * @async
      */
-    async getMessages(receiver) {
-        const result = await this.messages.find({receiver: receiver}).toArray();
+    async getMessages(receiver, page, pageSize) {
+        const result = await this.messages.aggregate([
+            {
+                $match: { receiver: receiver }
+            },
+            {
+                $facet: {
+                    metadata: [{ $count: "count" }],
+                    data: [{ $skip: page * pageSize }, { $limit: pageSize }]
+                }
+            }
+        ])
+        .sort({ date: -1 })
+        .toArray();
 
         return result;
     }

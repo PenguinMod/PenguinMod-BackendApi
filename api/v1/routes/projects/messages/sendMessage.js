@@ -1,14 +1,15 @@
 module.exports = (app, utils) => {
-    app.post('api/v1/projects/modresponse', async (req, res) => {
+    app.post('api/v1/projects/sendmessage', async (req, res) => {
+        // use this if you need to tell a certain user something but you're not responding to a dispute or smth
         const packet = req.body;
 
         const username = packet.username;
         const token = packet.token;
 
-        const disputeID = packet.disputeID;
+        const target = packet.target;
         const message = packet.message;
 
-        if (!username || !token || typeof disputeID !== "number" || typeof message !== "string") {
+        if (!username || !token || typeof message !== "string") {
             return utils.error(res, 400, "InvalidData");
         }
 
@@ -20,13 +21,7 @@ module.exports = (app, utils) => {
             return utils.error(res, 401, "Invalid credentials");
         }
 
-        const dispute = await utils.UserManager.getMessage(disputeID);
-
-        if (!dispute) {
-            return utils.error(res, 404, "MessageNotFound");
-        }
-
-        await utils.UserManager.sendMessage(dispute.receiver, message, true, dispute.projectID);
+        await utils.UserManager.sendMessage(target, message, false);
 
         res.header('Content-type', "application/json");
         res.send({ success: true });

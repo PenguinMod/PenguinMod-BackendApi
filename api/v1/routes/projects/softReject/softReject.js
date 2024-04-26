@@ -1,5 +1,5 @@
 module.exports = (app, utils) => {
-    app.post('api/v1/projects/softReject', async (req, res) => {
+    app.post('api/v1/projects/softreject', async (req, res) => {
         const packet = req.body;
 
         const username = packet.username;

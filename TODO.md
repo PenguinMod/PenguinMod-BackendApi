@@ -67,7 +67,7 @@
   - [x] pingpong (take a guess...)
   - [x] robots.txt (get those damn robs out of here!!E2!!11)
 
-- [ ] projects
+- [x] projects
   - [x] get project metadata
   - [x] get project protobuf
   - [x] get project assets
@@ -134,11 +134,10 @@
   - [ ] get badges
   - [ ] set badges (admin only/automated on some endpoints)
 
-- [ ] Messages
-  - [ ] get messages (page + page count)
-  - [ ] add message
-  - [ ] get message count
-  - [ ] mark messages as read
+- [x] Messages
+  - [x] get messages (page + page count)
+  - [x] get message count
+  - [x] mark messages as read
 
 - [ ] Reports
   - [ ] get reports (page + page count)
