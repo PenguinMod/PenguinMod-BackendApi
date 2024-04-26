@@ -601,7 +601,7 @@ class UserManager {
 
     /**
      * Get all moderators
-     * @returns {Promise<Array<object>>} - Array of all moderators
+     * @returns {Promise<Array<Object>>} - Array of all moderators
      * @async
      */
     async getAllModerators() {

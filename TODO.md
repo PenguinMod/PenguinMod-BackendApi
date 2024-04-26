@@ -102,7 +102,7 @@
   - [x] request rank up
   - [x] check if banned
   - [x] assign possition
-  - [ ] get site mods (admin only)
+  - [x] get site mods/admins (admin only)
   - [ ] login
     - [x] login with password
     - [x] login with token
