@@ -77,11 +77,10 @@
   - [x] toggle posting projects
   - [x] get featured projects (sorted by newest) (page + page count) (meta)
   - [x] get remixes of a project (page + page count) (meta)
-  - [ ] "remove" project
-    - [ ] dispute
-    - [ ] respond to dispute
-    - [ ] download
-    - [ ] restore
+  - [x] "remove" project
+    - [x] dispute
+    - [x] respond to dispute
+    - [x] restore
   - [x] delete project (admin/creator only)
   - [x] manually feature (admin only)
   - [x] vote toggle

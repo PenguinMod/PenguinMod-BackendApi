@@ -780,7 +780,8 @@ class UserManager {
             date: Date.now(),
             lastUpdate: Date.now(),
             rating: rating,
-            public: true
+            public: true,
+            softRejected: false
         });
 
         // minio bucket shit
@@ -800,7 +801,7 @@ class UserManager {
     async getRemixes(id, page, pageSize) {
         const result = await this.projects.aggregate([
             {
-                $match: { remix: id, public: true }
+                $match: { remix: id, public: true, softReject: false }
             },
             {
                 $facet: {
@@ -880,12 +881,12 @@ class UserManager {
      * @returns {Promise<Array<Object>>} - Array of projects by the specified author
      * @async
      */
-    async getProjectsByAuthor(author, page, pageSize) {
+    async getProjectsByAuthor(author, page, pageSize, softRejected=false) {
         const _result = await this.projects.aggregate([
             {
                 $facet: {
                     metadata: [{ $count: "count" }],
-                    data: [{ $match: { author: author, public: true } }, { $skip: page * pageSize }, { $limit: pageSize }]
+                    data: [{ $match: { author: author, public: true, softReject: softRejected } }, { $skip: page * pageSize }, { $limit: pageSize }]
                 }
             }
         ])
@@ -1215,7 +1216,7 @@ class UserManager {
     async getFeaturedProjects(page, pageSize) {
         const result = await this.projects.aggregate([
             {
-                $match: { featured: true, public: true }
+                $match: { featured: true, public: true, softReject: false }
             },
             {
                 $facet: {
@@ -1333,17 +1334,26 @@ class UserManager {
 
     /**
      * Send a message
-     * @param {string} sender - ID of the person sending the message
      * @param {string} receiver - ID of the person receiving the message
      * @param {string} message - The message - should follow the format specified in the schema
+     * @param {boolean} disputable - True if the message is disputable, false if not
+     * @returns {Promise<string>} - ID of the message
      * @async
      */
-    async sendMessage(receiver, message) {
+    async sendMessage(receiver, message, disputable, projectID=0) {
+        const id = ULID.ulid();
+
         await this.messages.insertOne({
             receiver: receiver,
             message: message,
-            date: Date.now()
+            disputable: disputable,
+            date: Date.now(),
+            read: false,
+            id: id,
+            projectID: projectID
         });
+
+        return id;
     }
 
     /**
@@ -1354,6 +1364,17 @@ class UserManager {
      */
     async getMessages(receiver) {
         const result = await this.messages.find({receiver: receiver}).toArray();
+
+        return result;
+    }
+
+    /**
+     * Get a message
+     * @param {string} messageID - ID of the message
+     * @returns {Promise<Object>} - The message
+     */
+    async getMessage(messageID) {
+        const result = await this.messages.findOne({ id: messageID });
 
         return result;
     }
@@ -1383,12 +1404,51 @@ class UserManager {
     }
 
     /**
+     * Mark a message as read
+     * @param {string} id - ID of the message
+     * @param {boolean} read - Toggle between read and not read
+     */
+    async markMessageAsRead(id, read) {
+        await this.messages.updateOne({id: id}, {$set: {read: read}});
+    }
+
+    /**
+     * Mark all messages sent to a user as read
+     * @param {string} receiver - ID of the person receiving the messages
+     */
+    async markAllMessagesAsRead(receiver) {
+        await this.messages.updateMany({receiver: receiver}, {$set: {read: true}});
+    }
+
+    /**
      * Delete a message
      * @param {string} id - ID of the message
      * @async
      */
     async deleteMessage(id) {
         await this.messages.deleteOne({id: id});
+    }
+
+    /**
+     * Check if a message is disputable
+     * @param {string} id - ID of the message
+     * @returns {Promise<boolean>} - True if the message is disputable, false if not
+     */
+    async isMessageDisputable(id) {
+        const result = await this.messages.findOne({id: id});
+
+        return result.disputable;
+    }
+
+    /**
+     * Dispute a message
+     * @param {string} id - ID of the message
+     * @param {string} dispute - The dispute
+     */
+    async dispute(id, dispute) {
+        await this.messages.updateOne({id: id}, {$set: {dispute: dispute, disputable: false}});
+
+        // to respond to a dispute you just send another message
     }
 
     /**
@@ -2034,6 +2094,36 @@ class UserManager {
         .toArray();
 
         return result;
+    }
+
+    /**
+     * Set a project to soft rejected
+     * @param {string} id - ID of the project
+     * @param {boolean} toggle - True if soft rejecting, false if undoing it
+     */
+    async softReject(id, toggle) {
+        // dont change if public as you should still be able to go to it if you have the id
+        await this.projects.updateOne({id: id}, { $set: { softRejected: toggle } });
+    }
+
+    /**
+     * Check if a project is soft rejected
+     * @param {string} id - ID of the project
+     * @returns {Promise<boolean>}
+     */
+    async isSoftRejected(id) {
+        const result = await this.projects.findOne({id: id});
+
+        return result.softRejected;
+    }
+
+    /**
+     * Set a project to private/not private
+     * @param {string} id - ID of the project
+     * @param {boolean} toggle - True if making private, false if not
+     */
+    async privateProject(id, toggle) {
+        await this.projects.updateOne({id: id}, { $set: { public: !toggle } });
     }
 }
 
