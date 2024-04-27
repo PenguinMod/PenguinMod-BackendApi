@@ -141,8 +141,8 @@
   - [ ] get my feed?
   - [x] ban toggle
   - [x] is banned
-  - [ ] get badges
-  - [ ] set badges (admin only/automated on some endpoints)
+  - [x] get badges
+  - [x] set badges (admin only/automated on some endpoints)
 
 - [x] Messages
   - [x] get messages (page + page count)
@@ -161,3 +161,4 @@
   - [ ] get site stats
   - [ ] get last tos, privacy policy, and uploading guidelines update
   - [ ] update tos, privacy policy, or uploading guidelines
+  - [ ] add a few automated badges (like for example when your project is featured)
