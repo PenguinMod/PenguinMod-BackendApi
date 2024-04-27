@@ -139,7 +139,7 @@
   - [x] is following
   - [x] follow toggle
   - [ ] get my feed?
-  - [ ] ban toggle
+  - [x] ban toggle
   - [x] is banned
   - [ ] get badges
   - [ ] set badges (admin only/automated on some endpoints)
