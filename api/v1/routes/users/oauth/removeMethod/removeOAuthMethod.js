@@ -19,23 +19,11 @@ module.exports = (app, utils) => {
 
         const methods = await utils.UserManager.getOAuthMethods(username);
 
-        if (methods.includes(method)) {
+        if (!methods.includes(method)) {
             utils.error(res, 400, "InvalidData");
             return;
         }
 
-        const userid = await utils.UserManager.getUserID(username);
-        
-        // using switch case cuz erm i like it
-        switch (method) {
-            case "scratch":
-                let state = await utils.UserManager.generateOAuth2State(`_${userid}`);
-                
-                res.redirect(`https://oauth2.scratch-wiki.info/wiki/Special:ScratchOAuth2/authorize?client_id=${utils.env.ScratchOAuthClientID}&redirect_uri=https://projects.penguinmod.com/api/v1/users/removescratchlogin&scopes=identify&state=${state}`);
-                break;
-            default:
-                utils.error(res, 400, "InvalidData");
-                return;
-        }
+        await utils.UserManager.removeOAuthMethod(username, method);
     });
 }

@@ -110,7 +110,16 @@
       - [ ] all methods
         - [x] scratch
         - [ ] github
+          - [ ] add method
+          - [ ] create account
+          - [ ] add password
+          - [ ] login
         - [ ] google
+          - [ ] add method
+          - [ ] create account
+          - [ ] add password
+          - [ ] login
+        - [x] Remove method
       - [x] create account
       - [x] login
       - [x] link account
