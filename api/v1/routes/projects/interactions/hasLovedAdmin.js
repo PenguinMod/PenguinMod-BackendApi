@@ -5,11 +5,11 @@ module.exports = (app, utils) => {
         const username = packet.username;
         const token = packet.token;
 
-        const user = packet.user;
+        const target = packet.target;
 
         const projectID = packet.projectID;
 
-        if (!username || !token || !projectID || !user) {
+        if (!username || !token || !projectID || !target) {
             return utils.error(res, 400, "InvalidData");
         }
 
@@ -25,7 +25,7 @@ module.exports = (app, utils) => {
             return utils.error(res, 404, "Project not found");
         }
 
-        const id = await utils.UserManager.getIDByUsername(user);
+        const id = await utils.UserManager.getIDByUsername(target);
 
         const has = await utils.UserManager.hasLovedProject(projectID, id);
 

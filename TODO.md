@@ -130,9 +130,9 @@
   - [x] get id by username
   - [x] get username by id
   - [x] is admin, is mod, etc (admin only)
-  - [ ] set my featured project
+  - [x] set my featured project
   - [x] set bio
-  - [ ] set a users featured project (admin)
+  - [x] set a users featured project (admin)
   - [x] set a users bio (admin)
   - [ ] get follower count
   - [ ] is following

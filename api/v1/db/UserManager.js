@@ -181,7 +181,13 @@ class UserManager {
      */
     async loginWithPassword(username, password) {
         const result = await this.users.findOne({ username: username });
+
         if (!result) return false;
+
+        if (result.banned) {
+            return false;
+        }
+
         if (await bcrypt.compare(password, result.password)) {
             return await this.newTokenGen(username);
         } else {
@@ -200,6 +206,10 @@ class UserManager {
         const result = await this.users.findOne({ username: username });
 
         if (!result) return false;
+
+        if (result.banned) {
+            return false;
+        }
 
         // login invalid if more than the time
         if (result.lastLogin + UserManager.loginInvalidationTime < Date.now()) {

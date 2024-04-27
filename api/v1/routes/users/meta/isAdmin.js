@@ -5,9 +5,9 @@ module.exports = (app, utils) => {
         const username = packet.username;
         const token = packet.token;
 
-        const user = packet.user;
+        const target = packet.target;
 
-        if (!username || !token || typeof user !== "string") {
+        if (!username || !token || typeof target !== "string") {
             return utils.error(res, 400, "Missing username or token");
         }
 
@@ -19,7 +19,7 @@ module.exports = (app, utils) => {
             return utils.error(res, 401, "Unauthorized");
         }
 
-        const isAdmin = await utils.UserManager.isAdmin(user);
+        const isAdmin = await utils.UserManager.isAdmin(target);
 
         res.header('Content-type', "application/json");
         res.send({ success: true, isAdmin: isAdmin });

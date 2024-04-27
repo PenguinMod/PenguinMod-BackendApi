@@ -1,11 +1,11 @@
 module.exports = (app, utils) => {
-    app.post('/api/v1/users/setBio', async function (req, res) {
+    app.post('/api/v1/users/setbioadmin', async function (req, res) {
         const packet = req.body;
 
         const username = packet.username;
         const token = packet.token;
 
-        const user = packet.user;
+        const target = packet.target;
         const bio = packet.bio;
 
         if (!await utils.UserManager.loginWithToken(username, token)) {
