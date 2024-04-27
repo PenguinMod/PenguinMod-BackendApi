@@ -122,9 +122,9 @@
   - [x] get username by id
   - [x] is admin, is mod, etc (admin only)
   - [ ] set my featured project
-  - [ ] set bio
+  - [x] set bio
   - [ ] set a users featured project (admin)
-  - [ ] set a users bio (admin)
+  - [x] set a users bio (admin)
   - [ ] get follower count
   - [ ] is following
   - [ ] follow toggle

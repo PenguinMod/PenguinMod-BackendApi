@@ -57,6 +57,45 @@ function sendHeatLog(text, type, location, color="\x1b[0m") {
     });
 }
 
+function sendBioUpdateLog(username, target, oldBio, newBio) {
+    const body = JSON.stringify({
+        content: `${target}'s bio was edited by ${username}`,
+        embeds: [{
+            title: `${target} had their bio edited`,
+            color: 0xff0000,
+            fields: [
+                {
+                    name: "Edited by",
+                    value: `${username}`
+                },
+                {
+                    name: "URL",
+                    value: `https://penguinmod.com/profile?user=${target}`
+                },
+            ],
+            author: {
+                name: String(target).substring(0, 50),
+                icon_url: String("https://trampoline.turbowarp.org/avatars/by-username/" + String(target).substring(0, 50)),
+                url: String("https://penguinmod.com/profile?user=" + String(target).substring(0, 50))
+            },
+            timestamp: new Date().toISOString()
+        }, {
+            title: `New Bio for ${target}`,
+            color: 0xffbb00,
+            description: `${newBio}`
+        }, {
+            title: `Original Bio for ${target}`,
+            color: 0xffbb00,
+            description: `${oldBio}`
+        }]
+    });
+    fetch(process.env.ApproverLogWebhook, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body
+    });
+}
+
 const app = express();
 const PORT = process.env.PORT || 8080;
 const MAXVIEWS = process.env.MaxViews || 10000; // it will take up to 10000 views then reset after
@@ -113,7 +152,9 @@ const UserManager = new um();
         uploadCooldown: process.env.uploadCooldown || 1000 * 60 * 8,
         unlinkAsync: promisify(fs.unlink),
         path: path,
-        PORT: PORT
+        PORT: PORT,
+        sendHeatLog: sendHeatLog,
+        sendBioUpdateLog: sendBioUpdateLog
     });
 
     app.listen(PORT, () => {
