@@ -134,9 +134,10 @@
   - [x] set bio
   - [x] set a users featured project (admin)
   - [x] set a users bio (admin)
-  - [ ] get follower count
-  - [ ] is following
-  - [ ] follow toggle
+  - [x] get follower count
+  - [x] get followers
+  - [x] is following
+  - [x] follow toggle
   - [ ] get my feed?
   - [ ] ban toggle
   - [x] is banned

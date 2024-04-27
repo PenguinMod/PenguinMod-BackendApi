@@ -1321,13 +1321,15 @@ class UserManager {
     /**
      * Get the people a person is being followed by
      * @param {string} username - username of the person
+     * @param {number} page - page of followers to get
+     * @param {number} pageCount - amount of followers to get
      * @returns {Promise<Array<string>>} - Array of the people the person is being followed by
      * @async
      */
-    async getFollowers(username) {
-        const result = await this.users.findOne({username: username});
+    async getFollowers(username, page, pageCount) {
+        const result = await this.username.findOne({username: username});
 
-        return result.followers;
+        return result.followers.slice(page * pageCount, page * pageCount + pageCount);
     }
 
     /**
@@ -1336,10 +1338,21 @@ class UserManager {
      * @returns {Promise<Array<string>>} - Array of the people the person is following
      * @async
      */
-    async getFollowing(username) {
-        const result = await this.users.findOne({username: username});
+    async getFollowing(username, page, pageSize) {
+        const result = await this.username.findOne({username: username});
 
-        return result.following;
+        return result.following.slice(page * pageSize, page * pageSize + pageSize);
+    }
+
+    /**
+     * Get the amount of people following a user
+     * @param {string} username - Username of the user
+     * @returns {Promise<number>} - Amount of people following the user
+     */
+    async getFollowerCount(username) {
+        const result = await this.username.findOne({username: username});
+
+        return result.followers.length;
     }
 
     /**
