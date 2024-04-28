@@ -111,7 +111,7 @@
         - [x] scratch
         - [ ] github
           - [ ] add method
-          - [ ] create account
+          - [x] create account
           - [ ] add password
           - [ ] login
         - [ ] google
