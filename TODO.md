@@ -52,7 +52,7 @@
 
 ## Extra
 
-- [ ] Make sure changing password is secure. (should require login right before, make sure to verify that it does actually happen)
+- [x] Make sure changing password is secure. (should require login right before, make sure to verify that it does actually happen)
 
 ## Endpoints
 
