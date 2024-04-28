@@ -21,7 +21,8 @@ module.exports = (app, utils) => {
 
         const isAdmin = await utils.UserManager.isAdmin(target);
 
+        res.status(200);
         res.header('Content-type', "application/json");
-        res.send({ success: true, isAdmin: isAdmin });
+        res.send({ isAdmin:isAdmin });
     });
 }

@@ -10,7 +10,8 @@ module.exports = (app, utils) => {
 
         const id = await utils.UserManager.getIDByUsername(username);
 
+        res.status(200);
         res.header('Content-type', "application/json");
-        res.send({ success: true, id: id });
+        res.send({ id: id });
     });
 }

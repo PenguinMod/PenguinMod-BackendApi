@@ -21,7 +21,8 @@ module.exports = (app, utils) => {
 
         const isModerator = await utils.UserManager.isModerator(target);
 
+        res.status(200);
         res.header('Content-type', "application/json");
-        res.send({ success: true, isModerator: isModerator });
+        res.send({ isMod: isModerator });
     });
 }

@@ -1,5 +1,5 @@
 module.exports = (app, utils) => {
-    app.get('/api/v1/users/ismod', async function (req, res) {
+    app.get('/api/v1/users/getadmins', async function (req, res) {
         const packet = req.query;
 
         const username = packet.username;
@@ -21,7 +21,8 @@ module.exports = (app, utils) => {
 
         const admins = await utils.UserManager.getAllAdmins();
 
+        res.status(200);
         res.header('Content-type', "application/json");
-        res.send({ success: true, admins: admins });
+        res.send({ admins: admins });
     });
 }

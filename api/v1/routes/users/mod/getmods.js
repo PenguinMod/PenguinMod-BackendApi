@@ -21,7 +21,8 @@ module.exports = (app, utils) => {
 
         const mods = await utils.UserManager.getAllModerators();
 
+        res.status(200);
         res.header('Content-type', "application/json");
-        res.send({ success: true, mods: mods });
+        res.send({ mods: mods });
     });
 }

@@ -14,6 +14,6 @@ module.exports = (app, utils) => {
 
         res.status(200);
         res.header("Content-Type", 'application/json');
-        res.send({ "count": count });
+        res.send({ count: count });
     });
 }

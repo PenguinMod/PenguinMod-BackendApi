@@ -10,10 +10,10 @@ module.exports = (app, utils) => {
             return;
         }
 
-        const count = await utils.UserManager.isFollowing(username, target);
+        const isFollowing = await utils.UserManager.isFollowing(username, target);
 
         res.status(200);
         res.header("Content-Type", 'application/json');
-        res.send({ "count": count });
+        res.send({ following: isFollowing });
     });
 }

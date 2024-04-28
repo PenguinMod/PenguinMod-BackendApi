@@ -53,6 +53,7 @@ Please report any security vulnerabilities using GitHub's security tab on the re
     FeatureAmount=amountOfVotesToBeFeatured
 
     FeedExpirationTime=feedExpirationTime
+    FeedSize=feedSize
     ```
 
 6. Run `npm run dev` to start the server in development mode.

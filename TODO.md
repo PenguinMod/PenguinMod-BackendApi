@@ -138,7 +138,7 @@
   - [x] get followers
   - [x] is following
   - [x] follow toggle
-  - [ ] get my feed?
+  - [x] get my feed
   - [x] ban toggle
   - [x] is banned
   - [x] get badges
