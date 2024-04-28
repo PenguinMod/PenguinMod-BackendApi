@@ -3,7 +3,7 @@ const Magic = require('mmmagic').Magic;
 const magic = new Magic();
 
 module.exports = (app, utils) => {
-    app.post('/api/v1/users/setPFPAdmin', utils.upload.single("picture"), async (req, res) => {
+    app.post('/api/v1/users/setpfpadmin', utils.upload.single("picture"), async (req, res) => {
         const packet = req.body;
 
         const username = packet.username;
@@ -42,7 +42,7 @@ module.exports = (app, utils) => {
                 return utils.error(res, 400, "Invalid file type");
             }
 
-            await utils.UserManager.setPFP(target, picture);
+            await utils.UserManager.setProfilePicture(target, picture);
 
             res.status(200);
             res.header("Content-Type", 'application/json');
