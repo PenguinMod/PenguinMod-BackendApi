@@ -27,11 +27,17 @@ module.exports = (app, utils) => {
         const userid = await utils.UserManager.getUserID(username);
         
         // using switch case cuz erm i like it
+        let state;
         switch (method) {
             case "scratch":
-                let state = await utils.UserManager.generateOAuth2State(`_${userid}`);
+                state = await utils.UserManager.generateOAuth2State(`_${userid}`);
                 
                 res.redirect(`https://oauth2.scratch-wiki.info/wiki/Special:ScratchOAuth2/authorize?client_id=${utils.env.ScratchOAuthClientID}&redirect_uri=https://projects.penguinmod.com/api/v1/users/addscratchlogin&scopes=identify&state=${state}`);
+                break;
+            case "github":
+                state = await utils.UserManager.generateOAuth2State(`_${userid}`);
+                
+                res.redirect(`https://github.com/login/oauth/authorize?client_id=${utils.env.GitHubOAuthClientID}&redirect_uri=https://projects.penguinmod.com/api/v1/users/githubcallback/addmethod&state=${state}&scope=read:user`);
                 break;
             default:
                 utils.error(res, 400, "InvalidData");
