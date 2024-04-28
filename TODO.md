@@ -116,7 +116,7 @@
           - [x] login
         - [ ] google
           - [ ] add method
-          - [ ] create account
+          - [x] create account
           - [ ] add password
           - [ ] login
         - [x] Remove method
