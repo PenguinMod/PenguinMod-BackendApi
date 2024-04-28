@@ -16,6 +16,9 @@ module.exports = (app, utils) => {
                 let state = await utils.UserManager.generateOAuth2State();
                 res.redirect(`https://oauth2.scratch-wiki.info/wiki/Special:ScratchOAuth2/authorize?client_id=${utils.env.ScratchOAuthClientID}&redirect_uri=http://localhost:${utils.PORT}/api/v1/users/scratchoauthlogin&scopes=identify&state=${state}`);
                 break;
+            case "github":
+                state = await utils.UserManager.generateOAuth2State();
+                res.redirect(`https://github.com/login/oauth/authorize?client_id=${utils.env.GitHubOAuthClientID}&redirect_uri=http://localhost:8080/api/v1/users/githubcallback/login&state=${state}&scope=read:user`);
             default:
                 utils.error(res, 400, "InvalidData");
                 return;

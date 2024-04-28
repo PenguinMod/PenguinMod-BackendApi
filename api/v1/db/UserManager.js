@@ -350,6 +350,8 @@ class UserManager {
     async getUserIDByOAuthID(method, id) {
         const result = await this.oauthIDs.findOne({ method: method, code: id });
 
+        if (!result) return false;
+
         return result.id;
     }
 
