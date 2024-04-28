@@ -18,8 +18,6 @@ module.exports = (app, utils) => {
         // now make the request
         const response = await utils.UserManager.makeOAuth2Request(code, "scratch");
 
-        // response.access_token
-
         res.status(200);
         res.redirect(`http://localhost:5173/oauthchangepassword?method=scratch&at=${response.access_token}`); //TODO: add page to on main site or smth for this 
         // TODO: in prod change this to penguinmod.com

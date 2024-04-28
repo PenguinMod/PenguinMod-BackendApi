@@ -19,6 +19,7 @@ module.exports = (app, utils) => {
             case "github":
                 state = await utils.UserManager.generateOAuth2State();
                 res.redirect(`https://github.com/login/oauth/authorize?client_id=${utils.env.GitHubOAuthClientID}&redirect_uri=https://projects.penguinmod.com/api/v1/users/githubcallback/login&state=${state}&scope=read:user`);
+                break;
             default:
                 utils.error(res, 400, "InvalidData");
                 return;
