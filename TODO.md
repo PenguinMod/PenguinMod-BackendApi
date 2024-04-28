@@ -109,10 +109,10 @@
     - [ ] oauth
       - [ ] all methods
         - [x] scratch
-        - [ ] github
+        - [x] github
           - [x] add method
           - [x] create account
-          - [ ] add password
+          - [x] add password
           - [x] login
         - [ ] google
           - [ ] add method
