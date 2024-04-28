@@ -36,6 +36,7 @@ class UserManager {
         this.messages = this.db.collection('messages');
         this.oauthStates = this.db.collection('oauthStates');
         this.userFeed = this.db.collection('userFeed');
+        await this.userFeed.createIndex({ 'expireAt': 1 }, { expireAfterSeconds: process.utils.FeedExpirationTime });
         this.illegalList = this.db.collection('illegalList');
         if (!this.illegalList.findOne({ id: "illegalWords" })) {
             this.illegalList.insertMany([
@@ -779,7 +780,6 @@ class UserManager {
             id = "0".repeat(10 - id.length) + id;
         } while (id !== 0 && await this.projects.findOne({id: id}));
         
-        
         await this.projects.insertOne({
             id: id,
             author: author,
@@ -802,6 +802,8 @@ class UserManager {
         for (const asset of assetBuffers) {
             await this.minioClient.putObject("project-assets", `${id}_${asset.id}`, asset.buffer);
         }
+
+        await this.addToFeed(author, remix ? "remix" : "upload", {id: id, name: title});
     }
 
     /**
@@ -1305,6 +1307,10 @@ class UserManager {
         }
         await this.users.updateOne({id: follower}, {$pull: {following: followee}});
         await this.users.updateOne({id: followee}, {$pull: {followers: follower}});
+
+        if (follow) {
+            await this.addToFeed(follower, "follow", {id: followee, name: await this.getUsernameByID(followee)});
+        }
     }
 
     /**
@@ -2218,9 +2224,9 @@ class UserManager {
 
         const followers = result.followers;
 
-        const feed = await this.projects.aggregate([
+        const feed = await this.userFeed.aggregate([
             {
-                $match: { author: { $in: followers } }
+                $match: { userID: { $in: followers } }
             },
             {
                 $facet: {
@@ -2235,11 +2241,17 @@ class UserManager {
         return feed;
     }
 
-    async addToFeed(userID, type, id) {
+    /**
+     * 
+     * @param {string} userID - ID of the user
+     * @param {string} type - Type of the feed item
+     * @param {string} data - Data of the feed item, for example the project id and name
+     */
+    async addToFeed(userID, type, data) {
         await this.userFeed.insertOne({
             userID: userID,
             type: type,
-            id: id,
+            data: data,
             date: Date.now(),
             expireAt: new Date(Date.now() + process.env.FeedExpirationTime)
         });
