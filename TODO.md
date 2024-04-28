@@ -150,10 +150,10 @@
   - [x] mark messages as read
 
 - [ ] Reports
-  - [ ] get reports (page + page count)
-  - [ ] get reports on a certain user (page + page count (just in case theres a shit ton))
+  - [x] get reports (page + page count)
+  - [ ] get reports on a certain user/project (page + page count (just in case theres a shit ton))
   - [ ] delete report
-  - [ ] send report
+  - [x] send report
 
 - [ ] Misc
   - [x] get profanity list
