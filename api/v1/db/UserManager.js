@@ -692,6 +692,7 @@ class UserManager {
             reportee: reportee,
             reason: reason,
             reporter: reporter,
+            date: Date.now(),
             id: ULID.ulid()
         })
     }
@@ -702,8 +703,21 @@ class UserManager {
      * @returns {Promise<Array<object>>} - Array of reports of the specified type
      * @async
      */
-    async getReportsByType(type) {
-        const result = await this.reports.find({ type: type }).toArray();
+    async getReportsByType(type, page, pageSize) {
+        const result = await this.reports.aggregate([
+            {
+                $match: { type: type }
+            },
+            {
+                $facet: {
+                    metadata: [{ $count: "count" }],
+                    data: [{ $skip: page * pageSize }, { $limit: pageSize }]
+                }
+            }
+        ])
+        .sort({ date: -1 })
+        .toArray();
+
         return result;
     }
 
@@ -713,8 +727,21 @@ class UserManager {
      * @returns {Promise<Array<object>>} - Array of reports on the specified reportee
      * @async
      */
-    async getReportsByReportee(reportee) {
-        const result = await this.reports.find({ reportee: reportee }).toArray();
+    async getReportsByReportee(reportee, page, pageSize) {
+        const result = await this.reports.aggregate([
+            {
+                $match: { reportee: reportee }
+            },
+            {
+                $facet: {
+                    metadata: [{ $count: "count" }],
+                    data: [{ $skip: page * pageSize }, { $limit: pageSize }]
+                }
+            }
+        ])
+        .sort({ date: -1 })
+        .toArray();
+
         return result;
     }
 
@@ -724,8 +751,21 @@ class UserManager {
      * @returns {Promise<Array<object>>} - Array of reports by the specified reporter
      * @async 
      */
-    async getReportsByReporter(reporter) {
-        const result = await this.reports.find({ reporter: reporter }).toArray();
+    async getReportsByReporter(reporter, page, pageSize) {
+        const result = await this.reports.aggregate([
+            {
+                $match: { reporter: reporter }
+            },
+            {
+                $facet: {
+                    metadata: [{ $count: "count" }],
+                    data: [{ $skip: page * pageSize }, { $limit: pageSize }]
+                }
+            }
+        ])
+        .sort({ date: -1 })
+        .toArray();
+
         return result;
     }
 
@@ -745,7 +785,7 @@ class UserManager {
                 }
             }
         ])
-        .sort({ lastUpdate: -1 })
+        .sort({ date: -1 })
         .toArray();
 
         return result;
@@ -1139,7 +1179,6 @@ class UserManager {
                 }
             }
         ])
-        .sort({ lastUpdate: -1 })
         .toArray();
 
         return result;
@@ -1164,7 +1203,6 @@ class UserManager {
                 }
             }
         ])
-        .sort({ lastUpdate: -1 })
         .toArray();
 
         return result;
