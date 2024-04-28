@@ -10,6 +10,7 @@ const path = require('path');
 const multer = require('multer');
 const fs = require('fs');
 const requestIp = require('request-ip');
+const {OAuth2Client} = require('google-auth-library');
 const { promisify } = require('util');
 
 function escapeXML(unsafe) {
@@ -68,6 +69,19 @@ const UserManager = new um();
 (async () => {
     await UserManager.init(MAXVIEWS, VIEWRESETRATE);
 
+    const oauth2Client = new OAuth2Client(
+        process.env.GoogleOAuthClientID,
+        process.env.GoogleOAuthClientSecret,
+        process.env.GoogleOAuthRedirectURI
+    );
+
+    const authorizeUrl = oauth2Client.generateAuthUrl({
+        access_type: 'offline',
+        scope: 'https://www.googleapis.com/auth/userinfo.profile',
+    });
+
+    console.log(authorizeUrl)
+
     app.get("/test", (req, res) => {
         res.sendFile(path.join(__dirname, 'test.html'));
     });
@@ -96,7 +110,9 @@ const UserManager = new um();
         sendHeatLog: ((text, type, location, color="\x1b[0m") => {sendHeatLog(heatWebhook, text, type, location, color="\x1b[0m")}),
         sendBioUpdateLog: ((username, target, oldBio, newBio) => {sendBioUpdateLog(bioWebhook, username, target, oldBio, newBio)}),
         sendReportLog: ((username, target, reason) => {sendReportLog(reportWebhook, username, target, reason)}),
-        sendMultiReportLog: ((username, target, reason) => {sendMultiReportLog(reportWebhook, username, target, reason)})
+        sendMultiReportLog: ((username, target, reason) => {sendMultiReportLog(reportWebhook, username, target, reason)}),
+        googleAuthorizeUrl: authorizeUrl,
+        googleOAuth2Client: oauth2Client
     });
 
     app.listen(PORT, () => {
