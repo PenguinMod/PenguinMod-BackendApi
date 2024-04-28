@@ -31,8 +31,8 @@ Please report any security vulnerabilities using GitHub's security tab on the re
     # General
     PORT=8080
 
-    MinioClientID=admin
-    MinioClientSecret=alrightdudewhattheflip
+    MinioClientID=yourID
+    MinioClientSecret=yourSecret
 
     # OAuth
     ScratchOAuthClientID=id
@@ -54,6 +54,11 @@ Please report any security vulnerabilities using GitHub's security tab on the re
 
     FeedExpirationTime=feedExpirationTime
     FeedSize=feedSize
+
+    # Moderator logs
+    HeatWebhook=abc
+    BioWebhook=xyz
+    ReportWebhook=lmn
     ```
 
 6. Run `npm run dev` to start the server in development mode.

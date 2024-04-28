@@ -698,8 +698,21 @@ class UserManager {
     }
 
     /**
+     * Check if a report exists
+     * @param {string} id - ID of the report
+     * @returns {Promise<boolean>} - true if the report exists, false if not
+     */
+    async reportExists(id) {
+        const result = await this.reports.findOne({ id: id });
+
+        return result ? true : false;
+    }
+
+    /**
      * Get reports by type
      * @param {number} type - The type of reports to get 
+     * @param {number} page - The page of reports to get
+     * @param {number} pageSize - The amount of reports to get
      * @returns {Promise<Array<object>>} - Array of reports of the specified type
      * @async
      */
@@ -724,6 +737,8 @@ class UserManager {
     /**
      * Get reports by reportee
      * @param {string} reportee - ID of the person/project being reported
+     * @param {number} page - The page of reports to get
+     * @param {number} pageSize - The amount of reports to get
      * @returns {Promise<Array<object>>} - Array of reports on the specified reportee
      * @async
      */
@@ -748,6 +763,8 @@ class UserManager {
     /**
      * Get reports by reporter
      * @param {string} reporter - ID of the person reporting
+     * @param {number} page - The page of reports to get
+     * @param {number} pageSize - The amount of reports to get
      * @returns {Promise<Array<object>>} - Array of reports by the specified reporter
      * @async 
      */
@@ -767,6 +784,18 @@ class UserManager {
         .toArray();
 
         return result;
+    }
+
+    /**
+     * Check if a user has already reported a person/project
+     * @param {string} reporter - ID of the person reporting
+     * @param {string} reportee - ID of the person/project being reported
+     * @returns {Promise<boolean>} - true if the user has already reported the person/project, false if not
+     */
+    async hasAlreadyReported(reporter, reportee) {
+        const result = await this.reports.findOne({ reporter: reporter, reportee: reportee });
+
+        return result ? true : false;
     }
 
     /**

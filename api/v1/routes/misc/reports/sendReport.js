@@ -30,6 +30,16 @@ module.exports = (app, utils) => {
         const reporterID = await utils.UserManager.getIDByUsername(username);
         const targetID = await utils.UserManager.getIDByUsername(target);
 
+        if (await utils.UserManager.hasAlreadyReported(reporterID, targetID)) {
+            res.status(200);
+            res.header("Content-Type", "application/json");
+            res.send({ success: true }); // so they think its working
+
+            // send log
+            utils.sendMultiReportLog(reporterID, targetID, report);
+            return;
+        }
+
         await utils.UserManager.report(type, targetID, report, reporterID);
 
         res.status(200);

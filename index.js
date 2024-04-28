@@ -5,6 +5,7 @@ const express = require("express");
 const endpointLoader = require("./api/endpointLoader");
 const um = require('./api/v1/db/UserManager');
 const cast = require("./utils/Cast");
+const { sendHeatLog, sendBioUpdateLog, sendReportLog, sendMultiReportLog } = require('./utils/Logs');
 const path = require('path');
 const multer = require('multer');
 const fs = require('fs');
@@ -29,71 +30,6 @@ function error(res, code, error) {
     res.status(code);
     res.header("Content-Type", 'application/json');
     res.json({ "error": error });
-}
-
-function sendHeatLog(text, type, location, color="\x1b[0m") {
-    const body = JSON.stringify({
-        embeds: [{
-            title: `Filter Triggered`,
-            color: 0xff0000,
-            description: `\`\`\`${text}\n\`\`\``,
-            fields: [
-                {
-                    name: "Type",
-                    value: `\`${type}\``
-                },
-                {
-                    name: "Location",
-                    value: `${JSON.stringify(location)}`
-                }
-            ],
-            timestamp: new Date().toISOString()
-        }]
-    });
-    fetch(process.env.HeatWebhook, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body
-    });
-}
-
-function sendBioUpdateLog(username, target, oldBio, newBio) {
-    const body = JSON.stringify({
-        content: `${target}'s bio was edited by ${username}`,
-        embeds: [{
-            title: `${target} had their bio edited`,
-            color: 0xff0000,
-            fields: [
-                {
-                    name: "Edited by",
-                    value: `${username}`
-                },
-                {
-                    name: "URL",
-                    value: `https://penguinmod.com/profile?user=${target}`
-                },
-            ],
-            author: {
-                name: String(target).substring(0, 50),
-                icon_url: String("https://trampoline.turbowarp.org/avatars/by-username/" + String(target).substring(0, 50)),
-                url: String("https://penguinmod.com/profile?user=" + String(target).substring(0, 50))
-            },
-            timestamp: new Date().toISOString()
-        }, {
-            title: `New Bio for ${target}`,
-            color: 0xffbb00,
-            description: `${newBio}`
-        }, {
-            title: `Original Bio for ${target}`,
-            color: 0xffbb00,
-            description: `${oldBio}`
-        }]
-    });
-    fetch(process.env.ApproverLogWebhook, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body
-    });
 }
 
 const app = express();
@@ -140,6 +76,10 @@ const UserManager = new um();
         res.sendFile(path.join(__dirname, 'robots.txt'));
     });
 
+    const heatWebhook = process.env.HeatWebhook;
+    const bioWebhook = process.env.BioWebhook;
+    const reportWebhook = process.env.ReportWebhook;
+
     endpointLoader(app, 'v1/routes', {
         UserManager: UserManager,
         homeDir: path.join(__dirname, "./"),
@@ -153,8 +93,10 @@ const UserManager = new um();
         unlinkAsync: promisify(fs.unlink),
         path: path,
         PORT: PORT,
-        sendHeatLog: sendHeatLog,
-        sendBioUpdateLog: sendBioUpdateLog
+        sendHeatLog: ((text, type, location, color="\x1b[0m") => {sendHeatLog(heatWebhook, text, type, location, color="\x1b[0m")}),
+        sendBioUpdateLog: ((username, target, oldBio, newBio) => {sendBioUpdateLog(bioWebhook, username, target, oldBio, newBio)}),
+        sendReportLog: ((username, target, reason) => {sendReportLog(reportWebhook, username, target, reason)}),
+        sendMultiReportLog: ((username, target, reason) => {sendMultiReportLog(reportWebhook, username, target, reason)})
     });
 
     app.listen(PORT, () => {

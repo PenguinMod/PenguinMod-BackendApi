@@ -149,10 +149,10 @@
   - [x] get message count
   - [x] mark messages as read
 
-- [ ] Reports
+- [x] Reports
   - [x] get reports (page + page count)
   - [x] get reports on a certain user/project (page + page count (just in case theres a shit ton))
-  - [ ] delete report
+  - [x] delete report
   - [x] send report
 
 - [ ] Misc
