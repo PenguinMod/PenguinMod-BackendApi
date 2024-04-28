@@ -151,7 +151,7 @@
 
 - [ ] Reports
   - [x] get reports (page + page count)
-  - [ ] get reports on a certain user/project (page + page count (just in case theres a shit ton))
+  - [x] get reports on a certain user/project (page + page count (just in case theres a shit ton))
   - [ ] delete report
   - [x] send report
 
