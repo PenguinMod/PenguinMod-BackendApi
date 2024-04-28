@@ -143,7 +143,7 @@
   - [x] is banned
   - [x] get badges
   - [x] set badges (admin only/automated on some endpoints)
-  - [ ] PFP stuff!
+  - [x] PFP stuff!
 
 - [x] Messages
   - [x] get messages (page + page count)
