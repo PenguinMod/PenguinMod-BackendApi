@@ -35,6 +35,7 @@ class UserManager {
         this.projectStats = this.db.collection('projectStats');
         this.messages = this.db.collection('messages');
         this.oauthStates = this.db.collection('oauthStates');
+        this.userFeed = this.db.collection('userFeed');
         this.illegalList = this.db.collection('illegalList');
         if (!this.illegalList.findOne({ id: "illegalWords" })) {
             this.illegalList.insertMany([
@@ -115,6 +116,7 @@ class UserManager {
         await this.projectStats.deleteMany({});
         await this.messages.deleteMany({});
         await this.oauthStates.deleteMany({});
+        await this.userFeed.deleteMany({});
         await this.illegalList.deleteMany({});
         await this.illegalList.insertMany([
             { id: "illegalWords", items: [] },
@@ -2203,6 +2205,44 @@ class UserManager {
      */
     async privateProject(id, toggle) {
         await this.projects.updateOne({id: id}, { $set: { public: !toggle } });
+    }
+
+    /**
+     * Get a users feed
+     * @param {string} username - Username of the user
+     * @param {number} size - Size of the feed 
+     * @returns {Promise<ARray<Object>>}
+     */
+    async getUserFeed(username, size) {
+        const result = await this.users.findOne({username: username});
+
+        const followers = result.followers;
+
+        const feed = await this.projects.aggregate([
+            {
+                $match: { author: { $in: followers } }
+            },
+            {
+                $facet: {
+                    metadata: [{ $count: "count" }],
+                    data: [{ $skip: 0 }, { $limit: size }]
+                }
+            }
+        ])
+        .sort({ date: -1 })
+        .toArray();
+
+        return feed;
+    }
+
+    async addToFeed(userID, type, id) {
+        await this.userFeed.insertOne({
+            userID: userID,
+            type: type,
+            id: id,
+            date: Date.now(),
+            expireAt: new Date(Date.now() + process.env.FeedExpirationTime)
+        });
     }
 }
 

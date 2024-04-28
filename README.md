@@ -31,34 +31,28 @@ Please report any security vulnerabilities using GitHub's security tab on the re
     # General
     PORT=8080
 
-    # Oauth
-    ScratchOAuthClientID=yourclientid
-    ScratchOAuthClientSecret=yourclientsecret
-    GithubOauthId=yourid
-    GithubOauthSecret=yoursecret
-    ScratchOauth2ClientID=yourclientid
-    ScratchOauth2ClientSecret=yourclientsecret
-    GithubOauthId=yourgithubappid
-    GithubOauthSecret=yourgithubappsecret
-    GoogleOauthId=yourgoogleoauthid
-    GoogleOauthSecret=yourgoogleoauthsecret
+    MinioClientID=admin
+    MinioClientSecret=alrightdudewhattheflip
 
-    # Minio
-    MinioClientID=yourclientid
-    MinioClientSecret=yourclientsecret
+    # OAuth
+    ScratchOAuthClientID=id
+    ScratchOAuthClientSecret=secret
 
-    # Project Views
-    MaxViews=howmanyviewsbeforeviewcheckresets
-    ViewResetRate=timebeforeviewcheckresets
+    #Misc
+    MaxViews=maxViewsBeforeViewCheckerReset (ex: 100)
+    ViewResetRate=resetRateOfViewChecker (ex: 1 hour)
 
-    # Others
-    MaxAssets=maxassetsyouwantinaproject
+    MaxAssets=maxAssetsPerProject
 
-    PageSize=howmanypagesyouwant
-    MaxPageSize=howmanypagesyouwant
+    PageSize=pageSize
+    MaxPageSize=maxPageSize
 
-    UploadingEnabled=true
-    ViewingEnabled=true
+    UploadingEnabled=bool
+    ViewingEnabled=bool
+
+    FeatureAmount=amountOfVotesToBeFeatured
+
+    FeedExpirationTime=feedExpirationTime
     ```
 
 6. Run `npm run dev` to start the server in development mode.

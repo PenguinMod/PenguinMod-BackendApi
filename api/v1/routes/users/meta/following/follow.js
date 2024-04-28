@@ -19,7 +19,15 @@ module.exports = (app, utils) => {
             return;
         }
 
-        await utils.UserManager.followUser(username, target, toggle);
+        if (!await utils.UserManager.existsByUsername(target)) {
+            utils.error(res, 400, "InvalidData");
+            return;
+        }
+
+        const userID = await utils.UserManager.getIDByUsername(username);
+        const targetID = await utils.UserManager.getIDByUsername(target);
+
+        await utils.UserManager.followUser(userID, targetID, toggle);
 
         res.status(200);
         res.header("Content-Type", 'application/json');
