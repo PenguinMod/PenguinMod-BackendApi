@@ -21,6 +21,9 @@ module.exports = (app, utils) => {
                 state = await utils.UserManager.generateOAuth2State("_createAccount");
                 res.redirect(`https://github.com/login/oauth/authorize?client_id=${utils.env.GithubOAuthClientID}&redirect_uri=http://localhost:8080/api/v1/users/githubcallback/createaccount&state=${state}&scope=read:user`);
                 break;
+            case "google":
+                res.redirect(utils.googleAuthorizeUrl);
+                break;
             default:
                 utils.error(res, 400, "InvalidData");
                 return;

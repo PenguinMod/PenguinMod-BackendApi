@@ -33,9 +33,12 @@ module.exports = (app, utils) => {
         }
 
         // create the user
-        const token = await utils.UserManager.makeOAuth2Account("scratch", username.user);
+        const userdata = await utils.UserManager.makeOAuth2Account("scratch", username.user);
+
+        const accountUsername = userdata.username;
+        const token = userdata.token;
 
         res.status(200);
-        res.redirect(`/api/v1/users/sendloginsuccess?token=${token}&username=${username.user.user_name}`);
+        res.redirect(`/api/v1/users/sendloginsuccess?token=${token}&username=${accountUsername}`);
     });
 }

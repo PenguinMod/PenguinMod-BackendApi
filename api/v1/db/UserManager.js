@@ -1812,11 +1812,16 @@ class UserManager {
                 id = data.id;
 
                 break;
+            case "google":
+                username = data.username;
+                id = data.id;
+
+                break;
         }
 
         let n = 1;
         while (await this.existsByUsername(username)) {
-            username = data.user_name + n;
+            username = `${data.user_name}${n}`;
             n++;
         }
 
@@ -1826,7 +1831,7 @@ class UserManager {
         await this.users.updateOne({ username: username }, { $set: { password: "" } });
 
         await this.addOAuthMethod(username, method, id);
-        return token;
+        return { token, username };
     }
 
     /**

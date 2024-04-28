@@ -80,8 +80,6 @@ const UserManager = new um();
         scope: 'https://www.googleapis.com/auth/userinfo.profile',
     });
 
-    console.log(authorizeUrl)
-
     app.get("/test", (req, res) => {
         res.sendFile(path.join(__dirname, 'test.html'));
     });
