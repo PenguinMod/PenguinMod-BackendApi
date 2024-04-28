@@ -2367,7 +2367,9 @@ class UserManager {
     async setProfilePicture(username, buffer) {
         const id = await this.getIDByUsername(username);
 
-        await this.minioClient.putObject("profile-pictures", id, buffer);
+        const pfp = await sharp(buffer).resize(100).png().toBuffer();
+
+        await this.minioClient.putObject("profile-pictures", id, pfp);
     }
 
     /**
