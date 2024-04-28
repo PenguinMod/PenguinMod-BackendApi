@@ -5,10 +5,14 @@ const { MongoClient } = require('mongodb');
 const ULID = require('ulid');
 const Minio = require('minio');
 const protobuf = require('protobufjs');
+const sharp = require('sharp');
+const fs = require('fs');
 var prompt = require('prompt-sync')();
 
 // scratch oauth redir: http://localhost:PORT/api/v1/users/loginlocal
 //                      https://projects.penguinmod.com/api/v1/users/login
+
+const basePFP = fs.readFileSync("./scratcher.png");
 
 class UserManager {
     static loginInvalidationTime = 
@@ -69,6 +73,8 @@ class UserManager {
         this._makeBucket("project-thumbnails");
         // project asset bucket
         this._makeBucket("project-assets");
+        // pfp bucket
+        this._makeBucket("profile-pictures");
     }
 
     async _makeBucket(bucketName) {
@@ -132,6 +138,7 @@ class UserManager {
         await this.resetBucket("projects");
         await this.resetBucket("project-thumbnails");
         await this.resetBucket("project-assets");
+        await this.resetBucket("profile-pictures");
     }
 
     /**
@@ -172,6 +179,9 @@ class UserManager {
             lastUpload: 0,
             email: email
         });
+
+        await this.minioClient.putObject("profile-pictures", id, basePFP);
+
         return token;
     }
 
@@ -2347,6 +2357,30 @@ class UserManager {
             date: Date.now(),
             expireAt: new Date(Date.now() + process.env.FeedExpirationTime)
         });
+    }
+
+    /**
+     * Set a users pfp
+     * @param {string} username - Username of the user
+     * @param {Buffer} buffer - Buffer of the pfp
+     */
+    async setProfilePicture(username, buffer) {
+        const id = await this.getIDByUsername(username);
+
+        await this.minioClient.putObject("profile-pictures", id, buffer);
+    }
+
+    /**
+     * Get a user's profile picture
+     * @param {string} username - Username of the user
+     * @returns {Promise<Buffer>} - User's pfp
+     */
+    async getProfilePicture(username) {
+        const id = await this.getIDByUsername(username);
+
+        const buffer = await this.readObjectFromBucket("profile-pictures", id);
+
+        return buffer;
     }
 }
 
