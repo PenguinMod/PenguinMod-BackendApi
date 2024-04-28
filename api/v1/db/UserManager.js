@@ -36,7 +36,7 @@ class UserManager {
         this.messages = this.db.collection('messages');
         this.oauthStates = this.db.collection('oauthStates');
         this.userFeed = this.db.collection('userFeed');
-        await this.userFeed.createIndex({ 'expireAt': 1 }, { expireAfterSeconds: process.utils.FeedExpirationTime });
+        await this.userFeed.createIndex({ 'expireAt': 1 }, { expireAfterSeconds: Number(process.env.FeedExpirationTime) });
         this.illegalList = this.db.collection('illegalList');
         if (!this.illegalList.findOne({ id: "illegalWords" })) {
             this.illegalList.insertMany([
@@ -1686,9 +1686,10 @@ class UserManager {
      * @returns 
      */
     async makeOAuth2Request(code, method) {
+        let response;
         switch (method) {
             case "scratch":
-                const response = await fetch(`https://oauth2.scratch-wiki.info/w/rest.php/soa2/v0/tokens`, {
+                response = await fetch(`https://oauth2.scratch-wiki.info/w/rest.php/soa2/v0/tokens`, {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"
@@ -1701,29 +1702,51 @@ class UserManager {
                     })
                 }).then(res => res.json());
                 return response;
+            case "github":
+                response = await fetch(`https://github.com/login/oauth/access_token`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Accept": "application/json"
+                    },
+                    body: JSON.stringify({
+                        client_id: process.env.GithubOAuthClientID,
+                        client_secret: process.env.GithubOAuthClientSecret,
+                        code: code
+                    })
+                }).then(res => res.json());
+                return response;
         }
     }
 
     async makeOAuth2Account(method, data) {
+        let username, id;
         switch (method) {
             case "scratch":
-                let username = data.user_name;
-                const id = data.user_id;
+                username = data.user_name;
+                id = data.user_id;
 
-                let n = 1;
-                while (await this.existsByUsername(username)) {
-                    username = data.user_name + n;
-                    n++;
-                }
+                break;
+            case "github":
+                username = data.login;
+                id = data.id;
 
-                const token = await this.createAccount(username, randomBytes(32).toString(), "")
-
-                // set their password HASH to nothing so cant login with a password
-                await this.users.updateOne({ username: username }, { $set: { password: "" } });
-
-                await this.addOAuthMethod(username, method, id);
-                return token;
+                break;
         }
+
+        let n = 1;
+        while (await this.existsByUsername(username)) {
+            username = data.user_name + n;
+            n++;
+        }
+
+        const token = await this.createAccount(username, randomBytes(32).toString(), "")
+
+        // set their password HASH to nothing so cant login with a password
+        await this.users.updateOne({ username: username }, { $set: { password: "" } });
+
+        await this.addOAuthMethod(username, method, id);
+        return token;
     }
 
     /**
