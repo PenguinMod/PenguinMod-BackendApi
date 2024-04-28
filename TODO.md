@@ -113,7 +113,7 @@
           - [x] add method
           - [x] create account
           - [ ] add password
-          - [ ] login
+          - [x] login
         - [ ] google
           - [ ] add method
           - [ ] create account
