@@ -37,7 +37,7 @@ module.exports = (app, utils) => {
 
         const methods = await utils.UserManager.getOAuthMethods(username);
 
-        if (methods.includes("scratch")) {
+        if (methods.includes("github")) {
             utils.error(res, 400, "InvalidData");
             return;
         }

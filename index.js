@@ -69,17 +69,6 @@ const UserManager = new um();
 (async () => {
     await UserManager.init(MAXVIEWS, VIEWRESETRATE);
 
-    const oauth2Client = new OAuth2Client(
-        process.env.GoogleOAuthClientID,
-        process.env.GoogleOAuthClientSecret,
-        process.env.GoogleOAuthRedirectURI
-    );
-
-    const authorizeUrl = oauth2Client.generateAuthUrl({
-        access_type: 'offline',
-        scope: 'https://www.googleapis.com/auth/userinfo.profile',
-    });
-
     app.get("/test", (req, res) => {
         res.sendFile(path.join(__dirname, 'test.html'));
     });
@@ -109,8 +98,7 @@ const UserManager = new um();
         sendBioUpdateLog: ((username, target, oldBio, newBio) => {sendBioUpdateLog(bioWebhook, username, target, oldBio, newBio)}),
         sendReportLog: ((username, target, reason) => {sendReportLog(reportWebhook, username, target, reason)}),
         sendMultiReportLog: ((username, target, reason) => {sendMultiReportLog(reportWebhook, username, target, reason)}),
-        googleAuthorizeUrl: authorizeUrl,
-        googleOAuth2Client: oauth2Client
+        googleOAuth2Client: OAuth2Client
     });
 
     app.listen(PORT, () => {

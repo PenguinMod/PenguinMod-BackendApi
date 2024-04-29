@@ -1,21 +1,33 @@
 module.exports = (app, utils) => {
-    app.get("/api/v1/users/googlecallback", async (req, res) => {
+    app.get("/api/v1/users/googlecallback/createaccount", async (req, res) => {
         const packet = req.query;
 
         const code = packet.code;
+        const state = packet.state;
 
-        if (!code) {
+        if (!code || !state) {
             utils.error(res, 400, "InvalidData");
             return;
         }
 
-        const r = await utils.googleOAuth2Client.getToken(code);
+        if (!await utils.UserManager.verifyOAuth2State(state)) {
+            utils.error(res, 400, "InvalidData");
+            return;
+        }
+
+        const oauth2Client = new OAuth2Client(
+            utils.env.GoogleOAuthClientID,
+            utils.env.GoogleOAuthClientSecret,
+            "http://localhost:8080/api/v1/users/googlecallback/createaccount"
+        );
+
+        const r = await oauth2Client.getToken(code);
         const tokens = r.tokens;
 
-        utils.googleOAuth2Client.setCredentials(tokens);
+        oauth2Client.setCredentials(tokens);
 
         const url = 'https://people.googleapis.com/v1/people/me?personFields=names';
-        const user = await utils.googleOAuth2Client.request({url});
+        const user = await oauth2Client.request({url});
         
         const id = user.data.resourceName.split('/')[1];
         const displayName = user.data.names[0].displayName;
