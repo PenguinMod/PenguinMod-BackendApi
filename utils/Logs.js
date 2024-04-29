@@ -41,9 +41,9 @@ function sendBioUpdateLog(webhook, username, target, oldBio, newBio) {
                 },
             ],
             author: {
-                name: String(target).substring(0, 50),
-                icon_url: String("https://trampoline.turbowarp.org/avatars/by-username/" + String(target).substring(0, 50)),
-                url: String("https://penguinmod.com/profile?user=" + String(target).substring(0, 50))
+                name: target,
+                icon_url: String("https://projects.penguinmod.com/api/v1/users/getpfp?username=" + target),
+                url: String("https://penguinmod.com/profile?user=" + target)
             },
             timestamp: new Date().toISOString()
         }, {
@@ -85,9 +85,9 @@ function sendReportLog(webhook, username, target, reason) {
             ],
             // TODO: change this to the new pfp system
             author: {
-                name: String(target).substring(0, 50),
-                icon_url: String("https://trampoline.turbowarp.org/avatars/by-username/" + String(target).substring(0, 50)),
-                url: String("https://penguinmod.com/profile?user=" + String(target).substring(0, 50))
+                name: target,
+                icon_url: String("https://projects.penguinmod.com/api/v1/users/getpfp?username=" + target),
+                url: String("https://penguinmod.com/profile?user=" + target)
             },
             timestamp: new Date().toISOString()
         }]
@@ -122,9 +122,9 @@ function sendMultiReportLog(webhook, username, target, reason) {
             ],
             // TODO: change this to the new pfp system
             author: {
-                name: String(username).substring(0, 50),
-                icon_url: String("https://trampoline.turbowarp.org/avatars/by-username/" + String(username).substring(0, 50)),
-                url: String("https://penguinmod.com/profile?user=" + String(username).substring(0, 50))
+                name: target,
+                icon_url: String("https://projects.penguinmod.com/api/v1/users/getpfp?username=" + target),
+                url: String("https://penguinmod.com/profile?user=" + target)
             },
             timestamp: new Date().toISOString()
         }]

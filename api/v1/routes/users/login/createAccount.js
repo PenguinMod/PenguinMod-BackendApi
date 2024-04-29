@@ -1,14 +1,15 @@
 module.exports = (app, utils) => {
     app.post("/api/v1/users/createAccount", async function (req, res) {
         const packet = req.body;
+
+        const username = packet.username;
+        const password = packet.password;
+
+        const email = packet.email || null;
         
-        if (!packet.username || !packet.password) {
+        if (typeof username !== "string" || typeof password !== "string" || (email && typeof email !== "string")) {
             utils.error(res, 400, "InvalidData");
             return;
-        }
-
-        if (typeof packet.username !== "string" && typeof packet.password !== "string") {
-            utils.error(res, 400, "InvalidData")
         }
 
         // TODO: this is currently pretty basic. we should add a few more requirements

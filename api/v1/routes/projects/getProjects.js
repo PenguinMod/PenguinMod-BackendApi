@@ -1,5 +1,3 @@
-// TODO: make this an actual thing that isnt for testing
-
 module.exports = (app, utils) => {
     app.get('/api/v1/projects/getProjects', async (req, res) => {
         if (!utils.env.ViewingEnabled) {
