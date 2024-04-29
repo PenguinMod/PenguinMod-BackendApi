@@ -10,7 +10,7 @@ module.exports = (app, utils) => {
             return;
         }
 
-        const oauth2Client = new OAuth2Client(
+        const oauth2Client = new utils.googleOAuth2Client(
             utils.env.GoogleOAuthClientID,
             utils.env.GoogleOAuthClientSecret,
             "http://localhost:8080/api/v1/users/googlecallback/createaccount"

@@ -26,7 +26,7 @@ module.exports = (app, utils) => {
 
         const userid = await utils.UserManager.getUserID(username);
 
-        const oauth2Client = new OAuth2Client(
+        const oauth2Client = new utils.googleOAuth2Client(
             utils.env.GoogleOAuthClientID,
             utils.env.GoogleOAuthClientSecret,
             "http://localhost:8080/api/v1/users/googlecallback/addmethod"
