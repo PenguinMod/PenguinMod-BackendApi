@@ -162,4 +162,4 @@
   - [x] get site stats
   - [ ] get last tos, privacy policy, and uploading guidelines update
   - [ ] update tos, privacy policy, or uploading guidelines
-  - [ ] add a few automated badges (like for example when your project is featured)
+  - [x] add a few automated badges (like for example when your project is featured)
