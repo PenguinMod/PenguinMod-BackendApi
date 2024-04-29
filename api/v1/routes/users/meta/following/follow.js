@@ -29,6 +29,13 @@ module.exports = (app, utils) => {
 
         await utils.UserManager.followUser(userID, targetID, toggle);
 
+        const followers = await utils.UserManager.getFollowerCount(targetID);
+
+        if (followers >= utils.env.FollowAmount && !await utils.UserManager.hasBadge(target, "followers")) {
+            await utils.UserManager.addBadge(target, "followers");
+            await utils.UserManager.sendMessage(targetID, { type: "newBadge", badge: "followers" }, false, null);
+        }
+
         res.status(200);
         res.header("Content-Type", 'application/json');
         res.send({ success: true });

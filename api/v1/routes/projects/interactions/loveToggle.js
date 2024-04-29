@@ -26,6 +26,12 @@ module.exports = (app, utils) => {
             return utils.error(res, 400, "Already loved");
         }
 
+        const loves = await utils.ProjectManager.getProjectLoves(projectID);
+        if (loves >= utils.env.LoveAmount && !await utils.UserManager.hasBadge(username, "likes")) {
+            await utils.UserManager.addBadge(username, "likes");
+            await utils.UserManager.sendMessage(id, {type: "newBadge", badge: "likes"}, false, projectID);
+        }
+
         await utils.ProjectManager.loveProject(projectID, love);
         
         return res.send({ success: true });
