@@ -96,29 +96,29 @@
   - [x] front page (just to make it easier to get all the projects on there)
   - [x] get projects by author (page + page count) (meta)
 
-- [ ] Users
+- [x] Users
   - [x] get profile json
   - [x] user from code (no idea why this is used but wtv)
   - [x] request rank up
   - [x] check if banned
   - [x] assign possition
   - [x] get site mods/admins (admin only)
-  - [ ] login
+  - [x] login
     - [x] login with password
     - [x] login with token
-    - [ ] oauth
-      - [ ] all methods
+    - [x] oauth
+      - [x] all methods
         - [x] scratch
         - [x] github
           - [x] add method
           - [x] create account
           - [x] add password
           - [x] login
-        - [ ] google
-          - [ ] add method
+        - [x] google
+          - [x] add method
           - [x] create account
-          - [ ] add password
-          - [ ] login
+          - [x] add password
+          - [x] login
         - [x] Remove method
       - [x] create account
       - [x] login
