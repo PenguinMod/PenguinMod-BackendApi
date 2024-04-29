@@ -510,6 +510,18 @@ class UserManager {
     }
 
     /**
+     * Check if a user has a badge
+     * @param {string} username - username of the user 
+     * @param {string} badge - badge to check for 
+     * @returns {Promise<boolean>} - true if the user has the badge, false if not
+     */
+    async hasBadge(username, badge) {
+        const result = await this.users.findOne({ username: username });
+
+        return result.badges.includes(badge);
+    }
+
+    /**
      * Remove a badge from a user
      * @param {string} username - username of the user 
      * @param {string} badge - the badge to remove 
