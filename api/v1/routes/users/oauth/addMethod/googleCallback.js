@@ -28,8 +28,6 @@ module.exports = (app, utils) => {
             r = await oauth2Client.getToken(code);
         }
         catch (e) {
-            console.log("couldnt get access token")
-            console.log(e);
             utils.error(res, 400, "InvalidData");
             return;
         }

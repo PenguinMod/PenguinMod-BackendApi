@@ -29,7 +29,7 @@ module.exports = (app, utils) => {
         const oauth2Client = new OAuth2Client(
             utils.env.GoogleOAuthClientID,
             utils.env.GoogleOAuthClientSecret,
-            "http://localhost:8080/api/v1/users/googlecallback/addmethod?userid=" + userid
+            "http://localhost:8080/api/v1/users/googlecallback/addmethod"
         );
     
         const authorizeUrl = oauth2Client.generateAuthUrl({

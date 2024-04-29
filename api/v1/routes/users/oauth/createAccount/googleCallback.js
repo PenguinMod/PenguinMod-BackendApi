@@ -15,13 +15,20 @@ module.exports = (app, utils) => {
             return;
         }
 
-        const oauth2Client = new OAuth2Client(
+        const oauth2Client = new utils.googleOAuth2Client(
             utils.env.GoogleOAuthClientID,
             utils.env.GoogleOAuthClientSecret,
             "http://localhost:8080/api/v1/users/googlecallback/createaccount"
         );
 
-        const r = await oauth2Client.getToken(code);
+        let r;
+        try {
+            r = await oauth2Client.getToken(code);
+        }
+        catch (e) {
+            utils.error(res, 400, "InvalidData");
+            return;
+        }
         const tokens = r.tokens;
 
         oauth2Client.setCredentials(tokens);

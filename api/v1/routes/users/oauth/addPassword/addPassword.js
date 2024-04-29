@@ -18,10 +18,23 @@ module.exports = (app, utils) => {
 
         const methods = await utils.UserManager.getOAuthMethods(username);
 
-        if (!methods.includes(method)) {
+        if (!methods) {
+            
             utils.error(res, 400, "InvalidData");
             return;
         }
+
+        const oauth2Client = new utils.googleOAuth2Client(
+            utils.env.GoogleOAuthClientID,
+            utils.env.GoogleOAuthClientSecret,
+            "http://localhost:8080/api/v1/users/googlecallback/addpassword"
+        );
+    
+        const authorizeUrl = oauth2Client.generateAuthUrl({
+            access_type: 'offline',
+            scope: 'https://www.googleapis.com/auth/userinfo.profile',
+            state: await utils.UserManager.generateOAuth2State()
+        });
         
         // using switch case cuz erm i like it
         let state;
@@ -35,6 +48,9 @@ module.exports = (app, utils) => {
                 state = await utils.UserManager.generateOAuth2State();
                 
                 res.redirect(`https://github.com/login/oauth/authorize?client_id=${utils.env.GitHubOAuthClientID}&redirect_uri=https://projects.penguinmod.com/api/v1/users/githubcallback/addpassword&state=${state}&scope=read:user`);
+                break;
+            case "google":
+                res.redirect(authorizeUrl);
                 break;
             default:
                 utils.error(res, 400, "InvalidData");

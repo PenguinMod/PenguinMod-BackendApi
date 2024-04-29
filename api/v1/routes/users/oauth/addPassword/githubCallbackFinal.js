@@ -1,5 +1,5 @@
 module.exports = (app, utils) => {
-    app.get("/api/v1/users/githubaddpasswordfinal", async function (req, res) {
+    app.get("/api/v1/users/githubcallback/addpasswordfinal", async function (req, res) {
         const packet = req.query;
 
         const access_token = packet.at;
