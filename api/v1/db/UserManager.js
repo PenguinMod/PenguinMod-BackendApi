@@ -10,9 +10,6 @@ const fs = require('fs');
 const path = require('path');
 var prompt = require('prompt-sync')();
 
-// scratch oauth redir: http://localhost:PORT/api/v1/users/loginlocal
-//                      https://projects.penguinmod.com/api/v1/users/login
-
 const basePFP = fs.readFileSync(path.join(__dirname, "./scratcher.png"));
 
 class UserManager {
