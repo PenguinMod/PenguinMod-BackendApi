@@ -36,10 +36,16 @@ class UserManager {
         this.projects = this.db.collection('projects');
         this.projectStats = this.db.collection('projectStats');
         this.messages = this.db.collection('messages');
-        this.oauthStates = this.db.collection('oauthStates');
+        this.oauthStates = this.db.collection('oauthStates'); // needed bc load balancer will split requests so needs to be copied to all servers
         this.userFeed = this.db.collection('userFeed');
         await this.userFeed.createIndex({ 'expireAt': 1 }, { expireAfterSeconds: Number(process.env.FeedExpirationTime) });
         this.illegalList = this.db.collection('illegalList');
+        this.lastPolicyUpdates = this.db.collection('lastPolicyUpdates');
+        if (!await this.lastPolicyUpdates.findOne({ id: "privacyPolicy" })) {
+            this.lastPolicyUpdates.insertOne({ id: "privacyPolicy", lastUpdate: Date.now() });
+            this.lastPolicyUpdates.insertOne({ id: "tos", lastUpdate: Date.now() });
+            this.lastPolicyUpdates.insertOne({ id: "guidelines", lastUpdate: Date.now() });
+        }
         if (!await this.illegalList.findOne({ id: "illegalWords" })) {
             this.illegalList.insertMany([
                 { id: "illegalWords", items: [] },
@@ -123,6 +129,7 @@ class UserManager {
         await this.oauthStates.deleteMany({});
         await this.userFeed.deleteMany({});
         await this.illegalList.deleteMany({});
+        // dont reset policy stuff, we need that :normal:
         await this.illegalList.insertMany([
             { id: "illegalWords", items: [] },
             { id: "illegalWebsites", items: [] },
@@ -175,7 +182,10 @@ class UserManager {
             firstLogin: Date.now(),
             lastLogin: Date.now(),
             lastUpload: 0,
-            email: email
+            email: email,
+            lastPrivacyPolicyRead: Date.now(),
+            lastTOSRead: Date.now(),
+            lastGuidelinesRead: Date.now()
         });
 
         await this.minioClient.putObject("profile-pictures", id, basePFP);
@@ -751,7 +761,7 @@ class UserManager {
         .sort({ date: -1 })
         .toArray();
 
-        return result;
+        return result[0].data;
     }
 
     /**
@@ -1424,7 +1434,7 @@ class UserManager {
      * @async
      */
     async getFollowers(username, page, pageCount) {
-        const result = await this.username.findOne({username: username});
+        const result = await this.users.findOne({username: username});
 
         return result.followers.slice(page * pageCount, page * pageCount + pageCount);
     }
@@ -2413,6 +2423,46 @@ class UserManager {
             remixCount: remixCount,
             featuredCount: featuredCount
         }
+    }
+
+    async markPrivacyPolicyAsRead(username) {
+        await this.users.updateOne({ username: username }, { $set: { lastPrivacyPolicyRead: Date.now() } });
+    }
+
+    async markTOSAsRead(username) {
+        await this.users.updateOne({ username: username }, { $set: { lastTOSRead: Date.now() } });
+    }
+
+    async markGuidelinesAsRead(username) {
+        await this.users.updateOne({ username: username }, { $set: { lastGuidelinesRead: Date.now() } });
+    }
+
+    async getLastPolicyRead(username) {
+        const result = await this.users.findOne({ username: username });
+
+        return {
+            privacyPolicy: result.lastPrivacyPolicyRead,
+            TOS: result.lastTOSRead,
+            guidelines: result.lastGuidelinesRead
+        }
+    }
+
+    async getLastPolicyUpdate() {
+        const result = this.lastPolicyUpdates.find().toArray();
+
+        console.log(result);
+    }
+
+    async setLastPrivacyPolicyUpdate() {
+        await this.lastPolicyUpdates.updateOne({ id: "privacyPolicy" }, { $set: { date: Date.now() } });
+    }
+
+    async setLastTOSUpdate() {
+        await this.lastPolicyUpdates.updateOne({ id: "TOS" }, { $set: { date: Date.now() } });
+    }
+
+    async setLastGuidelinesUpdate() {
+        await this.lastPolicyUpdates.updateOne({ id: "guidelines" }, { $set: { date: Date.now() } });
     }
 }
 

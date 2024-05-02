@@ -208,21 +208,21 @@ async function tests() {
         await manager.getIDByUsername("newtest")
     );
 
-    let getReportsByType = await manager.getReportsByType(0);
+    let getReportsByType = await manager.getReportsByType(0, 0, 2);
     if (getReportsByType.length !== 1) {
         console.log("[ FAIL ]".red, "Failed to get reports by type");
         return false;
     }
     console.log("[ PASS ]".green, "Got reports by type");
 
-    let getReportsByReporter = await manager.getReportsByReporter(await manager.getIDByUsername("newtest"));
+    let getReportsByReporter = await manager.getReportsByReporter(await manager.getIDByUsername("newtest"), 0, 2);
     if (getReportsByReporter.length !== 1) {
         console.log("[ FAIL ]".red, "Failed to get reports by reporter");
         return false;
     }
     console.log("[ PASS ]".green, "Got reports by reporter");
 
-    let getReportsByReported = await manager.getReportsByReportee(await manager.getIDByUsername("imstupid"));
+    let getReportsByReported = await manager.getReportsByReportee(await manager.getIDByUsername("imstupid"), 0, 2);
     if (getReportsByReported.length !== 1) {
         console.log("[ FAIL ]".red, "Failed to get reports by reportee");
         return false;
@@ -237,7 +237,7 @@ async function tests() {
     console.log("[ PASS ]".green, "Got reports");
 
     let deleteReport = await manager.deleteReport(getReportsByType[0].id);
-    if ((await manager.getReportsByType(0)).length !== 0) {
+    if ((await manager.getReportsByType(0, 0, 2)).length !== 0) {
         console.log("[ FAIL ]".red, "Failed to delete report");
         return false;
     }
@@ -416,7 +416,7 @@ async function tests() {
     }
     console.log("[ PASS ]".green, "Followed user and checked if following user");
 
-    let getFollowers = await manager.getFollowers("newtest");
+    let getFollowers = await manager.getFollowers("newtest", 0, 2);
     if (getFollowers.length !== 1) {
         console.log("[ FAIL ]".red, "Failed to get followers");
         return false;
