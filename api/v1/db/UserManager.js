@@ -43,7 +43,7 @@ class UserManager {
         this.userFeed = this.db.collection('userFeed');
         await this.userFeed.createIndex({ 'expireAt': 1 }, { expireAfterSeconds: Number(process.env.FeedExpirationTime) });
         this.illegalList = this.db.collection('illegalList');
-        if (!this.illegalList.findOne({ id: "illegalWords" })) {
+        if (!await this.illegalList.findOne({ id: "illegalWords" })) {
             this.illegalList.insertMany([
                 { id: "illegalWords", items: [] },
                 { id: "illegalWebsites", items: [] },
