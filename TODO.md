@@ -29,7 +29,7 @@
 - [ ] Allow members to follow groups
 - [ ] Allow studios to enable project adding for all people, followers, managers, or no one
 - [ ] Allow studios to earn badges
-- [ ]<proto_path> [--no-write] [--no-read] [--browser] Allow studios to have ranks (can be used for enabling future features)
+- [ ] Allow studios to have ranks (can be used for enabling future features)
 - [ ] Allow studios to OWN projects (the author is the studio, would allow managers to edit the project)
 
 ## Moderation
