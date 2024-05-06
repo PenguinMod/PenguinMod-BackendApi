@@ -3,23 +3,23 @@
 ## API
 
 - [x] Endpoints should be seperate files
-- [ ] Literally just remake all of the endpoints lamo
+- [x] Literally just remake all of the endpoints lamo
 - [x] Use MongoDB Database
   - [x] Make a login system
   - [x] Projects stuff
   - [x] Reports stuff
 - [x] Use minio to store project shit (json and assets)
   - [x] Use protobufs to store project jsons
-- [ ] OAuth2 (Someone please do this😭)
+- [x] OAuth2 (Someone please do this😭)
   - [x] Scratch Auth
-  - [ ] Github Auth?
-  - [ ] Google Auth??? (why this shit so difficult)
+  - [x] Github Auth?
+  - [x] Google Auth??? (why this shit so difficult)
   - [x] Be able to connect an account with oauth (e.g. you want to sign in with a password and oauth)
 
 ## Projects
 
 - [x] Store project assets seperately
-- [ ] Moderator removed projects should be "under review" (only accessible by ID) unless specified to fully delete
+- [x] Moderator removed projects should be "under review" (only accessible by ID) unless specified to fully delete
 
 ## Studios
 
@@ -29,7 +29,7 @@
 - [ ] Allow members to follow groups
 - [ ] Allow studios to enable project adding for all people, followers, managers, or no one
 - [ ] Allow studios to earn badges
-- [ ] Allow studios to have ranks (can be used for enabling future features)
+- [ ]<proto_path> [--no-write] [--no-read] [--browser] Allow studios to have ranks (can be used for enabling future features)
 - [ ] Allow studios to OWN projects (the author is the studio, would allow managers to edit the project)
 
 ## Moderation
