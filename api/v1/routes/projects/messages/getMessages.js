@@ -15,7 +15,7 @@ module.exports = (app, utils) => {
             return utils.error(res, 401, "Invalid credentials");
         }
 
-        const messages = await utils.UserManager.getMessages(username, page, utils.env.PageSize);
+        const messages = await utils.UserManager.getMessages(username, page, Number(utils.env.PageSize));
 
         res.header('Content-type', "application/json");
         res.send({ success: true, messages: messages });

@@ -1,5 +1,5 @@
 module.exports = (app, utils) => {
-    app.get('/api/v1/projects/searchProjects', async (req, res) => {
+    app.get('/api/v1/projects/searchprojects', async (req, res) => {
         const packet = req.query;
 
         const query = packet.query;
@@ -9,7 +9,7 @@ module.exports = (app, utils) => {
             return utils.error(res, 400, "Missing query");
         }
 
-        const projects = await utils.UserManager.searchProjects(query, page, utils.env.PageSize);
+        const projects = await utils.UserManager.searchProjects(query, page, Number(utils.env.PageSize));
 
         return res.send(projects);
     });

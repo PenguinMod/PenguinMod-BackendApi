@@ -158,7 +158,8 @@
             const formData = new FormData();
 
             request.open("POST", API_ENDPOINT, true);
-            request.onreadystatechange = () => {
+            request.onload = () => {
+                console.log(request.response);
                 console.log("success probably");
             };
             

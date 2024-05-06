@@ -28,7 +28,7 @@ module.exports = (app, utils) => {
             }
         }
 
-        const reports = await utils.UserManager.getReportsByReportee(target, page, utils.env.PageSize);
+        const reports = await utils.UserManager.getReportsByReportee(target, page, Number(utils.env.PageSize));
 
         res.status(200);
         res.header("Content-Type", "application/json");

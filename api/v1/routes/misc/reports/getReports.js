@@ -17,8 +17,8 @@ module.exports = (app, utils) => {
         const page = packet.page || 0;
 
         const reports = type ?
-                        await utils.UserManager.getReportsByType(type, page, utils.env.PageSize) :
-                        await utils.UserManager.getReports(page, utils.env.PageSize);
+                        await utils.UserManager.getReportsByType(type, page, Number(utils.env.PageSize)) :
+                        await utils.UserManager.getReports(page, Number(utils.env.PageSize));
         
         res.status(200);
         res.header("Content-Type", "application/json");

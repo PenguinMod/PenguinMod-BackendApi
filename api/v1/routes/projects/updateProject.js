@@ -1,7 +1,7 @@
 const fs = require('fs');
 
 module.exports = (app, utils) => {
-    app.post('/api/v1/projects/uploadProject', utils.upload.fields([
+    app.post('/api/v1/projects/updateProject', utils.upload.fields([
         { name: 'jsonFile', maxCount: 1 },
         { name: 'thumbnail', maxCount: 1 },
         // assets

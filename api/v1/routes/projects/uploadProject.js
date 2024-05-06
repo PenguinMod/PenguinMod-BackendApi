@@ -46,13 +46,14 @@ module.exports = (app, utils) => {
                 for (let extension of jsonFile.extensions) {
                     if (isUrlExtension(extension)) { // url extension names can be faked (if not trusted source)
                         for (let source of utils.allowedSources) {
-                            if (!projectCodeJSON.extensionURLs[extension].startsWith(source)) {
+                            if (extension.startsWith(source)) {
                                 return utils.error(res, 400, "Extension not allowed");
                             }
                         }
                     }
                     
                     if (!await utils.UserManager.checkExtensionIsAllowed(extension)) {
+                        console.log(extension);
                         return utils.error(res, 400, "Extension not allowed");
                     }
                 }
@@ -91,7 +92,8 @@ module.exports = (app, utils) => {
         }
 
         // upload the project
-        utils.UserManager.publishProject(
+        console.log("uploading");
+        await utils.UserManager.publishProject(
             protobufFile,
             assets,
             await utils.UserManager.getIDByUsername(packet.username),
@@ -109,6 +111,8 @@ module.exports = (app, utils) => {
             await utils.unlinkAsync(asset.path);
         }
 
+        res.status(200);
+        res.header("Content-Type", "application/json");
         res.send({ success: true });
     });
 }

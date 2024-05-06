@@ -18,7 +18,7 @@ module.exports = (app, utils) => {
 
         const signInDate = await UserManager.getFirstLogin(username);
 
-        const userProjects = await utils.ProjectManager.getProjectsByAuthor(0, utils.env.PageSize, username);
+        const userProjects = await utils.ProjectManager.getProjectsByAuthor(0, Number(utils.env.PageSize), username);
 
         const canRequestRankUp = (userProjects.length >= 3 // if we have 3 projects and
             && (Date.now() - signInDate) >= 4.32e+8) // first signed in 5 days ago

@@ -42,7 +42,7 @@ function sendBioUpdateLog(webhook, username, target, oldBio, newBio) {
             ],
             author: {
                 name: target,
-                icon_url: String("https://projects.penguinmod.com/api/v1/users/getpfp?username=" + target),
+                icon_url: String("http://localhost:8080/api/v1/users/getpfp?username=" + target),
                 url: String("https://penguinmod.com/profile?user=" + target)
             },
             timestamp: new Date().toISOString()
@@ -86,7 +86,7 @@ function sendReportLog(webhook, username, target, reason) {
             // TODO: change this to the new pfp system
             author: {
                 name: target,
-                icon_url: String("https://projects.penguinmod.com/api/v1/users/getpfp?username=" + target),
+                icon_url: String("http://localhost:8080/api/v1/users/getpfp?username=" + target),
                 url: String("https://penguinmod.com/profile?user=" + target)
             },
             timestamp: new Date().toISOString()
@@ -123,7 +123,7 @@ function sendMultiReportLog(webhook, username, target, reason) {
             // TODO: change this to the new pfp system
             author: {
                 name: target,
-                icon_url: String("https://projects.penguinmod.com/api/v1/users/getpfp?username=" + target),
+                icon_url: String("http://localhost:8080/api/v1/users/getpfp?username=" + target),
                 url: String("https://penguinmod.com/profile?user=" + target)
             },
             timestamp: new Date().toISOString()

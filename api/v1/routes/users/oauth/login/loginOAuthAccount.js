@@ -26,11 +26,11 @@ module.exports = (app, utils) => {
         switch (method) {
             case "scratch":
                 let state = await utils.UserManager.generateOAuth2State();
-                res.redirect(`https://oauth2.scratch-wiki.info/wiki/Special:ScratchOAuth2/authorize?client_id=${utils.env.ScratchOAuthClientID}&redirect_uri=https://projects.penguinmod.com/api/v1/users/scratchoauthlogin&scopes=identify&state=${state}`);
+                res.redirect(`https://oauth2.scratch-wiki.info/wiki/Special:ScratchOAuth2/authorize?client_id=${utils.env.ScratchOAuthClientID}&redirect_uri=http://localhost:8080/api/v1/users/scratchoauthlogin&scopes=identify&state=${state}`);
                 break;
             case "github":
                 state = await utils.UserManager.generateOAuth2State();
-                res.redirect(`https://github.com/login/oauth/authorize?client_id=${utils.env.GitHubOAuthClientID}&redirect_uri=https://projects.penguinmod.com/api/v1/users/githubcallback/login&state=${state}&scope=read:user`);
+                res.redirect(`https://github.com/login/oauth/authorize?client_id=${utils.env.GitHubOAuthClientID}&redirect_uri=http://localhost:8080/api/v1/users/githubcallback/login&state=${state}&scope=read:user`);
                 break;
             case "google":
                 res.redirect(authorizeUrl);

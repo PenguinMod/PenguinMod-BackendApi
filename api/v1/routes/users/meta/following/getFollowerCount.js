@@ -10,7 +10,7 @@ module.exports = (app, utils) => {
             return;
         }
 
-        const count = await utils.UserManager.getFollowerCount(username, page, utils.env.PageSize);
+        const count = await utils.UserManager.getFollowerCount(username, page, Number(utils.env.PageSize));
 
         res.status(200);
         res.header("Content-Type", 'application/json');

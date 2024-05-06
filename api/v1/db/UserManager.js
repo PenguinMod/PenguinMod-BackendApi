@@ -974,6 +974,7 @@ class UserManager {
      * @async
      */
     async getProjects(page, pageSize) {
+
         const _result = await this.projects.aggregate([
             {
                 $facet: {
@@ -985,7 +986,13 @@ class UserManager {
         .sort({ lastUpdate: -1 })
         .toArray()
 
-        const result = _result[0].data.map(x => {let v = x;delete v._id;return v;})
+        const result = _result[0].data.map(x => {let v = x;delete v._id;return v;});
+
+        for (const project of result) {
+            const username = await this.getUsernameByID(project.author);
+
+            project.author = {id: project.author, username: username};
+        }
 
         return result;
     }
@@ -1009,6 +1016,11 @@ class UserManager {
         .toArray();
 
         const result = _result[0].data.map(x => {let v = x;delete v._id;return v;})
+        .map(async project => {
+            const username = await this.getUsernameByID(project.author);
+
+            project.author = {id: project.author, username: username};
+        })
 
         return result;
     }
@@ -1602,7 +1614,8 @@ class UserManager {
      * @async
      */
     async projectExists(id, nonPublic) {
-        const result = await this.projects.findOne({id: id, public: !nonPublic});
+        // TODO: search for only public when true, search for all when false
+        const result = await this.projects.findOne({id: id});
 
         return result ? true : false;
     }
