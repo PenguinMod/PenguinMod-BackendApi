@@ -35,6 +35,10 @@ module.exports = (app, utils) => {
             res.header("Content-Type", "application/json");
             res.send({ success: true }); // so they think its working
 
+            if (await utils.UserManager.hasAlreadyReported("Server", reporterID)) return;
+
+            await utils.UserManager.report("MultiReport", reporterID, "User has sent multiple reports on same user.", "Server");
+
             // send log
             utils.sendMultiReportLog(reporterID, targetID, report);
             return;
