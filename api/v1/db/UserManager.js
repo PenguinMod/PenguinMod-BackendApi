@@ -1929,8 +1929,14 @@ class UserManager {
                 newtarget.broadcasts[broadcast] = json.targets[target].broadcasts[broadcast];
             }
 
-            // loop over the customVars
-            // TODO: make this :skullington:
+            for (const customVar in json.targets[target].customVars) {
+                newtarget.customVars.push({
+                    name: json.targets[target].customVars[customVar].name,
+                    value: this.castToString(json.targets[target].customVars[customVar].value),
+                    type: json.targets[target].customVars[customVar].type,
+                    id: json.targets[target].customVars[customVar].id
+                });
+            }
 
             // loop over the blocks
             for (const block in json.targets[target].blocks) {
