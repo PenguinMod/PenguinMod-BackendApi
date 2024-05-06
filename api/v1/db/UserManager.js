@@ -2107,7 +2107,14 @@ class UserManager {
                 newTarget.broadcasts[broadcast] = target.broadcasts[broadcast];
             }
 
-            // customvars
+            for (const customVar in target.customVars) {
+                newTarget.customVars.push({
+                    name: target.customVars[customVar].name,
+                    value: target.customVars[customVar].value,
+                    type: target.customVars[customVar].type,
+                    id: target.customVars[customVar].id
+                });
+            }
 
             for (const block in target.blocks) {
                 newTarget.blocks[block] = {
