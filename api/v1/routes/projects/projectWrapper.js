@@ -1,3 +1,7 @@
+const path = require('path');
+const fs = require('fs');
+const jszip = require('jszip');
+
 module.exports = (app, utils) => {
     app.get("/api/v1/projects/getprojectwrapper", async (req, res) => {
         const packet = req.query;
@@ -5,17 +9,49 @@ module.exports = (app, utils) => {
         const projectId = packet.projectId;
         const safe = packet.safe; // TODO: this shit
 
+        const safeReturn = () => {
+            const project = fs.readFileSync(path.join(utils.homeDir, "NoProjectFound.pmp"));
+            const assets = fs.readFileSync(path.join(utils.homeDir, "NoProjectFound.pmp"));
+
+            jszip.loadAsync(project).then(async (zip) => {
+                const file = zip.file("project.json");
+                const json = JSON.parse(await file.async("text"));
+                const protobuf = utils.UserManager.projectJsonToProtobuf(json);
+
+                jszip.loadAsync(assets).then(async (zip) => {
+                    const assets = []
+                    for (let [filename, file] of Object.entries(zip.files)) {
+                        if (filename !== "project.json") {
+                            const buffer = await file.async("nodebuffer");
+                            assets.push({ id: filename, buffer });
+                        }
+                    }
+    
+                    res.send({ project: protobuf, assets });
+                });
+            });
+        }
+
         if (!projectId) {
+            if (safe) {
+                return safeReturn();
+            }
             return utils.error(res, 400, "Missing projectId");
         }
 
         if (!await utils.UserManager.projectExists(projectId, true)) {
+            if (safe) {
+                return safeReturn();
+            }
             return utils.error(res, 404, "Project not found");
         }
 
         const metadata = await utils.UserManager.getProjectMetadata(projectId);
 
         if (metadata.author.username !== packet.username && !metadata.public) {
+            if (safe) {
+                return safeReturn();
+            }
             return utils.error(res, 404, "Project not found");
         }
 
