@@ -53,7 +53,6 @@ module.exports = (app, utils) => {
                     }
                     
                     if (!await utils.UserManager.checkExtensionIsAllowed(extension)) {
-                        console.log(extension);
                         return utils.error(res, 400, "Extension not allowed");
                     }
                 }
@@ -87,12 +86,11 @@ module.exports = (app, utils) => {
 
         for (let i = 0; i < req.files.assets.length; i++) {
             const asset = fs.readFileSync(req.files.assets[i].path);
-            const id = req.files.assets[i].filename;
+            const id = req.files.assets[i].originalname;
             assets.push({id: id, buffer: asset});
         }
 
         // upload the project
-        console.log("uploading");
         await utils.UserManager.publishProject(
             protobufFile,
             assets,

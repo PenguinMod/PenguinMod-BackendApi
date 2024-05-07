@@ -2476,7 +2476,7 @@ class UserManager {
     async getLastPolicyUpdate() {
         const result = this.lastPolicyUpdates.find().toArray();
 
-        console.log(result);
+        return result;
     }
 
     async setLastPrivacyPolicyUpdate() {

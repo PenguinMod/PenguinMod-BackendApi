@@ -2,6 +2,8 @@
 
 // monitor ========================================
 
+// TODO: find some way to have this auto go to gui instead of having to manually move it on protobuf update
+
 var monitor = self.monitor = {};
 
 monitor.read = function (pbf, end) {

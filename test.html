@@ -242,7 +242,9 @@
                 }
 
                 // loop over the customVars
-                // TODO: make this :skullington:
+                for (const customVar in json.targets[target].customVars) {
+                    newtarget.customVars.push(json.targets[target].customVars[customVar]);
+                }
 
                 // loop over the blocks
                 for (const block in json.targets[target].blocks) {
@@ -402,7 +404,9 @@
                     newTarget.broadcasts[broadcast] = target.broadcasts[broadcast];
                 }
 
-                // customvars
+                for (const customVar in target.customVars) {
+                    newTarget.customVars.push(target.customVars[customVar]);
+                }
 
                 for (const block in target.blocks) {
                     newTarget.blocks[block] = {
