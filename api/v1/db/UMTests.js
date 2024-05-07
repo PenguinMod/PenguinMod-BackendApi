@@ -277,7 +277,7 @@ async function tests() {
 
     let getProjectData = await manager.getProjectMetadata(getProjects[0].id);
     if (
-        getProjectData.author       !== getID         ||
+        getProjectData.author.id    !== getID         ||
         getProjectData.title        !== "testproject" ||
         getProjectData.instructions !== "testinst"    ||
         getProjectData.notes        !== "testnotes"   ||

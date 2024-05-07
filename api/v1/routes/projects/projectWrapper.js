@@ -15,7 +15,7 @@ module.exports = (app, utils) => {
 
         const metadata = await utils.UserManager.getProjectMetadata(projectId);
 
-        if (metadata.author !== packet.username && !metadata.public) {
+        if (metadata.author.username !== packet.username && !metadata.public) {
             return utils.error(res, 404, "Project not found");
         }
 

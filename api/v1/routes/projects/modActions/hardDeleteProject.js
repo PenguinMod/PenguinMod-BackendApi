@@ -26,7 +26,7 @@ module.exports = (app, utils) => {
         const metadata = await utils.ProjectManager.getProjectMetadata(projectID);
 
         // only admins and the project owner can delete projects, not mods
-        if (metadata.author !== username || !await utils.UserManager.isAdmin(username)) {
+        if (metadata.author.username !== username || !await utils.UserManager.isAdmin(username)) {
             return utils.error(res, 403, "You are not authorized to delete this project");
         }
 

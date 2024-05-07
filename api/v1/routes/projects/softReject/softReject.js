@@ -32,7 +32,7 @@ module.exports = (app, utils) => {
 
         const projectData = await utils.ProjectManager.getProjectMetadata(project);
 
-        await utils.UserManager.sendMessage(projectData.author, message, true, project);
+        await utils.UserManager.sendMessage(projectData.author.id, message, true, project);
 
         res.header('Content-type', "application/json");
         res.send({ success: true });

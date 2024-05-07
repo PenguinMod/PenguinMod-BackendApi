@@ -46,8 +46,6 @@ module.exports = (app, utils) => {
 
                 return res.send(thumbnail);
             case "metadata":
-                const metadata = await utils.UserManager.getProjectMetadata(packet.projectId);
-
                 return res.send(metadata);
             default:
                 return utils.error(res, 400, "Invalid requestType");
