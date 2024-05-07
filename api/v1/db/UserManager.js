@@ -1127,12 +1127,17 @@ class UserManager {
         
         const tempresult = await this.projects.findOne({id: id})
 
+        tempresult.author = {
+            id: tempresult.author,
+            username: await this.getUsernameByID(tempresult.author)
+        }
+
         // add the views, loves, and votes
         const result = {
             ...tempresult,
             views: await this.getProjectViews(id),
             loves: await this.getProjectLoves(id),
-            votes: await this.getProjectVotes(id)
+            votes: await this.getProjectVotes(id),
         }
 
         return result;
