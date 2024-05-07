@@ -5,10 +5,10 @@ module.exports = (app, utils) => {
         const username = packet.username;
         const token = packet.token;
 
-        const love = packet.love;
-        const projectID = packet.projectID;
+        const love = packet.toggle;
+        const projectID = String(packet.projectId);
 
-        if (!username || !token || !love || !projectID) {
+        if (!username || !token || typeof love !== "boolean" || !projectID) {
             return utils.error(res, 400, "InvalidData");
         }
 
@@ -22,17 +22,18 @@ module.exports = (app, utils) => {
 
         const id = await utils.UserManager.getIDByUsername(username);
 
-        if (await utils.UserManager.hasLovedProject(projectID, id)) {
+        if (await utils.UserManager.hasLovedProject(projectID, id) && love) {
             return utils.error(res, 400, "Already loved");
         }
 
-        const loves = await utils.ProjectManager.getProjectLoves(projectID);
+        const loves = await utils.UserManager.getProjectLoves(projectID);
+
         if (loves >= utils.env.LoveAmount && !await utils.UserManager.hasBadge(username, "likes")) {
             await utils.UserManager.addBadge(username, "likes");
             await utils.UserManager.sendMessage(id, {type: "newBadge", badge: "likes"}, false, projectID);
         }
 
-        await utils.ProjectManager.loveProject(projectID, love);
+        await utils.UserManager.loveProject(projectID, id, love);
         
         return res.send({ success: true });
     });

@@ -970,10 +970,11 @@ class UserManager {
      * get projects to a specified size
      * @param {number} page - page of projects to get
      * @param {number} pageSize - amount of projects to get
+     * @param {boolean} reverse - if you should get newest or oldest first
      * @returns {Promise<Array<Object>>} - Projects in the specified amount
      * @async
      */
-    async getProjects(page, pageSize) {
+    async getProjects(page, pageSize, reverse=false) {
 
         const _result = await this.projects.aggregate([
             {
@@ -983,7 +984,7 @@ class UserManager {
                 }
             }
         ])
-        .sort({ lastUpdate: -1 })
+        .sort({ lastUpdate: 1*(!reverse) })
         .toArray()
 
         const result = _result[0].data.map(x => {let v = x;delete v._id;return v;});
@@ -1003,12 +1004,12 @@ class UserManager {
      * @returns {Promise<Array<Object>>} - Array of projects by the specified author
      * @async
      */
-    async getProjectsByAuthor(author, page, pageSize, softRejected=false) {
+    async getProjectsByAuthor(author, page, pageSize, getPrivate, softRejected=false) {
         const _result = await this.projects.aggregate([
             {
                 $facet: {
                     metadata: [{ $count: "count" }],
-                    data: [{ $match: { author: author, public: true, softReject: softRejected } }, { $skip: page * pageSize }, { $limit: pageSize }]
+                    data: [{ $match: { author: author, public: true, softReject: softRejected } }, { $match: getPrivate ? {} : { public: true } }, { $skip: page * pageSize }, { $limit: pageSize }]
                 }
             }
         ])

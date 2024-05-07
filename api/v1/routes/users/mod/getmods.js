@@ -1,5 +1,5 @@
 module.exports = (app, utils) => {
-    app.get('/api/v1/users/ismod', async function (req, res) {
+    app.get('/api/v1/users/getmods', async function (req, res) {
         const packet = req.query;
 
         const username = packet.username;

@@ -6,8 +6,9 @@ module.exports = (app, utils) => {
 
         const packet = req.query;
         const page = packet.page || 0;
+        const reverse = packet.reverse || false;
 
-        const projects = await utils.UserManager.getProjects(page, Number(utils.env.PageSize));
+        const projects = await utils.UserManager.getProjects(page, Number(utils.env.PageSize), reverse);
 
         res.status(200);
         res.setHeader('Content-Type', 'application/json');

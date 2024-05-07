@@ -5,10 +5,10 @@ module.exports = (app, utils) => {
         const username = packet.username;
         const token = packet.token;
 
-        const vote = packet.vote;
-        const projectID = packet.projectID;
+        const vote = packet.toggle;
+        const projectID = String(packet.projectId);
 
-        if (!username || !token || !vote || !projectID) {
+        if (!username || !token || typeof vote !== "boolean" || !projectID) {
             return utils.error(res, 400, "InvalidData");
         }
 
@@ -22,20 +22,22 @@ module.exports = (app, utils) => {
 
         const id = await utils.UserManager.getIDByUsername(username);
 
-        if (await utils.UserManager.hasVotedProject(projectID, id)) {
+        const hasVoted = await utils.UserManager.hasVotedProject(projectID, id);
+
+        if (hasVoted && vote) {
             return utils.error(res, 400, "Already voted");
+        } else if (!hasVoted && !vote) {
+            return utils.error(res, 400, "Not voted");
         }
 
-        await utils.ProjectManager.voteProject(projectID, vote);
-
-        const votes = await utils.ProjectManager.getProjectVotes(projectID);
+        const votes = await utils.UserManager.getProjectVotes(projectID);
 
         if (votes >= utils.env.FeatureAmount && !await utils.UserManager.hasBadge(username, "featured")) {
             await utils.UserManager.addBadge(username, "featured");
             await utils.UserManager.sendMessage(id, {type: "newBadge", badge: "featured"}, false, projectID);
         }
-        
-        await utils.ProjectManager.featureProject(projectID, votes >= utils.env.FeatureAmount);
+
+        await utils.UserManager.voteProject(projectID, id, vote);
         
         return res.send({ success: true });
     });

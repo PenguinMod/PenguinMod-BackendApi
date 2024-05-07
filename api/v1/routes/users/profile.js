@@ -1,5 +1,5 @@
 module.exports = (app, utils) => {
-    app.get('/api/v1/users/userFromCode', async function (req, res) {
+    app.get('/api/v1/users/profile', async function (req, res) {
         const username = utils.Cast.toString(req.query.username);
     
         if (typeof username !== "string") {

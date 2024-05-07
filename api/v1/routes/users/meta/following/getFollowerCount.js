@@ -3,14 +3,13 @@ module.exports = (app, utils) => {
         const packet = req.query;
 
         const username = packet.username;
-        const page = packet.page || 0;
 
         if (!username) {
             utils.error(res, 400, "InvalidData");
             return;
         }
 
-        const count = await utils.UserManager.getFollowerCount(username, page, Number(utils.env.PageSize));
+        const count = await utils.UserManager.getFollowerCount(username);
 
         res.status(200);
         res.header("Content-Type", 'application/json');
