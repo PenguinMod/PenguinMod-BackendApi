@@ -25,6 +25,7 @@ Please report any security vulnerabilities using GitHub's security tab on the re
    - Add a `projects` bucket
    - Add a `project-thumbnails` bucket
    - Add a `project-assets` bucket
+   - Add a `profile-pictures` bucket
 5. Add a `.env` file with the following:
 
     ```env
