@@ -34,6 +34,22 @@ class UserManager {
         this.oauthIDs = this.db.collection('oauthIDs');
         this.reports = this.db.collection('reports');
         this.projects = this.db.collection('projects');
+        /*
+            id: id,
+            author: author,
+            title: title,
+            instructions: instructions,
+            notes: notes,
+            remix: remix,
+            featured: false,
+            views: 0,
+            date: Date.now(),
+            lastUpdate: Date.now(),
+            rating: rating,
+            public: true,
+            softRejected: false
+        */
+        this.projects.createIndex({ author: "text", title: "text", instructions: "text", notes: "text" })
         this.projectStats = this.db.collection('projectStats');
         this.messages = this.db.collection('messages');
         this.oauthStates = this.db.collection('oauthStates'); // needed bc load balancer will split requests so needs to be copied to all servers
@@ -1345,7 +1361,7 @@ class UserManager {
      * @async
      */
     async getFeaturedProjects(page, pageSize) {
-        const result = await this.projects.aggregate([
+        const aggResult = await this.projects.aggregate([
             {
                 $match: { featured: true, public: true, softReject: false }
             },
@@ -1357,7 +1373,9 @@ class UserManager {
             }
         ])
         .sort({ lastUpdate: -1 })
-        .toArray();
+        .toArray()
+
+        const result = aggResult[0].data.map(x => {let v = x;delete v._id;return v;})
 
         return result;
     }
@@ -2302,7 +2320,7 @@ class UserManager {
      * @returns {Array<Object>} - Array of projects
      */
     async searchForTag(tag, page, pageSize) {
-        const result = await this.projects.aggregate([
+        const aggResult = await this.projects.aggregate([
             {
                 $match: { $text: { $search: tag } }
             },
@@ -2315,6 +2333,8 @@ class UserManager {
         ])
         .sort({ lastUpdate: -1 })
         .toArray();
+    
+        const result = aggResult[0].data.map(x => {let v = x;delete v._id;return v;})
 
         return result;
     }
@@ -2327,7 +2347,7 @@ class UserManager {
      * @returns {Array<Object>} - Array of projects
      */
     async specializedSearch(query, page, pageSize) {
-        const result = await this.projects.aggregate([
+        const aggResult = await this.projects.aggregate([
             query,
             {
                 $facet: {
@@ -2338,6 +2358,8 @@ class UserManager {
         ])
         .sort({ lastUpdate: -1 })
         .toArray();
+
+        const result = aggResult[0].data.map(x => {let v = x;delete v._id;return v;})
 
         return result;
     }
