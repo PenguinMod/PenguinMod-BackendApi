@@ -19,8 +19,8 @@ module.exports = (app, utils) => {
             return utils.error(res, 401, "Invalid credentials");
         }
 
-        const uploading = utils.env.UploadingEnabled 
+        const canUpload = utils.env.UploadingEnabled 
 
-        return res.send({ uploading: uploading });
+        return res.send({ canUpload });
     });
 }
