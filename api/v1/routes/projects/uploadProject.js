@@ -46,7 +46,7 @@ module.exports = (app, utils) => {
                 for (let extension of jsonFile.extensions) {
                     if (isUrlExtension(extension)) { // url extension names can be faked (if not trusted source)
                         for (let source of utils.allowedSources) {
-                            if (extension.startsWith(source)) {
+                            if (!extension.startswith(source)) {
                                 return utils.error(res, 400, "Extension not allowed");
                             }
                         }
