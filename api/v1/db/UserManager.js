@@ -1988,8 +1988,11 @@ class UserManager {
                     shadow: blocks[block].shadow,
                     topLevel: blocks[block].topLevel,
                     x: blocks[block].x,
-                    y: blocks[block].y,
-                    mutation: {
+                    y: blocks[block].y
+                }
+
+                if (blocks[block].mutation) {
+                    newtarget.blocks[block].mutation = {
                         tagName: blocks[block].mutation.tagName,
                         proccode: blocks[block].mutation.proccode,
                         argumentids: blocks[block].mutation.argumentids,
@@ -2178,7 +2181,10 @@ class UserManager {
                     topLevel: target.blocks[block].topLevel,
                     x: target.blocks[block].x,
                     y: target.blocks[block].y,
-                    mutation: {
+                }
+
+                if (target.blocks[block].mutation) {
+                    newTarget.blocks[block].mutation = {
                         tagName: target.blocks[block].mutation.tagName,
                         proccode: target.blocks[block].mutation.proccode,
                         argumentids: target.blocks[block].mutation.argumentids,
@@ -2188,7 +2194,8 @@ class UserManager {
                         returns: target.blocks[block].mutation._returns,
                         edited: target.blocks[block].mutation.edited,
                         optype: target.blocks[block].mutation.optype,
-                        color: target.blocks[block].mutation.color
+                        color: target.blocks[block].mutation.color,
+                        children: []
                     }
                 }
 

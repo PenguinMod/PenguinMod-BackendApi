@@ -18,7 +18,7 @@ module.exports = (app, utils) => {
             return;
         }
 
-        if (packet.password.length < 6 || packet.password.length > 20) {
+        if (packet.password.length < 8 || packet.password.length > 50) {
             utils.error(res, 400, "InvalidData");
             return;
         }
