@@ -34,21 +34,6 @@ class UserManager {
         this.oauthIDs = this.db.collection('oauthIDs');
         this.reports = this.db.collection('reports');
         this.projects = this.db.collection('projects');
-        /*
-            id: id,
-            author: author,
-            title: title,
-            instructions: instructions,
-            notes: notes,
-            remix: remix,
-            featured: false,
-            views: 0,
-            date: Date.now(),
-            lastUpdate: Date.now(),
-            rating: rating,
-            public: true,
-            softRejected: false
-        */
         this.projects.createIndex({ author: "text", title: "text", instructions: "text", notes: "text" })
         this.projectStats = this.db.collection('projectStats');
         this.messages = this.db.collection('messages');
@@ -304,7 +289,6 @@ class UserManager {
      * @async
      */
     async getUsernameByID(id) {
-
         const result = await this.users.findOne({ id: id });
         return result.username;
     }
@@ -932,7 +916,7 @@ class UserManager {
     async getRemixes(id, page, pageSize) {
         const result = await this.projects.aggregate([
             {
-                $match: { remix: id, public: true, softReject: false }
+                $match: { remix: id, public: true, softRejected: false }
             },
             {
                 $facet: {
@@ -992,7 +976,7 @@ class UserManager {
      */
     async getProjects(page, pageSize, reverse=false) {
 
-        const _result = await this.projects.aggregate([
+        const aggResult = await this.projects.aggregate([
             {
                 $facet: {
                     metadata: [{ $count: "count" }],
@@ -1003,15 +987,17 @@ class UserManager {
         .sort({ lastUpdate: 1*(!reverse) })
         .toArray()
 
-        const result = _result[0].data.map(x => {let v = x;delete v._id;return v;});
-
-        for (const project of result) {
-            const username = await this.getUsernameByID(project.author);
-
-            project.author = {id: project.author, username: username};
+        const final = []
+        for (const project of aggResult[0].data) {
+            delete project._id;
+            project.author = {
+                id: project.author,
+                username: await this.getUsernameByID(project.author)
+            }
+            final.push(project);
         }
 
-        return result;
+        return final;
     }
 
     /**
@@ -1025,7 +1011,7 @@ class UserManager {
             {
                 $facet: {
                     metadata: [{ $count: "count" }],
-                    data: [{ $match: { author: author, public: true, softReject: softRejected } }, { $match: getPrivate ? {} : { public: true } }, { $skip: page * pageSize }, { $limit: pageSize }]
+                    data: [{ $match: { author: author, public: true, softRejected: softRejected } }, { $match: getPrivate ? {} : { public: true } }, { $skip: page * pageSize }, { $limit: pageSize }]
                 }
             }
         ])
@@ -1363,7 +1349,7 @@ class UserManager {
     async getFeaturedProjects(page, pageSize) {
         const aggResult = await this.projects.aggregate([
             {
-                $match: { featured: true, public: true, softReject: false }
+                $match: { featured: true, public: true, softRejected: false }
             },
             {
                 $facet: {
@@ -1375,9 +1361,17 @@ class UserManager {
         .sort({ lastUpdate: -1 })
         .toArray()
 
-        const result = aggResult[0].data.map(x => {let v = x;delete v._id;return v;})
+        const final = []
+        for (const project of aggResult[0].data) {
+            delete project._id;
+            project.author = {
+                id: project.author,
+                username: await this.getUsernameByID(project.author)
+            }
+            final.push(project);
+        }
 
-        return result;
+        return final;
     }
 
     /**
@@ -2367,9 +2361,17 @@ class UserManager {
         .sort({ lastUpdate: -1 })
         .toArray();
     
-        const result = aggResult[0].data.map(x => {let v = x;delete v._id;return v;})
+        const final = []
+        for (const project of aggResult[0].data) {
+            delete project._id;
+            project.author = {
+                id: project.author,
+                username: await this.getUsernameByID(project.author)
+            }
+            final.push(project);
+        }
 
-        return result;
+        return final;
     }
 
     /**
@@ -2392,9 +2394,17 @@ class UserManager {
         .sort({ lastUpdate: -1 })
         .toArray();
 
-        const result = aggResult[0].data.map(x => {let v = x;delete v._id;return v;})
+        const final = []
+        for (const project of aggResult[0].data) {
+            delete project._id;
+            project.author = {
+                id: project.author,
+                username: await this.getUsernameByID(project.author)
+            }
+            final.push(project);
+        }
 
-        return result;
+        return final;
     }
 
     /**

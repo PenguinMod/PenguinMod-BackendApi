@@ -30,14 +30,15 @@ module.exports = (app, utils) => {
             return utils.error(res, 400, "Not voted");
         }
 
+        await utils.UserManager.voteProject(projectID, id, vote);
+
         const votes = await utils.UserManager.getProjectVotes(projectID);
+        await utils.UserManager.featureProject(projectID, votes >= utils.env.FeatureAmount);
 
         if (votes >= utils.env.FeatureAmount && !await utils.UserManager.hasBadge(username, "featured")) {
             await utils.UserManager.addBadge(username, "featured");
             await utils.UserManager.sendMessage(id, {type: "newBadge", badge: "featured"}, false, projectID);
         }
-
-        await utils.UserManager.voteProject(projectID, id, vote);
         
         return res.send({ success: true });
     });
