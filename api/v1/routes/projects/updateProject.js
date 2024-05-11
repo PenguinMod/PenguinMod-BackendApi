@@ -84,6 +84,8 @@ module.exports = (app, utils) => {
 
         const thumbnail = fs.readFileSync(req.files.thumbnail[0].path);
 
+        // TODO: use mmmagic to verify this is a valid image
+
         // get the assets and their ids
         const assets = [];
 
