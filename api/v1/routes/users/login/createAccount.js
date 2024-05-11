@@ -12,6 +12,7 @@ module.exports = (app, utils) => {
             return;
         }
 
+        // prevents usernames having unicode & non-scratch limits (since pm projects are built with scratch limits in mind)
         const usernameDoesNotMeetLength = packet.username.length < 3 || packet.username.length > 20;
         const usernameHasIllegalChars = packet.username.match(/[^a-z0-9\-_]/i);
         if (usernameDoesNotMeetLength) {
@@ -23,6 +24,7 @@ module.exports = (app, utils) => {
             return;
         }
 
+        // only allows ""complex"" passwords (also seperate regexes since regex just needs to go through each letter to find one match)
         const passwordDoesNotMeetLength = packet.password.length < 8 || packet.password.length > 50;
         const passwordMeetsTextInclude = packet.password.match(/[a-z]/) && packet.password.match(/[A-Z]/);
         const passwordMeetsSpecialInclude = packet.password.match(/[0-9]/) && packet.password.match(/[^a-z0-9]/i);
