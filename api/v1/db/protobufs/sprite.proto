@@ -11,6 +11,20 @@ message _listValue {
     repeated string value = 2;
 }
 
+message _mutation {
+    string tagName = 1;
+    // children (prob not needed?)
+    string proccode = 3;
+    string argumentids = 4;
+    string argumentnames = 5;
+    string argumentdefaults = 6;
+    bool warp = 7;
+    string _returns = 8;
+    bool edited = 9;
+    string optype = 10;
+    string color = 11;
+}
+
 message block {
     string opcode = 1;
     string next = 2;
@@ -21,6 +35,7 @@ message block {
     bool topLevel = 7;
     int32 x = 8;
     int32 y = 9;
+    optional _mutation mutation = 10;
 }
 
 message comment {

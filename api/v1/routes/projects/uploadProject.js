@@ -47,13 +47,13 @@ module.exports = (app, utils) => {
                     if (isUrlExtension(extension)) { // url extension names can be faked (if not trusted source)
                         for (let source of utils.allowedSources) {
                             if (!extension.startswith(source)) {
-                                return utils.error(res, 400, "Extension not allowed");
+                                //return utils.error(res, 400, "Extension not allowed");
                             }
                         }
                     }
                     
                     if (!await utils.UserManager.checkExtensionIsAllowed(extension)) {
-                        return utils.error(res, 400, "Extension not allowed");
+                        //return utils.error(res, 400, "Extension not allowed");
                     }
                 }
             }

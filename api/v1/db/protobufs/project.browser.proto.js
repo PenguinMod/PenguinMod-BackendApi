@@ -2,8 +2,6 @@
 
 // monitor ========================================
 
-// TODO: find some way to have this auto go to gui instead of having to manually move it on protobuf update
-
 var monitor = self.monitor = {};
 
 monitor.read = function (pbf, end) {
@@ -150,12 +148,44 @@ _listValue.write = function (obj, pbf) {
     if (obj.value) for (var i = 0; i < obj.value.length; i++) pbf.writeStringField(2, obj.value[i]);
 };
 
+// _mutation ========================================
+
+var _mutation = self._mutation = {};
+
+_mutation.read = function (pbf, end) {
+    return pbf.readFields(_mutation._readField, {tagName: "", proccode: "", argumentids: "", argumentnames: "", argumentdefaults: "", warp: false, _returns: "", edited: false, optype: "", color: ""}, end);
+};
+_mutation._readField = function (tag, obj, pbf) {
+    if (tag === 1) obj.tagName = pbf.readString();
+    else if (tag === 3) obj.proccode = pbf.readString();
+    else if (tag === 4) obj.argumentids = pbf.readString();
+    else if (tag === 5) obj.argumentnames = pbf.readString();
+    else if (tag === 6) obj.argumentdefaults = pbf.readString();
+    else if (tag === 7) obj.warp = pbf.readBoolean();
+    else if (tag === 8) obj._returns = pbf.readString();
+    else if (tag === 9) obj.edited = pbf.readBoolean();
+    else if (tag === 10) obj.optype = pbf.readString();
+    else if (tag === 11) obj.color = pbf.readString();
+};
+_mutation.write = function (obj, pbf) {
+    if (obj.tagName) pbf.writeStringField(1, obj.tagName);
+    if (obj.proccode) pbf.writeStringField(3, obj.proccode);
+    if (obj.argumentids) pbf.writeStringField(4, obj.argumentids);
+    if (obj.argumentnames) pbf.writeStringField(5, obj.argumentnames);
+    if (obj.argumentdefaults) pbf.writeStringField(6, obj.argumentdefaults);
+    if (obj.warp) pbf.writeBooleanField(7, obj.warp);
+    if (obj._returns) pbf.writeStringField(8, obj._returns);
+    if (obj.edited) pbf.writeBooleanField(9, obj.edited);
+    if (obj.optype) pbf.writeStringField(10, obj.optype);
+    if (obj.color) pbf.writeStringField(11, obj.color);
+};
+
 // block ========================================
 
 var block = self.block = {};
 
 block.read = function (pbf, end) {
-    return pbf.readFields(block._readField, {opcode: "", next: "", parent: "", inputs: {}, fields: {}, shadow: false, topLevel: false, x: 0, y: 0}, end);
+    return pbf.readFields(block._readField, {opcode: "", next: "", parent: "", inputs: {}, fields: {}, shadow: false, topLevel: false, x: 0, y: 0, mutation: null}, end);
 };
 block._readField = function (tag, obj, pbf) {
     if (tag === 1) obj.opcode = pbf.readString();
@@ -167,6 +197,7 @@ block._readField = function (tag, obj, pbf) {
     else if (tag === 7) obj.topLevel = pbf.readBoolean();
     else if (tag === 8) obj.x = pbf.readVarint(true);
     else if (tag === 9) obj.y = pbf.readVarint(true);
+    else if (tag === 10) obj.mutation = _mutation.read(pbf, pbf.readVarint() + pbf.pos);
 };
 block.write = function (obj, pbf) {
     if (obj.opcode) pbf.writeStringField(1, obj.opcode);
@@ -178,6 +209,7 @@ block.write = function (obj, pbf) {
     if (obj.topLevel) pbf.writeBooleanField(7, obj.topLevel);
     if (obj.x) pbf.writeVarintField(8, obj.x);
     if (obj.y) pbf.writeVarintField(9, obj.y);
+    if (obj.mutation) pbf.writeMessage(10, _mutation.write, obj.mutation);
 };
 
 // block._FieldEntry4 ========================================

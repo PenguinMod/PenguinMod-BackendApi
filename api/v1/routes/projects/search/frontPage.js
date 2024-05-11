@@ -32,27 +32,29 @@ module.exports = (app, utils) => {
 
         const tag = tags[Math.floor(Math.random() * tags.length)];
 
-        const featured = await utils.UserManager.getFeaturedProjects(0, Number(utils.env.PageSize));
+        const featured = await utils.UserManager.getFeaturedProjects(0, Number(utils.env.PageSize))
         
         const almostFeatured = await utils.UserManager.specializedSearch(
             {$match: { featured: false, votes: { $gte: utils.env.FeatureAmount - 5 }}},
             0,
             Number(utils.env.PageSize)
-        );
+        )
         
         const liked = await utils.UserManager.specializedSearch(
             { $match: { featured: false, votes: { $gte: 5 } } },
             0,
             Number(utils.env.PageSize)
-        );
+        )
+
         const highViews = await utils.UserManager.specializedSearch(
             { $match: { featured: false, views: { $gte: 30 } } },
             0,
             Number(utils.env.PageSize)
-        );
+        )
 
-        const fitsTags = await utils.UserManager.searchForTag(tag, 0, Number(utils.env.PageSize));
-        const latest = await utils.UserManager.getProjects(0, Number(utils.env.PageSize));
+        const fitsTags = await utils.UserManager.searchForTag(tag, 0, Number(utils.env.PageSize))
+        
+        const latest = await utils.UserManager.getProjects(0, Number(utils.env.PageSize))
 
         const page = {
             featured: featured,
@@ -60,11 +62,20 @@ module.exports = (app, utils) => {
             liked: liked,
             viewed: highViews,
             tagged: fitsTags,
-            latest: latest,
-            selectedTag: tag
+            latest: latest
         };
 
-        console.log(page);
+        // if someone knows a better way to do this (preferably with mongodb in usermanager) please tell me
+        for (const key in page) {
+            const newPage = []
+            for (const project of page[key]) {
+                const isDonator = (await utils.UserManager.getBadges(project.author.username)).includes("donator");
+                project.fromDonator = isDonator;
+                newPage.push(project);
+            }
+            page[key] = newPage;
+        }
+        page.selectedTag = tag;
 
         res.header("Content-Type", "application/json");
         res.status(200);

@@ -1975,28 +1975,42 @@ class UserManager {
                 });
             }
 
+            const blocks = json.targets[target].blocks;
             // loop over the blocks
-            for (const block in json.targets[target].blocks) {
+            for (const block in blocks) {
+                
                 newtarget.blocks[block] = {
-                    opcode: json.targets[target].blocks[block].opcode,
-                    next: json.targets[target].blocks[block].next,
-                    parent: json.targets[target].blocks[block].parent,
+                    opcode: blocks[block].opcode,
+                    next: blocks[block].next,
+                    parent: blocks[block].parent,
                     inputs: {},
                     fields: {},
-                    shadow: json.targets[target].blocks[block].shadow,
-                    topLevel: json.targets[target].blocks[block].topLevel,
-                    x: json.targets[target].blocks[block].x,
-                    y: json.targets[target].blocks[block].y,
+                    shadow: blocks[block].shadow,
+                    topLevel: blocks[block].topLevel,
+                    x: blocks[block].x,
+                    y: blocks[block].y,
+                    mutation: {
+                        tagName: blocks[block].mutation.tagName,
+                        proccode: blocks[block].mutation.proccode,
+                        argumentids: blocks[block].mutation.argumentids,
+                        argumentnames: blocks[block].mutation.argumentnames,
+                        argumentdefaults: blocks[block].mutation.argumentdefaults,
+                        warp: blocks[block].mutation.warp,
+                        _returns: blocks[block].mutation.returns,
+                        edited: blocks[block].mutation.edited,
+                        optype: blocks[block].mutation.optype,
+                        color: blocks[block].mutation.color
+                    }
                 }
 
                 // loop over the inputs
-                for (const input in json.targets[target].blocks[block].inputs) {
-                    newtarget.blocks[block].inputs[input] = JSON.stringify(json.targets[target].blocks[block].inputs[input]);
+                for (const input in blocks[block].inputs) {
+                    newtarget.blocks[block].inputs[input] = JSON.stringify(blocks[block].inputs[input]);
                 }
 
                 // loop over the fields
-                for (const field in json.targets[target].blocks[block].fields) {
-                    newtarget.blocks[block].fields[field] = JSON.stringify(json.targets[target].blocks[block].fields[field]);
+                for (const field in blocks[block].fields) {
+                    newtarget.blocks[block].fields[field] = JSON.stringify(blocks[block].fields[field]);
                 }
             }
 
@@ -2163,7 +2177,19 @@ class UserManager {
                     shadow: target.blocks[block].shadow,
                     topLevel: target.blocks[block].topLevel,
                     x: target.blocks[block].x,
-                    y: target.blocks[block].y
+                    y: target.blocks[block].y,
+                    mutation: {
+                        tagName: target.blocks[block].mutation.tagName,
+                        proccode: target.blocks[block].mutation.proccode,
+                        argumentids: target.blocks[block].mutation.argumentids,
+                        argumentnames: target.blocks[block].mutation.argumentnames,
+                        argumentdefaults: target.blocks[block].mutation.argumentdefaults,
+                        warp: target.blocks[block].mutation.warp,
+                        returns: target.blocks[block].mutation._returns,
+                        edited: target.blocks[block].mutation.edited,
+                        optype: target.blocks[block].mutation.optype,
+                        color: target.blocks[block].mutation.color
+                    }
                 }
 
                 for (const input in target.blocks[block].inputs) {
