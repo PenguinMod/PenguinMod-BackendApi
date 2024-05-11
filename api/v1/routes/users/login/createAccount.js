@@ -12,14 +12,26 @@ module.exports = (app, utils) => {
             return;
         }
 
-        // TODO: this is currently pretty basic. we should add a few more requirements
-        if (packet.username.length < 3 || packet.username.length > 20) {
-            utils.error(res, 400, "InvalidData");
+        const usernameDoesNotMeetLength = packet.username.length < 3 || packet.username.length > 20;
+        const usernameHasIllegalChars = packet.username.match(/[^a-z0-9\-_]/i);
+        if (usernameDoesNotMeetLength) {
+            utils.error(res, 400, "InvalidLengthUsername");
+            return;
+        }
+        if (usernameHasIllegalChars) {
+            utils.error(res, 400, "InvalidUsername");
             return;
         }
 
-        if (packet.password.length < 8 || packet.password.length > 50) {
-            utils.error(res, 400, "InvalidData");
+        const passwordDoesNotMeetLength = packet.password.length < 8 || packet.password.length > 50;
+        const passwordMeetsTextInclude = packet.password.match(/[a-z]/) && packet.password.match(/[A-Z]/);
+        const passwordMeetsSpecialInclude = packet.password.match(/[0-9]/) && packet.password.match(/[^a-z0-9]/i);
+        if (passwordDoesNotMeetLength) {
+            utils.error(res, 400, "InvalidLengthPassword");
+            return;
+        }
+        if (!(passwordMeetsTextInclude && passwordMeetsSpecialInclude)) {
+            utils.error(res, 400, "MissingRequirementsPassword");
             return;
         }
 
