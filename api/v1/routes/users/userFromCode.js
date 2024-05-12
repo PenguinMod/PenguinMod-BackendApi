@@ -3,11 +3,18 @@ module.exports = (app, utils) => {
         const packet = req.query;
 
         const username = packet.username;
+        const token = packet.token;
     
         if (!await utils.UserManager.existsByUsername(username)) {
             utils.error(res, 404, "NotFound")
             return;
         }
+
+        if (!await utils.UserManager.loginWithToken(username, token)) {
+            utils.error(res, 401, "Reauthenticate");
+        }
+
+        const id = await utils.UserManager.getIDByUsername(username);
 
         const badges = await utils.UserManager.getBadges(username);
         const isDonator = badges.includes('donator');
@@ -16,23 +23,26 @@ module.exports = (app, utils) => {
 
         const rank = await utils.UserManager.getRank(username);
 
-        const signInDate = await UserManager.getFirstLogin(username);
+        const signInDate = await utils.UserManager.getFirstLogin(username);
 
-        const userProjects = await utils.ProjectManager.getProjectsByAuthor(0, Number(utils.env.PageSize), username);
+        const userProjects = await utils.UserManager.getProjectsByAuthor(id, 0, 3);
 
         const canRequestRankUp = (userProjects.length >= 3 // if we have 3 projects and
             && (Date.now() - signInDate) >= 4.32e+8) // first signed in 5 days ago
             || badges.length > 0; // or we have a badge
 
-        const followers = await UserManager.getFollowers(username);
+        const followers = await utils.UserManager.getFollowers(username);
 
         const myFeaturedProject = await utils.UserManager.getFeaturedProject(username);
         const myFeaturedProjectTitle = await utils.UserManager.getFeaturedProjectTitle(username);
 
+        const isAdmin = await utils.UserManager.isAdmin(username);
+        const isModerator = await utils.UserManager.isModerator(username);
+
         return {
             username,
-            admin: AdminAccountUsernames.get(username),
-            approver: ApproverUsernames.get(username),
+            admin: isAdmin,
+            approver: isModerator,
             isBanned: isBanned,
             badges,
             donator: isDonator,
