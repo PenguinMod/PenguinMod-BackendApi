@@ -481,3 +481,5 @@ Sprite._FieldEntry9.write = function (obj, pbf) {
     if (obj.key) pbf.writeStringField(1, obj.key);
     if (obj.value) pbf.writeMessage(2, comment.write, obj.value);
 };
+
+module.exports = Project;
