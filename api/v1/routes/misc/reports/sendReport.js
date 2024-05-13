@@ -2,7 +2,7 @@ module.exports = (app, utils) => {
     app.post('/api/v1/reports/sendReport', async (req, res) => {
         const packet = req.body;
 
-        const username = packet.username;
+        const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
         if (!await utils.UserManager.loginWithToken(username, token)) {
@@ -10,7 +10,7 @@ module.exports = (app, utils) => {
         }
 
         const report = packet.report;
-        const target = packet.target;
+        const target = (String(packet.target)).toLowerCase();
         const type = packet.type;
 
         if (!report || !type) {

@@ -2,10 +2,10 @@ module.exports = (app, utils) => {
     app.post('/api/v1/users/ban', async function (req, res) {
         const packet = req.body;
 
-        const username = packet.username;
+        const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
-        const target = packet.target;
+        const target = (String(packet.target)).toLowerCase();
         const toggle = packet.toggle;
 
         if (!username || !token || !target || typeof toggle !== "boolean") {

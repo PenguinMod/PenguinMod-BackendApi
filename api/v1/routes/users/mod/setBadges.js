@@ -2,10 +2,10 @@ module.exports = (app, utils) => {
     app.get('/api/v1/users/setBadges', async function (req, res) {
         const packet = req.query;
 
-        const username = packet.username;
+        const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
-        const target = packet.target;
+        const target = (String(packet.target)).toLowerCase();
 
         if (!await utils.UserManager.loginWithToken(username, token)) {
             utils.error(res, 401, "InvalidToken");

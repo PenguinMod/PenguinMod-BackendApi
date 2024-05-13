@@ -4,7 +4,7 @@ module.exports = (app, utils) => {
 
         const projectID = packet.projectID;
 
-        const username = packet.username;
+        const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
         if (!username || !token) {

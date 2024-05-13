@@ -2,7 +2,7 @@ module.exports = (app, utils) => {
     app.post("/api/v1/users/changePassword", async function (req, res) {
         const packet = req.body;
 
-        const username = packet.username;
+        const username = (String(packet.username)).toLowerCase();
         const old_password = packet.old_password;
         const new_password = packet.new_password;
 

@@ -2,7 +2,7 @@ module.exports = (app, utils) => {
     app.get('/api/v1/misc/getLastPolicyRead', async function (req, res) {
         const packet = req.body;
 
-        const username = packet.username;
+        const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
         if (!await utils.UserManager.loginWithToken(username, token)) {

@@ -2,10 +2,10 @@ module.exports = (app, utils) => {
     app.get('/api/v1/projects/hasLovedAdmin', async (req, res) => {
         const packet = req.query;
         
-        const username = packet.username;
+        const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
-        const target = packet.target;
+        const target = (String(packet.target)).toLowerCase();
 
         const projectID = packet.projectID;
 

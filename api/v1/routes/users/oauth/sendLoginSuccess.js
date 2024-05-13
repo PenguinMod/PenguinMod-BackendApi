@@ -5,7 +5,7 @@ module.exports = (app, utils) => {
         const packet = req.query;
 
         const token = packet.token;
-        const username = packet.username;
+        const username = (String(packet.username)).toLowerCase();
 
         if (!token || !username) {
             utils.error(res, 400, "InvalidData");

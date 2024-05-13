@@ -2,8 +2,8 @@ module.exports = (app, utils) => {
     app.get("/api/v1/users/isfollowing", async function (req, res) {
         const packet = req.query;
 
-        const username = packet.username;
-        const target = packet.target;
+        const username = (String(packet.username)).toLowerCase();
+        const target = (String(packet.target)).toLowerCase();
 
         if (!username || !target) {
             utils.error(res, 400, "InvalidData");

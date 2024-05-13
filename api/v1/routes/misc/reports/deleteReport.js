@@ -2,7 +2,7 @@ module.exports = (app, utils) => {
     app.post("/api/v1/reports/deleteReport", async (req, res) => {
         const packet = req.body;
 
-        const username = packet.username;
+        const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
         if (!await utils.UserManager.loginWithToken(username, token)) {

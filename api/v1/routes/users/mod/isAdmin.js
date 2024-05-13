@@ -2,10 +2,10 @@ module.exports = (app, utils) => {
     app.get('/api/v1/users/isadmin', async function (req, res) {
         const packet = req.query;
 
-        const username = packet.username;
+        const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
-        const target = packet.target;
+        const target = (String(packet.target)).toLowerCase();
 
         if (!username || !token || typeof target !== "string") {
             return utils.error(res, 400, "Missing username or token");

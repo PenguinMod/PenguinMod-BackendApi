@@ -2,7 +2,7 @@ module.exports = (app, utils) => {
     app.post("/api/v1/users/createAccount", async function (req, res) {
         const packet = req.body;
 
-        const username = packet.username;
+        const username = (String(packet.username)).toLowerCase();
         const password = packet.password;
 
         const email = packet.email || null;
@@ -13,8 +13,8 @@ module.exports = (app, utils) => {
         }
 
         // prevents usernames having unicode & non-scratch limits (since pm projects are built with scratch limits in mind)
-        const usernameDoesNotMeetLength = packet.username.length < 3 || packet.username.length > 20;
-        const usernameHasIllegalChars = packet.username.match(/[^a-z0-9\-_]/i);
+        const usernameDoesNotMeetLength = username.length < 3 || username.length > 20;
+        const usernameHasIllegalChars = username.match(/[^a-z0-9\-_]/i);
         if (usernameDoesNotMeetLength) {
             utils.error(res, 400, "InvalidLengthUsername");
             return;
@@ -37,12 +37,12 @@ module.exports = (app, utils) => {
             return;
         }
 
-        if (await utils.UserManager.existsByUsername(packet.username)) {
+        if (await utils.UserManager.existsByUsername(username)) {
             utils.error(res, 400, "AccountExists");
             return;
         }
 
-        let token = await utils.UserManager.createAccount(packet.username, packet.password);
+        let token = await utils.UserManager.createAccount(username, packet.password);
 
         res.status(200);
         res.header("Content-Type", 'application/json');

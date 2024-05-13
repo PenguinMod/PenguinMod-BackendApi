@@ -2,7 +2,7 @@ module.exports = (app, utils) => {
     app.get("/api/v1/users/getpfp", async (req, res) => {
         const packet = req.query;
 
-        const username = packet.username;
+        const username = (String(packet.username)).toLowerCase();
 
         if (!await utils.UserManager.existsByUsername(username)) {
             utils.error(res, 404, "NotFound")

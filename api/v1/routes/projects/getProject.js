@@ -73,7 +73,7 @@ module.exports = (app, utils) => {
 
         const metadata = await utils.UserManager.getProjectMetadata(packet.projectId);
 
-        if (metadata.author !== packet.username && !metadata.public) {
+        if (metadata.author !== String(packet.username).toLowerCase() && !metadata.public) {
             if (safe) {
                 return safeReturn();
             }

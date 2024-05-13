@@ -2,7 +2,7 @@ module.exports = (app, utils) => {
     app.get('/api/v1/misc/getProfanityList', async function (req, res) {
         const packet = req.query;
 
-        const username = packet.username;
+        const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
         if (!await UserManager.loginWithToken(username, token)) {

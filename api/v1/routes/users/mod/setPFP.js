@@ -6,10 +6,10 @@ module.exports = (app, utils) => {
     app.post('/api/v1/users/setpfpadmin', utils.upload.single("picture"), async (req, res) => {
         const packet = req.body;
 
-        const username = packet.username;
+        const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
-        const target = packet.target;
+        const target = (String(packet.target)).toLowerCase();
 
         const pictureName = req.file;
 

@@ -3,7 +3,7 @@ module.exports = (app, utils) => {
         const packet = req.query;
 
         const method = packet.method;
-        const username = packet.username;
+        const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
         if (!method || !username || !token) {

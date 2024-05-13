@@ -2,7 +2,7 @@ module.exports = (app, utils) => {
     app.get('/api/v1/users/getmessagecount', async (req, res) => {
         const packet = req.query;
 
-        const username = packet.username;
+        const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
         if (!username || !token) {

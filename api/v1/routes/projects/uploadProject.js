@@ -13,16 +13,18 @@ module.exports = (app, utils) => {
 
         const packet = req.query; // because body is used for the files i think
 
-        if (!await utils.UserManager.loginWithToken(packet.username, packet.token)) {
+        const username = (String(username)).toLowerCase();
+
+        if (!await utils.UserManager.loginWithToken(username, packet.token)) {
             return utils.error(res, 401, "Invalid credentials");
         }
 
         // make sure its been 8 minutes since last upload
-        if (await utils.UserManager.getLastUpload(packet.username) > Date.now() - utils.uploadCooldown) {
+        if (await utils.UserManager.getLastUpload(username) > Date.now() - utils.uploadCooldown) {
             return utils.error(res, 400, "Uploaded in the last 8 minutes");
         }
 
-        utils.UserManager.setLastUpload(packet.username, Date.now());
+        utils.UserManager.setLastUpload(username, Date.now());
 
         // the jsonfile is in protobuf format so convert it to json
         const protobufFile = fs.readFileSync(req.files.jsonFile[0].path);
@@ -35,7 +37,7 @@ module.exports = (app, utils) => {
         }
 
         // check the extensions
-        const userRank = await utils.UserManager.getRank(packet.username);
+        const userRank = await utils.UserManager.getRank(username);
         if (userRank < 1) {
             const isUrlExtension = (extId) => {
                 if (!jsonFile.extensionURLs) return false;
@@ -96,7 +98,7 @@ module.exports = (app, utils) => {
         await utils.UserManager.publishProject(
             protobufFile,
             assets,
-            await utils.UserManager.getIDByUsername(packet.username),
+            await utils.UserManager.getIDByUsername(username),
             packet.title,
             thumbnail,
             packet.instructions,
