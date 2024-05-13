@@ -1,6 +1,6 @@
 module.exports = (app, utils) => {
     app.get('/api/v1/users/profile', async function (req, res) {
-        const username = String(req.query.username);
+        const username = String(req.query.username).toLowerCase();
     
         if (typeof username !== "string") {
             utils.error(res, 400, "NoUserSpecified")

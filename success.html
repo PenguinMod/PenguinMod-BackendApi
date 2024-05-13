@@ -17,9 +17,7 @@
                 // wrapper to handle errors & be easier
                 function post(data) {
                     opener.postMessage(
-                        {
-                            a2: data,
-                        },
+                        data,
                         `https://penguinmod.com`
                     );
                 }
