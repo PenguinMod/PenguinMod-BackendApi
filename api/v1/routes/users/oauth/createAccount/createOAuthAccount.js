@@ -31,7 +31,8 @@ module.exports = (app, utils) => {
                 break;
             case "github":
                 state = await utils.UserManager.generateOAuth2State();
-                res.redirect(`https://github.com/login/oauth/authorize?client_id=${utils.env.GitHubOAuthClientID}&redirect_uri=http://localhost:8080/api/v1/users/githubcallback/createaccount&state=${state}&scope=read:user`);
+                res.redirect(`https://github.com/login/oauth/authorize?client_id=${utils.env.GithubOAuthClientID}&redirect_uri=http://localhost:8080/api/v1/users/githubcallback/createaccount&state=${state}&scope=read:user`);
+                break;
             case "google":
                 res.redirect(authorizeUrl);
                 break;
