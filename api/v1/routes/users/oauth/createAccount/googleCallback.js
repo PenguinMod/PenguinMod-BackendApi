@@ -37,13 +37,39 @@ module.exports = (app, utils) => {
         const user = await oauth2Client.request({url});
         
         const id = user.data.resourceName.split('/')[1];
-        const displayName = user.data.names[0].displayName;
 
-        const regex = /^((?<irlName>.*?)\s+\((?<onlineName>.+?)\)|(?<fallbackName>.*))$/i 
+        const nameGroup1 = [
+            "Big",
+            "Small",
+            "Tall",
+            "Short",
+            "Long",
+            "Soft",
+            "Hard",
+            "Swift",
+            "Truthful",
+            "Slippery",
+        ]
 
-        const { groups } = regex.exec(displayName)
-        const usedFallback = !!groups.fallbackName
-        const username = groups.onlineName ?? groups.fallbackName
+        const nameGroup2 = [
+            "Bed",
+            "Parrot",
+            "Penguin",
+            "Falcon",
+            "Pigeon",
+            "Duck",
+            "Goose",
+            "Pheasant",
+            "Owl",
+            "Bear",
+            "Horse"
+        ]
+
+        const name1 = nameGroup1[Math.floor(Math.random() * nameGroup1.length)];
+        const name2 = nameGroup2[Math.floor(Math.random() * nameGroup2.length)];
+        const randomNum = Math.floor(Math.random() * 1000);
+
+        const username = `${name1}${name2}${randomNum}`;
 
         const userdata = await utils.UserManager.makeOAuth2Account("google", {id, username});
 
