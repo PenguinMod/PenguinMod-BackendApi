@@ -1,6 +1,6 @@
 module.exports = (app, utils) => {
-    app.post('api/v1/projects/getmessagecount', async (req, res) => {
-        const packet = req.body;
+    app.get('/api/v1/users/getmessagecount', async (req, res) => {
+        const packet = req.query;
 
         const username = packet.username;
         const token = packet.token;
@@ -13,9 +13,12 @@ module.exports = (app, utils) => {
             return utils.error(res, 401, "Invalid credentials");
         }
 
-        const messages = await utils.UserManager.getMessages(username);
+        const id = await utils.UserManager.getIDByUsername(username);
 
+        const count = await utils.UserManager.getMessageCount(id);
+
+        res.status(200);
         res.header('Content-type', "application/json");
-        res.send({ success: true, count: messages.length });
+        res.send({ count: count });
     });
 }

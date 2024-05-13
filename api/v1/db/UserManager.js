@@ -1564,6 +1564,17 @@ class UserManager {
     }
 
     /**
+     * Get the amount of messages sent to a person
+     * @param {string} receiver - ID of the person who received the messages 
+     * @returns {Promise<number>} - Amount of messages sent to the person
+     */
+    async getMessageCount(receiver) {
+        const result = await this.messages.countDocuments({receiver: receiver});
+
+        return result;
+    }
+
+    /**
      * Get a message
      * @param {string} messageID - ID of the message
      * @returns {Promise<Object>} - The message
@@ -2379,14 +2390,9 @@ class UserManager {
      * @returns {Promise<Array<object>>} - Array of users
      */
     async searchUsers(query, page, pageSize) {
-        console.log(query);
-
         const result = await this.users.aggregate([
             {
-                $match: { $text: { $search: query } },
-            },
-            {
-                $sort: { score: { $meta: "textScore" } }
+                $match: { username: { $regex: `.*${query}.*`, $options: "i" } }
             },
             {
                 $facet: {
@@ -2400,6 +2406,11 @@ class UserManager {
         const cleaned = result[0].data.map(x => {let v = x;delete v._id;return v;})
 
         const final = cleaned.map((user) => ({username: user.username, id: user.id}))
+
+        // sort by how well it matches
+        final.sort((a, b) => {
+            return (a.username.indexOf(query)+a.username.length) - (b.username.indexOf(query)-b.username.length);
+        });
 
         return final;
     }

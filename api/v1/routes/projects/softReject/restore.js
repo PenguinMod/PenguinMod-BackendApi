@@ -1,5 +1,5 @@
 module.exports = (app, utils) => {
-    app.post('api/v1/projects/restore', async (req, res) => {
+    app.post('/api/v1/users/restore', async (req, res) => {
         const packet = req.body;
 
         const username = packet.username;
