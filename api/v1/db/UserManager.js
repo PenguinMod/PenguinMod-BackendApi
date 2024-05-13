@@ -31,11 +31,9 @@ class UserManager {
         await this.client.connect();
         this.db = this.client.db('pm_apidata');
         this.users = this.db.collection('users');
-        this.users.createIndex({ username: "text" });
         this.oauthIDs = this.db.collection('oauthIDs');
         this.reports = this.db.collection('reports');
         this.projects = this.db.collection('projects');
-        this.projects.createIndex({ author: "text", title: "text", instructions: "text", notes: "text" })
         this.projectStats = this.db.collection('projectStats');
         this.messages = this.db.collection('messages');
         this.oauthStates = this.db.collection('oauthStates'); // needed bc load balancer will split requests so needs to be copied to all servers
@@ -2355,7 +2353,11 @@ class UserManager {
     async searchProjects(query, page, pageSize) {
         const result = await this.projects.aggregate([
             {
-                $match: { $text: { $search: query } },
+                $match: { $or: [
+                    { title: { $regex: `.*${query}.*`, $options: "i" } },
+                    { instructions: { $regex: `.*${query}.*`, $options: "i" } },
+                    { notes: { $regex: `.*${query}.*`, $options: "i" } }
+                ] },
             },
             {
                 $facet: {
@@ -2378,6 +2380,18 @@ class UserManager {
             }
             final.push(project);
         }
+
+        final.sort((a, b) => {
+            const firstVal = a.title.indexOf(query) - b.title.indexOf(query);
+
+            if (firstVal !== 0) return firstVal;
+
+            const secondVal = a.instructions.indexOf(query) - b.instructions.indexOf(query);
+
+            if (secondVal !== 0) return secondVal;
+
+            return a.notes.indexOf(query) - b.notes.indexOf(query);
+        })
 
         return final;
     }
