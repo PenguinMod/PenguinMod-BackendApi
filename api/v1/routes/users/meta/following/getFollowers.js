@@ -3,7 +3,7 @@ module.exports = (app, utils) => {
         const packet = req.query;
 
         const username = packet.username;
-        const page = packet.page || 0;
+        const page = Number(packet.page) || 0;
 
         if (!username) {
             utils.error(res, 400, "InvalidData");

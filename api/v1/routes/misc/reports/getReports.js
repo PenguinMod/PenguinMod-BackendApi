@@ -14,7 +14,7 @@ module.exports = (app, utils) => {
         }
 
         const type = packet.type;
-        const page = packet.page || 0;
+        const page = Number(packet.page) || 0;
 
         const reports = type ?
                         await utils.UserManager.getReportsByType(type, page, Number(utils.env.PageSize)) :

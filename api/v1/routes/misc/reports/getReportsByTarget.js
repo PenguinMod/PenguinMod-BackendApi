@@ -14,7 +14,7 @@ module.exports = (app, utils) => {
         }
 
         let target = packet.target;
-        const page = packet.page || 0;
+        const page = Number(packet.page) || 0;
 
         if (!target) {
             return utils.error(res, 400, "Invalid request");

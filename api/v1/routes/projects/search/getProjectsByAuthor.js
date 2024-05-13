@@ -3,7 +3,7 @@ module.exports = (app, utils) => {
         const packet = req.query;
 
         const authorUsername = packet.authorUsername;
-        const page = packet.page || 0;
+        const page = Number(packet.page) || 0;
 
         if (!authorUsername) {
             return utils.error(res, 400, "Missing authorId");

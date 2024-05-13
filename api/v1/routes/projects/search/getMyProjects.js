@@ -13,7 +13,7 @@ module.exports = (app, utils) => {
             return utils.error(res, 401, "Invalid credentials");
         }
 
-        const page = packet.page || 0;
+        const page = Number(packet.page) || 0;
 
         const projects = await utils.UserManager.getProjectsByAuthor(username, page, Number(utils.env.PageSize), true);
 

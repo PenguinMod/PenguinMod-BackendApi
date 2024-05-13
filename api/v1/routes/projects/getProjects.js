@@ -5,7 +5,7 @@ module.exports = (app, utils) => {
         }
 
         const packet = req.query;
-        const page = packet.page || 0;
+        const page = Number(packet.page) || 0;
         const reverse = packet.reverse || false;
 
         const projects = await utils.UserManager.getProjects(page, Number(utils.env.PageSize), reverse);

@@ -11,7 +11,7 @@ module.exports = (app, utils) => {
         }
 
         if (!await utils.UserManager.loginWithToken(username, token)) {
-            utils.error(res, 401, "Reauthenticate");
+            return utils.error(res, 401, "Reauthenticate");
         }
 
         const id = await utils.UserManager.getIDByUsername(username);
@@ -39,7 +39,7 @@ module.exports = (app, utils) => {
         const isAdmin = await utils.UserManager.isAdmin(username);
         const isModerator = await utils.UserManager.isModerator(username);
 
-        return {
+        const user = {
             username,
             admin: isAdmin,
             approver: isModerator,
@@ -54,5 +54,9 @@ module.exports = (app, utils) => {
             viewable: userProjects.length > 0,
             projects: userProjects.length // we check projects anyways so might aswell
         };
+
+        res.status(200);
+        res.header("Content-Type", "application/json");
+        res.send(user);
     });
 }

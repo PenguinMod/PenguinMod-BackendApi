@@ -24,7 +24,7 @@ module.exports = (app, utils) => {
             return utils.error(res, 404, "Project not found");
         }
 
-        await utils.ProjectManager.featureProject(projectID, toggle);
+        await utils.UserManager.featureProject(projectID, toggle);
         
         return res.send({ success: true });
     });

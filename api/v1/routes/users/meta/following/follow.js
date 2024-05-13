@@ -1,6 +1,6 @@
 module.exports = (app, utils) => {
-    app.get("/api/v1/users/meta/follow", async function (req, res) {
-        const packet = req.query;
+    app.post("/api/v1/users/follow", async function (req, res) {
+        const packet = req.body;
 
         const username = packet.username;
         const token = packet.token;
@@ -14,7 +14,7 @@ module.exports = (app, utils) => {
             return;
         }
 
-        if (!await utils.UserManager.loginWithToken(token, username)) {
+        if (!await utils.UserManager.loginWithToken(username, token)) {
             utils.error(res, 401, "InvalidToken");
             return;
         }
@@ -27,9 +27,19 @@ module.exports = (app, utils) => {
         const userID = await utils.UserManager.getIDByUsername(username);
         const targetID = await utils.UserManager.getIDByUsername(target);
 
+        if (await utils.UserManager.isFollowing(userID, targetID) && toggle) {
+            utils.error(res, 400, "AlreadyFollowing");
+            return;
+        } else if (!await utils.UserManager.isFollowing(userID, targetID) && !toggle) {
+            utils.error(res, 400, "NotFollowing");
+            return;
+        }
+
+
+
         await utils.UserManager.followUser(userID, targetID, toggle);
 
-        const followers = await utils.UserManager.getFollowerCount(targetID);
+        const followers = await utils.UserManager.getFollowerCount(target);
 
         if (followers >= utils.env.FollowAmount && !await utils.UserManager.hasBadge(target, "followers")) {
             await utils.UserManager.addBadge(target, "followers");

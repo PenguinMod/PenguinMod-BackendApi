@@ -10,12 +10,12 @@ module.exports = (app, utils) => {
             return;
         }
 
-        if (!await utils.UserManager.loginWithToken(token, username)) {
+        if (!await utils.UserManager.loginWithToken(username, token)) {
             utils.error(res, 401, "InvalidToken");
             return;
         }
 
-        const feed = await utils.UserManager.getUserFeed(username, utils.env.FeedSize);
+        const feed = await utils.UserManager.getUserFeed(username, Number(utils.env.FeedSize));
 
         res.status(200);
         res.header("Content-Type", 'application/json');

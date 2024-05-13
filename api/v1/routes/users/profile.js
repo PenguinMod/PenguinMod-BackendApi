@@ -1,6 +1,6 @@
 module.exports = (app, utils) => {
     app.get('/api/v1/users/profile', async function (req, res) {
-        const username = utils.Cast.toString(req.query.username);
+        const username = String(req.query.username);
     
         if (typeof username !== "string") {
             utils.error(res, 400, "NoUserSpecified")
@@ -8,6 +8,7 @@ module.exports = (app, utils) => {
         }
 
         if (!await utils.UserManager.existsByUsername(username)) {
+            console.log("doesnt exist", username)
             utils.error(res, 404, "NotFound")
             return;
         }
@@ -22,35 +23,35 @@ module.exports = (app, utils) => {
 
         const rank = await utils.UserManager.getRank(username);
 
-        const signInDate = await UserManager.getFirstLogin(username);
+        const signInDate = await utils.UserManager.getFirstLogin(username);
 
-        const userProjects = await utils.ProjectManager.getProjectsByAuthor(0, Number(utils.env.PageSize), username);
+        const userProjects = await utils.UserManager.getProjectsByAuthor(username, 0, Number(utils.env.PageSize));
 
         const canRequestRankUp = (userProjects.length >= 3 // if we have 3 projects and
             && (Date.now() - signInDate) >= 4.32e+8) // first signed in 5 days ago
             || badges.length > 0; // or we have a badge
 
-        const followers = await UserManager.getFollowers(username);
+        const followers = await utils.UserManager.getFollowerCount(username);
 
         const myFeaturedProject = await utils.UserManager.getFeaturedProject(username);
         const myFeaturedProjectTitle = await utils.UserManager.getFeaturedProjectTitle(username);
 
-        const bio = await UserManager.getBio(username);
+        const bio = await utils.UserManager.getBio(username);
 
-        return {
+        const user = {
             username,
-            admin: AdminAccountUsernames.get(username),
-            approver: ApproverUsernames.get(username),
             badges,
             donator: isDonator,
             rank,
             bio,
             myFeaturedProject,
             myFeaturedProjectTitle,
-            followers: followers.length,
+            followers: followers,
             canrankup: canRequestRankUp && rank === 0,
-            viewable: userProjects.length > 0,
             projects: userProjects.length // we check projects anyways so might aswell
         };
+        res.status(200);
+        res.header("Content-Type", "application/json");
+        res.send(user);
     });
 }

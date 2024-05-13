@@ -31,6 +31,7 @@ class UserManager {
         await this.client.connect();
         this.db = this.client.db('pm_apidata');
         this.users = this.db.collection('users');
+        this.users.createIndex({ username: "text" });
         this.oauthIDs = this.db.collection('oauthIDs');
         this.reports = this.db.collection('reports');
         this.projects = this.db.collection('projects');
@@ -761,7 +762,9 @@ class UserManager {
         .sort({ date: -1 })
         .toArray();
 
-        return result[0].data;
+        const cleaned = result[0].data.map(x => {let v = x;delete v._id;return v;})
+
+        return cleaned;
     }
 
     /**
@@ -787,7 +790,9 @@ class UserManager {
         .sort({ date: -1 })
         .toArray();
 
-        return result;
+        const cleaned = result[0].data.map(x => {let v = x;delete v._id;return v;})
+
+        return cleaned;
     }
 
     /**
@@ -812,8 +817,10 @@ class UserManager {
         ])
         .sort({ date: -1 })
         .toArray();
+        
+        const cleaned = result[0].data.map(x => {let v = x;delete v._id;return v;})
 
-        return result;
+        return cleaned;
     }
 
     /**
@@ -847,7 +854,9 @@ class UserManager {
         .sort({ date: -1 })
         .toArray();
 
-        return result;
+        const cleaned = result[0].data.map(x => {let v = x;delete v._id;return v;})
+
+        return cleaned;
     }
 
     /**
@@ -914,7 +923,7 @@ class UserManager {
      * @async
      */
     async getRemixes(id, page, pageSize) {
-        const result = await this.projects.aggregate([
+        const aggResult = await this.projects.aggregate([
             {
                 $match: { remix: id, public: true, softRejected: false }
             },
@@ -928,7 +937,17 @@ class UserManager {
         .sort({ lastUpdate: -1 })
         .toArray();
 
-        return result;
+        const final = []
+        for (const project of aggResult[0].data) {
+            delete project._id;
+            project.author = {
+                id: project.author,
+                username: await this.getUsernameByID(project.author)
+            }
+            final.push(project);
+        }
+
+        return final;
     }
 
     /**
@@ -1019,11 +1038,7 @@ class UserManager {
         .toArray();
 
         const result = _result[0].data.map(x => {let v = x;delete v._id;return v;})
-        .map(async project => {
-            const username = await this.getUsernameByID(project.author);
-
-            project.author = {id: project.author, username: username};
-        })
+        // you dont need to give it the user's username as... well... you prob already know it....
 
         return result;
     }
@@ -1260,7 +1275,9 @@ class UserManager {
         ])
         .toArray();
 
-        return result;
+        const cleaned = result[0].data.map(x => {let v = x;delete v._id;return v;});
+
+        return cleaned;
     }
 
     /**
@@ -1284,7 +1301,9 @@ class UserManager {
         ])
         .toArray();
 
-        return result;
+        const cleaned = result[0].data.map(x => {let v = x;delete v._id;return v;})
+
+        return cleaned;
     }
 
     /**
@@ -1476,7 +1495,7 @@ class UserManager {
      * @async
      */
     async getFollowing(username, page, pageSize) {
-        const result = await this.username.findOne({username: username});
+        const result = await this.users.findOne({username: username});
 
         return result.following.slice(page * pageSize, page * pageSize + pageSize);
     }
@@ -1487,7 +1506,7 @@ class UserManager {
      * @returns {Promise<number>} - Amount of people following the user
      */
     async getFollowerCount(username) {
-        const result = await this.username.findOne({username: username});
+        const result = await this.users.findOne({username: username});
 
         return result.followers.length;
     }
@@ -1538,8 +1557,10 @@ class UserManager {
         ])
         .sort({ date: -1 })
         .toArray();
+        
+        const cleaned = result[0].data.map(x => {let v = x;delete v._id;return v;})
 
-        return result;
+        return cleaned;
     }
 
     /**
@@ -2314,16 +2335,16 @@ class UserManager {
     }
 
     /**
-     * 
+     * Search project names/instructions/notes by query
      * @param {string} query - Query to search for
      * @param {number} page - Page of projects to get 
      * @param {number} pageSize - Amount of projects to get 
-     * @returns 
+     * @returns {Promise<Array<object>>} - Array of projects
      */
     async searchProjects(query, page, pageSize) {
         const result = await this.projects.aggregate([
             {
-                $match: { $text: { $search: query } }
+                $match: { $text: { $search: query } },
             },
             {
                 $facet: {
@@ -2331,12 +2352,56 @@ class UserManager {
                     data: [{ $skip: page * pageSize }, { $limit: pageSize }]
                 }
             },
-            { score: { $meta: "textScore" } }
+            {
+                $sort: { score: { $meta: "textScore" } }
+            }
         ])
-        .sort({ score: { $meta: "textScore" } })
         .toArray();
 
-        return result;
+        const final = [];
+        for (const project of result[0].data) {
+            delete project._id;
+            project.author = {
+                id: project.author,
+                username: await this.getUsernameByID(project.author)
+            }
+            final.push(project);
+        }
+
+        return final;
+    }
+
+    /**
+     * Search users by a query
+     * @param {string} query - Query to search for
+     * @param {number} page - Page of projects to get 
+     * @param {number} pageSize - Amount of projects to get 
+     * @returns {Promise<Array<object>>} - Array of users
+     */
+    async searchUsers(query, page, pageSize) {
+        console.log(query);
+
+        const result = await this.users.aggregate([
+            {
+                $match: { $text: { $search: query } },
+            },
+            {
+                $sort: { score: { $meta: "textScore" } }
+            },
+            {
+                $facet: {
+                    metadata: [{ $count: "count" }],
+                    data: [{ $skip: page * pageSize }, { $limit: pageSize }]
+                }
+            }
+        ])
+        .toArray();
+
+        const cleaned = result[0].data.map(x => {let v = x;delete v._id;return v;})
+
+        const final = cleaned.map((user) => ({username: user.username, id: user.id}))
+
+        return final;
     }
 
     /**
@@ -2361,7 +2426,7 @@ class UserManager {
         .sort({ lastUpdate: -1 })
         .toArray();
     
-        const final = []
+        const final = [];
         for (const project of aggResult[0].data) {
             delete project._id;
             project.author = {
@@ -2462,7 +2527,9 @@ class UserManager {
         .sort({ date: -1 })
         .toArray();
 
-        return feed;
+        const cleaned = feed[0].data.map(x => {let v = x;delete v._id;return v;})
+
+        return cleaned;
     }
 
     /**

@@ -19,11 +19,11 @@ module.exports = (app, utils) => {
             return utils.error(res, 401, "Invalid credentials");
         }
 
-        if (!await utils.ProjectManager.projectExists(project)) {
+        if (!await utils.UserManager.projectExists(project)) {
             return utils.error(res, 404, "ProjectNotFound");
         }
 
-        if (!await utils.ProjectManager.isSoftRejected(project)) {
+        if (!await utils.UserManager.isSoftRejected(project)) {
             return utils.error(res, 400, "AlreadySoftRejected");
         }
 

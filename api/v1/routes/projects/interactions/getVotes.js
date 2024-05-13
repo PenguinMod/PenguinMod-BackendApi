@@ -12,7 +12,7 @@ module.exports = (app, utils) => {
             return utils.error(res, 404, "Project not found");
         }
 
-        const votes = await utils.ProjectManager.getProjectVotes(projectID);
+        const votes = await utils.UserManager.getProjectVotes(projectID);
 
         return res.send({ votes: votes });
     });

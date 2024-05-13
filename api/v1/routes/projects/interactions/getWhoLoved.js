@@ -25,7 +25,7 @@ module.exports = (app, utils) => {
             return utils.error(res, 404, "Project not found");
         }
 
-        const loves = await utils.ProjectManager.getWhoLoved(projectID, page, Number(utils.env.PageSize));
+        const loves = await utils.UserManager.getWhoLoved(projectID, page, Number(utils.env.PageSize));
 
         // convert to usernames
         const usernames = [];

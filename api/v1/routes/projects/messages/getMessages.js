@@ -5,7 +5,7 @@ module.exports = (app, utils) => {
         const username = packet.username;
         const token = packet.token;
 
-        const page = packet.page || 0;
+        const page = Number(packet.page) || 0;
 
         if (!username || !token) {
             return utils.error(res, 400, "InvalidData");

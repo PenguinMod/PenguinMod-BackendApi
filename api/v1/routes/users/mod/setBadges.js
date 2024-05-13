@@ -7,7 +7,7 @@ module.exports = (app, utils) => {
 
         const target = packet.target;
 
-        if (!await utils.UserManager.loginWithToken(token, username)) {
+        if (!await utils.UserManager.loginWithToken(username, token)) {
             utils.error(res, 401, "InvalidToken");
             return;
         }
