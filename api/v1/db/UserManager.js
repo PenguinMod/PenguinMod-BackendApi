@@ -912,6 +912,8 @@ class UserManager {
         }
 
         await this.addToFeed(author, remix ? "remix" : "upload", {id: id, name: title});
+
+        return id;
     }
 
     /**

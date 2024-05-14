@@ -8,6 +8,11 @@ module.exports = (app, utils) => {
         { name: 'assets' }
     ]), async (req, res) => {
         if (!utils.env.UploadingEnabled) {
+            await utils.unlinkAsync(req.files.jsonFile[0].path);
+            await utils.unlinkAsync(req.files.thumbnail[0].path);
+            for (let asset of req.files.assets) {
+                await utils.unlinkAsync(asset.path);
+            }
             return utils.error(res, 503, "Uploading is disabled");
         }
 
@@ -16,12 +21,31 @@ module.exports = (app, utils) => {
         const username = (String(packet.username)).toLowerCase();
 
         if (!await utils.UserManager.loginWithToken(username, packet.token)) {
+            await utils.unlinkAsync(req.files.jsonFile[0].path);
+            await utils.unlinkAsync(req.files.thumbnail[0].path);
+            for (let asset of req.files.assets) {
+                await utils.unlinkAsync(asset.path);
+            }
             return utils.error(res, 401, "Invalid credentials");
         }
 
         // make sure its been 8 minutes since last upload
         if (await utils.UserManager.getLastUpload(username) > Date.now() - utils.uploadCooldown) {
+            await utils.unlinkAsync(req.files.jsonFile[0].path);
+            await utils.unlinkAsync(req.files.thumbnail[0].path);
+            for (let asset of req.files.assets) {
+                await utils.unlinkAsync(asset.path);
+            }
             return utils.error(res, 400, "Uploaded in the last 8 minutes");
+        }
+
+        if (!req.files.jsonFile || !req.files.thumbnail || !req.files.assets) {
+            await utils.unlinkAsync(req.files.jsonFile[0].path);
+            await utils.unlinkAsync(req.files.thumbnail[0].path);
+            for (let asset of req.files.assets) {
+                await utils.unlinkAsync(asset.path);
+            }
+            return utils.error(res, 400, "Invalid data");
         }
 
         utils.UserManager.setLastUpload(username, Date.now());
@@ -30,6 +54,11 @@ module.exports = (app, utils) => {
 
         // check if the project exists
         if (!await utils.UserManager.projectExists(projectID)) {
+            await utils.unlinkAsync(req.files.jsonFile[0].path);
+            await utils.unlinkAsync(req.files.thumbnail[0].path);
+            for (let asset of req.files.assets) {
+                await utils.unlinkAsync(asset.path);
+            }
             return utils.error(res, 400, "Project does not exist");
         }
 
@@ -37,7 +66,17 @@ module.exports = (app, utils) => {
 
         // the jsonfile is in protobuf format so convert it to json
         const protobufFile = fs.readFileSync(req.files.jsonFile[0].path);
-        const jsonFile = utils.UserManager.protobufToProjectJson(protobufFile);
+        let jsonFile;
+        try {
+            jsonFile = utils.UserManager.protobufToProjectJson(protobufFile);
+        } catch (e) {
+            await utils.unlinkAsync(req.files.jsonFile[0].path);
+            await utils.unlinkAsync(req.files.thumbnail[0].path);
+            for (let asset of req.files.assets) {
+                await utils.unlinkAsync(asset.path);
+            }
+            return utils.error(res, 400, "Invalid protobuf file");
+        }
 
         // check the extensions
         const userRank = await utils.UserManager.getRank(username);
@@ -50,14 +89,28 @@ module.exports = (app, utils) => {
             if (jsonFile.extensions) {
                 for (let extension of jsonFile.extensions) {
                     if (isUrlExtension(extension)) { // url extension names can be faked (if not trusted source)
+                        let found = false;
                         for (let source of utils.allowedSources) {
-                            if (!projectCodeJSON.extensionURLs[extension].startsWith(source)) {
-                                return utils.error(res, 400, "Extension not allowed");
+                            if (extension.startswith(source)) {
+                                found = true;
                             }
+                        }
+                        if (!found) {
+                            await utils.unlinkAsync(req.files.jsonFile[0].path);
+                            await utils.unlinkAsync(req.files.thumbnail[0].path);
+                            for (let asset of req.files.assets) {
+                                await utils.unlinkAsync(asset.path);
+                            }
+                            return utils.error(res, 400, "Extension not allowed");
                         }
                     }
                     
                     if (!await utils.UserManager.checkExtensionIsAllowed(extension)) {
+                        await utils.unlinkAsync(req.files.jsonFile[0].path);
+                        await utils.unlinkAsync(req.files.thumbnail[0].path);
+                        for (let asset of req.files.assets) {
+                            await utils.unlinkAsync(asset.path);
+                        }
                         return utils.error(res, 400, "Extension not allowed");
                     }
                 }

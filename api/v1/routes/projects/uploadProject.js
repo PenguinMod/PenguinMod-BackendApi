@@ -8,30 +8,73 @@ module.exports = (app, utils) => {
         { name: 'assets' }
     ]), async (req, res) => {
         if (!utils.env.UploadingEnabled) {
+            await utils.unlinkAsync(req.files.jsonFile[0].path);
+            await utils.unlinkAsync(req.files.thumbnail[0].path);
+            for (let asset of req.files.assets) {
+                await utils.unlinkAsync(asset.path);
+            }
             return utils.error(res, 503, "Uploading is disabled");
         }
 
         const packet = req.query; // because body is used for the files i think
 
-        const username = (String(username)).toLowerCase();
+        const username = (String(packet.username)).toLowerCase();
+        const token = packet.token;
 
-        if (!await utils.UserManager.loginWithToken(username, packet.token)) {
+        if (!await utils.UserManager.loginWithToken(username, token)) {
+            await utils.unlinkAsync(req.files.jsonFile[0].path);
+            await utils.unlinkAsync(req.files.thumbnail[0].path);
+            for (let asset of req.files.assets) {
+                await utils.unlinkAsync(asset.path);
+            }
             return utils.error(res, 401, "Invalid credentials");
         }
 
         // make sure its been 8 minutes since last upload
         if (await utils.UserManager.getLastUpload(username) > Date.now() - utils.uploadCooldown) {
+            await utils.unlinkAsync(req.files.jsonFile[0].path);
+            await utils.unlinkAsync(req.files.thumbnail[0].path);
+            for (let asset of req.files.assets) {
+                await utils.unlinkAsync(asset.path);
+            }
             return utils.error(res, 400, "Uploaded in the last 8 minutes");
+        }
+
+        if (!req.files.jsonFile || !req.files.thumbnail || !req.files.assets) {
+            await utils.unlinkAsync(req.files.jsonFile[0].path);
+            await utils.unlinkAsync(req.files.thumbnail[0].path);
+            for (let asset of req.files.assets) {
+                await utils.unlinkAsync(asset.path);
+            }
+            return utils.error(res, 400, "Invalid data");
         }
 
         utils.UserManager.setLastUpload(username, Date.now());
 
         // the jsonfile is in protobuf format so convert it to json
         const protobufFile = fs.readFileSync(req.files.jsonFile[0].path);
-        const jsonFile = utils.UserManager.protobufToProjectJson(protobufFile);
+        let jsonFile;
+        try {
+            jsonFile = utils.UserManager.protobufToProjectJson(protobufFile);
+        } catch (e) {
+            await utils.unlinkAsync(req.files.jsonFile[0].path);
+            await utils.unlinkAsync(req.files.thumbnail[0].path);
+            for (let asset of req.files.assets) {
+                await utils.unlinkAsync(asset.path);
+            }
+            return utils.error(res, 400, "Invalid protobuf file");
+        }
 
-        if (packet.remix) {
-            if (!await utils.UserManager.projectExists(packet.remix)) {
+        let remix = Number(packet.remix);
+
+        if (remix) {
+            console.log(typeof packet.remix);
+            if (!await utils.UserManager.projectExists(remix)) {
+                await utils.unlinkAsync(req.files.jsonFile[0].path);
+                await utils.unlinkAsync(req.files.thumbnail[0].path);
+                for (let asset of req.files.assets) {
+                    await utils.unlinkAsync(asset.path);
+                }
                 return utils.error(res, 400, "Remix project does not exist");
             }
         }
@@ -47,14 +90,28 @@ module.exports = (app, utils) => {
             if (jsonFile.extensions) {
                 for (let extension of jsonFile.extensions) {
                     if (isUrlExtension(extension)) { // url extension names can be faked (if not trusted source)
+                        let found = false;
                         for (let source of utils.allowedSources) {
-                            if (!extension.startswith(source)) {
-                                return utils.error(res, 400, "Extension not allowed");
+                            if (extension.startswith(source)) {
+                                found = true;
                             }
+                        }
+                        if (!found) {
+                            await utils.unlinkAsync(req.files.jsonFile[0].path);
+                            await utils.unlinkAsync(req.files.thumbnail[0].path);
+                            for (let asset of req.files.assets) {
+                                await utils.unlinkAsync(asset.path);
+                            }
+                            return utils.error(res, 400, "Extension not allowed");
                         }
                     }
                     
                     if (!await utils.UserManager.checkExtensionIsAllowed(extension)) {
+                        await utils.unlinkAsync(req.files.jsonFile[0].path);
+                        await utils.unlinkAsync(req.files.thumbnail[0].path);
+                        for (let asset of req.files.assets) {
+                            await utils.unlinkAsync(asset.path);
+                        }
                         return utils.error(res, 400, "Extension not allowed");
                     }
                 }
@@ -73,8 +130,8 @@ module.exports = (app, utils) => {
             packet.notes = "";
         }
 
-        if (!packet.remix || typeof packet.remix !== "number") {
-            packet.remix = 0;
+        if (!remix || typeof remix !== "number") {
+            remix = 0;
         }
 
         if (!packet.rating || typeof packet.rating !== "string") {
@@ -95,7 +152,7 @@ module.exports = (app, utils) => {
         }
 
         // upload the project
-        await utils.UserManager.publishProject(
+        const projectID = await utils.UserManager.publishProject(
             protobufFile,
             assets,
             await utils.UserManager.getIDByUsername(username),
@@ -103,7 +160,7 @@ module.exports = (app, utils) => {
             thumbnail,
             packet.instructions,
             packet.notes,
-            packet.remix,
+            remix,
             packet.rating
         );
 
@@ -115,6 +172,6 @@ module.exports = (app, utils) => {
 
         res.status(200);
         res.header("Content-Type", "application/json");
-        res.send({ success: true });
+        res.send({ id: projectID });
     });
 }
