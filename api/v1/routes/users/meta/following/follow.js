@@ -35,8 +35,8 @@ module.exports = (app, utils) => {
             return;
         }
 
-        if (!await utils.hasFollowed(userID, targetID) && toggle) {
-            await utils.UserManager.sendMessage(targetID, { type: "followerAdded", user: targetID }, false, null);
+        if (!await utils.UserManager.hasFollowed(userID, targetID) && toggle) {
+            await utils.UserManager.sendMessage(targetID, { type: "followerAdded", user: userID }, false, null);
         }
 
         await utils.UserManager.followUser(userID, targetID, toggle);

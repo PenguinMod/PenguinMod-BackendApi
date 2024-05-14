@@ -22,14 +22,15 @@ module.exports = (app, utils) => {
         const final = []
         for (const item of messages) {
             switch (item.message.type) {
-                case "follow":
+                case "followerAdded":
                     item.message = {
                         user: {
-                            id: item.message.id,
-                            username: await utils.UserManager.getUsernameByID(item.message.id)
+                            id: item.message.user,
+                            username: await utils.UserManager.getUsernameByID(item.message.user)
                         },
                         type: item.message.type
                     }
+
                     final.push(item);
                     break;
                 case "projectFeatured":
@@ -48,6 +49,8 @@ module.exports = (app, utils) => {
                     break;
             }
         }
+
+        console.log(final);
 
         res.header('Content-type', "application/json");
         res.send({ messages: final });
