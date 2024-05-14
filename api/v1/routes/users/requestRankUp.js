@@ -1,11 +1,11 @@
 module.exports = (app, utils) => {
-    app.get('/api/v1/users/requestrankup', async function (req, res) {
+    app.post('/api/v1/users/requestrankup', async function (req, res) {
         const packet = req.body;
 
         const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
-        if (!await UserManager.loginWithToken(username, token)) {
+        if (!await utils.UserManager.loginWithToken(username, token)) {
             utils.error(res, 400, "Reauthenticate");
             return;
         }
@@ -19,9 +19,9 @@ module.exports = (app, utils) => {
         }
 
         const signInDate = await utils.UserManager.getFirstLogin(username);
-        const userProjects = await utils.UserManager.getProjectsByAuthor(username);
+        const userProjects = await utils.UserManager.getProjectsByAuthor(username, 0, 3);
 
-        const canRequestRankUp = (userProjects.length > 3 // if we have 3 projects and
+        const canRequestRankUp = (userProjects.length >= 3 // if we have 3 projects and
             && (Date.now() - signInDate) >= 4.32e+8)     // first signed in 5 days ago
             || badges.length > 0;                       // or we have a badge
 
