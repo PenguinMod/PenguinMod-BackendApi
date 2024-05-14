@@ -9,7 +9,17 @@ module.exports = (app, utils) => {
             return utils.error(res, 400, "Missing authorId");
         }
 
-        const projects = await utils.UserManager.getProjectsByAuthor(authorUsername, page, Number(utils.env.PageSize));
+        const id = await utils.UserManager.getIDByUsername(authorUsername);
+
+        const projects = (await utils.UserManager.getProjectsByAuthor(id, page, Number(utils.env.PageSize)))
+        .map(project => {
+            project.author = {
+                username: authorUsername,
+                id: id
+            }
+
+            return project;
+        });
 
         return res.send(projects);
     });
