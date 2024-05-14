@@ -1,5 +1,5 @@
 module.exports = (app, utils) => {
-    app.get('/api/v1/users/getmessages', async (req, res) => {
+    app.get('/api/v1/users/getunreadmessages', async (req, res) => {
         const packet = req.query;
 
         const username = (String(packet.username)).toLowerCase();
@@ -17,7 +17,7 @@ module.exports = (app, utils) => {
 
         const id = await utils.UserManager.getIDByUsername(username);
 
-        const messages = await utils.UserManager.getMessages(id, page, Number(utils.env.PageSize));
+        const messages = await utils.UserManager.getUnreadMessages(id, page, Number(utils.env.PageSize));
 
         res.header('Content-type', "application/json");
         res.send({ messages: messages });

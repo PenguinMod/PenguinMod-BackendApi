@@ -31,14 +31,14 @@ module.exports = (app, utils) => {
         }
 
         // make sure its been 8 minutes since last upload
-        if (await utils.UserManager.getLastUpload(username) > Date.now() - utils.uploadCooldown) {
+        /*if (await utils.UserManager.getLastUpload(username) > Date.now() - utils.uploadCooldown) {
             await utils.unlinkAsync(req.files.jsonFile[0].path);
             await utils.unlinkAsync(req.files.thumbnail[0].path);
             for (let asset of req.files.assets) {
                 await utils.unlinkAsync(asset.path);
             }
             return utils.error(res, 400, "Uploaded in the last 8 minutes");
-        }
+        }*/
 
         if (!req.files.jsonFile || !req.files.thumbnail || !req.files.assets) {
             await utils.unlinkAsync(req.files.jsonFile[0].path);
@@ -68,7 +68,6 @@ module.exports = (app, utils) => {
         let remix = Number(packet.remix);
 
         if (remix) {
-            console.log(typeof packet.remix);
             if (!await utils.UserManager.projectExists(remix)) {
                 await utils.unlinkAsync(req.files.jsonFile[0].path);
                 await utils.unlinkAsync(req.files.thumbnail[0].path);
@@ -92,7 +91,7 @@ module.exports = (app, utils) => {
                     if (isUrlExtension(extension)) { // url extension names can be faked (if not trusted source)
                         let found = false;
                         for (let source of utils.allowedSources) {
-                            if (extension.startswith(source)) {
+                            if (extension.startsWith(source)) {
                                 found = true;
                             }
                         }

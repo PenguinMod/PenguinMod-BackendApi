@@ -751,13 +751,15 @@ class UserManager {
                 $match: { type: type }
             },
             {
+                $sort: { date: -1 }
+            },
+            {
                 $facet: {
                     metadata: [{ $count: "count" }],
                     data: [{ $skip: page * pageSize }, { $limit: pageSize }]
                 }
             }
         ])
-        .sort({ date: -1 })
         .toArray();
 
         const cleaned = result[0].data.map(x => {let v = x;delete v._id;return v;})
@@ -779,13 +781,15 @@ class UserManager {
                 $match: { reportee: reportee }
             },
             {
+                $sort: { date: -1 }
+            },
+            {
                 $facet: {
                     metadata: [{ $count: "count" }],
                     data: [{ $skip: page * pageSize }, { $limit: pageSize }]
                 }
             }
         ])
-        .sort({ date: -1 })
         .toArray();
 
         const cleaned = result[0].data.map(x => {let v = x;delete v._id;return v;})
@@ -807,13 +811,15 @@ class UserManager {
                 $match: { reporter: reporter }
             },
             {
+                $sort: { date: -1 }
+            },
+            {
                 $facet: {
                     metadata: [{ $count: "count" }],
                     data: [{ $skip: page * pageSize }, { $limit: pageSize }]
                 }
             }
         ])
-        .sort({ date: -1 })
         .toArray();
         
         const cleaned = result[0].data.map(x => {let v = x;delete v._id;return v;})
@@ -843,13 +849,15 @@ class UserManager {
     async getReports(page, pageSize) {
         const result = await this.reports.aggregate([
             {
+                $sort: { date: -1 }
+            },
+            {
                 $facet: {
                     metadata: [{ $count: "count" }],
                     data: [{ $skip: page * pageSize }, { $limit: pageSize }]
                 }
             }
         ])
-        .sort({ date: -1 })
         .toArray();
 
         const cleaned = result[0].data.map(x => {let v = x;delete v._id;return v;})
@@ -911,7 +919,7 @@ class UserManager {
             await this.minioClient.putObject("project-assets", `${id}_${asset.id}`, asset.buffer);
         }
 
-        await this.addToFeed(author, remix ? "remix" : "upload", {id: id, name: title});
+        await this.addToFeed(author, remix ? "remix" : "upload", id);
 
         return id;
     }
@@ -928,13 +936,15 @@ class UserManager {
                 $match: { remix: id, public: true, softRejected: false }
             },
             {
+                $sort: { lastUpdate: -1 }
+            },
+            {
                 $facet: {
                     metadata: [{ $count: "count" }],
                     data: [{ $skip: page * pageSize }, { $limit: pageSize }]
                 }
             }
         ])
-        .sort({ lastUpdate: -1 })
         .toArray();
 
         const final = []
@@ -997,13 +1007,15 @@ class UserManager {
 
         const aggResult = await this.projects.aggregate([
             {
+                $sort: { lastUpdate: -1*(!reverse) }
+            },
+            {
                 $facet: {
                     metadata: [{ $count: "count" }],
                     data: [{ $skip: page * pageSize }, { $limit: pageSize }]
                 }
             }
         ])
-        .sort({ lastUpdate: 1*(!reverse) })
         .toArray()
 
         const final = []
@@ -1028,13 +1040,18 @@ class UserManager {
     async getProjectsByAuthor(author, page, pageSize, getPrivate, softRejected=false) {
         const _result = await this.projects.aggregate([
             {
+                $match: { author: author, softRejected: softRejected }
+            },
+            {
+                $sort: { lastUpdate: -1 }
+            },
+            {
                 $facet: {
                     metadata: [{ $count: "count" }],
-                    data: [{ $match: { author: author, public: true, softRejected: softRejected } }, { $match: getPrivate ? {} : { public: true } }, { $skip: page * pageSize }, { $limit: pageSize }]
+                    data: [{ $skip: page * pageSize }, { $limit: pageSize }]
                 }
             }
         ])
-        .sort({ lastUpdate: -1 })
         .toArray();
 
         const result = _result[0].data.map(x => {let v = x;delete v._id;return v;})
@@ -1371,13 +1388,15 @@ class UserManager {
                 $match: { featured: true, public: true, softRejected: false }
             },
             {
+                $sort: { lastUpdate: -1 }
+            },
+            {
                 $facet: {
                     metadata: [{ $count: "count" }],
                     data: [{ $skip: page * pageSize }, { $limit: pageSize }]
                 }
             }
         ])
-        .sort({ lastUpdate: -1 })
         .toArray()
 
         const final = []
@@ -1448,17 +1467,16 @@ class UserManager {
      * @async
      */
     async followUser(follower, followee, follow) {
+
         if (follow) {
             await this.users.updateOne({id: follower}, {$push: {following: followee}});
             await this.users.updateOne({id: followee}, {$push: {followers: follower}});
+
+            await this.addToFeed(follower, "follow", followee);
             return;
         }
         await this.users.updateOne({id: follower}, {$pull: {following: followee}});
         await this.users.updateOne({id: followee}, {$pull: {followers: follower}});
-
-        if (follow) {
-            await this.addToFeed(follower, "follow", {id: followee, name: await this.getUsernameByID(followee)});
-        }
     }
 
     /**
@@ -1532,6 +1550,8 @@ class UserManager {
             projectID: projectID
         });
 
+        console.log(await this.getMessages(receiver, 0, 10));
+
         return id;
     }
 
@@ -1549,13 +1569,15 @@ class UserManager {
                 $match: { receiver: receiver }
             },
             {
+                $sort: { date: -1 }
+            },
+            {
                 $facet: {
                     metadata: [{ $count: "count" }],
                     data: [{ $skip: page * pageSize }, { $limit: pageSize }]
                 }
             }
         ])
-        .sort({ date: -1 })
         .toArray();
         
         const cleaned = result[0].data.map(x => {let v = x;delete v._id;return v;})
@@ -1591,8 +1613,30 @@ class UserManager {
      * @returns {Promise<Array<Object>>} - Array of the unread messages sent to the person
      * @async
      */
-    async getUnreadMessages(receiver) {
-        const result = await this.messages.find({receiver: receiver, read: false}).toArray();
+    async getUnreadMessages(receiver, page, pageSize) {
+        const result = await this.messages.aggregate([
+            {
+                $match: { receiver: receiver, read: false }
+            },
+            {
+                $sort: { date: -1 }
+            },
+            {
+                $facet: {
+                    metadata: [{ $count: "count" }],
+                    data: [{ $skip: page * pageSize }, { $limit: pageSize }]
+                }
+            }
+        ])
+        .toArray();
+
+        const cleaned = result[0].data.map(x => {let v = x;delete v._id;return v;})
+
+        return cleaned;
+    }
+
+    async getUnreadMessageCount(receiver) {
+        const result = await this.messages.countDocuments({receiver: receiver, read: false});
 
         return result;
     }
@@ -1616,6 +1660,12 @@ class UserManager {
      */
     async markMessageAsRead(id, read) {
         await this.messages.updateOne({id: id}, {$set: {read: read}});
+    }
+
+    async messageExists(id) {
+        const result = await this.messages.findOne({id: id});
+
+        return result ? true : false;
     }
 
     /**
@@ -2444,13 +2494,15 @@ class UserManager {
                 $match: { $text: { $search: tag } }
             },
             {
+                $sort: { lastUpdate: -1 }
+            },
+            {
                 $facet: {
                     metadata: [{ $count: "count" }],
                     data: [{ $skip: page * pageSize }, { $limit: pageSize }]
                 }
             }
         ])
-        .sort({ lastUpdate: -1 })
         .toArray();
     
         const final = [];
@@ -2477,13 +2529,15 @@ class UserManager {
         const aggResult = await this.projects.aggregate([
             query,
             {
+                $sort: { lastUpdate: -1 }
+            },
+            {
                 $facet: {
                     metadata: [{ $count: "count" }],
                     data: [{ $skip: page * pageSize }, { $limit: pageSize }]
                 }
             }
         ])
-        .sort({ lastUpdate: -1 })
         .toArray();
 
         const final = []
@@ -2545,13 +2599,15 @@ class UserManager {
                 $match: { userID: { $in: followers } }
             },
             {
+                $sort: { date: -1 }
+            },
+            {
                 $facet: {
                     metadata: [{ $count: "count" }],
                     data: [{ $skip: 0 }, { $limit: size }]
                 }
             }
         ])
-        .sort({ date: -1 })
         .toArray();
 
         const cleaned = feed[0].data.map(x => {let v = x;delete v._id;return v;})
@@ -2571,7 +2627,7 @@ class UserManager {
             type: type,
             data: data,
             date: Date.now(),
-            expireAt: new Date(Date.now() + process.env.FeedExpirationTime)
+            expireAt: Date.now() + Number(process.env.FeedExpirationTime)
         });
     }
 

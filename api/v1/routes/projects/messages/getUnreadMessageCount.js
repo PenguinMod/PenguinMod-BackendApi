@@ -1,11 +1,9 @@
 module.exports = (app, utils) => {
-    app.get('/api/v1/users/getmessages', async (req, res) => {
+    app.get('/api/v1/users/getunreadmessagecount', async (req, res) => {
         const packet = req.query;
 
         const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
-
-        const page = Number(packet.page) || 0;
 
         if (!username || !token) {
             return utils.error(res, 400, "InvalidData");
@@ -17,9 +15,10 @@ module.exports = (app, utils) => {
 
         const id = await utils.UserManager.getIDByUsername(username);
 
-        const messages = await utils.UserManager.getMessages(id, page, Number(utils.env.PageSize));
+        const count = await utils.UserManager.getUnreadMessageCount(id);
 
+        res.status(200);
         res.header('Content-type', "application/json");
-        res.send({ messages: messages });
+        res.send({ count: count });
     });
 }

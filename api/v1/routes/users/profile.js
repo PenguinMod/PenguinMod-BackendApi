@@ -8,7 +8,6 @@ module.exports = (app, utils) => {
         }
 
         if (!await utils.UserManager.existsByUsername(username)) {
-            console.log("doesnt exist", username)
             utils.error(res, 404, "NotFound")
             return;
         }

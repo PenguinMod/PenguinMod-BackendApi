@@ -15,8 +15,12 @@ module.exports = (app, utils) => {
 
         const page = Number(packet.page) || 0;
 
-        const projects = await utils.UserManager.getProjectsByAuthor(username, page, Number(utils.env.PageSize), true);
+        const authorID = await utils.UserManager.getIDByUsername(username);
 
+        const projects = await utils.UserManager.getProjectsByAuthor(authorID, page, Number(utils.env.PageSize), true);
+
+        res.status(200);
+        res.header("Content-Type", 'application/json');
         return res.send(projects);
     });
 }
