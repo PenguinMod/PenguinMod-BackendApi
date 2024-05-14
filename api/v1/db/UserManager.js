@@ -185,7 +185,8 @@ class UserManager {
             email: email,
             lastPrivacyPolicyRead: Date.now(),
             lastTOSRead: Date.now(),
-            lastGuidelinesRead: Date.now()
+            lastGuidelinesRead: Date.now(),
+            previousFollowers: [], // holds all people who have ever followed the user
         });
 
         await this.minioClient.putObject("profile-pictures", id, basePFP);
@@ -1472,6 +1473,10 @@ class UserManager {
             await this.users.updateOne({id: follower}, {$push: {following: followee}});
             await this.users.updateOne({id: followee}, {$push: {followers: follower}});
 
+            if (!await this.hasFollowed(follower, followee)) {
+                await this.users.updateOne({id: follower}, {$push: {hasFollowed: followee}});
+            }
+
             await this.addToFeed(follower, "follow", followee);
             return;
         }
@@ -1519,6 +1524,21 @@ class UserManager {
     }
 
     /**
+     * Check if a person has ever followed another person
+     * @param {string} follower - ID of the person following
+     * @param {*} followee - ID of the person being followed
+     * @returns {Promise<boolean>} - True if the person has followed/is following the other person, false if not
+     */
+    async hasFollowed(follower, followee) {
+        const result = await this.users.findOne({
+            id: follower,
+            hasFollowed: { $all: [followee] }
+        });
+
+        return result ? true : false;
+    }
+
+    /**
      * Get the amount of people following a user
      * @param {string} username - Username of the user
      * @returns {Promise<number>} - Amount of people following the user
@@ -1549,8 +1569,6 @@ class UserManager {
             id: id,
             projectID: projectID
         });
-
-        console.log(await this.getMessages(receiver, 0, 10));
 
         return id;
     }

@@ -141,6 +141,8 @@ module.exports = (app, utils) => {
 
         // TODO: use mmmagic to verify this is a valid image
 
+        // TODO: send a message on remix
+
         // get the assets and their ids
         const assets = [];
 

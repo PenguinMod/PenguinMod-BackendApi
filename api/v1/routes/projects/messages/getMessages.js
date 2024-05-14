@@ -19,7 +19,37 @@ module.exports = (app, utils) => {
 
         const messages = await utils.UserManager.getMessages(id, page, Number(utils.env.PageSize));
 
+        const final = []
+        for (const item of messages) {
+            switch (item.message.type) {
+                case "follow":
+                    item.message = {
+                        user: {
+                            id: item.message.id,
+                            username: await utils.UserManager.getUsernameByID(item.message.id)
+                        },
+                        type: item.message.type
+                    }
+                    final.push(item);
+                    break;
+                case "projectFeatured":
+                    item.message = {
+                        project: {
+                            id: item.projectID,
+                            title: (await utils.UserManager.getProjectMetadata(item.projectID)).title
+                        },
+                        type: item.message.type
+                    
+                    }
+                    final.push(item);
+                    break;
+                default:
+                    final.push(item);
+                    break;
+            }
+        }
+
         res.header('Content-type', "application/json");
-        res.send({ messages: messages });
+        res.send({ messages: final });
     });
 }
