@@ -10,6 +10,18 @@ module.exports = (app, utils) => {
             return;
         }
 
+        const passwordDoesNotMeetLength = packet.password.length < 8 || packet.password.length > 50;
+        const passwordMeetsTextInclude = packet.password.match(/[a-z]/) && packet.password.match(/[A-Z]/);
+        const passwordMeetsSpecialInclude = packet.password.match(/[0-9]/) && packet.password.match(/[^a-z0-9]/i);
+        if (passwordDoesNotMeetLength) {
+            utils.error(res, 400, "InvalidLengthPassword");
+            return;
+        }
+        if (!(passwordMeetsTextInclude && passwordMeetsSpecialInclude)) {
+            utils.error(res, 400, "MissingRequirementsPassword");
+            return;
+        }
+
         const user = await fetch("https://oauth2.scratch-wiki.info/w/rest.php/soa2/v0/user", {
             headers: {
                 Authorization: `Bearer ${btoa(access_token)}`

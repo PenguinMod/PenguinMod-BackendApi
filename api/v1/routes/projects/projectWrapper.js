@@ -7,7 +7,7 @@ module.exports = (app, utils) => {
         const packet = req.query;
 
         const projectId = packet.projectId;
-        const safe = packet.safe; // TODO: this shit
+        const safe = packet.safe;
 
         const safeReturn = () => {
             const project = fs.readFileSync(path.join(utils.homeDir, "NoProjectFound.pmp"));

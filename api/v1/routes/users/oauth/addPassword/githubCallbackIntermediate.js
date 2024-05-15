@@ -1,5 +1,5 @@
 module.exports = (app, utils) => {
-    app.get("/api/v1/users/githubcallback/addpassword", async function (req, res) {
+    app.get("/api/v1/users/googlecallback/addpassword", async function (req, res) {
         const packet = req.query;
 
         const state = packet.state;

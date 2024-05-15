@@ -37,6 +37,7 @@ class UserManager {
         this.projectStats = this.db.collection('projectStats');
         this.messages = this.db.collection('messages');
         this.oauthStates = this.db.collection('oauthStates'); // needed bc load balancer will split requests so needs to be copied to all servers
+        await this.oauthStates.createIndex({ 'expireAt': 1 }, { expireAfterSeconds: 60 * 5 }); // give 5 minutes
         this.userFeed = this.db.collection('userFeed');
         await this.userFeed.createIndex({ 'expireAt': 1 }, { expireAfterSeconds: Number(process.env.FeedExpirationTime) });
         this.illegalList = this.db.collection('illegalList');
@@ -1904,7 +1905,10 @@ class UserManager {
     async generateOAuth2State(extra="") {
         const state = ULID.ulid() + extra;
 
-        await this.oauthStates.insertOne({ state: state });
+        await this.oauthStates.insertOne({
+            state: state,
+            expireAt: Date.now() + 1000 * 60 * 5
+        });
 
         return state;
     }

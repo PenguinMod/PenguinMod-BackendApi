@@ -12,7 +12,7 @@ module.exports = (app, utils) => {
         
         const requestType = packet.requestType;
 
-        const safe = packet.safe; // TODO: if safe, return the no project found pmp
+        const safe = packet.safe;
 
         if (!requestType) {
             return utils.error(res, 400, "Missing requestType");
