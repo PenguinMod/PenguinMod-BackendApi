@@ -39,6 +39,10 @@ module.exports = (app, utils) => {
         const isAdmin = await utils.UserManager.isAdmin(username);
         const isModerator = await utils.UserManager.isModerator(username);
 
+        const loginMethods = await utils.UserManager.getOAuthMethods(username);
+
+        if (await utils.UserManager.canPasswordLogin(username)) loginMethods.push("password");
+
         const user = {
             username,
             admin: isAdmin,
@@ -52,7 +56,8 @@ module.exports = (app, utils) => {
             followers: followers.length,
             canrankup: canRequestRankUp && rank === 0,
             viewable: userProjects.length > 0,
-            projects: userProjects.length // we check projects anyways so might aswell
+            projects: userProjects.length, // we check projects anyways so might aswell,
+            loginMethods: loginMethods
         };
 
         res.status(200);

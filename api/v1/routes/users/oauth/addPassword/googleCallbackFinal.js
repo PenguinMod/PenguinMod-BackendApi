@@ -28,7 +28,12 @@ module.exports = (app, utils) => {
             "http://localhost:8080/api/v1/users/googlecallback/addpassword"
         );
 
-        oauth2Client.setCredentials(JSON.parse(tokens));
+        try {
+            oauth2Client.setCredentials(JSON.parse(tokens));
+        } catch (e) {
+            utils.error(res, 400, "InvalidData");
+            return;
+        }
 
         const url = 'https://people.googleapis.com/v1/people/me?personFields=names';
         let user;

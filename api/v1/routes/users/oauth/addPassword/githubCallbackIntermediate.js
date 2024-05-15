@@ -1,5 +1,5 @@
 module.exports = (app, utils) => {
-    app.get("/api/v1/users/googlecallback/addpassword", async function (req, res) {
+    app.get("/api/v1/users/githubcallback/addpassword", async function (req, res) {
         const packet = req.query;
 
         const state = packet.state;
@@ -19,7 +19,7 @@ module.exports = (app, utils) => {
         const response = await utils.UserManager.makeOAuth2Request(code, "github");
 
         res.status(200);
-        res.redirect(`http://localhost:5173/oauthchangepassword?method=github&at=${response.access_token}`); //TODO: add page to on main site or smth for this 
+        res.redirect(`http://localhost:5173/oauthchangepasswordintermediate?method=github&at=${response.access_token}`); //TODO: add page to on main site or smth for this 
         // TODO: in prod change this to penguinmod.com
     });
 }

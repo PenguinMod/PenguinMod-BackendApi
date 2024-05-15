@@ -32,7 +32,7 @@ module.exports = (app, utils) => {
         const tokens = r.tokens;
 
         res.status(200);
-        res.redirect(`http://localhost:5173/oauthchangepassword?method=google&at=${JSON.stringify(tokens)}`); //TODO: add page to on main site or smth for this 
+        res.redirect(`http://localhost:5173/oauthchangepasswordintermediate?method=google&at=${JSON.stringify(tokens)}`); //TODO: add page to on main site or smth for this 
         // TODO: in prod change this to penguinmod.com
     });
 }

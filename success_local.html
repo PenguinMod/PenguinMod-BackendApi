@@ -17,9 +17,7 @@
                 // wrapper to handle errors & be easier
                 function post(data) {
                     opener.postMessage(
-                        {
-                            a2: data,
-                        },
+                        data,
                         `http://localhost:5173`
                     );
                 }

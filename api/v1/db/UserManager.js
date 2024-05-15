@@ -316,6 +316,17 @@ class UserManager {
     }
 
     /**
+     * Check if a user can login using a password
+     * @param {string} username - The user's username
+     * @returns {Promise<boolean>} - Whether the user can login with a password
+     */
+    async canPasswordLogin(username) {
+        const result = await this.users.findOne({ username: username });
+
+        return result.password ? true : false;
+    }
+
+    /**
      * Get a user's oauth login methods
      * @param {string} username - Username of the user
      * @returns {Promise<Array<string>>} - Array of the user's followers
@@ -1957,17 +1968,17 @@ class UserManager {
         let username, id;
         switch (method) {
             case "scratch":
-                username = data.user_name;
+                username = data.user_name.toLowerCase();
                 id = data.user_id;
 
                 break;
             case "github":
-                username = data.login;
+                username = data.login.toLowerCase();
                 id = data.id;
 
                 break;
             case "google":
-                username = data.username;
+                username = data.username.toLowerCase();
                 id = data.id;
 
                 break;
