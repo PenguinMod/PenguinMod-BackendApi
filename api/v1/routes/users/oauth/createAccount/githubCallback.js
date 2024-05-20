@@ -1,3 +1,5 @@
+const fs = require('fs');
+
 module.exports = (app, utils) => {
     app.get("/api/v1/users/githubcallback/createaccount", async function (req, res) {
         const packet = req.query;
@@ -31,7 +33,16 @@ module.exports = (app, utils) => {
             return;
         }
 
+        if (await utils.UserManager.getUserIDByOAuthID("github", username.user.id)) {
+            utils.error(res, 400, "AccountExists");
+            return;
+        }
+
         const userdata = await utils.UserManager.makeOAuth2Account("github", username.user);
+
+        const profilePicture = await fetch(`https://github.com/${username.user.login.toLowerCase()}.png`).then(res => res.arrayBuffer());
+
+        await utils.UserManager.setProfilePicture(userdata.username, profilePicture);
 
         const accountUsername = userdata.username;
         const token = userdata.token;

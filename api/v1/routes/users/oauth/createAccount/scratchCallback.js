@@ -32,8 +32,17 @@ module.exports = (app, utils) => {
             return;
         }
 
+        if (await utils.UserManager.getUserIDByOAuthID("scratch", username.user.id)) {
+            utils.error(res, 400, "AccountExists");
+            return;
+        }
+
         // create the user
         const userdata = await utils.UserManager.makeOAuth2Account("scratch", username.user);
+
+        const profilePicture = await fetch(`https://trampoline.turbowarp.org/avatars/by-username/${username.user.user_name.toLowerCase()}`).then(res => res.arrayBuffer());
+
+        await utils.UserManager.setProfilePicture(userdata.username, profilePicture);
 
         const accountUsername = userdata.username;
         const token = userdata.token;
