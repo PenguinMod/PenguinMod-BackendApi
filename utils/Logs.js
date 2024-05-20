@@ -83,7 +83,6 @@ function sendReportLog(webhook, username, target, reason) {
                     value: `https://penguinmod.com/profile?user=${target}`
                 }
             ],
-            // TODO: change this to the new pfp system
             author: {
                 name: target,
                 icon_url: String("http://localhost:8080/api/v1/users/getpfp?username=" + target),
@@ -120,7 +119,6 @@ function sendMultiReportLog(webhook, username, target, reason) {
                     value: `https://penguinmod.com/profile?user=${username}`
                 }
             ],
-            // TODO: change this to the new pfp system
             author: {
                 name: target,
                 icon_url: String("http://localhost:8080/api/v1/users/getpfp?username=" + target),

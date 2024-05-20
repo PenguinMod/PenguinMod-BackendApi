@@ -19,7 +19,7 @@ module.exports = (app, utils) => {
         const response = await utils.UserManager.makeOAuth2Request(code, "github");
 
         res.status(200);
-        res.redirect(`http://localhost:5173/oauthchangepasswordintermediate?method=github&at=${response.access_token}`); //TODO: add page to on main site or smth for this 
+        res.redirect(`http://localhost:5173/oauthchangepasswordintermediate?method=github&at=${response.access_token}`);
         // TODO: in prod change this to penguinmod.com
     });
 }
