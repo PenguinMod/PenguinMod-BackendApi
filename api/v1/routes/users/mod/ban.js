@@ -25,6 +25,8 @@ module.exports = (app, utils) => {
 
         await utils.UserManager.setBanned(target, toggle);
 
+        // TODO: log.
+
         res.status(200);
         res.header("Content-Type", 'application/json');
         res.send({ success: true });

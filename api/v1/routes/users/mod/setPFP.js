@@ -44,6 +44,8 @@ module.exports = (app, utils) => {
 
             await utils.UserManager.setProfilePicture(target, picture);
 
+            // TODO: log.
+
             res.status(200);
             res.header("Content-Type", 'application/json');
             res.json({ "success": true });

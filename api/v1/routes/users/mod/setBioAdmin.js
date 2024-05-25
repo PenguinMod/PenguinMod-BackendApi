@@ -31,6 +31,8 @@ module.exports = (app, utils) => {
         utils.sendBioUpdatelog(username, user, await utils.UserManager.getBio(user), bio);
 
         await utils.UserManager.setBio(user, bio);
+
+        // TODO: log.
         
         res.status(200);
         res.header("Content-Type", 'application/json');

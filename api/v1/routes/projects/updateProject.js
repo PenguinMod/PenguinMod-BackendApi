@@ -7,12 +7,16 @@ module.exports = (app, utils) => {
         // assets
         { name: 'assets' }
     ]), async (req, res) => {
-        if (!utils.env.UploadingEnabled) {
+        const unlink = async () => {
             await utils.unlinkAsync(req.files.jsonFile[0].path);
             await utils.unlinkAsync(req.files.thumbnail[0].path);
             for (let asset of req.files.assets) {
                 await utils.unlinkAsync(asset.path);
             }
+        }
+
+        if (!utils.env.UploadingEnabled) {
+            await unlink();
             return utils.error(res, 503, "Uploading is disabled");
         }
 
@@ -21,46 +25,35 @@ module.exports = (app, utils) => {
         const username = (String(packet.username)).toLowerCase();
 
         if (!await utils.UserManager.loginWithToken(username, packet.token)) {
-            await utils.unlinkAsync(req.files.jsonFile[0].path);
-            await utils.unlinkAsync(req.files.thumbnail[0].path);
-            for (let asset of req.files.assets) {
-                await utils.unlinkAsync(asset.path);
-            }
+            await unlink();
             return utils.error(res, 401, "Invalid credentials");
         }
-
-        // make sure its been 8 minutes since last upload
-        if (await utils.UserManager.getLastUpload(username) > Date.now() - utils.uploadCooldown) {
-            await utils.unlinkAsync(req.files.jsonFile[0].path);
-            await utils.unlinkAsync(req.files.thumbnail[0].path);
-            for (let asset of req.files.assets) {
-                await utils.unlinkAsync(asset.path);
-            }
-            return utils.error(res, 400, "Uploaded in the last 8 minutes");
-        }
-
-        if (!req.files.jsonFile || !req.files.thumbnail || !req.files.assets) {
-            await utils.unlinkAsync(req.files.jsonFile[0].path);
-            await utils.unlinkAsync(req.files.thumbnail[0].path);
-            for (let asset of req.files.assets) {
-                await utils.unlinkAsync(asset.path);
-            }
-            return utils.error(res, 400, "Invalid data");
-        }
-
-        utils.UserManager.setLastUpload(username, Date.now());
 
         const projectID = packet.projectID;
 
         // check if the project exists
         if (!await utils.UserManager.projectExists(projectID)) {
-            await utils.unlinkAsync(req.files.jsonFile[0].path);
-            await utils.unlinkAsync(req.files.thumbnail[0].path);
-            for (let asset of req.files.assets) {
-                await utils.unlinkAsync(asset.path);
-            }
+            await unlink();
             return utils.error(res, 400, "Project does not exist");
         }
+
+        if (packet.author !== username && !await utils.UserManager.isAdmin(username)) {
+            await unlink();
+            return utils.error(res, 403, "Unauthorized");
+        }
+
+        // make sure its been 8 minutes since last upload
+        if (await utils.UserManager.getLastUpload(username) > Date.now() - utils.uploadCooldown) {
+            await unlink();
+            return utils.error(res, 400, "Uploaded in the last 8 minutes");
+        }
+
+        if (!req.files.jsonFile || !req.files.thumbnail || !req.files.assets) {
+            await unlink();
+            return utils.error(res, 400, "Invalid data");
+        }
+
+        utils.UserManager.setLastUpload(username, Date.now());
 
         // TODO: make this only update, yk, the things that were updated
 
@@ -70,11 +63,7 @@ module.exports = (app, utils) => {
         try {
             jsonFile = utils.UserManager.protobufToProjectJson(protobufFile);
         } catch (e) {
-            await utils.unlinkAsync(req.files.jsonFile[0].path);
-            await utils.unlinkAsync(req.files.thumbnail[0].path);
-            for (let asset of req.files.assets) {
-                await utils.unlinkAsync(asset.path);
-            }
+            await unlink();
             return utils.error(res, 400, "Invalid protobuf file");
         }
 
@@ -96,21 +85,12 @@ module.exports = (app, utils) => {
                             }
                         }
                         if (!found) {
-                            await utils.unlinkAsync(req.files.jsonFile[0].path);
-                            await utils.unlinkAsync(req.files.thumbnail[0].path);
-                            for (let asset of req.files.assets) {
-                                await utils.unlinkAsync(asset.path);
-                            }
+                            await unlink();
                             return utils.error(res, 400, "Extension not allowed");
                         }
                     }
-                    
                     if (!await utils.UserManager.checkExtensionIsAllowed(extension)) {
-                        await utils.unlinkAsync(req.files.jsonFile[0].path);
-                        await utils.unlinkAsync(req.files.thumbnail[0].path);
-                        for (let asset of req.files.assets) {
-                            await utils.unlinkAsync(asset.path);
-                        }
+                        await unlink();
                         return utils.error(res, 400, "Extension not allowed");
                     }
                 }
@@ -162,12 +142,7 @@ module.exports = (app, utils) => {
             packet.rating
         );
 
-        await utils.unlinkAsync(req.files.jsonFile[0].path);
-        await utils.unlinkAsync(req.files.thumbnail[0].path);
-        for (let asset of req.files.assets) {
-            await utils.unlinkAsync(asset.path);
-        }
-
+        await unlink();
         res.send({ success: true });
     });
 }

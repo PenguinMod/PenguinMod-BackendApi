@@ -19,6 +19,8 @@ module.exports = (app, utils) => {
 
         await utils.UserManager.setBadges(target, packet.badges);
 
+        // TODO: log?
+
         res.status(200);
         res.header('Content-type', "application/json");
         res.send({ success: true });

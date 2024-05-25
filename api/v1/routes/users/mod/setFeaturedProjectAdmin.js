@@ -36,6 +36,8 @@ module.exports = (app, utils) => {
         await utils.UserManager.setFeaturedProject(target, project);
         await utils.UserManager.setFeaturedProjectTitle(target, title);
 
+        // TODO: log.
+
         res.status(200);
         res.header("Content-Type", 'application/json');
         res.send({ "success": true });
