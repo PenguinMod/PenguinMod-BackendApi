@@ -7,8 +7,9 @@ module.exports = (app, utils) => {
 
         const target = (String(packet.target)).toLowerCase();
         const toggle = packet.toggle;
+        const reason = packet.reason;
 
-        if (!username || !token || !target || typeof toggle !== "boolean") {
+        if (!username || !token || !target || typeof toggle !== "boolean" || typeof reason !== "string" || reason.length > 512) {
             utils.error(res, 400, "InvalidData");
             return;
         }
@@ -23,7 +24,7 @@ module.exports = (app, utils) => {
             return;
         }
 
-        await utils.UserManager.setBanned(target, toggle);
+        await utils.UserManager.setBanned(target, toggle, reason);
 
         // TODO: log.
 

@@ -24,7 +24,7 @@ module.exports = (app, utils) => {
         }
 
         if (!await utils.UserManager.isSoftRejected(project)) {
-            return utils.error(res, 400, "AlreadySoftRejected");
+            return utils.error(res, 400, "NotSoftRejected");
         }
 
         await utils.UserManager.softReject(project, false);

@@ -172,6 +172,7 @@ class UserManager {
             admin: false,
             moderator: false,
             banned: false,
+            banReason: "",
             rank: 0,
             badges: [],
             following: [],
@@ -685,8 +686,8 @@ class UserManager {
      * @param {Promise<boolean>} banned - true if banning, false if unbanning
      * @async
      */
-    async setBanned(username, banned) {
-        await this.users.updateOne({ username: username }, { $set: { banned: banned } });
+    async setBanned(username, banned, reason) {
+        await this.users.updateOne({ username: username }, { $set: { banned: banned, banReason: reason } });
     }
 
     /**
@@ -1461,6 +1462,8 @@ class UserManager {
      * @async
      */
     async deleteProject(id) {
+        // TODO: instead of literally deleting the file, add a minio expiration thing; https://min.io/docs/minio/linux/administration/object-management/create-lifecycle-management-expiration-rule.html
+
         await this.projects.deleteOne({id: id});
 
         // remove the loves and votes
