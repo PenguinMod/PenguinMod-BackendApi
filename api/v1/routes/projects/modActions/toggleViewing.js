@@ -21,6 +21,8 @@ module.exports = (app, utils) => {
 
         utils.env.ViewingEnabled = toggle;
 
+        // TODO: send log
+
         return res.send({ success: true });
     });
 }

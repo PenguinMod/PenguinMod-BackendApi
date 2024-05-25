@@ -34,6 +34,8 @@ module.exports = (app, utils) => {
 
         await utils.UserManager.sendMessage(projectData.author.id, message, true, project);
 
+        // TODO: send log.
+
         res.header('Content-type', "application/json");
         res.send({ success: true });
     });

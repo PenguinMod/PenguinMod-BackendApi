@@ -31,6 +31,7 @@ module.exports = (app, utils) => {
         }
 
         // TODO: log
+        
         // notify the author that their project has been deleted
         const userid = await utils.UserManager.getUserID(username);
         if (metadata.author.username !== username) {

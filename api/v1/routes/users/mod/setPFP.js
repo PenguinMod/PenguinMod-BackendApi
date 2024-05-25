@@ -44,7 +44,7 @@ module.exports = (app, utils) => {
 
             await utils.UserManager.setProfilePicture(target, picture);
 
-            // TODO: log.
+            utils.logs.sendAdminLog(username, target, "Admin or mod has updated user's profile picture.");
 
             res.status(200);
             res.header("Content-Type", 'application/json');

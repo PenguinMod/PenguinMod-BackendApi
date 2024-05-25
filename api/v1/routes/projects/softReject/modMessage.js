@@ -28,6 +28,8 @@ module.exports = (app, utils) => {
 
         await utils.UserManager.sendMessage(dispute.receiver, message, true, dispute.projectID);
 
+        // TODO: send log
+
         res.header('Content-type', "application/json");
         res.send({ success: true });
     });

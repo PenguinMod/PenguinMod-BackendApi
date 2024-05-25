@@ -39,12 +39,13 @@ module.exports = (app, utils) => {
 
             await utils.UserManager.report("MultiReport", reporterID, "User has sent multiple reports on same user.", "Server");
 
-            // send log
-            utils.sendMultiReportLog(reporterID, targetID, report);
+            utils.logs.sendMultiReportLog(reporterID, targetID, report);
             return;
         }
 
         await utils.UserManager.report(type, targetID, report, reporterID);
+
+        utils.logs.sendReportLog(username, target, report);
 
         res.status(200);
         res.header("Content-Type", "application/json");

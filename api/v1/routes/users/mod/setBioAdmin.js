@@ -13,7 +13,7 @@ module.exports = (app, utils) => {
             return;
         }
 
-        if (!await utils.UserManager.isAdmin(username)) {
+        if (!await utils.UserManager.isAdmin(username) || !await utils.UserManager.isModerator(username)) {
             utils.error(res, 400, "Unauthorized");
             return;
         }
@@ -28,11 +28,11 @@ module.exports = (app, utils) => {
             return;
         }
 
-        utils.sendBioUpdatelog(username, user, await utils.UserManager.getBio(user), bio);
+        utils.logs.sendBioUpdatelog(username, target, await utils.UserManager.getBio(user), bio);
 
         await utils.UserManager.setBio(user, bio);
 
-        // TODO: log.
+        utils.logs.sendAdminLog(username, target, "Admin or mod has updated user's bio.");
         
         res.status(200);
         res.header("Content-Type", 'application/json');

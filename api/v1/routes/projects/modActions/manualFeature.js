@@ -25,6 +25,8 @@ module.exports = (app, utils) => {
         }
 
         await utils.UserManager.featureProject(projectID, toggle);
+
+        // TODO: send log
         
         return res.send({ success: true });
     });

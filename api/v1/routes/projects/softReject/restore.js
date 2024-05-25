@@ -29,6 +29,8 @@ module.exports = (app, utils) => {
 
         await utils.UserManager.softReject(project, false);
 
+        // TODO: send log
+
         res.header('Content-type', "application/json");
         res.send({ success: true });
     });

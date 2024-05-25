@@ -26,7 +26,7 @@ module.exports = (app, utils) => {
 
         await utils.UserManager.setBanned(target, toggle, reason);
 
-        // TODO: log.
+        utils.logs.sendAdminLog(username, target, `Admin or mod has ${toggle ? "" : "un"}banned user.`);
 
         res.status(200);
         res.header("Content-Type", 'application/json');

@@ -21,6 +21,8 @@ module.exports = (app, utils) => {
 
         utils.env.UploadingEnabled = toggle;
 
+        // TODO: send log
+
         return res.send({ success: true });
     });
 }

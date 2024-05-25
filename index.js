@@ -5,7 +5,7 @@ const express = require("express");
 const endpointLoader = require("./api/endpointLoader");
 const um = require('./api/v1/db/UserManager');
 const cast = require("./utils/Cast");
-const { sendHeatLog, sendBioUpdateLog, sendReportLog, sendMultiReportLog } = require('./utils/Logs');
+const logs = require('./utils/Logs');
 const path = require('path');
 const multer = require('multer');
 const fs = require('fs');
@@ -94,10 +94,7 @@ const UserManager = new um();
         unlinkAsync: promisify(fs.unlink),
         path: path,
         PORT: PORT,
-        sendHeatLog: ((text, type, location, color="\x1b[0m") => {sendHeatLog(heatWebhook, text, type, location, color="\x1b[0m")}),
-        sendBioUpdateLog: ((username, target, oldBio, newBio) => {sendBioUpdateLog(bioWebhook, username, target, oldBio, newBio)}),
-        sendReportLog: ((username, target, reason) => {sendReportLog(reportWebhook, username, target, reason)}),
-        sendMultiReportLog: ((username, target, reason) => {sendMultiReportLog(reportWebhook, username, target, reason)}),
+        logs,
         googleOAuth2Client: OAuth2Client
     });
 

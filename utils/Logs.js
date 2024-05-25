@@ -1,4 +1,11 @@
-function sendHeatLog(webhook, text, type, location, color="\x1b[0m") {
+require('dotenv').config();
+
+const heatWebhook = process.env.HeatWebhook;
+const bioUpdateWebhook = process.env.BioWebhook;
+const reportWebhook = process.env.ReportWebhook;
+const adminWebhook = process.env.AdminWebhook;
+
+function sendHeatLog(text, type, location, color="\x1b[0m") {
     const body = JSON.stringify({
         embeds: [{
             title: `Filter Triggered`,
@@ -17,14 +24,14 @@ function sendHeatLog(webhook, text, type, location, color="\x1b[0m") {
             timestamp: new Date().toISOString()
         }]
     });
-    fetch(webhook, {
+    fetch(heatWebhook, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body
     });
 }
 
-function sendBioUpdateLog(webhook, username, target, oldBio, newBio) {
+function sendBioUpdateLog(username, target, oldBio, newBio) {
     const body = JSON.stringify({
         content: `${target}'s bio was edited by ${username}`,
         embeds: [{
@@ -56,14 +63,14 @@ function sendBioUpdateLog(webhook, username, target, oldBio, newBio) {
             description: `${oldBio}`
         }]
     });
-    fetch(webhook, {
+    fetch(bioUpdateWebhook, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body
     });
 }
 
-function sendReportLog(webhook, username, target, reason) {
+function sendReportLog(username, target, reason) {
     const body = JSON.stringify({
         content: `${username} reported ${target}`,
         embeds: [{
@@ -92,14 +99,14 @@ function sendReportLog(webhook, username, target, reason) {
         }]
     });
 
-    fetch(webhook, {
+    fetch(reportWebhook, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body
     });
 }
 
-function sendMultiReportLog(webhook, username, target, reason) {
+function sendMultiReportLog(username, target, reason) {
     const body = JSON.stringify({
         content: `${username} reported ${target}`,
         embeds: [{
@@ -128,9 +135,48 @@ function sendMultiReportLog(webhook, username, target, reason) {
         }]
     });
 
-    fetch(webhook, {
+    fetch(reportWebhook, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body
     });
+}
+
+function sendAdminLog(username, target, action) {
+    const body = JSON.stringify({
+        content: `${username} ${action} ${target}`,
+        embeds: [{
+            title: `${target} was ${action}`,
+            color: 0xff0000,
+            fields: [
+                {
+                    name: "Action",
+                    value: `${action}`
+                },
+                {
+                    name: "URL",
+                    value: `https://penguinmod.com/profile?user=${target}`
+                }
+            ],
+            author: {
+                name: target,
+                icon_url: String("http://localhost:8080/api/v1/users/getpfp?username=" + target),
+                url: String("https://penguinmod.com/profile?user=" + target)
+            }
+        }]
+    });
+
+    fetch(adminWebhook, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body
+    });
+}
+
+export {
+    sendHeatLog,
+    sendBioUpdateLog,
+    sendReportLog,
+    sendMultiReportLog,
+    sendAdminLog
 }
