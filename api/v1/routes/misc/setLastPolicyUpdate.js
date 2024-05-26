@@ -1,5 +1,5 @@
 module.exports = (app, utils) => {
-    app.post('/api/v1/misc/getLastPolicyUpdate', async function (req, res) {
+    app.post('/api/v1/misc/setLastPolicyUpdate', async function (req, res) {
         const packet = req.body;
 
         const username = (String(packet.username)).toLowerCase();

@@ -30,8 +30,8 @@ module.exports = (app, utils) => {
             return utils.error(res, 403, "You are not authorized to delete this project");
         }
 
-        // TODO: log
-        
+        // TODO: send log
+
         // notify the author that their project has been deleted
         const userid = await utils.UserManager.getUserID(username);
         if (metadata.author.username !== username) {
