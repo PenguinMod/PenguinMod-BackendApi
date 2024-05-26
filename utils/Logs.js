@@ -172,11 +172,3 @@ function sendAdminLog(username, target, action) {
         body
     });
 }
-
-export {
-    sendHeatLog,
-    sendBioUpdateLog,
-    sendReportLog,
-    sendMultiReportLog,
-    sendAdminLog
-}

@@ -32,6 +32,8 @@ module.exports = (app, utils) => {
                 return;
         }
 
+        // TODO: send log
+
         res.status(200);
         res.header("Content-Type", 'application/json');
         res.json({ success: true });
