@@ -209,7 +209,11 @@ function disputeLog(username, originalID, originalReason, reply, projectID=0) {
             fields: [
                 {
                     name: "Message Replied to",
-                    value: `${originalReason ? originalReason.message : ''}\n\n\`\`(${originalID})\`\``
+                    value: `${originalReason ? originalReason.message : ''}`
+                },
+                {
+                    name: "Message ID",
+                    value: `\`\`(${originalID})\`\``
                 },
                 {
                     name: "Project ID (if applicable)",
