@@ -247,17 +247,17 @@ function modResponse(approver, disputer, messageID, originalDispute, reply) {
             color: 0x6600ff,
             fields: [
                 {
-                    name: "Message ID",
-                    value: `${messageID}`
+                    name: "",
+                    value: `\`\`\`\n${reply}\n\`\`\``
                 },
                 {
                     name: "Original Reply",
-                    value: originalDispute
+                    value: `\`\`\`\n${originalDispute}\n\`\`\``
                 },
                 {
-                    name: "Moderator Reply",
-                    value: reply
-                }
+                    name: "Message ID",
+                    value: `\`(${messageID})\``
+                },
             ],
             author: {
                 name: username,
