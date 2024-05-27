@@ -3,6 +3,7 @@ require('dotenv').config();
 const heatWebhook = process.env.HeatWebhook;
 const bioUpdateWebhook = process.env.BioWebhook;
 const reportWebhook = process.env.ReportWebhook;
+const modWebhook = process.env.ModWebhook;
 const adminWebhook = process.env.AdminWebhook;
 
 function sendHeatLog(text, type, location, color=0xff0000) {

@@ -39,6 +39,12 @@ Please report any security vulnerabilities using GitHub's security tab on the re
     ScratchOAuthClientID=id
     ScratchOAuthClientSecret=secret
 
+    GithubOAuthClientID=id
+    GithubOAuthClientSecret=secret
+
+    GoogleOAuthClientID=id
+    GoogleOAuthClientSecret=secret
+
     #Misc
     MaxViews=maxViewsBeforeViewCheckerReset (ex: 100)
     ViewResetRate=resetRateOfViewChecker (ex: 1 hour)
@@ -51,15 +57,19 @@ Please report any security vulnerabilities using GitHub's security tab on the re
     UploadingEnabled=bool
     ViewingEnabled=bool
 
-    FeatureAmount=amountOfVotesToBeFeatured
+    FeatureAmount=10 # amount of votes to be featured
+    FollowAmount=50 # amount of followers to get badge
+    LoveAmount=50 # amount of loves to get badge
 
-    FeedExpirationTime=feedExpirationTime
-    FeedSize=feedSize
+    FeedExpirationTime=86400000 # amount of time before an item in your feed expires (in milliseconds) (this is 1 day)
+    FeedSize=25 # max items in someones feed
 
     # Moderator logs
     HeatWebhook=abc
-    BioWebhook=xyz
-    ReportWebhook=lmn
+    BioWebhook=def
+    ReportWebhook=ghi
+    ModWebhook=jkl
+    AdminWebhook=mno
     ```
 
 6. Run `npm run dev` to start the server in development mode.
