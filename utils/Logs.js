@@ -252,7 +252,7 @@ function modResponse(approver, disputer, messageID, originalDispute, reply) {
                 },
                 {
                     name: "Original Reply",
-                    value: `\`\`\`\n${originalDispute}\n\`\`\``
+                    value: `\`\`\`\n${originalDispute.message}\n\`\`\``
                 },
                 {
                     name: "Message ID",
@@ -260,9 +260,9 @@ function modResponse(approver, disputer, messageID, originalDispute, reply) {
                 },
             ],
             author: {
-                name: username,
-                icon_url: String("http://localhost:8080/api/v1/users/getpfp?username=" + username),
-                url: String("https://penguinmod.com/profile?user=" + username)
+                name: approver,
+                icon_url: String("http://localhost:8080/api/v1/users/getpfp?username=" + approver),
+                url: String("https://penguinmod.com/profile?user=" + approver)
             },
             timestamp: new Date().toISOString()
         }]

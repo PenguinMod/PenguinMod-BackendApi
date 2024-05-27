@@ -58,9 +58,6 @@ module.exports = (app, utils) => {
             }
         }
 
-        console.log(final);
-        console.log(final[0].message.project);
-
         res.header('Content-type', "application/json");
         res.send({ messages: final });
     });

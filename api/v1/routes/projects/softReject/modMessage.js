@@ -8,7 +8,7 @@ module.exports = (app, utils) => {
         const disputeID = packet.disputeID;
         const message = packet.message;
 
-        if (!username || !token || typeof disputeID !== "number" || typeof message !== "string") {
+        if (!username || !token || typeof disputeID !== "string" || typeof message !== "string") {
             return utils.error(res, 400, "InvalidData");
         }
 
