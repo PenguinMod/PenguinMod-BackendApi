@@ -1762,15 +1762,20 @@ class UserManager {
      * @async
      */
     async checkForIllegalWording(text) {
-        const illegalWords = await this.illegalList.findOne
-            ({ id: "illegalWords" }).items;
-        const illegalWebsites = await this.illegalList.findOne
-            ({ id: "illegalWebsites" }).items;
-        const spacedOutWordsOnly = await this.illegalList.findOne
-            ({ id: "spacedOutWordsOnly" }).items;
+        let illegalWords = (await this.illegalList.findOne
+            ({ id: "illegalWords" })).items;
+        let illegalWebsites = (await this.illegalList.findOne
+            ({ id: "illegalWebsites" })).items;
+        let spacedOutWordsOnly = (await this.illegalList.findOne
+            ({ id: "spacedOutWordsOnly" })).items;
+
+        illegalWords = illegalWords ? illegalWords : [];
+        illegalWebsites = illegalWebsites ? illegalWebsites : [];
+        spacedOutWordsOnly = spacedOutWordsOnly ? spacedOutWordsOnly : [];
+
         const joined = illegalWords.concat(illegalWebsites, spacedOutWordsOnly);
         
-        for (const item in joined) {
+        for (const item of joined) {
             if (text.includes(item)) {
                 return true;
             }
@@ -1784,15 +1789,15 @@ class UserManager {
      * @returns {Promise<number>} - Index of the illegal wording
      */
     async getIndexOfIllegalWording(text) {
-        const illegalWords = await this.illegalList.findOne
-            ({ id: "illegalWords" }).items;
-        const illegalWebsites = await this.illegalList.findOne
-            ({ id: "illegalWebsites" }).items;
-        const spacedOutWordsOnly = await this.illegalList.findOne
-            ({ id: "spacedOutWordsOnly" }).items;
+        const illegalWords = (await this.illegalList.findOne
+            ({ id: "illegalWords" })).items;
+        const illegalWebsites = (await this.illegalList.findOne
+            ({ id: "illegalWebsites" })).items;
+        const spacedOutWordsOnly = (await this.illegalList.findOne
+            ({ id: "spacedOutWordsOnly" })).items;
         const joined = illegalWords.concat(illegalWebsites, spacedOutWordsOnly);
         
-        for (const item in joined) {
+        for (const item of joined) {
             const index = text.indexOf(item)
             if (index + 1) {
                 return [index, index+item.length];
@@ -1807,13 +1812,17 @@ class UserManager {
      * @async
      */
     async checkForSlightlyIllegalWording(text) {
-        const potentiallyUnsafeWords = await this.illegalList.findOne
-            ({ id: "potentiallyUnsafeWords" }).items;
-        const potentiallyUnsafeWordsSpacedOut = await this.illegalList.findOne
-            ({ id: "potentiallyUnsafeWordsSpacedOut" }).items;
+        let potentiallyUnsafeWords = (await this.illegalList.findOne
+            ({ id: "potentiallyUnsafeWords" })).items;
+        let potentiallyUnsafeWordsSpacedOut = (await this.illegalList.findOne
+            ({ id: "potentiallyUnsafeWordsSpacedOut" })).items;
+
+        potentiallyUnsafeWords = potentiallyUnsafeWords ? potentiallyUnsafeWords : [];
+        potentiallyUnsafeWordsSpacedOut = potentiallyUnsafeWordsSpacedOut ? potentiallyUnsafeWordsSpacedOut : [];
+
         const joined = potentiallyUnsafeWords.concat(potentiallyUnsafeWordsSpacedOut);
         
-        for (const item in joined) {
+        for (const item of joined) {
             if (text.includes(item)) {
                 return true;
             }
@@ -1827,13 +1836,13 @@ class UserManager {
      * @returns {Promise<number>} - Index of the slightly illegal wording
      */
     async getIndexOfSlightlyIllegalWording(text) {
-        const potentiallyUnsafeWords = await this.illegalList.findOne
-            ({ id: "potentiallyUnsafeWords" }).items;
-        const potentiallyUnsafeWordsSpacedOut = await this.illegalList.findOne
-            ({ id: "potentiallyUnsafeWordsSpacedOut" }).items;
+        const potentiallyUnsafeWords = (await this.illegalList.findOne
+            ({ id: "potentiallyUnsafeWords" })).items;
+        const potentiallyUnsafeWordsSpacedOut = (await this.illegalList.findOne
+            ({ id: "potentiallyUnsafeWordsSpacedOut" })).items;
         const joined = potentiallyUnsafeWords.concat(potentiallyUnsafeWordsSpacedOut);
         
-        for (const item in joined) {
+        for (const item of joined) {
             const index = text.indexOf(item)
             if (index + 1) {
                 return [index, index+item.length];
@@ -1847,7 +1856,7 @@ class UserManager {
      * @param {string} type - The type of the illegal item
      * @async
      */
-    async setIllegalWords(words, type) {
+    async setIllegalWords(type, words) {
         await this.illegalList.updateOne({id: type}, {$set: {items: words}});
     }
 
@@ -1877,16 +1886,16 @@ class UserManager {
      * @async
      */
     async getIllegalWords() {
-        const illegalWords = await this.illegalList.findOne
-            ({ id: "illegalWords" }).items;
-        const illegalWebsites = await this.illegalList.findOne
-            ({ id: "illegalWebsites" }).items;
-        const spacedOutWordsOnly = await this.illegalList.findOne
-            ({ id: "spacedOutWordsOnly" }).items;
-        const potentiallyUnsafeWords = await this.illegalList.findOne
-            ({ id: "potentiallyUnsafeWords" }).items;
-        const potentiallyUnsafeWordsSpacedOut = await this.illegalList.findOne
-            ({ id: "potentiallyUnsafeWordsSpacedOut" }).items;
+        const illegalWords = (await this.illegalList.findOne
+            ({ id: "illegalWords" })).items;
+        const illegalWebsites = (await this.illegalList.findOne
+            ({ id: "illegalWebsites" })).items;
+        const spacedOutWordsOnly = (await this.illegalList.findOne
+            ({ id: "spacedOutWordsOnly" })).items;
+        const potentiallyUnsafeWords = (await this.illegalList.findOne
+            ({ id: "potentiallyUnsafeWords" })).items;
+        const potentiallyUnsafeWordsSpacedOut = (await this.illegalList.findOne
+            ({ id: "potentiallyUnsafeWordsSpacedOut" })).items;
 
         return {
             illegalWords: illegalWords,

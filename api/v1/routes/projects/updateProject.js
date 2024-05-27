@@ -48,6 +48,66 @@ module.exports = (app, utils) => {
             return utils.error(res, 400, "Uploaded in the last 8 minutes");
         }
 
+        const illegalWordingError = async (text, type) => {
+            if (await utils.UserManager.checkForIllegalWording(text)) {
+                utils.error(res, 400, "IllegalWordsUsed")
+    
+                const illegalWordIndex = await utils.UserManager.getIndexOfIllegalWording(text);
+
+
+                const before = text.substring(0, illegalWordIndex[0]);
+                const after = text.substring(illegalWordIndex[1], 0);
+                const illegalWord = text.substring(illegalWordIndex[0], illegalWordIndex[1]);
+    
+                utils.logs.sendHeatLog(
+                    before + "\x1b[31;1m" + illegalWord + "\x1b[0m" + after,
+                    type,
+                    [projectID, username]
+                )
+                
+                return true;
+            }
+            return false;
+        }
+
+        const slightlyIllegalWordingError = async (text, type) => {
+            if (await utils.UserManager.checkForSlightlyIllegalWording(text)) {
+                const illegalWordIndex = await utils.UserManager.getIndexOfSlightlyIllegalWording(text);
+    
+                const before = text.substring(0, illegalWordIndex[0]);
+                const after = text.substring(illegalWordIndex[1], 0);
+                const illegalWord = text.substring(illegalWordIndex[0], illegalWordIndex[1]);
+    
+                utils.logs.sendHeatLog(
+                    before + "\x1b[33;1m" + illegalWord + "\x1b[0m" + after,
+                    type,
+                    username,
+                    0xffbb00,
+                )
+                return true;
+            }
+            return false;
+        }
+
+        if (await illegalWordingError(packet.title, "projectTitle")) {
+            await unlink();
+            return;
+        }
+
+        if (await illegalWordingError(packet.instructions, "projectInstructions")) {
+            await unlink();
+            return;
+        }
+
+        if (await illegalWordingError(packet.notes, "projectNotes")) {
+            await unlink();
+            return;
+        }
+
+        await slightlyIllegalWordingError(packet.title, "projectTitle");
+        await slightlyIllegalWordingError(packet.instructions, "projectInstructions");
+        await slightlyIllegalWordingError(packet.notes, "projectNotes");
+
         if (!req.files.jsonFile || !req.files.thumbnail || !req.files.assets) {
             await unlink();
             return utils.error(res, 400, "Invalid data");

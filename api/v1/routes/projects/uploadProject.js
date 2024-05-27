@@ -7,12 +7,16 @@ module.exports = (app, utils) => {
         // assets
         { name: 'assets' }
     ]), async (req, res) => {
-        if (!utils.env.UploadingEnabled) {
+        const unlink = async () => {
             await utils.unlinkAsync(req.files.jsonFile[0].path);
             await utils.unlinkAsync(req.files.thumbnail[0].path);
             for (let asset of req.files.assets) {
                 await utils.unlinkAsync(asset.path);
             }
+        }
+
+        if (!utils.env.UploadingEnabled) {
+            await unlink();
             return utils.error(res, 503, "Uploading is disabled");
         }
 
@@ -22,30 +26,77 @@ module.exports = (app, utils) => {
         const token = packet.token;
 
         if (!await utils.UserManager.loginWithToken(username, token)) {
-            await utils.unlinkAsync(req.files.jsonFile[0].path);
-            await utils.unlinkAsync(req.files.thumbnail[0].path);
-            for (let asset of req.files.assets) {
-                await utils.unlinkAsync(asset.path);
-            }
+            await unlink();
             return utils.error(res, 401, "Invalid credentials");
         }
 
         // make sure its been 8 minutes since last upload
-        /*if (await utils.UserManager.getLastUpload(username) > Date.now() - utils.uploadCooldown) {
-            await utils.unlinkAsync(req.files.jsonFile[0].path);
-            await utils.unlinkAsync(req.files.thumbnail[0].path);
-            for (let asset of req.files.assets) {
-                await utils.unlinkAsync(asset.path);
-            }
+        if (await utils.UserManager.getLastUpload(username) > Date.now() - utils.uploadCooldown) {
+            await unlink();
             return utils.error(res, 400, "Uploaded in the last 8 minutes");
-        }*/
+        }
+
+        const illegalWordingError = async (text, type) => {
+            if (await utils.UserManager.checkForIllegalWording(text)) {
+                utils.error(res, 400, "IllegalWordsUsed")
+    
+                const illegalWordIndex = await utils.UserManager.getIndexOfIllegalWording(text);
+
+                const before = text.substring(0, illegalWordIndex[0]);
+                const after = text.substring(illegalWordIndex[1], 0);
+                const illegalWord = text.substring(illegalWordIndex[0], illegalWordIndex[1]);
+    
+                utils.logs.sendHeatLog(
+                    before + "\x1b[31;1m" + illegalWord + "\x1b[0m" + after,
+                    type,
+                    username
+                )
+                
+                return true;
+            }
+            return false;
+        }
+
+        const slightlyIllegalWordingError = async (text, type) => {
+            if (await utils.UserManager.checkForSlightlyIllegalWording(text)) {
+                const illegalWordIndex = await utils.UserManager.getIndexOfSlightlyIllegalWording(text);
+    
+                const before = text.substring(0, illegalWordIndex[0]);
+                const after = text.substring(illegalWordIndex[1], 0);
+                const illegalWord = text.substring(illegalWordIndex[0], illegalWordIndex[1]);
+    
+                utils.logs.sendHeatLog(
+                    before + "\x1b[33;1m" + illegalWord + "\x1b[0m" + after,
+                    type,
+                    username,
+                    0xffbb00,
+                )
+                return true;
+            }
+            return false;
+        }
+
+        if (await illegalWordingError(packet.title, "projectTitle")) {
+            await unlink();
+            return;
+        }
+
+        if (await illegalWordingError(packet.instructions, "projectInstructions")) {
+            await unlink();
+            return;
+        }
+
+        if (await illegalWordingError(packet.notes, "projectNotes")) {
+            await unlink();
+            return;
+        }
+
+        await slightlyIllegalWordingError(packet.title, "projectTitle");
+        await slightlyIllegalWordingError(packet.instructions, "projectInstructions");
+        await slightlyIllegalWordingError(packet.notes, "projectNotes");
 
         if (!req.files.jsonFile || !req.files.thumbnail || !req.files.assets) {
-            await utils.unlinkAsync(req.files.jsonFile[0].path);
-            await utils.unlinkAsync(req.files.thumbnail[0].path);
-            for (let asset of req.files.assets) {
-                await utils.unlinkAsync(asset.path);
-            }
+            await unlink();
             return utils.error(res, 400, "Invalid data");
         }
 
@@ -57,11 +108,7 @@ module.exports = (app, utils) => {
         try {
             jsonFile = utils.UserManager.protobufToProjectJson(protobufFile);
         } catch (e) {
-            await utils.unlinkAsync(req.files.jsonFile[0].path);
-            await utils.unlinkAsync(req.files.thumbnail[0].path);
-            for (let asset of req.files.assets) {
-                await utils.unlinkAsync(asset.path);
-            }
+            await unlink();
             return utils.error(res, 400, "Invalid protobuf file");
         }
 
@@ -69,11 +116,7 @@ module.exports = (app, utils) => {
 
         if (remix) {
             if (!await utils.UserManager.projectExists(remix)) {
-                await utils.unlinkAsync(req.files.jsonFile[0].path);
-                await utils.unlinkAsync(req.files.thumbnail[0].path);
-                for (let asset of req.files.assets) {
-                    await utils.unlinkAsync(asset.path);
-                }
+                await unlink();
                 return utils.error(res, 400, "Remix project does not exist");
             }
         }
@@ -96,21 +139,13 @@ module.exports = (app, utils) => {
                             }
                         }
                         if (!found) {
-                            await utils.unlinkAsync(req.files.jsonFile[0].path);
-                            await utils.unlinkAsync(req.files.thumbnail[0].path);
-                            for (let asset of req.files.assets) {
-                                await utils.unlinkAsync(asset.path);
-                            }
+                            await unlink();
                             return utils.error(res, 400, "Extension not allowed");
                         }
                     }
                     
                     if (!await utils.UserManager.checkExtensionIsAllowed(extension)) {
-                        await utils.unlinkAsync(req.files.jsonFile[0].path);
-                        await utils.unlinkAsync(req.files.thumbnail[0].path);
-                        for (let asset of req.files.assets) {
-                            await utils.unlinkAsync(asset.path);
-                        }
+                        await unlink();
                         return utils.error(res, 400, "Extension not allowed");
                     }
                 }
@@ -165,11 +200,7 @@ module.exports = (app, utils) => {
             packet.rating
         );
 
-        await utils.unlinkAsync(req.files.jsonFile[0].path);
-        await utils.unlinkAsync(req.files.thumbnail[0].path);
-        for (let asset of req.files.assets) {
-            await utils.unlinkAsync(asset.path);
-        }
+        await unlink();
 
         res.status(200);
         res.header("Content-Type", "application/json");

@@ -5,11 +5,11 @@ const bioUpdateWebhook = process.env.BioWebhook;
 const reportWebhook = process.env.ReportWebhook;
 const adminWebhook = process.env.AdminWebhook;
 
-function sendHeatLog(text, type, location, color="\x1b[0m") {
+function sendHeatLog(text, type, location, color=0xff0000) {
     const body = JSON.stringify({
         embeds: [{
             title: `Filter Triggered`,
-            color: 0xff0000,
+            color: color,
             description: `\`\`\`${text}\n\`\`\``,
             fields: [
                 {

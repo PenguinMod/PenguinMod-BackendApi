@@ -1,11 +1,11 @@
 module.exports = (app, utils) => {
-    app.get('/api/v1/misc/setProfanityList', async function (req, res) {
-        const packet = req.query;
+    app.post('/api/v1/misc/setProfanityList', async function (req, res) {
+        const packet = req.body;
 
         const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
-        if (!await UserManager.loginWithToken(username, token)) {
+        if (!await utils.UserManager.loginWithToken(username, token)) {
             utils.error(res, 400, "Reauthenticate")
             return;
         }
@@ -23,9 +23,16 @@ module.exports = (app, utils) => {
 
         const types = ["illegalWords", "illegalWebsites", "spacedOutWordsOnly", "potentiallyUnsafeWords", "potentiallyUnsafeWordsSpacedOut"];
         for (const key in words) {
-            if (typeof words[key] !== 'string') {
+            // make sure its an array of strings
+            if (typeof words[key] !== 'object') {
                 utils.error(res, 400, "InvalidData");
                 return;
+            }
+            for (const word of words[key]) {
+                if (typeof word !== 'string') {
+                    utils.error(res, 400, "InvalidData");
+                    return;
+                }
             }
 
             if (!types.includes(key)) {
@@ -35,8 +42,10 @@ module.exports = (app, utils) => {
         }
 
         for (const key in words) {
-            await utils.UserManager.setIllegalWords(words[key], key);
+            await utils.UserManager.setIllegalWords(key, words[key]);
         }
+
+        console.log(await utils.UserManager.getIllegalWords());
         
         utils.logs.sendAdminLog(
             {
