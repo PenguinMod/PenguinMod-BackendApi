@@ -174,7 +174,7 @@ module.exports = (app, utils) => {
 
         const thumbnail = fs.readFileSync(req.files.thumbnail[0].path);
 
-        // TODO: use mmmagic to verify this is a valid image
+        // ATODO: use mmmagic to verify this is a valid image
 
         // TODO: send a message on remix
 

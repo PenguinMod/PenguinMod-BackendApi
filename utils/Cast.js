@@ -58,7 +58,6 @@ class Cast {
 
     /**
      * Converts Data URLs to Buffers.
-     * @todo Move this to another class
      * @param {string} dataUrl Value to cast to string.
      * @return {Buffer} The new buffer.
      */

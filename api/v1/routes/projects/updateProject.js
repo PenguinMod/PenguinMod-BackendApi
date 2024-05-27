@@ -115,7 +115,7 @@ module.exports = (app, utils) => {
 
         utils.UserManager.setLastUpload(username, Date.now());
 
-        // TODO: make this only update, yk, the things that were updated
+        // ATODO: make this only update, yk, the things that were updated
 
         // the jsonfile is in protobuf format so convert it to json
         const protobufFile = fs.readFileSync(req.files.jsonFile[0].path);
@@ -179,7 +179,7 @@ module.exports = (app, utils) => {
 
         const thumbnail = fs.readFileSync(req.files.thumbnail[0].path);
 
-        // TODO: use mmmagic to verify this is a valid image
+        // ATODO: use mmmagic to verify this is a valid image
 
         // get the assets and their ids
         const assets = [];
