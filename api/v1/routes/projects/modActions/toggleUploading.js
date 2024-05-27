@@ -21,7 +21,27 @@ module.exports = (app, utils) => {
 
         utils.env.UploadingEnabled = toggle;
 
-        // TODO: send log
+        utils.logs.sendAdminLog(
+            {
+                action: "Project uploading has been toggled",
+                content: `${username} toggled project uploading to ${toggle}`,
+                fields: [
+                    {
+                        name: "Admin",
+                        value: username
+                    },
+                    {
+                        name: "Status",
+                        value: toggle
+                    }
+                ]
+            },
+            {
+                name: username,
+                icon_url: String("http://localhost:8080/api/v1/users/getpfp?username=" + username),
+                url: String("https://penguinmod.com/profile?user=" + username)
+            }
+        );
 
         return res.send({ success: true });
     });

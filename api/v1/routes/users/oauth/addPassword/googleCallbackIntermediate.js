@@ -33,6 +33,6 @@ module.exports = (app, utils) => {
 
         res.status(200);
         res.redirect(`http://localhost:5173/oauthchangepasswordintermediate?method=google&at=${JSON.stringify(tokens)}`);
-        // TODO: in prod change this to penguinmod.com
+        // ATODO: in prod change this to penguinmod.com
     });
 }

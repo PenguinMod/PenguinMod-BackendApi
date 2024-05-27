@@ -19,7 +19,7 @@ module.exports = (app, utils) => {
 
         await utils.UserManager.setBadges(target, packet.badges);
 
-        utils.logs.sendAdminLog(username, target, "Admin has updated user's badges.");
+        utils.logs.sendAdminUserLog(username, target, "Admin has updated user's badges.");
 
         res.status(200);
         res.header('Content-type', "application/json");

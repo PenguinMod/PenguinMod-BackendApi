@@ -32,7 +32,7 @@ module.exports = (app, utils) => {
 
         await utils.UserManager.setBio(user, bio);
 
-        utils.logs.sendAdminLog(username, target, "Admin or mod has updated user's bio.");
+        utils.logs.sendAdminUserLog(username, target, "Admin or mod has updated user's bio.");
         
         res.status(200);
         res.header("Content-Type", 'application/json');

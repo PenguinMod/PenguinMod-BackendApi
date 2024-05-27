@@ -5,9 +5,9 @@ module.exports = (app, utils) => {
         const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
-        const project = packet.project;
+        const project = String(packet.project);
 
-        if (!username || !token || typeof project !== "number") {
+        if (!username || !token || !project) {
             return utils.error(res, 400, "InvalidData");
         }
 
@@ -29,7 +29,31 @@ module.exports = (app, utils) => {
 
         await utils.UserManager.softReject(project, false);
 
-        // TODO: send log
+        utils.logs.sendAdminLog(
+            {
+                action: "Project has been restored",
+                content: `${username} restored project ${project}`,
+                fields: [
+                    {
+                        name: "Mod",
+                        value: username
+                    },
+                    {
+                        name: "Project ID",
+                        value: project
+                    },
+                    {
+                        name: "URL",
+                        value: `https://studio.penguinmod.com/#${project}`
+                    }
+                ]
+            },
+            {
+                name: username,
+                icon_url: String("http://localhost:8080/api/v1/users/getpfp?username=" + username),
+                url: String("https://penguinmod.com/profile?user=" + username)
+            }
+        );
 
         res.header('Content-type', "application/json");
         res.send({ success: true });

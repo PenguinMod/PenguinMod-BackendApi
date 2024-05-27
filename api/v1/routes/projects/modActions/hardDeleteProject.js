@@ -2,7 +2,7 @@ module.exports = (app, utils) => {
     app.post('/api/v1/projects/hardDeleteProject', async (req, res) => {
         const packet = req.body;
 
-        const projectID = packet.projectID;
+        const projectID = String(packet.projectID);
 
         const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
@@ -26,16 +26,46 @@ module.exports = (app, utils) => {
         const metadata = await utils.UserManager.getProjectMetadata(projectID);
 
         // only admins and the project owner can delete projects, not mods
-        if (metadata.author.username !== username || !await utils.UserManager.isAdmin(username)) {
+        if (metadata.author.username !== username && !await utils.UserManager.isAdmin(username)) {
             return utils.error(res, 403, "You are not authorized to delete this project");
         }
 
-        // TODO: send log
+        utils.logs.sendAdminLog(
+            {
+                action: `${username} hard deleted ${metadata.title}`,
+                content: "",
+                fields: [
+                    {
+                        name: "Mod",
+                        value: username
+                    },    
+                    {
+                        name: "Title",
+                        value: metadata.title
+                    },
+                    {
+                        name: "Author",
+                        value: metadata.author.username
+                    },
+                    // send url because eventually we'll have the objects expire instead of just deleting them striaight away
+                    {
+                        name: "URL",
+                        value: `https://studio.penguinmod.com/#${projectID}`
+                    }
+                ]
+            },
+            {
+                name: username,
+                icon_url: String("http://localhost:8080/api/v1/users/getpfp?username=" + username),
+                url: String("https://penguinmod.com/profile?user=" + username)
+            }
+        );
 
+        // TODO: make this work on frontend
         // notify the author that their project has been deleted
-        const userid = await utils.UserManager.getUserID(username);
         if (metadata.author.username !== username) {
-            await utils.UserManager.sendMessage(userid, {type: "reject", hardReject: true}, false, projectID);
+            const userid = metadata.author.userid;
+            await utils.UserManager.sendMessage(userid, {type: "reject", hardReject: true, title: metadata.title}, false, projectID);
         }
 
         await utils.UserManager.deleteProject(projectID);

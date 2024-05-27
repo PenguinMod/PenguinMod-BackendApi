@@ -34,7 +34,36 @@ module.exports = (app, utils) => {
 
         await utils.UserManager.sendMessage(projectData.author.id, message, true, project);
 
-        // TODO: send log.
+        utils.logs.sendAdminLog(
+            {
+                action: `${username} soft rejected ${projectData.title}`,
+                content: "",
+                fields: [
+                    {
+                        name: "Mod",
+                        value: username
+                    },    
+                    {
+                        name: "Title",
+                        value: projectData.title
+                    },
+                    {
+                        name: "Author",
+                        value: projectData.author.username
+                    },
+                    // send url because eventually we'll have the objects expire instead of just deleting them striaight away
+                    {
+                        name: "URL",
+                        value: `https://studio.penguinmod.com/#${project}`
+                    }
+                ]
+            },
+            {
+                name: username,
+                icon_url: String("http://localhost:8080/api/v1/users/getpfp?username=" + username),
+                url: String("https://penguinmod.com/profile?user=" + username)
+            }
+        );
 
         res.header('Content-type', "application/json");
         res.send({ success: true });

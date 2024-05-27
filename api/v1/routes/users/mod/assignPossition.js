@@ -26,7 +26,7 @@ module.exports = (app, utils) => {
         await utils.UserManager.setAdmin(target, Boolean(admin));
         await utils.UserManager.setModerator(target, Boolean(approver));
 
-        utils.logs.sendAdminLog(username, target, "Admin or mod has updated user's permissions.");
+        utils.logs.sendAdminUserLog(username, target, "Admin or mod has updated user's permissions.");
 
         res.status(200);
         res.header("Content-Type", 'application/json');

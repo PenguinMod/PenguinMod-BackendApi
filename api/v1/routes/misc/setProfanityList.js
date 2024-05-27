@@ -38,7 +38,23 @@ module.exports = (app, utils) => {
             await utils.UserManager.setIllegalWords(words[key], key);
         }
         
-        // TODO: send log
+        utils.logs.sendAdminLog(
+            {
+                action: "Profanity list has been set",
+                content: `${username} set the profanity list`,
+                fields: [
+                    {
+                        name: "Admin",
+                        value: username
+                    },
+                ]
+            },
+            {
+                name: username,
+                icon_url: String("http://localhost:8080/api/v1/users/getpfp?username=" + username),
+                url: String("https://penguinmod.com/profile?user=" + username)
+            }
+        );
         
         res.status(200);
         res.header("Content-Type", 'application/json');

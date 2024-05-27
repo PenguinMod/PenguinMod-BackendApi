@@ -26,7 +26,35 @@ module.exports = (app, utils) => {
 
         await utils.UserManager.featureProject(projectID, toggle);
 
-        // TODO: send log
+        utils.logs.sendAdminLog(
+            {
+                action: "Project has been manually featured",
+                content: `${username} manually featured project ${projectID}`,
+                fields: [
+                    {
+                        name: "Mod",
+                        value: username
+                    },
+                    {
+                        name: "Project ID",
+                        value: projectID
+                    },
+                    {
+                        name: "Status",
+                        value: toggle
+                    },
+                    {
+                        name: "URL",
+                        value: `https://studio.penguinmod.com/#${projectID}`
+                    }
+                ]
+            },
+            {
+                name: username,
+                icon_url: String("http://localhost:8080/api/v1/users/getpfp?username=" + username),
+                url: String("https://penguinmod.com/profile?user=" + username)
+            }
+        );
         
         return res.send({ success: true });
     });

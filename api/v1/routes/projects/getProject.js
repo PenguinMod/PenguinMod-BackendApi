@@ -14,6 +14,8 @@ module.exports = (app, utils) => {
 
         const safe = packet.safe;
 
+        const projectID = String(packet.projectID);
+
         if (!requestType) {
             return utils.error(res, 400, "Missing requestType");
         }
@@ -57,21 +59,21 @@ module.exports = (app, utils) => {
                 }
         }
 
-        if (!packet.projectId) {
+        if (!projectID) {
             if (safe) {
                 return safeReturn();
             }
             return utils.error(res, 400, "Missing projectId");
         }
 
-        if (!await utils.UserManager.projectExists(packet.projectId, true)) {
+        if (!await utils.UserManager.projectExists(projectID, true)) {
             if (safe) {
                 return safeReturn();
             }
             return utils.error(res, 404, "Project not found");
         }
 
-        const metadata = await utils.UserManager.getProjectMetadata(packet.projectId);
+        const metadata = await utils.UserManager.getProjectMetadata(projectID);
 
         if (metadata.author !== String(packet.username).toLowerCase() && !metadata.public) {
             if (safe) {
@@ -80,21 +82,21 @@ module.exports = (app, utils) => {
             return utils.error(res, 404, "Project not found");
         }
 
-        if (!await utils.UserManager.hasSeenProject(packet.projectId, req.clientIp)) {
-            await utils.UserManager.projectView(packet.projectId, req.clientIp);
+        if (!await utils.UserManager.hasSeenProject(projectID, req.clientIp)) {
+            await utils.UserManager.projectView(projectID, req.clientIp);
         }
 
         switch (requestType) {
             case "protobuf":
-                const project = await utils.UserManager.getProjectFile(packet.projectId);
+                const project = await utils.UserManager.getProjectFile(projectID);
 
                 return res.send(project);
             case "assets":
-                const assets = await utils.UserManager.getProjectAssets(packet.projectId);
+                const assets = await utils.UserManager.getProjectAssets(projectID);
 
                 return res.send(assets);
             case "thumbnail":
-                const thumbnail = await utils.UserManager.getProjectImage(packet.projectId);
+                const thumbnail = await utils.UserManager.getProjectImage(projectID);
 
                 return res.send(thumbnail);
             case "metadata":

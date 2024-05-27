@@ -32,7 +32,31 @@ module.exports = (app, utils) => {
                 return;
         }
 
-        // TODO: send log
+        utils.logs.sendAdminLog(
+            {
+                action: "Last policy update has been set",
+                content: `${username} set the last policy update for ${type}`,
+                fields: [
+                    {
+                        name: "Admin",
+                        value: username
+                    },
+                    {
+                        name: "Type",
+                        value: type
+                    },
+                    {
+                        name: "Date",
+                        value: new Date().toISOString()
+                    }
+                ]
+            },
+            {
+                name: username,
+                icon_url: String("http://localhost:8080/api/v1/users/getpfp?username=" + username),
+                url: String("https://penguinmod.com/profile?user=" + username)
+            }
+        );
 
         res.status(200);
         res.header("Content-Type", 'application/json');

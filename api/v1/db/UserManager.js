@@ -903,7 +903,7 @@ class UserManager {
      */
     async publishProject(projectBuffer, assetBuffers, author, title, imageBuffer, instructions, notes, remix, rating) {
         let id;
-        // TODO: replace this with a ulid somehow
+        // ATODO: replace this with a ulid somehow
         // i love being whimsical ^^
         do {
             id = randomInt(0, 9999999999).toString();
@@ -1002,7 +1002,7 @@ class UserManager {
         await this.minioClient.putObject("project-thumbnails", id, imageBuffer);
 
         await this.deleteMultipleObjects("project-assets", id) // delete all the old assets
-        // TODO: instead of doing this just replace the ones that were edited
+        // ATODO: instead of doing this just replace the ones that were edited
 
         for (const asset of assetBuffers) {
             await this.minioClient.putObject("project-assets", `${id}_${asset.id}`, asset.buffer);
@@ -1462,7 +1462,8 @@ class UserManager {
      * @async
      */
     async deleteProject(id) {
-        // TODO: instead of literally deleting the file, add a minio expiration thing; https://min.io/docs/minio/linux/administration/object-management/create-lifecycle-management-expiration-rule.html
+        // ATODO: instead of literally deleting the file, add a minio expiration thing; https://min.io/docs/minio/linux/administration/object-management/create-lifecycle-management-expiration-rule.html
+        // once thats done make it where you can download "deleted" ones before the expiration is up
 
         await this.projects.deleteOne({id: id});
 
@@ -1747,8 +1748,9 @@ class UserManager {
      * @async
      */
     async projectExists(id, nonPublic) {
-        // TODO: search for only public when true, search for all when false
-        const result = await this.projects.findOne({id: id});
+        const result = nonPublic ? 
+            await this.projects.findOne({id: String(id)}) :
+            await this.projects.findOne({id: String(id), public: true});
 
         return result ? true : false;
     }
