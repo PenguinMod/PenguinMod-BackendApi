@@ -56,7 +56,7 @@ module.exports = (app, utils) => {
 
 
                 const before = text.substring(0, illegalWordIndex[0]);
-                const after = text.substring(illegalWordIndex[1], 0);
+                const after = text.substring(illegalWordIndex[1]);
                 const illegalWord = text.substring(illegalWordIndex[0], illegalWordIndex[1]);
     
                 utils.logs.sendHeatLog(
@@ -75,7 +75,7 @@ module.exports = (app, utils) => {
                 const illegalWordIndex = await utils.UserManager.getIndexOfSlightlyIllegalWording(text);
     
                 const before = text.substring(0, illegalWordIndex[0]);
-                const after = text.substring(illegalWordIndex[1], 0);
+                const after = text.substring(illegalWordIndex[1]);
                 const illegalWord = text.substring(illegalWordIndex[0], illegalWordIndex[1]);
     
                 utils.logs.sendHeatLog(

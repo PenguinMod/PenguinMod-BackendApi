@@ -10,7 +10,7 @@ function sendHeatLog(text, type, location, color=0xff0000) {
         embeds: [{
             title: `Filter Triggered`,
             color: color,
-            description: `\`\`\`${text}\n\`\`\``,
+            description: `\`\`\`ansi\n${text}\n\`\`\``,
             fields: [
                 {
                     name: "Type",

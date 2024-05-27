@@ -31,10 +31,12 @@ module.exports = (app, utils) => {
         }
 
         // make sure its been 8 minutes since last upload
+        /*
         if (await utils.UserManager.getLastUpload(username) > Date.now() - utils.uploadCooldown) {
             await unlink();
             return utils.error(res, 400, "Uploaded in the last 8 minutes");
         }
+        */
 
         const illegalWordingError = async (text, type) => {
             if (await utils.UserManager.checkForIllegalWording(text)) {
@@ -43,7 +45,7 @@ module.exports = (app, utils) => {
                 const illegalWordIndex = await utils.UserManager.getIndexOfIllegalWording(text);
 
                 const before = text.substring(0, illegalWordIndex[0]);
-                const after = text.substring(illegalWordIndex[1], 0);
+                const after = text.substring(illegalWordIndex[1]);
                 const illegalWord = text.substring(illegalWordIndex[0], illegalWordIndex[1]);
     
                 utils.logs.sendHeatLog(
@@ -62,7 +64,7 @@ module.exports = (app, utils) => {
                 const illegalWordIndex = await utils.UserManager.getIndexOfSlightlyIllegalWording(text);
     
                 const before = text.substring(0, illegalWordIndex[0]);
-                const after = text.substring(illegalWordIndex[1], 0);
+                const after = text.substring(illegalWordIndex[1]);
                 const illegalWord = text.substring(illegalWordIndex[0], illegalWordIndex[1]);
     
                 utils.logs.sendHeatLog(

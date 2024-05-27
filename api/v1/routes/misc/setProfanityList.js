@@ -44,8 +44,6 @@ module.exports = (app, utils) => {
         for (const key in words) {
             await utils.UserManager.setIllegalWords(key, words[key]);
         }
-
-        console.log(await utils.UserManager.getIllegalWords());
         
         utils.logs.sendAdminLog(
             {
