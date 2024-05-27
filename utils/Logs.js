@@ -208,6 +208,10 @@ function disputeLog(username, originalID, originalReason, reply, projectID=0) {
             color: 0xff8800,
             fields: [
                 {
+                    name: "",
+                    value: `${reply}`
+                },
+                {
                     name: "Message Replied to",
                     value: `${originalReason ? originalReason.message : ''}`
                 },
@@ -219,10 +223,6 @@ function disputeLog(username, originalID, originalReason, reply, projectID=0) {
                     name: "Project ID (if applicable)",
                     value: `${projectID ? projectID : '(not applicable)'}`
                 },
-                {
-                    name: "Reply",
-                    value: `${reply}`
-                }
             ],
             author: {
                 name: username,
