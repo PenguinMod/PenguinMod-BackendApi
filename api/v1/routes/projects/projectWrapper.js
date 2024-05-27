@@ -6,7 +6,7 @@ module.exports = (app, utils) => {
     app.get("/api/v1/projects/getprojectwrapper", async (req, res) => {
         const packet = req.query;
 
-        const projectId = packet.projectId;
+        const projectId = String(packet.projectId);
         const safe = packet.safe;
 
         const safeReturn = () => {
