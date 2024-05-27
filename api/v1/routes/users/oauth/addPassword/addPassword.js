@@ -35,8 +35,6 @@ module.exports = (app, utils) => {
             scope: 'https://www.googleapis.com/auth/userinfo.profile',
             state: await utils.UserManager.generateOAuth2State()
         });
-
-        console.log("loud incorrect buzzer");
         
         // using switch case cuz erm i like it
         let state;

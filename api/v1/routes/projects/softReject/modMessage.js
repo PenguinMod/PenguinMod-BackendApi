@@ -26,9 +26,11 @@ module.exports = (app, utils) => {
             return utils.error(res, 404, "MessageNotFound");
         }
 
-        await utils.UserManager.sendMessage(dispute.receiver, message, true, dispute.projectID);
+        const id = await utils.UserManager.sendMessage(dispute.receiver, {type: "modresponse", message}, true, dispute.projectID);
 
-        // TODO: send log
+        const disputer = await utils.UserManager.getUsernameByID(dispute.receiver);
+
+        utils.logs.modResponse(username, disputer, id, dispute.message, message);
 
         res.header('Content-type', "application/json");
         res.send({ success: true });

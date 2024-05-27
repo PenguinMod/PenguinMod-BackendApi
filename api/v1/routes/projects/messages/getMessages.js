@@ -44,6 +44,14 @@ module.exports = (app, utils) => {
                     }
                     final.push(item);
                     break;
+                case "reject":
+                    item.message = {
+                        project: {
+                            id: item.projectID,
+                            title: (await utils.UserManager.getProjectMetadata(item.projectID)).title
+                        },
+                        ...item.message
+                    }
                 default:
                     final.push(item);
                     break;
@@ -51,6 +59,7 @@ module.exports = (app, utils) => {
         }
 
         console.log(final);
+        console.log(final[0].message.project);
 
         res.header('Content-type', "application/json");
         res.send({ messages: final });

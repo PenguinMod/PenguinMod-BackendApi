@@ -5,7 +5,7 @@ module.exports = (app, utils) => {
         const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
-        const project = packet.project;
+        const project = String(packet.project);
         const title = packet.title;
 
         if (!await utils.UserManager.loginWithToken(username, token)) {
@@ -13,7 +13,7 @@ module.exports = (app, utils) => {
             return;
         }
 
-        if (typeof project !== "number" || typeof title !== "number") {
+        if (!project || typeof title !== "number") {
             utils.error(res, 400, "InvalidInput")
             return;
         }

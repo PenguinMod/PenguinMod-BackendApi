@@ -200,11 +200,83 @@ function sendAdminLog(data, author) {
     });
 }
 
+function disputeLog(username, originalID, originalReason, reply, projectID=0) {
+    const body = JSON.stringify({
+        content: `${username} replied to moderator message`,
+        embeds: [{
+            title: `Reply by ${username}`,
+            color: 0xff8800,
+            fields: [
+                {
+                    name: "Message Replied to",
+                    value: `${originalReason ? originalReason.message : ''}\n\n\`\`(${originalID})\`\``
+                },
+                {
+                    name: "Project ID (if applicable)",
+                    value: `${projectID ? projectID : '(not applicable)'}`
+                },
+                {
+                    name: "Reply",
+                    value: `${reply}`
+                }
+            ],
+            author: {
+                name: username,
+                icon_url: String("http://localhost:8080/api/v1/users/getpfp?username=" + username),
+                url: String("https://penguinmod.com/profile?user=" + username)
+            },
+            timestamp: new Date().toISOString()
+        }]
+    });
+    fetch(modWebhook, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body
+    });
+}
+
+function modResponse(approver, disputer, messageID, originalDispute, reply) {
+    const body = JSON.stringify({
+        content: `${approver} responded to reply from ${disputer}`,
+        embeds: [{
+            title: `${approver} responded to a reply`,
+            color: 0x6600ff,
+            fields: [
+                {
+                    name: "Message ID",
+                    value: `${messageID}`
+                },
+                {
+                    name: "Original Reply",
+                    value: originalDispute
+                },
+                {
+                    name: "Moderator Reply",
+                    value: reply
+                }
+            ],
+            author: {
+                name: username,
+                icon_url: String("http://localhost:8080/api/v1/users/getpfp?username=" + username),
+                url: String("https://penguinmod.com/profile?user=" + username)
+            },
+            timestamp: new Date().toISOString()
+        }]
+    });
+    fetch(modWebhook, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body
+    });
+}
+
 module.exports = {
     sendHeatLog,
     sendBioUpdateLog,
     sendReportLog,
     sendMultiReportLog,
     sendAdminUserLog,
-    sendAdminLog
+    sendAdminLog,
+    disputeLog,
+    modResponse
 };

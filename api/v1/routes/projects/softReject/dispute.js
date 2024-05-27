@@ -28,7 +28,7 @@ module.exports = (app, utils) => {
 
         await utils.UserManager.dispute(messageID, dispute);
         
-        // TODO: send log
+        utils.logs.disputeLog(username, messageID, message.message, dispute, message.projectID);
 
         res.status(200);
         res.header("Content-Type", 'application/json');

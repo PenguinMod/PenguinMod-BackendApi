@@ -5,10 +5,10 @@ module.exports = (app, utils) => {
         const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
-        const project = packet.project;
+        const project = String(packet.project);
         const message = packet.message;
 
-        if (!username || !token || typeof project !== "number" || typeof message !== "string") {
+        if (!username || !token || !project || typeof message !== "string") {
             return utils.error(res, 400, "InvalidData");
         }
 
@@ -32,7 +32,7 @@ module.exports = (app, utils) => {
 
         const projectData = await utils.UserManager.getProjectMetadata(project);
 
-        await utils.UserManager.sendMessage(projectData.author.id, message, true, project);
+        await utils.UserManager.sendMessage(projectData.author.id, {type: "reject", message, hardReject: false}, true, project);
 
         utils.logs.sendAdminLog(
             {
@@ -65,6 +65,7 @@ module.exports = (app, utils) => {
             }
         );
 
+        res.status(200);
         res.header('Content-type', "application/json");
         res.send({ success: true });
     });
