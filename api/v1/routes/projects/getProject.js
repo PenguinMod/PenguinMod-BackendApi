@@ -59,14 +59,14 @@ module.exports = (app, utils) => {
                 }
         }
 
-        if (!projectID) {
+        if (!packet.projectID) {
             if (safe) {
                 return safeReturn();
             }
             return utils.error(res, 400, "Missing projectId");
         }
 
-        if (!await utils.UserManager.projectExists(projectID, true)) {
+        if (!await utils.UserManager.projectExists(projectID)) {
             if (safe) {
                 return safeReturn();
             }
