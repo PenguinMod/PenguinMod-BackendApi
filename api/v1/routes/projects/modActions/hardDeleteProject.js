@@ -61,7 +61,6 @@ module.exports = (app, utils) => {
             }
         );
 
-        // TODO: make this work on frontend
         // notify the author that their project has been deleted
         if (metadata.author.username !== username) {
             const userid = metadata.author.userid;

@@ -1051,10 +1051,13 @@ class UserManager {
      * @returns {Promise<Array<Object>>} - Array of projects by the specified author
      * @async
      */
-    async getProjectsByAuthor(author, page, pageSize, getPrivate, softRejected=false) {
+    async getProjectsByAuthor(author, page, pageSize, getPrivate, getSoftRejected=false) {
+        const match = { author: author }
+        if (!getPrivate) match.public = true;
+        if (!getSoftRejected) match.softRejected = false;
         const _result = await this.projects.aggregate([
             {
-                $match: { author: author, softRejected: softRejected }
+                $match: match
             },
             {
                 $sort: { lastUpdate: -1 }
