@@ -176,7 +176,7 @@ module.exports = (app, utils) => {
 
         // ATODO: use mmmagic to verify this is a valid image
 
-        // TODO: send a message on remix
+        const userid = await utils.UserManager.getIDByUsername(username);
 
         // get the assets and their ids
         const assets = [];
@@ -191,7 +191,7 @@ module.exports = (app, utils) => {
         const projectID = await utils.UserManager.publishProject(
             protobufFile,
             assets,
-            await utils.UserManager.getIDByUsername(username),
+            userid,
             packet.title,
             thumbnail,
             packet.instructions,
@@ -199,6 +199,18 @@ module.exports = (app, utils) => {
             remix,
             packet.rating
         );
+
+        if (remix) {
+            await utils.UserManager.sendMessage(
+                userid,
+                {
+                    type: "remix",
+                    projectID: remix,
+                },
+                false,
+                projectID
+            )
+        }
 
         await unlink();
 

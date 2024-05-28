@@ -52,6 +52,22 @@ module.exports = (app, utils) => {
                         },
                         ...item.message
                     }
+                    final.push(item);
+                    break;
+                case "remix":
+                    item.message = {
+                        oldProject: {
+                            id: item.message.projectID,
+                            title: (await utils.UserManager.getProjectMetadata(item.message.oldProject)).title
+                        },
+                        newProject: {
+                            id: item.projectID,
+                            title: (await utils.UserManager.getProjectMetadata(item.projectID)).title
+                        },
+                        type: item.message.type
+                    }
+                    final.push(item);
+                    break;
                 default:
                     final.push(item);
                     break;
