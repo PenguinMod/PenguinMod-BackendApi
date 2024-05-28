@@ -28,11 +28,13 @@ module.exports = (app, utils) => {
             return;
         }
 
+        const oldBio = await utils.UserManager.getBio(target);
+
         utils.logs.sendBioUpdatelog(username, target, await utils.UserManager.getBio(user), bio);
 
         await utils.UserManager.setBio(user, bio);
 
-        utils.logs.sendAdminUserLog(username, target, "Admin or mod has updated user's bio.");
+        utils.logs.sendBioUpdateLog(username, target, oldBio, bio);
         
         res.status(200);
         res.header("Content-Type", 'application/json');

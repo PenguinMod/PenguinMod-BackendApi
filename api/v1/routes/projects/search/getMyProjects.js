@@ -17,7 +17,7 @@ module.exports = (app, utils) => {
 
         const authorID = await utils.UserManager.getIDByUsername(username);
 
-        const projects = await utils.UserManager.getProjectsByAuthor(authorID, page, Number(utils.env.PageSize), true);
+        const projects = await utils.UserManager.getProjectsByAuthor(authorID, page, Number(utils.env.PageSize), true, true);
 
         res.status(200);
         res.header("Content-Type", 'application/json');

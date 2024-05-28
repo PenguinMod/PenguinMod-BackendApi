@@ -4,12 +4,12 @@ module.exports = (app, utils) => {
 
         const username = (String(packet.username)).toLowerCase();
 
-        if (!await utils.existsByUsername(username)) {
+        if (!await utils.UserManager.existsByUsername(username)) {
             utils.error(res, 404, "NotFound")
             return;
         }
 
-        const badges = await utils.getBadges(username);
+        const badges = await utils.UserManager.getBadges(username);
 
         res.status(200);
         res.header("Content-Type", 'application/json');

@@ -43,6 +43,14 @@ function sendBioUpdateLog(username, target, oldBio, newBio) {
                     value: `${username}`
                 },
                 {
+                    name: "Old Bio",
+                    value: `\`\`\`\n${oldBio}\n\`\`\``
+                },
+                {
+                    name: "New Bio",
+                    value: `\`\`\`\n${newBio}\n\`\`\``
+                },
+                {
                     name: "URL",
                     value: `https://penguinmod.com/profile?user=${target}`
                 },
@@ -53,14 +61,6 @@ function sendBioUpdateLog(username, target, oldBio, newBio) {
                 url: String("https://penguinmod.com/profile?user=" + target)
             },
             timestamp: new Date().toISOString()
-        }, {
-            title: `New Bio for ${target}`,
-            color: 0xffbb00,
-            description: `${newBio}`
-        }, {
-            title: `Original Bio for ${target}`,
-            color: 0xffbb00,
-            description: `${oldBio}`
         }]
     });
     fetch(adminWebhook, {
