@@ -31,10 +31,12 @@ module.exports = (app, utils) => {
             const after = bio.substring(illegalWordIndex[1], bio.length);
             const illegalWord = bio.substring(illegalWordIndex[0], illegalWordIndex[1]);
 
+            const userID = await utils.UserManager.getIDByUsername(username);
+
             utils.logs.sendHeatLog(
                 before + "\x1b[31;1m" + illegalWord + "\x1b[0m" + after,
                 "profileBio",
-                username
+                [username, userID]
             )
             
             return;
@@ -47,10 +49,12 @@ module.exports = (app, utils) => {
             const after = bio.substring(illegalWordIndex[1], bio.length);
             const illegalWord = bio.substring(illegalWordIndex[0], illegalWordIndex[1]);
 
+            const userID = await utils.UserManager.getIDByUsername(username);
+
             utils.logs.sendHeatLog(
                 before + "\x1b[33;1m" + illegalWord + "\x1b[0m" + after,
                 "profileBio",
-                username
+                [username, userID]
             )
         }
 
