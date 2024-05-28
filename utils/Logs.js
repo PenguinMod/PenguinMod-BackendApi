@@ -1,7 +1,6 @@
 require('dotenv').config();
 
 const heatWebhook = process.env.HeatWebhook;
-const bioUpdateWebhook = process.env.BioWebhook;
 const reportWebhook = process.env.ReportWebhook;
 const modWebhook = process.env.ModWebhook;
 const adminWebhook = process.env.AdminWebhook;
@@ -64,7 +63,7 @@ function sendBioUpdateLog(username, target, oldBio, newBio) {
             description: `${oldBio}`
         }]
     });
-    fetch(bioUpdateWebhook, {
+    fetch(adminWebhook, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body

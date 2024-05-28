@@ -1462,7 +1462,7 @@ class UserManager {
      * @async
      */
     async deleteProject(id) {
-        // ATODO: instead of literally deleting the file, add a minio expiration thing; https://min.io/docs/minio/linux/administration/object-management/create-lifecycle-management-expiration-rule.html
+        // BTODO: instead of literally deleting the file, add a minio expiration thing; https://min.io/docs/minio/linux/administration/object-management/create-lifecycle-management-expiration-rule.html
         // once thats done make it where you can download "deleted" ones before the expiration is up
 
         await this.projects.deleteOne({id: id});

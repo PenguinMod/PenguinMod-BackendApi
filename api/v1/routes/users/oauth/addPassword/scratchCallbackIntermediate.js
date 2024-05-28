@@ -20,6 +20,6 @@ module.exports = (app, utils) => {
 
         res.status(200);
         res.redirect(`http://localhost:5173/oauthchangepasswordintermediate?method=scratch&at=${response.access_token}`);
-        // ATODO: in prod change this to penguinmod.com
+        // BTODO: in prod change this to penguinmod.com
     });
 }
