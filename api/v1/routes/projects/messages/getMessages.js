@@ -58,11 +58,11 @@ module.exports = (app, utils) => {
                     item.message = {
                         oldProject: {
                             id: item.message.projectID,
-                            title: (await utils.UserManager.getProjectMetadata(item.message.oldProject)).title
+                            title: (await utils.UserManager.getProjectMetadata(String(item.message.projectID))).title
                         },
                         newProject: {
                             id: item.projectID,
-                            title: (await utils.UserManager.getProjectMetadata(item.projectID)).title
+                            title: (await utils.UserManager.getProjectMetadata(String(item.projectID))).title
                         },
                         type: item.message.type
                     }
