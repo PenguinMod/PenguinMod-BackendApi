@@ -1,16 +1,14 @@
 module.exports = (app, utils) => {
-    app.post('/api/v1/projects/modmessage', async (req, res) => {
+    app.post('/api/v1/projects/modresponse', async (req, res) => {
         const packet = req.body;
 
         const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
-        const target = packet.target;
+        const disputeID = packet.disputeID;
         const message = packet.message;
 
-        const disputable = packet.disputable || false;
-
-        if (!username || !token || !target || typeof message !== "string") {
+        if (!username || !token || typeof disputeID !== "string" || typeof message !== "string") {
             return utils.error(res, 400, "InvalidData");
         }
 
@@ -22,15 +20,17 @@ module.exports = (app, utils) => {
             return utils.error(res, 401, "Invalid credentials");
         }
 
-        if (!await utils.UserManager.existsByUsername(target)) {
-            return utils.error(res, 404, "UserNotFound");
+        const dispute = await utils.UserManager.getMessage(disputeID);
+
+        if (!dispute) {
+            return utils.error(res, 404, "MessageNotFound");
         }
 
-        const targetID = await utils.UserManager.getIDByUsername(target);
+        const id = await utils.UserManager.sendMessage(dispute.receiver, {type: "disputeResponse", message}, true, dispute.projectID);
 
-        const id = await utils.UserManager.sendMessage(targetID, {type: "modMessage", message}, disputable, 0);
+        const disputer = await utils.UserManager.getUsernameByID(dispute.receiver);
 
-        utils.logs.modMessage(username, target, id, message);
+        utils.logs.modResponse(username, disputer, id, dispute.dispute, message);
 
         res.header('Content-type', "application/json");
         res.send({ success: true });

@@ -251,12 +251,43 @@ function modResponse(approver, disputer, messageID, originalDispute, reply) {
                 },
                 {
                     name: "Original Reply",
-                    value: `\`\`\`\n${originalDispute.message}\n\`\`\``
+                    value: `\`\`\`\n${originalDispute}\n\`\`\``
                 },
                 {
                     name: "Message ID",
                     value: `\`(${messageID})\``
                 },
+            ],
+            author: {
+                name: approver,
+                icon_url: String("http://localhost:8080/api/v1/users/getpfp?username=" + approver),
+                url: String("https://penguinmod.com/profile?user=" + approver)
+            },
+            timestamp: new Date().toISOString()
+        }]
+    });
+    fetch(modWebhook, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body
+    });
+}
+
+function modMessage(approver, target, messageID, message) {
+    const body = JSON.stringify({
+        content: `${approver} messaged ${target}`,
+        embeds: [{
+            title: `${approver} messaged ${target}`,
+            color: 0x6600ff,
+            fields: [
+                {
+                    name: "",
+                    value: `\`\`\`\n${message}\n\`\`\``
+                },
+                {
+                    name: "Message ID",
+                    value: `\`(${messageID})\``
+                }
             ],
             author: {
                 name: approver,
@@ -281,5 +312,6 @@ module.exports = {
     sendAdminUserLog,
     sendAdminLog,
     disputeLog,
-    modResponse
+    modResponse,
+    modMessage
 };
