@@ -41,6 +41,28 @@ module.exports = (app, utils) => {
             }
         }
 
+        const flatten = (obj) => {
+            const newArr = [];
+            for (const key in obj) {
+                newArr.push(...obj[key]);
+            }
+            return newArr;
+        }
+        const oldFlat = flatten(await utils.UserManager.getIllegalWords());
+        const newFlat = flatten(words);
+
+        const newDiff = newFlat.filter(x => !oldFlat.includes(x));
+        const oldDiff = oldFlat.filter(x => !newFlat.includes(x));
+
+        let diff = "```diff\n";
+        for (const word of newDiff) {
+            diff += `+ ${word}\n`;
+        }
+        for (const word of oldDiff) {
+            diff += `- ${word}\n`;
+        }
+        diff += "```";
+
         for (const key in words) {
             await utils.UserManager.setIllegalWords(key, words[key]);
         }
@@ -54,6 +76,10 @@ module.exports = (app, utils) => {
                         name: "Admin",
                         value: username
                     },
+                    {
+                        name: "Difference",
+                        value: diff
+                    }
                 ]
             },
             {
