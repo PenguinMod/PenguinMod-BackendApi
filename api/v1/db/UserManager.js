@@ -1932,7 +1932,7 @@ class UserManager {
      * @returns {Promise<string>} - The state
      */
     async generateOAuth2State(extra="") {
-        const state = ULID.ulid() + extra;
+        const state = randomBytes(32).toString("hex") + extra;
 
         await this.oauthStates.insertOne({
             state: state,
