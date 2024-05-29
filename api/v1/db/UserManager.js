@@ -34,6 +34,7 @@ class UserManager {
         this.oauthIDs = this.db.collection('oauthIDs');
         this.reports = this.db.collection('reports');
         this.projects = this.db.collection('projects');
+        await this.projects.createIndex({ title: "text", instructions: "text", notes: "text"});
         this.projectStats = this.db.collection('projectStats');
         this.messages = this.db.collection('messages');
         this.oauthStates = this.db.collection('oauthStates'); // needed bc load balancer will split requests so needs to be copied to all servers
