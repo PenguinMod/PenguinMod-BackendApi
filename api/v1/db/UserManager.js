@@ -169,7 +169,7 @@ class UserManager {
             id: id,
             username: username,
             password: hash,
-            token: token,
+            token: randomBytes(32).toString('hex'),
             admin: false,
             moderator: false,
             banned: false,
@@ -2439,7 +2439,7 @@ class UserManager {
      * @returns {Promise<string>} - the new token
      */
     async newTokenGen(username) {
-        const token = ULID.ulid();
+        const token = randomBytes(32).toString();
         
         await this.users.updateOne({ username: username }, { $set: { token: token, lastLogin: Date.now() } });
 
