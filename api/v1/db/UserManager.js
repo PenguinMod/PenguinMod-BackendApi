@@ -35,6 +35,16 @@ class UserManager {
         this.reports = this.db.collection('reports');
         this.projects = this.db.collection('projects');
         await this.projects.createIndex({ title: "text", instructions: "text", notes: "text"});
+        if (!await this.projects.indexExists("Partial-TTL-Index")) {
+            await this.projects.createIndex(
+                { hardRejectTime: 1 },
+                {
+                    name: "Partial-TTL-Index",
+                    partialFilterExpression: { hardReject: true },
+                    expireAfterSeconds: Number(process.env.HardRejectExpirationTime)
+                }
+            )
+        }
         this.projectStats = this.db.collection('projectStats');
         this.messages = this.db.collection('messages');
         this.oauthStates = this.db.collection('oauthStates'); // needed bc load balancer will split requests so needs to be copied to all servers
@@ -81,6 +91,30 @@ class UserManager {
         this._makeBucket("project-assets");
         // pfp bucket
         this._makeBucket("profile-pictures");
+
+        // set life cycle policy
+
+        const expirTime = Math.floor(process.env.HardRejectExpirationTime / 60 / 60 / 24); // has to be days as minio only runs the check every 24 hours
+
+        const policy = {
+            "Rule": {
+                "ID": "ExpireDeleteAfterTag",
+                "Status": "Enabled",
+                "Filter": {
+                    "Tag": {
+                        "Key": "delete_after",
+                        "Value": "true"
+                    }
+                },
+                "Expiration": {
+                    "Days": expirTime ? expirTime : 1
+                }
+            }
+        }
+
+        await this.setLifecyclePolicy("projects", policy);
+        await this.setLifecyclePolicy("project-thumbnails", policy);
+        await this.setLifecyclePolicy("project-assets", policy);
     }
 
     async _makeBucket(bucketName) {
@@ -146,6 +180,10 @@ class UserManager {
         await this.resetBucket("project-thumbnails");
         await this.resetBucket("project-assets");
         await this.resetBucket("profile-pictures");
+    }
+
+    async setLifecyclePolicy(bucketName, policy) {
+        await this.minioClient.setBucketLifecycle(bucketName, policy);
     }
 
     /**
@@ -924,7 +962,9 @@ class UserManager {
             lastUpdate: Date.now(),
             rating: rating,
             public: true,
-            softRejected: false
+            softRejected: false,
+            hardReject: false,
+            hardRejectTime: 0
         });
 
         // minio bucket shit
@@ -1146,7 +1186,7 @@ class UserManager {
      * @returns {Array<Object>} - Array of project assets
      */
     async getProjectAssets(id) {
-        const stream = await this.minioClient.listObjects("project-assets", id);
+        const stream = this.minioClient.listObjects("project-assets", id);
 
         // deal with the object stream :sob:
 
@@ -1466,9 +1506,6 @@ class UserManager {
      * @async
      */
     async deleteProject(id) {
-        // BTODO: instead of literally deleting the file, add a minio expiration thing; https://min.io/docs/minio/linux/administration/object-management/create-lifecycle-management-expiration-rule.html
-        // once thats done make it where you can download "deleted" ones before the expiration is up
-
         await this.projects.deleteOne({id: id});
 
         // remove the loves and votes
@@ -1478,6 +1515,33 @@ class UserManager {
         await this.minioClient.removeObject("projects", id);
         await this.minioClient.removeObject("project-thumbnails", id);
         this.deleteMultipleObjects("project-assets", id);
+    }
+
+    async hardRejectProject(id) {
+        // BTODO: test this
+
+        // just mark as hard rejected, mongodb will do the rest
+        await this.projects.updateOne({id: id}, {$set: {hardReject: true, hardRejectTime: new Date()}});
+
+        await this.addMinioExpirationTag("projects", id);
+        await this.addMinioExpirationTag("project-thumbnails", id);
+
+        const assets = this.getProjectAssets(id);
+
+        for (const asset of assets) {
+            await this.addMinioExpirationTag("project-assets", `${id}_${asset.id}`)
+        }
+    }
+
+    async addMinioExpirationTag(bucket, object) {
+        const tags = { delete_after: 'true' }
+        await minioClient.setObjectTagging(bucket, object, tags);
+    }
+
+    async isHardRejected(id) {
+        const result = await this.projects.findOne({id: id});
+
+        return result.hardReject;
     }
 
     /**

@@ -20,7 +20,7 @@ module.exports = (app, utils) => {
             return utils.error(res, 401, "Invalid credentials");
         }
 
-        if (!await utils.UserManager.projectExists(project)) {
+        if (!await utils.UserManager.projectExists(project, true)) {
             return utils.error(res, 404, "ProjectNotFound");
         }
 
@@ -51,7 +51,6 @@ module.exports = (app, utils) => {
                         name: "Author",
                         value: projectData.author.username
                     },
-                    // send url because eventually we'll have the objects expire instead of just deleting them striaight away
                     {
                         name: "URL",
                         value: `https://studio.penguinmod.com/#${project}`
