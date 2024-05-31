@@ -31,6 +31,7 @@ module.exports = (app, utils) => {
             || badges.length > 0; // or we have a badge
 
         const followers = await utils.UserManager.getFollowerCount(username);
+        console.log(followers);
 
         const myFeaturedProject = await utils.UserManager.getFeaturedProject(username);
         const myFeaturedProjectTitle = await utils.UserManager.getFeaturedProjectTitle(username);

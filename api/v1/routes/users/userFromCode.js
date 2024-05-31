@@ -31,8 +31,6 @@ module.exports = (app, utils) => {
             && (Date.now() - signInDate) >= 4.32e+8) // first signed in 5 days ago
             || badges.length > 0; // or we have a badge
 
-        const followers = await utils.UserManager.getFollowers(username);
-
         const myFeaturedProject = await utils.UserManager.getFeaturedProject(username);
         const myFeaturedProjectTitle = await utils.UserManager.getFeaturedProjectTitle(username);
 
@@ -40,6 +38,8 @@ module.exports = (app, utils) => {
         const isModerator = await utils.UserManager.isModerator(username);
 
         const loginMethods = await utils.UserManager.getOAuthMethods(username);
+
+        const followers = await utils.UserManager.getFollowerCount(username);
 
         if (await utils.UserManager.canPasswordLogin(username)) loginMethods.push("password");
 
@@ -53,7 +53,7 @@ module.exports = (app, utils) => {
             rank,
             myFeaturedProject,
             myFeaturedProjectTitle,
-            followers: followers.length,
+            followers: followers,
             canrankup: canRequestRankUp && rank === 0,
             viewable: userProjects.length > 0,
             projects: userProjects.length, // we check projects anyways so might aswell,

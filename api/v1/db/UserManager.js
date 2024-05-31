@@ -31,6 +31,7 @@ class UserManager {
         await this.client.connect();
         this.db = this.client.db('pm_apidata');
         this.users = this.db.collection('users');
+        this.followers = this.db.collection("followers");
         this.oauthIDs = this.db.collection('oauthIDs');
         this.reports = this.db.collection('reports');
         this.projects = this.db.collection('projects');
@@ -202,20 +203,20 @@ class UserManager {
 
         const hash = await bcrypt.hash(password, 10);
         const id = ULID.ulid();
-        const token = ULID.ulid();
+        const token = randomBytes(32).toString('hex');
         await this.users.insertOne({
             id: id,
             username: username,
             password: hash,
-            token: randomBytes(32).toString('hex'),
+            token: token,
             admin: false,
             moderator: false,
             banned: false,
             banReason: "",
             rank: 0,
             badges: [],
-            following: [],
-            followers: [],
+            following: 0,
+            followers: 0,
             bio: "",
             favoriteProjectType: -1,
             favoriteProjectID: -1,
@@ -227,7 +228,6 @@ class UserManager {
             lastPrivacyPolicyRead: Date.now(),
             lastTOSRead: Date.now(),
             lastGuidelinesRead: Date.now(),
-            previousFollowers: [], // holds all people who have ever followed the user
         });
 
         await this.minioClient.putObject("profile-pictures", id, basePFP);
@@ -369,7 +369,7 @@ class UserManager {
     /**
      * Get a user's oauth login methods
      * @param {string} username - Username of the user
-     * @returns {Promise<Array<string>>} - Array of the user's followers
+     * @returns {Promise<Array<string>>} - Array of the user's oauth methods
      */
     async getOAuthMethods(username) {
         const id = await this.getIDByUsername(username);
@@ -1552,20 +1552,20 @@ class UserManager {
      * @async
      */
     async followUser(follower, followee, follow) {
+        const existing = await this.followers.findOne({ follower, target: followee })
 
-        if (follow) {
-            await this.users.updateOne({id: follower}, {$push: {following: followee}});
-            await this.users.updateOne({id: followee}, {$push: {followers: follower}});
-
-            if (!await this.hasFollowed(follower, followee)) {
-                await this.users.updateOne({id: follower}, {$push: {hasFollowed: followee}});
+        if (existing) {
+            if (existing.active === follow) {
+                return
             }
 
-            await this.addToFeed(follower, "follow", followee);
-            return;
+            await this.followers.updateOne({ follower, target: followee }, { $set: { active: follow } });
+        } else {
+            await this.followers.insertOne({ follower, target: followee, active: follow})
         }
-        await this.users.updateOne({id: follower}, {$pull: {following: followee}});
-        await this.users.updateOne({id: followee}, {$pull: {followers: follower}});
+
+        await this.users.updateOne({ id: follower }, { $inc: { following: 1 } });
+        await this.users.updateOne({ id: followee }, { $inc: { followers: 1 } });
     }
 
     /**
@@ -1576,23 +1576,39 @@ class UserManager {
      * @async
      */
     async isFollowing(follower, followee) {
-        const result = await this.users.findOne({id: followee});
+        const result = await this.followers.findOne({ follower, target: followee, active: true });
 
-        return result.followers.includes(follower);
+        return result ? true : false;
     }
 
     /**
      * Get the people a person is being followed by
      * @param {string} username - username of the person
      * @param {number} page - page of followers to get
-     * @param {number} pageCount - amount of followers to get
+     * @param {number} pageSize - amount of followers to get
      * @returns {Promise<Array<string>>} - Array of the people the person is being followed by
      * @async
      */
-    async getFollowers(username, page, pageCount) {
-        const result = await this.users.findOne({username: username});
+    async getFollowers(username, page, pageSize) {
+        const result = await this.followers.aggregate([
+            {
+                $match: { target: username, active: true }
+            },
+            {
+                $facet: {
+                    metadata: [{ $count: "count" }],
+                    data: [{ $skip: page * pageSize }, { $limit: pageSize }]
+                }
+            }
+        ])
+        .toArray();
 
-        return result.followers.slice(page * pageCount, page * pageCount + pageCount);
+        const cleaned = result[0].data.map(x => {let v = x;delete v._id;return v;})
+        .map(x => {
+            x = x.follower
+        })
+
+        return cleaned;
     }
 
     /**
@@ -1602,9 +1618,25 @@ class UserManager {
      * @async
      */
     async getFollowing(username, page, pageSize) {
-        const result = await this.users.findOne({username: username});
+        const result = await this.followers.aggregate([
+            {
+                $match: { follower: username, active: true }
+            },
+            {
+                $facet: {
+                    metadata: [{ $count: "count" }],
+                    data: [{ $skip: page * pageSize }, { $limit: pageSize }]
+                }
+            }
+        ])
+        .toArray();
 
-        return result.following.slice(page * pageSize, page * pageSize + pageSize);
+        const cleaned = result[0].data.map(x => {let v = x;delete v._id;return v;})
+        .map(x => {
+            x = x.target
+        })
+
+        return cleaned;
     }
 
     /**
@@ -1614,12 +1646,9 @@ class UserManager {
      * @returns {Promise<boolean>} - True if the person has followed/is following the other person, false if not
      */
     async hasFollowed(follower, followee) {
-        const result = await this.users.findOne({
-            id: follower,
-            hasFollowed: { $all: [followee] }
-        });
+        const result = await this.followers.findOne({ follower, target: followee });
 
-        return result ? true : false;
+        return result ? true : false
     }
 
     /**
@@ -1630,7 +1659,9 @@ class UserManager {
     async getFollowerCount(username) {
         const result = await this.users.findOne({username: username});
 
-        return result.followers.length;
+        console.log(result);
+
+        return result.followers;
     }
 
     /**
@@ -2698,6 +2729,22 @@ class UserManager {
         await this.projects.updateOne({id: id}, { $set: { public: !toggle } });
     }
 
+    async getAllFollowing(username) {
+        const result = await this.followers.aggregate([
+            {
+                $match: { follower: username, active: true }
+            }
+        ])
+        .toArray();
+
+        const cleaned = result.map(x => {let v = x;delete v._id;return v;})
+        .map(x => {
+            x = x.target
+        })
+
+        return cleaned;
+    }
+
     /**
      * Get a users feed
      * @param {string} username - Username of the user
@@ -2705,9 +2752,7 @@ class UserManager {
      * @returns {Promise<ARray<Object>>}
      */
     async getUserFeed(username, size) {
-        const result = await this.users.findOne({username: username});
-
-        const followers = result.followers;
+        const followers = await this.getAllFollowing(username);
 
         const feed = await this.userFeed.aggregate([
             {

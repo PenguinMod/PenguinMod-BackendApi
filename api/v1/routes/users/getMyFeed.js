@@ -2,6 +2,7 @@ module.exports = (app, utils) => {
     app.get('/api/v1/users/getmyfeed', async function (req, res) {
         const packet = req.query;
 
+
         const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 

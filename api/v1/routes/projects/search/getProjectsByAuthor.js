@@ -6,7 +6,11 @@ module.exports = (app, utils) => {
         const page = Number(packet.page) || 0;
 
         if (!authorUsername) {
-            return utils.error(res, 400, "Missing authorId");
+            return utils.error(res, 400, "Missing author username");
+        }
+
+        if (!await utils.UserManager.existsByUsername(authorUsername)) {
+            return utils.error(res, 404, "UserNotFound")
         }
 
         const id = await utils.UserManager.getIDByUsername(authorUsername);
