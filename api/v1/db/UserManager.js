@@ -691,7 +691,10 @@ class UserManager {
      * @async
      */
     async getAllAdmins() {
-        const result = await this.users.find({ admin: true }).toArray();
+        const result = (await this.users.find({ admin: true }).toArray())
+        .map(admin => {
+            return {id: admin.id, username: admin.username};
+        })
 
         return result;
     }
