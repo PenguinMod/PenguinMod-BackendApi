@@ -19,9 +19,12 @@ module.exports = (app, utils) => {
             return utils.error(res, 400, "No picture was provided");
         }
 
+        // BTODO: iirc this doesnt work... we'll need to get the .path and join that with the base path
         const picture = fs.readFileSync(pictureName);
 
         const allowedTypes = ["image/png", "image/jpeg"];
+
+        // ATODO: make sure the pfp isnt too big, this is a pfp, not an open world video game
 
         magic.detect(picture, async (err, result) => {
             if (err) {

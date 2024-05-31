@@ -21,7 +21,7 @@ module.exports = (app, utils) => {
             return;
         }
 
-        const types = ["illegalWords", "illegalWebsites", "spacedOutWordsOnly", "potentiallyUnsafeWords", "potentiallyUnsafeWordsSpacedOut"];
+        const types = ["illegalWords", "illegalWebsites", "spacedOutWordsOnly", "potentiallyUnsafeWords", "potentiallyUnsafeWordsSpacedOut", "legalExtensions"];
         for (const key in words) {
             // make sure its an array of strings
             if (typeof words[key] !== 'object') {

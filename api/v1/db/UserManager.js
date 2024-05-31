@@ -1993,13 +1993,15 @@ class UserManager {
             ({ id: "potentiallyUnsafeWords" })).items;
         const potentiallyUnsafeWordsSpacedOut = (await this.illegalList.findOne
             ({ id: "potentiallyUnsafeWordsSpacedOut" })).items;
+        const legalExtensions = await this.getLegalExtensions();
 
         return {
-            illegalWords: illegalWords,
-            illegalWebsites: illegalWebsites,
-            spacedOutWordsOnly: spacedOutWordsOnly,
-            potentiallyUnsafeWords: potentiallyUnsafeWords,
-            potentiallyUnsafeWordsSpacedOut: potentiallyUnsafeWordsSpacedOut
+            illegalWords,
+            illegalWebsites,
+            spacedOutWordsOnly,
+            potentiallyUnsafeWords,
+            potentiallyUnsafeWordsSpacedOut,
+            legalExtensions
         }
     }
 
@@ -2500,7 +2502,7 @@ class UserManager {
      * Add an extension to the legal list
      * @param {string} extension - Extension ID
      */
-    async addLegalExtension(extension) {
+    async addLegalExlegalExtentension(extension) {
         await this.illegalList.updateOne({id: "legalExtensions"}, {$push: {items: extension}});
     }
 
@@ -2510,6 +2512,12 @@ class UserManager {
      */
     async removeLegalExtension(extension) {
         await this.illegalList.updateOne({id: "legalExtensions"}, {$pull: {items: extension}});
+    }
+
+    async getLegalExtensions() {
+        const result = await this.illegalList.findOne({id: "legalExtensions"});
+
+        return result.items;
     }
 
     /**
