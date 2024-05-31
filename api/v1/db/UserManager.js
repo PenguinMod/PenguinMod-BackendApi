@@ -1659,8 +1659,6 @@ class UserManager {
     async getFollowerCount(username) {
         const result = await this.users.findOne({username: username});
 
-        console.log(result);
-
         return result.followers;
     }
 

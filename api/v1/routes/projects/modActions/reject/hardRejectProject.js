@@ -13,7 +13,6 @@ module.exports = (app, utils) => {
         }
 
         if (!await utils.UserManager.loginWithToken(username, token)) {
-            console.log("token invalid");
             return utils.error(res, 401, "Invalid credentials");
         }
 
