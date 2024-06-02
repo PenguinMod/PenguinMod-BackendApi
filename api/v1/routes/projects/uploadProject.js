@@ -15,7 +15,7 @@ module.exports = (app, utils) => {
             }
         }
 
-        if (!utils.env.UploadingEnabled) {
+        if (!utils.UserManager.getRuntimeConfigItem("uploadingEnabled")) {
             await unlink();
             return utils.error(res, 503, "Uploading is disabled");
         }

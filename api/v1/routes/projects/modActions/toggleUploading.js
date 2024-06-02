@@ -7,7 +7,7 @@ module.exports = (app, utils) => {
 
         const toggle = packet.toggle;
 
-        if (!username || !token || !toggle) {
+        if (!username || !token || typeof toggle !== "boolean") {
             return utils.error(res, 400, "InvalidData");
         }
 
@@ -19,7 +19,7 @@ module.exports = (app, utils) => {
             return utils.error(res, 401, "Invalid credentials");
         }
 
-        utils.env.UploadingEnabled = toggle;
+        await utils.UserManager.setRuntimeConfigItem("uploadingEnabled", toggle);
 
         utils.logs.sendAdminLog(
             {

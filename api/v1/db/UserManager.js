@@ -34,6 +34,11 @@ class UserManager {
         this.followers = this.db.collection("followers");
         this.oauthIDs = this.db.collection('oauthIDs');
         this.reports = this.db.collection('reports');
+        this.runtimeConfig = this.db.collection('runtimeConfig');
+        if (!await this.runtimeConfig.findOne({ id: "viewingEnabled" })) {
+            this.runtimeConfig.insertOne({ id: "viewingEnabled", value: Boolean(process.env.ViewingEnabled) });
+            this.runtimeConfig.insertOne({ id: "uploadingEnabled", value: Boolean(process.env.UploadingEnabled) });
+        }
         this.projects = this.db.collection('projects');
         await this.projects.createIndex({ title: "text", instructions: "text", notes: "text"});
         if (!await this.projects.indexExists("Partial-TTL-Index")) {
@@ -2883,6 +2888,16 @@ class UserManager {
 
     async setLastGuidelinesUpdate() {
         await this.lastPolicyUpdates.updateOne({ id: "guidelines" }, { $set: { date: Date.now() } });
+    }
+
+    async getRuntimeConfigItem(id) {
+        const result = await this.runtimeConfig.findOne({ id: id });
+
+        return result.value;
+    }
+
+    async setRuntimeConfigItem(id, value) {
+        await this.runtimeConfig.updateOne({ id: id }, { $set: { value: value } });
     }
 }
 

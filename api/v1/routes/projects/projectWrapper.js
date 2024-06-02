@@ -4,6 +4,10 @@ const jszip = require('jszip');
 
 module.exports = (app, utils) => {
     app.get("/api/v1/projects/getprojectwrapper", async (req, res) => {
+        if (!await utils.UserManager.getRuntimeConfigItem("viewingEnabled")) {
+            return utils.error(res, 503, "Viewing is disabled");
+        }
+
         const packet = req.query;
 
         const projectId = String(packet.projectId);
