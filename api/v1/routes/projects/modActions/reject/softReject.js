@@ -48,6 +48,10 @@ module.exports = (app, utils) => {
                         value: projectData.title
                     },
                     {
+                        name: "Message",
+                        value: `\`\`\`\n${message}\n\`\`\``
+                    },
+                    {
                         name: "Author",
                         value: projectData.author.username
                     },

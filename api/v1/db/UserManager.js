@@ -1074,6 +1074,9 @@ class UserManager {
 
         const aggResult = await this.projects.aggregate([
             {
+                $match: { softRejected: false, hardReject: true }
+            },
+            {
                 $sort: { lastUpdate: -1*(!reverse) }
             },
             {
@@ -1455,7 +1458,7 @@ class UserManager {
     async getFeaturedProjects(page, pageSize) {
         const aggResult = await this.projects.aggregate([
             {
-                $match: { featured: true, public: true, softRejected: false }
+                $match: { featured: true, public: true, softRejected: false, hardReject: false }
             },
             {
                 $sort: { lastUpdate: -1 }
@@ -2655,7 +2658,7 @@ class UserManager {
     async searchForTag(tag, page, pageSize) {
         const aggResult = await this.projects.aggregate([
             {
-                $match: { $text: { $search: tag } }
+                $match: { $text: { $search: tag }, public: true, softRejected: false, hardReject: false }
             },
             {
                 $sort: { lastUpdate: -1 }

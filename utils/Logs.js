@@ -179,12 +179,12 @@ function sendAdminUserLog(username, target, action) {
  * @param {Object} author - Author part of log
  * @example sendAdminLog("admin", { action: "update profanity list", content: `sssss`, fields: [{ name: "Added", value: "poopy butt face"}]}, { name: "admin", icon_url: "http://localhost:8080/api/v1/users/getpfp?username=admin", url: "https://penguinmod.com/profile?user=admin"})
  */
-function sendAdminLog(data, author) {
+function sendAdminLog(data, author, color=0xff0000) {
     const body = JSON.stringify({
         content: data.content,
         embeds: [{
             title: `${data.action}`,
-            color: 0xff0000,
+            color: color,
             fields: [
                 ...data.fields
             ],
@@ -199,12 +199,12 @@ function sendAdminLog(data, author) {
     });
 }
 
-function disputeLog(username, originalID, originalReason, reply, projectID=0) {
+function disputeLog(username, originalID, originalReason, reply, projectID=0, color=0xff8800) {
     const body = JSON.stringify({
         content: `${username} replied to moderator message`,
         embeds: [{
             title: `Reply by ${username}`,
-            color: 0xff8800,
+            color: color,
             fields: [
                 {
                     name: "",
@@ -238,12 +238,12 @@ function disputeLog(username, originalID, originalReason, reply, projectID=0) {
     });
 }
 
-function modResponse(approver, disputer, messageID, originalDispute, reply) {
+function modResponse(approver, disputer, messageID, originalDispute, reply, color=0x70066e) {
     const body = JSON.stringify({
         content: `${approver} responded to reply from ${disputer}`,
         embeds: [{
             title: `${approver} responded to a reply`,
-            color: 0x6600ff,
+            color: color,
             fields: [
                 {
                     name: "",
@@ -273,12 +273,12 @@ function modResponse(approver, disputer, messageID, originalDispute, reply) {
     });
 }
 
-function modMessage(approver, target, messageID, message) {
+function modMessage(approver, target, messageID, message, color=0x70066e) {
     const body = JSON.stringify({
         content: `${approver} messaged ${target}`,
         embeds: [{
             title: `${approver} messaged ${target}`,
-            color: 0x6600ff,
+            color: color,
             fields: [
                 {
                     name: "",

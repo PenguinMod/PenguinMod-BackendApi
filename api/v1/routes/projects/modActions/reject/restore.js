@@ -29,6 +29,11 @@ module.exports = (app, utils) => {
 
         await utils.UserManager.softReject(project, false);
 
+        const projectData = await utils.UserManager.getProjectMetadata(project);
+        const author = projectData.author.id;
+
+        await utils.UserManager.sendMessage(author, {type: "restored"}, false, project);
+
         utils.logs.sendAdminLog(
             {
                 action: "Project has been restored",

@@ -25,7 +25,7 @@ module.exports = (app, utils) => {
         }
 
         if (await utils.UserManager.isHardRejected(project)) {
-            //return utils.error(res, 400, "AlreadySoftRejected");
+            return utils.error(res, 400, "AlreadyHardRejected");
         }
 
         await utils.UserManager.hardRejectProject(project);

@@ -68,6 +68,16 @@ module.exports = (app, utils) => {
                     }
                     final.push(item);
                     break;
+                case "restored":
+                    item.message = {
+                        project: {
+                            id: item.projectID,
+                            title: (await utils.UserManager.getProjectMetadata(item.projectID)).title
+                        },
+                        type: item.message.type
+                    }
+                    final.push(item);
+                    break;
                 default:
                     final.push(item);
                     break;
