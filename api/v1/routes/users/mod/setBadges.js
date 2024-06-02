@@ -1,11 +1,12 @@
 module.exports = (app, utils) => {
-    app.get('/api/v1/users/setBadges', async function (req, res) {
-        const packet = req.query;
+    app.post('/api/v1/users/setBadges', async function (req, res) {
+        const packet = req.body;
 
         const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
         const target = (String(packet.target)).toLowerCase();
+        const badges = packet.badges;
 
         if (!await utils.UserManager.loginWithToken(username, token)) {
             utils.error(res, 401, "InvalidToken");
@@ -17,7 +18,17 @@ module.exports = (app, utils) => {
             return;
         }
 
-        await utils.UserManager.setBadges(target, packet.badges);
+        if (!await utils.UserManager.existsByUsername(target)) {
+            utils.error(res, 404, "UserNotFound");
+            return;
+        }
+
+        if (!Array.isArray(badges)) {
+            utils.error(res, 400, "InvalidData");
+            return;
+        }
+
+        await utils.UserManager.setBadges(target, badges);
 
         utils.logs.sendAdminUserLog(username, target, "Admin has updated user's badges.");
 

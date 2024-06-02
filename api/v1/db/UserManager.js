@@ -574,6 +574,10 @@ class UserManager {
         await this.users.updateOne({ username: username }, { $push: { badges: badge } });
     }
 
+    async setBadges(username, badges) {
+        await this.users.updateOne({ username: username }, { $set: { badges: badges } });
+    }
+
     /**
      * Check if a user has a badge
      * @param {string} username - username of the user 
