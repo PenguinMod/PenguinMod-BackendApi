@@ -11,7 +11,7 @@ module.exports = (app, utils) => {
             return;
         }
 
-        if (!await utils.UserManager.loginWithToken(username, token)) {
+        if (!await utils.UserManager.loginWithToken(username, token, true)) {
             utils.error(res, 401, "InvalidToken");
             return;
         }

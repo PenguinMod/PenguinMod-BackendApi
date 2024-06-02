@@ -12,7 +12,7 @@ module.exports = (app, utils) => {
             return utils.error(res, 400, "InvalidData");
         }
 
-        if (!await utils.UserManager.loginWithToken(username, token)) {
+        if (!await utils.UserManager.loginWithToken(username, token, true)) {
             return utils.error(res, 401, "Invalid credentials");
         }
 

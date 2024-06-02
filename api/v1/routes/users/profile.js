@@ -1,6 +1,9 @@
 module.exports = (app, utils) => {
     app.get('/api/v1/users/profile', async function (req, res) {
-        const username = String(req.query.username).toLowerCase();
+        const packet = req.query;
+
+        const username = String(packet.username).toLowerCase();
+        const token = packet.token || "";
     
         if (typeof username !== "string") {
             utils.error(res, 400, "NoUserSpecified")
@@ -12,9 +15,15 @@ module.exports = (app, utils) => {
             return;
         }
 
-        if (await utils.UserManager.isBanned(username)) {
-            utils.error(res, 404, "NotFound")
-            return;
+        if (token) {
+            if (!await utils.UserManager.loginWithToken(username, token, true)) {
+                return utils.error(res, 401, "Reauthenticate");
+            }
+        } else {
+            if (await utils.UserManager.isBanned(username)) {
+                utils.error(res, 404, "NotFound")
+                return;
+            }
         }
 
         const badges = await utils.UserManager.getBadges(username);

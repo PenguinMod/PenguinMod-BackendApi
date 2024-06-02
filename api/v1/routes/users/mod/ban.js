@@ -24,9 +24,55 @@ module.exports = (app, utils) => {
             return;
         }
 
+        if (!await utils.UserManager.existsByUsername(target)) {
+            utils.error(res, 404, "NotFound");
+            return;
+        }
+
+        if (!await utils.UserManager.isAdmin(username) && await utils.UserManager.isAdmin(target)) {
+            utils.error(res, 403, "Unauthorized");
+            return;
+        }
+
+        const targetID = await utils.UserManager.getIDByUsername(target);
+
         await utils.UserManager.setBanned(target, toggle, reason);
 
-        utils.logs.sendAdminUserLog(username, target, `Moderator ${toggle ? "" : "un"}banned user`);
+        if (toggle) {
+            await utils.UserManager.sendMessage(targetID, {type: "ban", reason: reason}, false, 0);
+        } else {
+            await utils.UserManager.sendMessage(targetID, {type: "unban"}, false, 0);
+        }
+
+        utils.logs.sendAdminLog(
+            {
+                action: `User has been ${toggle ? "" : "un"}banned`,
+                content: `${username} ${toggle ? "" : "un"}banned ${target}`,
+                fields: [
+                    {
+                        name: "Mod",
+                        value: username
+                    },
+                    {
+                        name: "Target",
+                        value: target
+                    },
+                    {
+                        name: "Reason",
+                        value: `\`\`\`\n${reason}\n\`\`\``
+                    },
+                    {
+                        name: "URL",
+                        value: `https://penguinmod.com/profile?userid=${targetID}`
+                    }
+                ]
+            },
+            {
+                name: username,
+                icon_url: String("http://localhost:8080/api/v1/users/getpfp?username=" + username),
+                url: String("https://penguinmod.com/profile?user=" + username)
+            }
+        );
 
         res.status(200);
         res.header("Content-Type", 'application/json');

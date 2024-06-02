@@ -9,11 +9,6 @@ module.exports = (app, utils) => {
             return;
         }
 
-        if (await utils.UserManager.isBanned(username)) {
-            utils.error(res, 404, "NotFound")
-            return;
-        }
-
         const pfp = await utils.UserManager.getProfilePicture(username);
 
         res.status(200);
