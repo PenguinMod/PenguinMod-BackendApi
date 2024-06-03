@@ -142,7 +142,7 @@ function sendMultiReportLog(username, target, reason) {
     });
 }
 
-function sendAdminUserLog(username, target, action) {
+function sendAdminUserLog(username, target, action, color=0xff0000) {
     sendAdminLog(
         {
             action,
@@ -166,7 +166,8 @@ function sendAdminUserLog(username, target, action) {
             name: username,
             icon_url: String("http://localhost:8080/api/v1/users/getpfp?username=" + username),
             url: String("https://penguinmod.com/profile?user=" + username)
-        }
+        },
+        color
     );
 }
 
@@ -199,7 +200,7 @@ function sendAdminLog(data, author, color=0xff0000) {
     });
 }
 
-function disputeLog(username, originalID, originalReason, reply, projectID=0, color=0xff8800) {
+function disputeLog(username, originalID, originalReason, reply, projectID=0, color=0x8fdc3d) {
     const body = JSON.stringify({
         content: `${username} replied to moderator message`,
         embeds: [{

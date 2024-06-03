@@ -15,35 +15,37 @@ module.exports = (app, utils) => {
             return;
         }
 
-        const type = packet.type;
+        const types = packet.types;
 
-        switch (type) {
-            case "privacyPolicy":
-                await utils.UserManager.setLastPrivacyPolicyUpdate();
-                break;
-            case "tos":
-                await utils.UserManager.setLastTOSUpdate();
-                break;
-            case "guidelines":
-                await utils.UserManager.setLastGuidelinesUpdate();
-                break;
-            default:
-                utils.error(res, 400, "Invalid type")
-                return;
+        for (const type of types) {
+            switch (type) {
+                case "privacyPolicy":
+                    await utils.UserManager.setLastPrivacyPolicyUpdate();
+                    break;
+                case "tos":
+                    await utils.UserManager.setLastTOSUpdate();
+                    break;
+                case "guidelines":
+                    await utils.UserManager.setLastGuidelinesUpdate();
+                    break;
+                default:
+                    utils.error(res, 400, "Invalid type")
+                    return;
+            }
         }
 
         utils.logs.sendAdminLog(
             {
                 action: "Last policy update has been set",
-                content: `${username} set the last policy update for ${type}`,
+                content: `${username} set the last policy update for ${types}`,
                 fields: [
                     {
                         name: "Admin",
                         value: username
                     },
                     {
-                        name: "Type",
-                        value: type
+                        name: "Types",
+                        value: `\`${types}\``
                     },
                     {
                         name: "Date",
@@ -55,7 +57,8 @@ module.exports = (app, utils) => {
                 name: username,
                 icon_url: String("http://localhost:8080/api/v1/users/getpfp?username=" + username),
                 url: String("https://penguinmod.com/profile?user=" + username)
-            }
+            },
+            0xff33de
         );
 
         res.status(200);
