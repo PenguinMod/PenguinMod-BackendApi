@@ -45,12 +45,19 @@ module.exports = (app, utils) => {
                     final.push(item);
                     break;
                 case "reject":
-                    item.message = {
-                        project: {
+                    if (!item.message.hardReject) {
+                        item.message = {
+                            project: {
+                                id: item.projectID,
+                                title: (await utils.UserManager.getProjectMetadata(item.projectID)).title
+                            },
+                            ...item.message
+                        }
+                    } else {
+                        item.message.project = {
                             id: item.projectID,
-                            title: (await utils.UserManager.getProjectMetadata(item.projectID)).title
-                        },
-                        ...item.message
+                            title: item.message.title
+                        }
                     }
                     final.push(item);
                     break;

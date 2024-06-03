@@ -40,6 +40,7 @@ class UserManager {
             this.runtimeConfig.insertOne({ id: "uploadingEnabled", value: Boolean(process.env.UploadingEnabled) });
         }
         this.projects = this.db.collection('projects');
+        this.projects.dropIndexes(); // BTODO: comment out in prod
         await this.projects.createIndex({ title: "text", instructions: "text", notes: "text"});
         if (!await this.projects.indexExists("Partial-TTL-Index")) {
             await this.projects.createIndex(
@@ -1078,7 +1079,7 @@ class UserManager {
 
         const aggResult = await this.projects.aggregate([
             {
-                $match: { softRejected: false, hardReject: true }
+                $match: { softRejected: false, hardReject: false, public: true }
             },
             {
                 $sort: { lastUpdate: -1*(!reverse) }
@@ -1202,7 +1203,7 @@ class UserManager {
     /**
      * Get a projects assets
      * @param {string} id - ID of the project
-     * @returns {Array<Object>} - Array of project assets
+     * @returns {Promise<Array<Object>>} - Array of project assets
      */
     async getProjectAssets(id) {
         const stream = this.minioClient.listObjects("project-assets", id);
@@ -1540,12 +1541,14 @@ class UserManager {
         // BTODO: test this
 
         // just mark as hard rejected, mongodb will do the rest
-        await this.projects.updateOne({id: id}, {$set: {hardReject: true, hardRejectTime: new Date()}});
+        // have to separate so the index doesnt delete prematurely
+        await this.projects.updateOne({id: id}, { $set: { hardRejectTime: new Date() } });
+        await this.projects.updateOne({id: id}, { $set: { hardReject: true           } });
 
         await this.addMinioExpirationTag("projects", id);
         await this.addMinioExpirationTag("project-thumbnails", id);
 
-        const assets = this.getProjectAssets(id);
+        const assets = await this.getProjectAssets(id);
 
         for (const asset of assets) {
             await this.addMinioExpirationTag("project-assets", `${id}_${asset.id}`)
@@ -1554,7 +1557,7 @@ class UserManager {
 
     async addMinioExpirationTag(bucket, object) {
         const tags = { delete_after: 'true' }
-        await minioClient.setObjectTagging(bucket, object, tags);
+        await this.minioClient.setObjectTagging(bucket, object, tags);
     }
 
     async isHardRejected(id) {

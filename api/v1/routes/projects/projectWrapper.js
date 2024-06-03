@@ -52,11 +52,13 @@ module.exports = (app, utils) => {
 
         const metadata = await utils.UserManager.getProjectMetadata(projectId);
 
-        if (metadata.author.username !== String(packet.username).toLowerCase() && !metadata.public) {
-            if (safe) {
-                return safeReturn();
+        if (metadata.author.username !== String(packet.username).toLowerCase()) {
+            if (!metadata.public || metadata.softRejected || metadata.hardReject) {
+                if (safe) {
+                    return safeReturn();
+                }
+                return utils.error(res, 404, "Project not found");
             }
-            return utils.error(res, 404, "Project not found");
         }
 
         if (!await utils.UserManager.hasSeenProject(projectId, req.clientIp)) {
