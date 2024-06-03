@@ -10,7 +10,7 @@ const fs = require('fs');
 const path = require('path');
 var prompt = require('prompt-sync')();
 
-const basePFP = fs.readFileSync(path.join(__dirname, "./scratcher.png"));
+const basePFP = fs.readFileSync(path.join(__dirname, "./penguin.png"));
 
 class UserManager {
     static loginInvalidationTime = 
