@@ -41,6 +41,8 @@ module.exports = (app, utils) => {
 
         const followers = await utils.UserManager.getFollowerCount(username);
 
+        const lastPolicyRead = await utils.UserManager.getLastPolicyRead(username);
+
         if (await utils.UserManager.canPasswordLogin(username)) loginMethods.push("password");
 
         const user = {
@@ -57,7 +59,8 @@ module.exports = (app, utils) => {
             canrankup: canRequestRankUp && rank === 0,
             viewable: userProjects.length > 0,
             projects: userProjects.length, // we check projects anyways so might aswell,
-            loginMethods: loginMethods
+            loginMethods: loginMethods,
+            lastPolicyRead: lastPolicyRead
         };
 
         res.status(200);

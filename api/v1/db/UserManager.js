@@ -62,7 +62,7 @@ class UserManager {
         this.lastPolicyUpdates = this.db.collection('lastPolicyUpdates');
         if (!await this.lastPolicyUpdates.findOne({ id: "privacyPolicy" })) {
             this.lastPolicyUpdates.insertOne({ id: "privacyPolicy", lastUpdate: Date.now() });
-            this.lastPolicyUpdates.insertOne({ id: "tos", lastUpdate: Date.now() });
+            this.lastPolicyUpdates.insertOne({ id: "TOS", lastUpdate: Date.now() });
             this.lastPolicyUpdates.insertOne({ id: "guidelines", lastUpdate: Date.now() });
         }
         if (!await this.illegalList.findOne({ id: "illegalWords" })) {
@@ -2879,28 +2879,33 @@ class UserManager {
         const result = await this.users.findOne({ username: username });
 
         return {
-            privacyPolicy: result.lastPrivacyPolicyRead,
+            privacyPolicy: result.lastPrivacyPgetLastPolicyReadolicyRead,
             TOS: result.lastTOSRead,
             guidelines: result.lastGuidelinesRead
         }
     }
 
     async getLastPolicyUpdate() {
-        const result = this.lastPolicyUpdates.find().toArray();
+        const out = {};
 
-        return result;
+        (await this.lastPolicyUpdates.find().toArray())
+        .map(x => {
+            out[x.id] = x.lastUpdate;
+        });
+
+        return out;
     }
 
     async setLastPrivacyPolicyUpdate() {
-        await this.lastPolicyUpdates.updateOne({ id: "privacyPolicy" }, { $set: { date: Date.now() } });
+        await this.lastPolicyUpdates.updateOne({ id: "privacyPolicy" }, { $set: { lastUpdate: Date.now() } });
     }
 
     async setLastTOSUpdate() {
-        await this.lastPolicyUpdates.updateOne({ id: "TOS" }, { $set: { date: Date.now() } });
+        await this.lastPolicyUpdates.updateOne({ id: "TOS" }, { $set: { lastUpdate: Date.now() } });
     }
 
     async setLastGuidelinesUpdate() {
-        await this.lastPolicyUpdates.updateOne({ id: "guidelines" }, { $set: { date: Date.now() } });
+        await this.lastPolicyUpdates.updateOne({ id: "guidelines" }, { $set: { lastUpdate: Date.now() } });
     }
 
     async getRuntimeConfigItem(id) {

@@ -15,7 +15,18 @@ module.exports = (app, utils) => {
 
         const id = await utils.UserManager.getIDByUsername(username);
 
-        const count = await utils.UserManager.getUnreadMessageCount(id);
+        let count = await utils.UserManager.getUnreadMessageCount(id);
+
+        const lastPolicyUpdates = await utils.UserManager.getLastPolicyUpdate(username);
+        const lastPolicyReads = await utils.UserManager.getLastPolicyRead(username);
+
+        const hasReadTOS = lastPolicyReads.TOS >= lastPolicyUpdates.TOS;
+        const hasReadPrivacyPolicy = lastPolicyReads.privacyPolicy >= lastPolicyUpdates.privacyPolicy;
+        const hasReadGuidelines = lastPolicyReads.guidelines >= lastPolicyUpdates.guidelines;
+
+        count += hasReadTOS ? 0 : 1;
+        count += hasReadPrivacyPolicy ? 0 : 1;
+        count += hasReadGuidelines ? 0 : 1;
 
         res.status(200);
         res.header('Content-type', "application/json");
