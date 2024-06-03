@@ -58,7 +58,7 @@ module.exports = (app, utils) => {
                 icon_url: String("http://localhost:8080/api/v1/users/getpfp?username=" + username),
                 url: String("https://penguinmod.com/profile?user=" + username)
             },
-            0x18e5a1
+            0x2de65d
         );
 
         res.header('Content-type', "application/json");

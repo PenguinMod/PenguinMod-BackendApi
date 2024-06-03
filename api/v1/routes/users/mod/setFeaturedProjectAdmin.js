@@ -36,7 +36,7 @@ module.exports = (app, utils) => {
         await utils.UserManager.setFeaturedProject(target, project);
         await utils.UserManager.setFeaturedProjectTitle(target, title);
 
-        utils.logs.sendAdminUserLog(username, target, "Admin or mod has updated user's featured project.");
+        utils.logs.sendAdminUserLog(username, target, "Admin or mod has updated user's featured project.", 0xc1e518);
 
         res.status(200);
         res.header("Content-Type", 'application/json');

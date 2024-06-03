@@ -71,7 +71,8 @@ module.exports = (app, utils) => {
                 name: username,
                 icon_url: String("http://localhost:8080/api/v1/users/getpfp?username=" + username),
                 url: String("https://penguinmod.com/profile?user=" + username)
-            }
+            },
+            toggle ? 0xc40404 : 0x45efc6
         );
 
         res.status(200);
