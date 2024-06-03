@@ -47,8 +47,6 @@ Please report any security vulnerabilities using GitHub's security tab on the re
 
     HardRejectExpirationTime=hardRejectExpirationTime (ex: 5 days) (this is in seconds)
 
-    MaxAssets=maxAssetsPerProject
-
     PageSize=pageSize
     MaxPageSize=maxPageSize
 

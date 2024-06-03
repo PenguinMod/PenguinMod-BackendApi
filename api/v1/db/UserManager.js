@@ -1192,7 +1192,10 @@ class UserManager {
         stream.on("data", (chunk) => chunks.push(chunk.name));
         stream.on("error", (err) => console.log("Error listing objects:", err));
         stream.on("end", () => {
-            this.minioClient.removeObjects(bucketName, chunks, (err) => {
+            const names = chunks.map((chunk) => {
+                return chunk.split("_")[1];
+            })
+            this.minioClient.removeObjects(bucketName, names, (err) => {
                 if (err) {
                     console.log("Error removing objects:", err);
                 }

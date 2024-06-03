@@ -8,7 +8,9 @@ module.exports = (app, utils) => {
         { name: 'assets' }
     ]), async (req, res) => {
         const unlink = async () => {
+            if (req.files.jsonFile)
             await utils.unlinkAsync(req.files.jsonFile[0].path);
+            if (req.files.thumbnail)
             await utils.unlinkAsync(req.files.thumbnail[0].path);
             for (let asset of req.files.assets) {
                 await utils.unlinkAsync(asset.path);
@@ -43,7 +45,7 @@ module.exports = (app, utils) => {
         }
 
         // make sure its been 8 minutes since last upload
-        if (await utils.UserManager.getLastUpload(username) > Date.now() - utils.uploadCooldown) {
+        if (await utils.UserManager.getLastUpload(username) > Date.now() - utils.uploadCooldown && (!await utils.UserManager.isAdmin(username) && !await utils.UserManager.isModerator(username))) {
             await unlink();
             return utils.error(res, 400, "Uploaded in the last 8 minutes");
         }
@@ -186,12 +188,12 @@ module.exports = (app, utils) => {
 
         for (let i = 0; i < req.files.assets.length; i++) {
             const asset = fs.readFileSync(req.files.assets[i].path);
-            const id = req.files.assets[i].filename;
+            const id = req.files.assets[i].originalname;
             assets.push({id: id, buffer: asset});
         }
 
         // upload the project
-        utils.UserManager.updateProject(
+        await utils.UserManager.updateProject(
             projectID,
             protobufFile,
             assets,
