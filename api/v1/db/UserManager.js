@@ -2879,7 +2879,7 @@ class UserManager {
         const result = await this.users.findOne({ username: username });
 
         return {
-            privacyPolicy: result.lastPrivacyPgetLastPolicyReadolicyRead,
+            privacyPolicy: result.lastPrivacyPolicyRead,
             TOS: result.lastTOSRead,
             guidelines: result.lastGuidelinesRead
         }
