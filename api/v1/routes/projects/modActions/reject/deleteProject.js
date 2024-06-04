@@ -6,6 +6,7 @@ module.exports = (app, utils) => {
 
         const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
+        const reason = packet.reason;
 
         if (!username || !token) {
             return utils.error(res, 400, "Missing username or token");
@@ -33,13 +34,17 @@ module.exports = (app, utils) => {
         if (metadata.author.username !== username) {
             utils.logs.sendAdminLog(
                 {
-                    action: `${username} hard deleted ${metadata.title}`,
+                    action: `${username} **full deleted** ${metadata.title}`,
                     content: "",
                     fields: [
                         {
                             name: "Mod",
                             value: username
                         },    
+                        {
+                            name: "Reason",
+                            value: reason
+                        },
                         {
                             name: "Title",
                             value: metadata.title
@@ -65,7 +70,7 @@ module.exports = (app, utils) => {
 
             // notify the author that their project has been deleted
             const userid = metadata.author.userid;
-            await utils.UserManager.sendMessage(userid, {type: "delete", title: metadata.title}, false, projectID);
+            await utils.UserManager.sendMessage(userid, {type: "delete", title: metadata.title, message: reason}, false, projectID);
         }
 
         await utils.UserManager.deleteProject(projectID);

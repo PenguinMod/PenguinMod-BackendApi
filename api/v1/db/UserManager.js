@@ -281,11 +281,13 @@ class UserManager {
         if (!result) return false;
 
         if ((result.permBanned || result.unbanTime > Date.now()) && !allowBanned) {
+            console.log("pbanned");
             return false;
         }
 
         // login invalid if more than the time
         if (result.lastLogin + UserManager.loginInvalidationTime < Date.now()) {
+            console.log("token invalid")
             return false;
         }
 
@@ -294,6 +296,8 @@ class UserManager {
             this.users.updateOne({ username: username }, { $set: { lastLogin: Date.now() } });
             return true;
         } else {
+            console.log("neq");
+            console.log(result.token, token)
             return false;
         }
     }
@@ -2131,7 +2135,7 @@ class UserManager {
             n++;
         }
 
-        const token = await this.createAccount(username, randomBytes(32).toString(), "")
+        const token = await this.createAccount(username, randomBytes(32).toString("hex"), "")
 
         // set their password HASH to nothing so cant login with a password
         await this.users.updateOne({ username: username }, { $set: { password: "" } });
@@ -2568,8 +2572,8 @@ class UserManager {
      * @returns {Promise<string>} - the new token
      */
     async newTokenGen(username) {
-        const token = randomBytes(32).toString();
-        
+        const token = randomBytes(32).toString("hex");
+
         await this.users.updateOne({ username: username }, { $set: { token: token, lastLogin: Date.now() } });
 
         return token;
@@ -2970,8 +2974,6 @@ class UserManager {
 
     async getStanding(username) {
         const result = await this.users.findOne({ username: username });
-
-        console.log(result.unbanTime, result.permBanned);
 
         if (result.unbanTime > Date.now()) return 2;
         if (result.permBanned) return 3;
