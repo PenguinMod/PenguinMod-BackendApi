@@ -15,7 +15,7 @@ module.exports = (app, utils) => {
             return;
         }
 
-        let token = await utils.UserManager.loginWithPassword(username, password);
+        let token = await utils.UserManager.loginWithPassword(username, password, true);
         if (!token) {
             utils.error(res, 401, "InvalidCredentials");
             return;

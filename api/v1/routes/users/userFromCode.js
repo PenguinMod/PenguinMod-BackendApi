@@ -46,6 +46,8 @@ module.exports = (app, utils) => {
         const privateProfile = await utils.UserManager.isPrivateProfile(username);
         const canFollowingSeeProfile = await utils.UserManager.canFollowingSeeProfile(username);
 
+        const standing = await utils.UserManager.getStanding(username);
+
         if (await utils.UserManager.canPasswordLogin(username)) loginMethods.push("password");
 
         const user = {
@@ -65,7 +67,8 @@ module.exports = (app, utils) => {
             loginMethods: loginMethods,
             lastPolicyRead: lastPolicyRead,
             privateProfile,
-            canFollowingSeeProfile
+            canFollowingSeeProfile,
+            standing
         };
 
         res.status(200);

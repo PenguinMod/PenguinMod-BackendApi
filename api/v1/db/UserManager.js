@@ -217,7 +217,8 @@ class UserManager {
             token: token,
             admin: false,
             moderator: false,
-            banned: false,
+            permBanned: false,
+            unbanTime: 0,
             banReason: "",
             rank: 0,
             badges: [],
@@ -250,12 +251,12 @@ class UserManager {
      * @returns {Promise<string|boolean>} - token if successful, false if not
      * @async
      */
-    async loginWithPassword(username, password) {
+    async loginWithPassword(username, password, allowBanned) {
         const result = await this.users.findOne({ username: username });
 
         if (!result) return false;
 
-        if (result.banned) {
+        if ((result.permBanned || result.unbanTime > Date.now()) && !allowBanned) {
             return false;
         }
 
@@ -279,7 +280,7 @@ class UserManager {
 
         if (!result) return false;
 
-        if (result.banned && !allowBanned) {
+        if ((result.permBanned || result.unbanTime > Date.now()) && !allowBanned) {
             return false;
         }
 
@@ -735,17 +736,17 @@ class UserManager {
     async isBanned(username) {
         const result = await this.users.findOne({ username: username });
 
-        return result.banned;
+        return result.permBanned || result.unbanTime > Date.now();
     }
 
     /**
      * Ban/unban a user
      * @param {string} username - username of the user
-     * @param {Promise<boolean>} banned - true if banning, false if unbanning
+     * @param {boolean} banned - true if banning, false if unbanning
      * @async
      */
-    async setBanned(username, banned, reason) {
-        await this.users.updateOne({ username: username }, { $set: { banned: banned, banReason: reason } });
+    async setPermBanned(username, banned, reason) {
+        await this.users.updateOne({ username: username }, { $set: { permBanned: banned, banReason: reason } });
     }
 
     /**
@@ -2938,6 +2939,44 @@ class UserManager {
 
     async setFollowingSeeProfile(username, toggle) {
         await this.users.updateOne({ username: username }, { $set: { allowFollowingView: toggle } });
+    }
+
+    /**
+     * Temporarily ban a user
+     * @param {string} username - Username of the user
+     * @param {string} reason - Reason for temp ban
+     * @param {number} length - Length of ban in milliseconds
+     * @returns {Promise<void>}
+     */
+    async tempBanUser(username, reason, length) {
+        await this.users.updateOne({ username: username }, { $set: { banReason: reason, unbanTime: Date.now()+length } });
+    }
+
+    async unTempBan(username) {
+        await this.users.updateOne({ username: username }, { $set: { unbanTime: 0 } });
+    }
+
+    async getBanReason(username) {
+        const result = await this.users.findOne({ username: username });
+
+        return result.banReason;
+    }
+
+    async isTempBanned(username) {
+        const result = await this.users.findOne({ username: username });
+
+        return result.unbanTime > Date.now();
+    }
+
+    async getStanding(username) {
+        const result = await this.users.findOne({ username: username });
+
+        console.log(result.unbanTime, result.permBanned);
+
+        if (result.unbanTime > Date.now()) return 2;
+        if (result.permBanned) return 3;
+        // ATODO: 2 is limited, not yet implemented
+        return 0;
     }
 }
 

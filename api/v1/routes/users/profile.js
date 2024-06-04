@@ -14,10 +14,18 @@ module.exports = (app, utils) => {
             return;
         }
 
+        let isMod = false;
+        if (loggedIn)
+            isMod = await utils.UserManager.isAdmin(username) || await utils.UserManager.isModerator(username);
+
         if (await utils.UserManager.isBanned(target)) {
-            if (!loggedIn || username !== target) {
-                utils.error(res, 404, "NotFound")
-                return;
+            if (username !== target) {
+                if (loggedIn && isMod) {
+                    // continue
+                } else {
+                    utils.error(res, 404, "NotFound")
+                    return;
+                }
             }
         }
 
@@ -36,8 +44,14 @@ module.exports = (app, utils) => {
             canrankup: false,
             projects: 0,
             privateProfile,
-            canFollowingSeeProfile
+            canFollowingSeeProfile,
+            isFollowing: false,
+            success: false
         };
+
+        if (loggedIn) {
+            user.isFollowing = await utils.UserManager.isFollowing(username, target);
+        }
 
         if (privateProfile) {
             if (!loggedIn) {
@@ -53,7 +67,7 @@ module.exports = (app, utils) => {
             
                 const isFollowing = await utils.UserManager.isFollowing(usernameID, targetID);
 
-                if (!isFollowing && !canFollowingSeeProfile) {
+                if (!isFollowing && !canFollowingSeeProfile && !isMod) {
                     res.status(200);
                     res.header("Content-Type", "application/json");
                     res.send(user);
@@ -94,7 +108,9 @@ module.exports = (app, utils) => {
             canrankup: canRequestRankUp && rank === 0,
             projects: userProjects.length, // we check projects anyways so might aswell,
             privateProfile,
-            canFollowingSeeProfile
+            canFollowingSeeProfile,
+            isFollowing: user.isFollowing,
+            success: true
         };
 
         res.status(200);
