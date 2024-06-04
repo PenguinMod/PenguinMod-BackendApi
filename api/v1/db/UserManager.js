@@ -234,6 +234,8 @@ class UserManager {
             lastPrivacyPolicyRead: Date.now(),
             lastTOSRead: Date.now(),
             lastGuidelinesRead: Date.now(),
+            privateProfile: false,
+            allowFollowingView: false,
         });
 
         await this.minioClient.putObject("profile-pictures", id, basePFP);
@@ -2916,6 +2918,26 @@ class UserManager {
 
     async setRuntimeConfigItem(id, value) {
         await this.runtimeConfig.updateOne({ id: id }, { $set: { value: value } });
+    }
+
+    async isPrivateProfile(username) {
+        const result = await this.users.findOne({ username: username });
+
+        return result.privateProfile;
+    }
+
+    async setPrivateProfile(username, toggle) {
+        await this.users.updateOne({ username: username }, { $set: { privateProfile: toggle } });
+    }
+
+    async canFollowingSeeProfile(username) {
+        const result = await this.users.findOne({ username: username });
+
+        return result.allowFollowingView;
+    }
+
+    async setFollowingSeeProfile(username, toggle) {
+        await this.users.updateOne({ username: username }, { $set: { allowFollowingView: toggle } });
     }
 }
 

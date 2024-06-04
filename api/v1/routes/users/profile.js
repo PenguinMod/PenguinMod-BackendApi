@@ -2,52 +2,88 @@ module.exports = (app, utils) => {
     app.get('/api/v1/users/profile', async function (req, res) {
         const packet = req.query;
 
+        const target = String(packet.target).toLowerCase();
+
         const username = String(packet.username).toLowerCase();
         const token = packet.token || "";
-    
-        if (typeof username !== "string") {
-            utils.error(res, 400, "NoUserSpecified")
-            return;
-        }
 
-        if (!await utils.UserManager.existsByUsername(username)) {
+        let loggedIn = await utils.UserManager.loginWithToken(username, token);
+
+        if (!await utils.UserManager.existsByUsername(target)) {
             utils.error(res, 404, "NotFound")
             return;
         }
 
-        if (token) {
-            if (!await utils.UserManager.loginWithToken(username, token, true)) {
-                return utils.error(res, 401, "Reauthenticate");
-            }
-        } else {
-            if (await utils.UserManager.isBanned(username)) {
+        if (await utils.UserManager.isBanned(target)) {
+            if (!loggedIn || username !== target) {
                 utils.error(res, 404, "NotFound")
                 return;
             }
         }
 
-        const badges = await utils.UserManager.getBadges(username);
+        const privateProfile = await utils.UserManager.isPrivateProfile(target);
+        const canFollowingSeeProfile = await utils.UserManager.canFollowingSeeProfile(target);
+
+        let user = {
+            username: target,
+            badges: [],
+            donator: false,
+            rank: 0,
+            bio: "",
+            myFeaturedProject: "",
+            myFeaturedProjectTitle: "",
+            followers: 0,
+            canrankup: false,
+            projects: 0,
+            privateProfile,
+            canFollowingSeeProfile
+        };
+
+        if (privateProfile) {
+            if (!loggedIn) {
+                res.status(200);
+                res.header("Content-Type", "application/json");
+                res.send(user);
+                return;
+            }
+
+            if (username !== target) {
+                const usernameID = await utils.UserManager.getIDByUsername(username);
+                const targetID = await utils.UserManager.getIDByUsername(target);
+            
+                const isFollowing = await utils.UserManager.isFollowing(usernameID, targetID);
+
+                if (!isFollowing && !canFollowingSeeProfile) {
+                    res.status(200);
+                    res.header("Content-Type", "application/json");
+                    res.send(user);
+                    return;
+                }
+            }
+        }
+
+        const badges = await utils.UserManager.getBadges(target);
         const isDonator = badges.includes('donator');
 
-        const rank = await utils.UserManager.getRank(username);
+        const rank = await utils.UserManager.getRank(target);
 
-        const signInDate = await utils.UserManager.getFirstLogin(username);
+        const signInDate = await utils.UserManager.getFirstLogin(target);
 
-        const userProjects = await utils.UserManager.getProjectsByAuthor(username, 0, Number(utils.env.PageSize));
+        const userProjects = await utils.UserManager.getProjectsByAuthor(target, 0, 3, true, true);
 
         const canRequestRankUp = (userProjects.length >= 3 // if we have 3 projects and
             && (Date.now() - signInDate) >= 4.32e+8) // first signed in 5 days ago
             || badges.length > 0; // or we have a badge
 
-        const followers = await utils.UserManager.getFollowerCount(username);
+        const followers = await utils.UserManager.getFollowerCount(target);
 
-        const myFeaturedProject = await utils.UserManager.getFeaturedProject(username);
-        const myFeaturedProjectTitle = await utils.UserManager.getFeaturedProjectTitle(username);
+        const myFeaturedProject = await utils.UserManager.getFeaturedProject(target);
+        const myFeaturedProjectTitle = await utils.UserManager.getFeaturedProjectTitle(target);
 
-        const bio = await utils.UserManager.getBio(username);
+        const bio = await utils.UserManager.getBio(target);
 
-        const user = {
-            username,
+        user = {
+            username: target,
             badges,
             donator: isDonator,
             rank,
@@ -56,8 +92,11 @@ module.exports = (app, utils) => {
             myFeaturedProjectTitle,
             followers: followers,
             canrankup: canRequestRankUp && rank === 0,
-            projects: userProjects.length // we check projects anyways so might aswell
+            projects: userProjects.length, // we check projects anyways so might aswell,
+            privateProfile,
+            canFollowingSeeProfile
         };
+
         res.status(200);
         res.header("Content-Type", "application/json");
         res.send(user);

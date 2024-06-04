@@ -43,6 +43,9 @@ module.exports = (app, utils) => {
 
         const lastPolicyRead = await utils.UserManager.getLastPolicyRead(username);
 
+        const privateProfile = await utils.UserManager.isPrivateProfile(username);
+        const canFollowingSeeProfile = await utils.UserManager.canFollowingSeeProfile(username);
+
         if (await utils.UserManager.canPasswordLogin(username)) loginMethods.push("password");
 
         const user = {
@@ -60,7 +63,9 @@ module.exports = (app, utils) => {
             viewable: userProjects.length > 0,
             projects: userProjects.length, // we check projects anyways so might aswell,
             loginMethods: loginMethods,
-            lastPolicyRead: lastPolicyRead
+            lastPolicyRead: lastPolicyRead,
+            privateProfile,
+            canFollowingSeeProfile
         };
 
         res.status(200);
