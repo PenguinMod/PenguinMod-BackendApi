@@ -20,6 +20,9 @@ module.exports = (app, utils) => {
             utils.error(res, 401, "InvalidCredentials");
             return;
         }
+
+        await utils.UserManager.addIP(username, req.get("CF-Connecting-IP"));
+
         res.status(200);
         res.header("Content-Type", 'application/json');
         res.json({ "token": token });

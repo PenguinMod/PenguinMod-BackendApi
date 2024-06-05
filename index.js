@@ -77,7 +77,7 @@ const UserManager = new um();
 
     // ip banning
     app.use(async (req, res, next) => {
-        if (await UserManager.isIPBanned(req.clientIp)) {
+        if (await UserManager.isIPBanned(req.get("CF-Connecting-IP"))) { // change this if you're not using cloudflare
             return error(res, 418, "You are banned from using this service."); // 418 for the sillies
         }
         next();
