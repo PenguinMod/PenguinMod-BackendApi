@@ -84,8 +84,8 @@ class UserManager {
         // Setup minio
 
         this.minioClient = new Minio.Client({
-            endPoint: 'localhost',
-            port: 9000,
+            endPoint: process.env.MinioEndPoint,
+            port: Number(process.env.MinioPort),
             useSSL: false,
             accessKey: process.env.MinioClientID,
             secretKey: process.env.MinioClientSecret
