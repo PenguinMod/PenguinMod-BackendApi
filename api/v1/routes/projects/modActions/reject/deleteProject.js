@@ -43,7 +43,7 @@ module.exports = (app, utils) => {
                         },    
                         {
                             name: "Reason",
-                            value: reason
+                            value: `\`\`\`\n${reason}\n\`\`\``
                         },
                         {
                             name: "Title",

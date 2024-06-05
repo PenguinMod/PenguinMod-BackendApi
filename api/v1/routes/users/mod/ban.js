@@ -55,7 +55,7 @@ module.exports = (app, utils) => {
             await utils.UserManager.sendMessage(targetID, {type: "unban"}, false, 0);
         }
 
-        fields = [
+        let fields = [
             {
                 name: "Mod",
                 value: username
