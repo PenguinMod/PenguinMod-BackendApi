@@ -4,6 +4,7 @@ const jszip = require('jszip');
 
 module.exports = (app, utils) => {
     app.get('/api/v1/projects/getproject', async (req, res) => {
+
         if (!await utils.UserManager.getRuntimeConfigItem("viewingEnabled")) {
             return utils.error(res, 503, "Viewing is disabled");
         }
@@ -53,7 +54,7 @@ module.exports = (app, utils) => {
                     
                     return res.send(thumbnail);
                 case "metadata":
-                    return res.send({ author: "No Author", title: "No Title", description: "No Description", public: false });
+                    return res.send({ author: "No Author", title: "No Title", public: false }); // TODO: eventually make this return all of the placeholder data, instead of just like 3 things
                 default:
                     return utils.error(res, 400, "Invalid requestType");
                 }

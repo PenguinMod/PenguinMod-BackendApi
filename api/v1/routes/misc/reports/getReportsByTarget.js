@@ -30,8 +30,30 @@ module.exports = (app, utils) => {
 
         const reports = await utils.UserManager.getReportsByReportee(target, page, Number(utils.env.PageSize));
 
+        const final = [];
+
+        for (const report of reports) {
+            let pushing = {
+                reporter: await utils.UserManager.getUsernameByID(report.reporter),
+                target: report.reportee,
+                targetID: report.reportee,
+                report: report.reason,
+                date: report.date,
+                type: report.type,
+                id: report.id
+            }
+
+            if (pushing.type === "user") {
+                pushing.target = await utils.UserManager.getUsernameByID(pushing.targetID);
+            } else {
+                pushing.target = (await utils.UserManager.getProjectMetadata(pushing.targetID)).title;
+            }
+
+            final.push(pushing);
+        }
+
         res.status(200);
         res.header("Content-Type", "application/json");
-        res.send({ reports: reports });
+        res.send({ reports: final });
     });
 }
