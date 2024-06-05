@@ -44,6 +44,8 @@ module.exports = (app, utils) => {
 
         let token = await utils.UserManager.createAccount(username, packet.password);
 
+        await utils.UserManager.addIP(username, req.realIP);
+
         res.status(200);
         res.header("Content-Type", 'application/json');
         res.json({ "token": token });

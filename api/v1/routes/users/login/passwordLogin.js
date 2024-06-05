@@ -21,7 +21,7 @@ module.exports = (app, utils) => {
             return;
         }
 
-        await utils.UserManager.addIP(username, req.get("CF-Connecting-IP"));
+        await utils.UserManager.addIP(username, req.realIP);
 
         res.status(200);
         res.header("Content-Type", 'application/json');

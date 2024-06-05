@@ -8,7 +8,7 @@ module.exports = (app, utils) => {
         const target = packet.target;
 
         if (!await utils.UserManager.loginWithToken(username, token)) {
-            return utils.error(res, 401, "Invalid username or token");
+            return utils.error(res, 401, "Reauthenticate");
         }
 
         if (!await utils.UserManager.isAdmin(username)) {

@@ -3011,7 +3011,14 @@ class UserManager {
 
         const id = result.id;
 
-        const ips = await this.loggedIPs.find({ id: id }).toArray();
+        const ips = await this.loggedIPs.find({ id: id }).toArray()
+        .map(x => {
+            return {
+                ip: x.ip,
+                banned: x.banned,
+                lastLogin: x.lastLogin
+            }
+        });
 
         return ips;
     }
@@ -3026,6 +3033,13 @@ class UserManager {
 
     async banIP(ip) {
         await this.loggedIPs.updateOne({ ip: ip }, { $set: { banned: true } });
+    }
+
+    async getAllAccountsWithIP(ip) {
+        const result = await this.loggedIPs.find({ ip: ip }).toArray()
+        .map(x => x.id);
+
+        return result;
     }
 }
 

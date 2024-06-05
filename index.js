@@ -75,9 +75,15 @@ const UserManager = new um();
     });
     */
 
+    app.use((req, res, next) => {
+        // get the actuall ip
+        req.realIP = process.env.isCFTunnel === "true" ? req.get("CF-Connecting-IP") : req.clientIp;
+        next();
+    });
+
     // ip banning
     app.use(async (req, res, next) => {
-        if (await UserManager.isIPBanned(req.get("CF-Connecting-IP"))) { // change this if you're not using cloudflare
+        if (await UserManager.isIPBanned(req.realIP)) {
             return error(res, 418, "You are banned from using this service."); // 418 for the sillies
         }
         next();
