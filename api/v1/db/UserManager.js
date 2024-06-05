@@ -27,7 +27,7 @@ class UserManager {
      * @async
      */
     async init(maxviews, viewresetrate) {
-        this.client = new MongoClient('mongodb://localhost:27017');
+        this.client = new MongoClient(process.env.MongoUri || 'mongodb://localhost:27017');
         await this.client.connect();
         this.db = this.client.db('pm_apidata');
         this.users = this.db.collection('users');
