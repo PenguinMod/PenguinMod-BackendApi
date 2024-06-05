@@ -12,3 +12,6 @@ System Volume Information
 
 # Multifile shit
 tmp
+
+# Docker compose
+docker-compose.yml
