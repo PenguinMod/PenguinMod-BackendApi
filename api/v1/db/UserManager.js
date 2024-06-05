@@ -31,6 +31,7 @@ class UserManager {
         await this.client.connect();
         this.db = this.client.db('pm_apidata');
         this.users = this.db.collection('users');
+        this.loggedIPs = this.db.collection('loggedIPs');
         this.followers = this.db.collection("followers");
         this.oauthIDs = this.db.collection('oauthIDs');
         this.reports = this.db.collection('reports');
@@ -2975,6 +2976,56 @@ class UserManager {
         if (result.permBanned) return 3;
         // ATODO: 2 is limited, not yet implemented
         return 0;
+    }
+
+    async hasLoggedInWithIP(username, ip) {
+        const user = await this.users.findOne({ username: username });
+
+        const id = user.id;
+
+        const result = await this.loggedIPs.findOne({ id: id, ip: ip });
+
+        return result ? true : false;
+    }
+
+    async addIP(username, ip) {
+        const result = await this.users.findOne({ username: username });
+
+        const id = result.id;
+
+        if (await this.loggedIPs.findOne({ id: id, ip: ip })) {
+            await this.loggedIPs.updateOne({ id: id, ip: ip }, { $set: { lastLogin: Date.now() } });
+            return;
+        }
+
+        await this.loggedIPs.insertOne({
+            id: id,
+            ip: ip,
+            lastLogin: Date.now(),
+            banned: false,
+        });
+    }
+
+    async getIPs(username) {
+        const result = await this.users.findOne({ username: username });
+
+        const id = result.id;
+
+        const ips = await this.loggedIPs.find({ id: id }).toArray();
+
+        return ips;
+    }
+
+    async isIPBanned(ip) {
+        const result = await this.loggedIPs.findOne({ ip: ip });
+
+        if (!result) return false;
+
+        return result.banned;
+    }
+
+    async banIP(ip) {
+        await this.loggedIPs.updateOne({ ip: ip }, { $set: { banned: true } });
     }
 }
 

@@ -69,8 +69,18 @@ const UserManager = new um();
 (async () => {
     await UserManager.init(MAXVIEWS, VIEWRESETRATE);
 
+    /*
     app.get("/test", (req, res) => {
         res.sendFile(path.join(__dirname, 'test.html'));
+    });
+    */
+
+    // ip banning
+    app.use(async (req, res, next) => {
+        if (await UserManager.isIPBanned(req.clientIp)) {
+            return error(res, 418, "You are banned from using this service."); // 418 for the sillies
+        }
+        next();
     });
 
     app.get("/robots.txt", (req, res) => {
