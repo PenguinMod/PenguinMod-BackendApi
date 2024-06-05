@@ -70,7 +70,7 @@ function sendBioUpdateLog(username, target, oldBio, newBio) {
     });
 }
 
-function sendReportLog(username, target, reason) {
+function sendReportLog(type, username, targetID, target, reason) {
     const body = JSON.stringify({
         content: `${username} reported ${target}`,
         embeds: [{
@@ -78,17 +78,21 @@ function sendReportLog(username, target, reason) {
             color: 0xff0000,
             fields: [
                 {
+                    name: "Type",
+                    value: `\`${type}\``
+                },
+                {
                     name: "Reported by",
                     value: `${username}`
                 },
                 {
-                    name: "Reason",
-                    value: `${reason}`
+                    name: "Target",
+                    value: `${target}, (\`${targetID}\`)`
                 },
                 {
-                    name: "URL",
-                    value: `https://penguinmod.com/profile?user=${target}`
-                }
+                    name: "Reason",
+                    value: `\`\`\`\n${reason}\n\`\`\``
+                },
             ],
             author: {
                 name: target,
@@ -106,7 +110,7 @@ function sendReportLog(username, target, reason) {
     });
 }
 
-function sendMultiReportLog(username, target, reason) {
+function sendMultiReportLog(username, id, target, targetID, reason) {
     const body = JSON.stringify({
         content: `${username} reported ${target}`,
         embeds: [{
@@ -115,11 +119,15 @@ function sendMultiReportLog(username, target, reason) {
             fields: [
                 {
                     name: "Reporter",
-                    value: `${username}`
+                    value: `${username} (\`${id}\`)`
+                },
+                {
+                    name: "Target",
+                    value: `${target} (\`${targetID}\`)`
                 },
                 {
                     name: "Reason",
-                    value: `${reason}`
+                    value: `\`\`\`\n${reason}\n\`\`\``
                 },
                 {
                     name: "URL",

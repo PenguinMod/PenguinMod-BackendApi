@@ -281,13 +281,11 @@ class UserManager {
         if (!result) return false;
 
         if ((result.permBanned || result.unbanTime > Date.now()) && !allowBanned) {
-            console.log("pbanned");
             return false;
         }
 
         // login invalid if more than the time
         if (result.lastLogin + UserManager.loginInvalidationTime < Date.now()) {
-            console.log("token invalid")
             return false;
         }
 
@@ -296,8 +294,6 @@ class UserManager {
             this.users.updateOne({ username: username }, { $set: { lastLogin: Date.now() } });
             return true;
         } else {
-            console.log("neq");
-            console.log(result.token, token)
             return false;
         }
     }

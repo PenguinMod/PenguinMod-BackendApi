@@ -10,15 +10,11 @@ module.exports = (app, utils) => {
         }
 
         const report = packet.report;
-        const target = (String(packet.target)).toLowerCase();
+        const target = String(packet.target).toLowerCase();
         const type = packet.type;
 
         if (!report || !type) {
             return utils.error(res, 400, "Invalid request");
-        }
-
-        if (!await utils.UserManager.existsByUsername(target)) {
-            return utils.error(res, 404, "Target not found");
         }
 
         const allowedTypes = ["user", "project"]
@@ -27,8 +23,19 @@ module.exports = (app, utils) => {
             return utils.error(res, 400, "Invalid type");
         }
 
+        let targetID = target;
+
+        if (type === "user") {
+            if (!await utils.UserManager.existsByUsername(target)) {
+                return utils.error(res, 404, "User not found");
+            }
+
+            targetID = await utils.UserManager.getIDByUsername(target);
+        } else if (type == "project" && !await utils.UserManager.projectExists(target)) {
+            return utils.error(res, 404, "Project not found");
+        }
+
         const reporterID = await utils.UserManager.getIDByUsername(username);
-        const targetID = await utils.UserManager.getIDByUsername(target);
 
         if (await utils.UserManager.hasAlreadyReported(reporterID, targetID)) {
             res.status(200);
@@ -37,15 +44,15 @@ module.exports = (app, utils) => {
 
             if (await utils.UserManager.hasAlreadyReported("Server", reporterID)) return;
 
-            await utils.UserManager.report("MultiReport", reporterID, "User has sent multiple reports on same user.", "Server");
+            await utils.UserManager.report("MultiReport", reporterID, `User has sent multiple reports on same ${type}.`, "Server");
 
-            utils.logs.sendMultiReportLog(reporterID, targetID, report);
+            utils.logs.sendMultiReportLog(username, reporterID, target, targetID, report);
             return;
         }
 
         await utils.UserManager.report(type, targetID, report, reporterID);
 
-        utils.logs.sendReportLog(username, target, report);
+        utils.logs.sendReportLog(type, username, targetID, target, report);
 
         res.status(200);
         res.header("Content-Type", "application/json");
