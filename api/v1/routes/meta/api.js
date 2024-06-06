@@ -8,7 +8,6 @@ module.exports = function(app, utils) {
         const metadata = JSON.parse(fs.readFileSync(path.join(utils.homeDir, './metadata.json'), 'utf8'));
 
         child_process.exec('git rev-parse HEAD', function(err, stdout) {
-            fs.writeFileSync(path.join(utils.homeDir, './metadata.txt'), "HELLOOOO????");
             metadata.version.git = stdout.trim();
 
             res.status(200);
