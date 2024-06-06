@@ -165,8 +165,11 @@ class UserManager {
         }
 
         await this.users.deleteMany({});
+        await this.loggedIPs.deleteMany({});
+        await this.followers.deleteMany({});
         await this.oauthIDs.deleteMany({});
         await this.reports.deleteMany({});
+        await this.runtimeConfig.deleteMany({});
         await this.projects.deleteMany({});
         await this.projectStats.deleteMany({});
         await this.messages.deleteMany({});
