@@ -33,6 +33,5 @@ module.exports = (app, utils) => {
 
         res.status(200);
         res.redirect(`${utils.env.HomeURL}/oauthchangepasswordintermediate?method=google&at=${JSON.stringify(tokens)}`);
-        // BTODO: in prod change this to penguinmod.com
     });
 }

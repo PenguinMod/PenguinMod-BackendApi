@@ -20,6 +20,5 @@ module.exports = (app, utils) => {
 
         res.status(200);
         res.redirect(`${utils.env.HomeURL}/oauthchangepasswordintermediate?method=scratch&at=${response.access_token}`);
-        // BTODO: in prod change this to penguinmod.com
     });
 }
