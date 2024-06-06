@@ -2979,23 +2979,25 @@ class UserManager {
     }
 
     async hasLoggedInWithIP(username, ip) {
-        const user = await this.users.findOne({ username: username });
-
-        const id = user.id;
+        const id = await this.getIDByUsername(username);
 
         const result = await this.loggedIPs.findOne({ id: id, ip: ip });
 
         return result ? true : false;
     }
 
+    /**
+     * 
+     * @param {string} username - Username of the user
+     * @param {string} ip - Ip they logged in with
+     * @returns {Promise<boolean>} - Whether or not its new
+     */
     async addIP(username, ip) {
-        const result = await this.users.findOne({ username: username });
-
-        const id = result.id;
+        const id = await this.getIDByUsername(username);
 
         if (await this.loggedIPs.findOne({ id: id, ip: ip })) {
             await this.loggedIPs.updateOne({ id: id, ip: ip }, { $set: { lastLogin: Date.now() } });
-            return;
+            return true;
         }
 
         await this.loggedIPs.insertOne({
@@ -3004,14 +3006,14 @@ class UserManager {
             lastLogin: Date.now(),
             banned: false,
         });
+
+        return false;
     }
 
     async getIPs(username) {
-        const result = await this.users.findOne({ username: username });
+        const id = await this.getIDByUsername(username);
 
-        const id = result.id;
-
-        const ips = await this.loggedIPs.find({ id: id }).toArray()
+        const ips = (await this.loggedIPs.find({ id: id }).toArray())
         .map(x => {
             return {
                 ip: x.ip,
@@ -3031,8 +3033,18 @@ class UserManager {
         return result.banned;
     }
 
-    async banIP(ip) {
-        await this.loggedIPs.updateOne({ ip: ip }, { $set: { banned: true } });
+    async banIP(ip, toggle) {
+        await this.loggedIPs.updateOne({ ip: ip }, { $set: { banned: toggle } });
+    }
+
+    async banUserIP(username, toggle) {
+        const id = await this.getIDByUsername(username);
+
+        const result = await this.loggedIPs.find({ id: id }).toArray();
+
+        for (const ip of result) {
+            await this.loggedIPs.updateOne({ ip: ip.ip }, { $set: { banned: toggle } });
+        }
     }
 
     async getAllAccountsWithIP(ip) {

@@ -11,6 +11,7 @@ const multer = require('multer');
 const fs = require('fs');
 const requestIp = require('request-ip');
 const {OAuth2Client} = require('google-auth-library');
+const ipaddr = require('ipaddr.js');
 const { promisify } = require('util');
 
 function escapeXML(unsafe) {
@@ -78,6 +79,7 @@ const UserManager = new um();
     app.use((req, res, next) => {
         // get the actuall ip
         req.realIP = process.env.isCFTunnel === "true" ? req.get("CF-Connecting-IP") : req.clientIp;
+        req.realIP = ipaddr.process(req.realIP).toIPv4MappedAddress().toNormalizedString(); // normalize
         next();
     });
 
@@ -107,7 +109,8 @@ const UserManager = new um();
         path: path,
         PORT: PORT,
         logs,
-        googleOAuth2Client: OAuth2Client
+        googleOAuth2Client: OAuth2Client,
+        ipaddr
     });
 
     app.listen(PORT, () => {
