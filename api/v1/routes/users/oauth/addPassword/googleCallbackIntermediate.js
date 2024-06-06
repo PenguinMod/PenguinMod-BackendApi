@@ -18,7 +18,7 @@ module.exports = (app, utils) => {
         const oauth2Client = new utils.googleOAuth2Client(
             utils.env.GoogleOAuthClientID,
             utils.env.GoogleOAuthClientSecret,
-            "http://localhost:8080/api/v1/users/googlecallback/addpassword"
+            `${utils.env.ApiURL}/api/v1/users/googlecallback/addpassword`
         );
 
         let r;
@@ -32,7 +32,7 @@ module.exports = (app, utils) => {
         const tokens = r.tokens;
 
         res.status(200);
-        res.redirect(`http://localhost:5173/oauthchangepasswordintermediate?method=google&at=${JSON.stringify(tokens)}`);
+        res.redirect(`${utils.env.HomeURL}/oauthchangepasswordintermediate?method=google&at=${JSON.stringify(tokens)}`);
         // BTODO: in prod change this to penguinmod.com
     });
 }

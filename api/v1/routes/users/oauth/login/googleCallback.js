@@ -18,7 +18,7 @@ module.exports = (app, utils) => {
         const oauth2Client = new utils.googleOAuth2Client(
             utils.env.GoogleOAuthClientID,
             utils.env.GoogleOAuthClientSecret,
-            "http://localhost:8080/api/v1/users/googlecallback/login"
+            `${utils.env.ApiUrl}/api/v1/users/googlecallback/login`
         );
 
         let r;
@@ -48,6 +48,8 @@ module.exports = (app, utils) => {
         const username = await utils.UserManager.getUsernameByID(userid);
 
         const token = await utils.UserManager.newTokenGen(username);
+
+        await utils.UserManager.addIP(username, req.realIP);
 
         res.status(200);
         res.redirect(`/api/v1/users/sendloginsuccess?token=${token}&username=${username}`);

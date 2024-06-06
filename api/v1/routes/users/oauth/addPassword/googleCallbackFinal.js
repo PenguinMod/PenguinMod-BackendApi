@@ -25,7 +25,7 @@ module.exports = (app, utils) => {
         const oauth2Client = new utils.googleOAuth2Client(
             utils.env.GoogleOAuthClientID,
             utils.env.GoogleOAuthClientSecret,
-            "http://localhost:8080/api/v1/users/googlecallback/addpassword"
+            `${utils.env.ApiURL}/api/v1/users/googlecallback/addpassword`
         );
 
         try {
@@ -58,6 +58,8 @@ module.exports = (app, utils) => {
         await utils.UserManager.changePassword(username, password);
 
         const token = await utils.UserManager.newTokenGen(username);
+
+        await utils.UserManager.addIP(username, req.realIP);
 
         res.redirect(`/api/v1/users/sendloginsuccess?token=${token}&username=${username}`);
     });

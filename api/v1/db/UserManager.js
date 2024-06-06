@@ -201,7 +201,7 @@ class UserManager {
      * Create an account
      * @param {string} username - new username of the user
      * @param {string} password - new password of the user
-     * @param {string|undefined} email - email of the user, if provided
+     * @param {string} email - email of the user, if provided
      * @returns {Promise<string|boolean>} - token if successful, false if not
      * @async
      */
@@ -236,6 +236,7 @@ class UserManager {
             lastLogin: Date.now(),
             lastUpload: 0,
             email: email,
+            emailVerified: false,
             lastPrivacyPolicyRead: Date.now(),
             lastTOSRead: Date.now(),
             lastGuidelinesRead: Date.now(),
@@ -3055,6 +3056,26 @@ class UserManager {
         .map(x => x.id);
 
         return result;
+    }
+
+    async getEmail(username) {
+        const result = await this.users.findOne({ username: username });
+
+        return result.email;
+    }
+
+    async setEmail(username, email) {
+        await this.users.updateOne({ username: username }, { $set: { email: email } });
+    }
+
+    async isEmailVerified(username) {
+        const result = await this.users.findOne({ username: username });
+
+        return result.emailVerified;
+    }
+
+    async setEmailVerified(username, toggle) {
+        await this.users.updateOne({ username: username }, { $set: { emailVerified: toggle } });
     }
 }
 

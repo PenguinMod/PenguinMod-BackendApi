@@ -5,9 +5,9 @@ module.exports = (app, utils) => {
         const username = (String(packet.username)).toLowerCase();
         const password = packet.password;
 
-        const email = packet.email || null;
+        const email = packet.email || "";
         
-        if (typeof username !== "string" || typeof password !== "string" || (email && typeof email !== "string")) {
+        if (typeof username !== "string" || typeof password !== "string" || typeof email !== "string") {
             utils.error(res, 400, "InvalidData");
             return;
         }
@@ -42,7 +42,7 @@ module.exports = (app, utils) => {
             return;
         }
 
-        let token = await utils.UserManager.createAccount(username, packet.password);
+        let token = await utils.UserManager.createAccount(username, packet.password, email);
 
         await utils.UserManager.addIP(username, req.realIP);
 

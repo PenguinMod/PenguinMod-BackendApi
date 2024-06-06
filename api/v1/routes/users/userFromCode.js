@@ -48,6 +48,8 @@ module.exports = (app, utils) => {
 
         const standing = await utils.UserManager.getStanding(username);
 
+        const email = await utils.UserManager.getEmail(username);
+
         if (await utils.UserManager.canPasswordLogin(username)) loginMethods.push("password");
 
         const user = {

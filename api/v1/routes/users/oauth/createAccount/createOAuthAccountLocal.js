@@ -13,7 +13,7 @@ module.exports = (app, utils) => {
         const oauth2Client = new utils.googleOAuth2Client(
             utils.env.GoogleOAuthClientID,
             utils.env.GoogleOAuthClientSecret,
-            "http://localhost:8080/api/v1/users/googlecallback/createaccount"
+            `${utils.env.ApiURL}/api/v1/users/googlecallback/createaccount`
         );
     
         const authorizeUrl = oauth2Client.generateAuthUrl({
@@ -27,11 +27,11 @@ module.exports = (app, utils) => {
         switch (method) {
             case "scratch":
                 state = await utils.UserManager.generateOAuth2State();
-                res.redirect(`https://oauth2.scratch-wiki.info/wiki/Special:ScratchOAuth2/authorize?client_id=${utils.env.ScratchOAuthClientID}&redirect_uri=http://localhost:${utils.PORT}/api/v1/users/scratchoauthcreate&scopes=identify&state=${state}`);
+                res.redirect(`https://oauth2.scratch-wiki.info/wiki/Special:ScratchOAuth2/authorize?client_id=${utils.env.ScratchOAuthClientID}&redirect_uri=${utils.env.ApiURL}/api/v1/users/scratchoauthcreate&scopes=identify&state=${state}`);
                 break;
             case "github":
                 state = await utils.UserManager.generateOAuth2State("_createAccount");
-                res.redirect(`https://github.com/login/oauth/authorize?client_id=${utils.env.GithubOAuthClientID}&redirect_uri=http://localhost:8080/api/v1/users/githubcallback/createaccount&state=${state}&scope=read:user`);
+                res.redirect(`https://github.com/login/oauth/authorize?client_id=${utils.env.GithubOAuthClientID}&redirect_uri=${utils.env.ApiURL}/api/v1/users/githubcallback/createaccount&state=${state}&scope=read:user`);
                 break;
             case "google":
                 res.redirect(authorizeUrl);

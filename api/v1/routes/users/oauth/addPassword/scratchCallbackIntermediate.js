@@ -19,7 +19,7 @@ module.exports = (app, utils) => {
         const response = await utils.UserManager.makeOAuth2Request(code, "scratch");
 
         res.status(200);
-        res.redirect(`http://localhost:5173/oauthchangepasswordintermediate?method=scratch&at=${response.access_token}`);
+        res.redirect(`${utils.env.HomeURL}/oauthchangepasswordintermediate?method=scratch&at=${response.access_token}`);
         // BTODO: in prod change this to penguinmod.com
     });
 }

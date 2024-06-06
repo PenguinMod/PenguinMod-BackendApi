@@ -57,7 +57,7 @@ function sendBioUpdateLog(username, target, oldBio, newBio) {
             ],
             author: {
                 name: target,
-                icon_url: String("http://localhost:8080/api/v1/users/getpfp?username=" + target),
+                icon_url: String(`${process.env.ApiURL}/api/v1/users/getpfp?username=${target}`),
                 url: String("https://penguinmod.com/profile?user=" + target)
             },
             timestamp: new Date().toISOString()
@@ -96,7 +96,7 @@ function sendReportLog(type, username, targetID, target, reason) {
             ],
             author: {
                 name: target,
-                icon_url: String("http://localhost:8080/api/v1/users/getpfp?username=" + target),
+                icon_url: String(`${process.env.ApiURL}/api/v1/users/getpfp?username=${target}`),
                 url: String("https://penguinmod.com/profile?user=" + target)
             },
             timestamp: new Date().toISOString()
@@ -136,7 +136,7 @@ function sendMultiReportLog(username, id, target, targetID, reason) {
             ],
             author: {
                 name: target,
-                icon_url: String("http://localhost:8080/api/v1/users/getpfp?username=" + target),
+                icon_url: String(`${process.env.ApiURL}/api/v1/users/getpfp?username=${target}`),
                 url: String("https://penguinmod.com/profile?user=" + target)
             },
             timestamp: new Date().toISOString()
@@ -172,7 +172,7 @@ function sendAdminUserLog(username, target, action, color=0xff0000) {
         },
         {
             name: username,
-            icon_url: String("http://localhost:8080/api/v1/users/getpfp?username=" + username),
+            icon_url: String(`${process.env.ApiURL}/api/v1/users/getpfp?username=${username}`),
             url: String("https://penguinmod.com/profile?user=" + username)
         },
         color
@@ -186,7 +186,6 @@ function sendAdminUserLog(username, target, action, color=0xff0000) {
  * @param {Array<Object>} data.content - Content of the log
  * @param {Array<Object>} data.fields - Fields to include in the embed
  * @param {Object} author - Author part of log
- * @example sendAdminLog("admin", { action: "update profanity list", content: `sssss`, fields: [{ name: "Added", value: "poopy butt face"}]}, { name: "admin", icon_url: "http://localhost:8080/api/v1/users/getpfp?username=admin", url: "https://penguinmod.com/profile?user=admin"})
  */
 function sendAdminLog(data, author, color=0xff0000) {
     const body = JSON.stringify({
@@ -234,7 +233,7 @@ function disputeLog(username, originalID, originalReason, reply, projectID=0, co
             ],
             author: {
                 name: username,
-                icon_url: String("http://localhost:8080/api/v1/users/getpfp?username=" + username),
+                icon_url: String(`${process.env.ApiURL}/api/v1/users/getpfp?username=${username}`),
                 url: String("https://penguinmod.com/profile?user=" + username)
             },
             timestamp: new Date().toISOString()
@@ -269,7 +268,7 @@ function modResponse(approver, disputer, messageID, originalDispute, reply, colo
             ],
             author: {
                 name: approver,
-                icon_url: String("http://localhost:8080/api/v1/users/getpfp?username=" + approver),
+                icon_url: String(`${process.env.ApiURL}/api/v1/users/getpfp?username=${approver}`),
                 url: String("https://penguinmod.com/profile?user=" + approver)
             },
             timestamp: new Date().toISOString()
@@ -300,7 +299,7 @@ function modMessage(approver, target, messageID, message, color=0x70066e) {
             ],
             author: {
                 name: approver,
-                icon_url: String("http://localhost:8080/api/v1/users/getpfp?username=" + approver),
+                icon_url: String(`${process.env.ApiURL}/api/v1/users/getpfp?username=${approver}`),
                 url: String("https://penguinmod.com/profile?user=" + approver)
             },
             timestamp: new Date().toISOString()
