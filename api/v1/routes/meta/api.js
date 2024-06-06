@@ -12,7 +12,7 @@ module.exports = function(app, utils) {
 
             res.status(200);
             res.header("Content-Type", 'application/json');
-            res.json(metadata);
+            res.json({test:"test"});
         });
     });
 }
