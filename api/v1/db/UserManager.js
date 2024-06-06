@@ -41,7 +41,7 @@ class UserManager {
             this.runtimeConfig.insertOne({ id: "uploadingEnabled", value: Boolean(process.env.UploadingEnabled) });
         }
         this.projects = this.db.collection('projects');
-        this.projects.dropIndexes(); // BTODO: comment out in prod
+        //this.projects.dropIndexes();
         await this.projects.createIndex({ title: "text", instructions: "text", notes: "text"});
         if (!await this.projects.indexExists("Partial-TTL-Index")) {
             await this.projects.createIndex(
@@ -1549,7 +1549,7 @@ class UserManager {
     }
 
     async hardRejectProject(id) {
-        // BTODO: test this
+        // ATODO: test this
 
         // just mark as hard rejected, mongodb will do the rest
         // have to separate so the index doesnt delete prematurely

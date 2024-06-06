@@ -1,10 +1,11 @@
 const fs = require('fs');
-const Magic = require('mmmagic').Magic;
-const magic = new Magic();
+const path = require('path');
+const Magic = require('mmmagic');
+const magic = new Magic.Magic(Magic.MAGIC_MIME_TYPE);
 
 module.exports = (app, utils) => {
     app.post('/api/v1/users/setpfp', utils.upload.single("picture"), async (req, res) => {
-        const packet = req.body;
+        const packet = req.query;
 
         const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
@@ -19,8 +20,7 @@ module.exports = (app, utils) => {
             return utils.error(res, 400, "No picture was provided");
         }
 
-        // BTODO: iirc this doesnt work... we'll need to get the .path and join that with the base path
-        const picture = fs.readFileSync(pictureName);
+        const picture = fs.readFileSync(path.join(utils.homeDir, pictureName.path));
 
         const allowedTypes = ["image/png", "image/jpeg"];
 
