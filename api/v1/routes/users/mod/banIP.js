@@ -41,7 +41,7 @@ module.exports = (app, utils) => {
         utils.logs.sendAdminLog(
             {
                 action: `IP has been ${toggle ? "" : "un"}banned`,
-                content: `${username} ${toggle ? "" : "un"}banned the IP: ${targetIP}`,
+                content: `${username} ${toggle ? "" : "un"}banned the IP: \`${targetIP}\``,
                 fields: [
                     {
                         name: "Mod",

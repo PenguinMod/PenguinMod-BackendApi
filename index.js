@@ -113,6 +113,11 @@ const UserManager = new um();
         ipaddr
     });
 
+    app.use((err, req, res, next) => {
+        res.status(500)
+        res.send("An error occured, sorry about that.")
+    })
+
     app.listen(PORT, () => {
         console.log(`API is listening on port ${PORT}`);
     });
