@@ -78,8 +78,14 @@ const UserManager = new um();
 
     app.use((req, res, next) => {
         // get the actuall ip
-        req.realIP = process.env.isCFTunnel === "true" ? req.get("CF-Connecting-IP") : req.clientIp;
-        req.realIP = ipaddr.process(req.realIP).toIPv4MappedAddress().toNormalizedString(); // normalize
+        req.realIP = ipaddr.process(process.env.isCFTunnel === "true" ? req.get("CF-Connecting-IP") : req.clientIp);
+
+        if (req.realIP.kind() === 'ipv6') {
+            req.realIP = req.realIP.toNormalizedString();
+        } else {
+            req.realIP = req.realIP.toIPv4MappedAddress().toNormalizedString();
+        }
+        
         next();
     });
 
