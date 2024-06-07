@@ -1,4 +1,4 @@
-const um = require('./api/v1/db/UserManager');
+import um from './api/v1/db/UserManager';
 
 const UserManager = new um();
 

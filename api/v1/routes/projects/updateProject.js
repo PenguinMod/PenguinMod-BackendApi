@@ -1,6 +1,6 @@
-const fs = require('fs');
+import fs from 'fs';
 
-module.exports = (app, utils) => {
+export default (app, utils) => {
     app.post('/api/v1/projects/updateProject', utils.upload.fields([
         { name: 'jsonFile', maxCount: 1 },
         { name: 'thumbnail', maxCount: 1 },

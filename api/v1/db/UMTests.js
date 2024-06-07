@@ -1,6 +1,9 @@
-const UserManager = require('./UserManager');
-const prompt = require('prompt-sync')();
-const colors = require('colors');
+import UserManager from './UserManager.js';
+import 'colors';
+import promptSync from 'prompt-sync';
+
+const prompt = promptSync();
+
 
 
 let understands = process.argv.includes("-u") || 

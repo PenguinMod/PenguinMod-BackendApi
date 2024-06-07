@@ -1,4 +1,4 @@
-module.exports = (app, utils) => {
+export default (app, utils) => {
     app.post('/api/v1/misc/setProfanityList', async function (req, res) {
         const packet = req.body;
 

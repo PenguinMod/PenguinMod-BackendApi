@@ -1,6 +1,6 @@
-const fs = require('fs');
+import fs from 'fs';
 
-module.exports = (app, utils) => {
+export default (app, utils) => {
     app.get("/api/v1/users/githubcallback/createaccount", async function (req, res) {
         const packet = req.query;
 

@@ -1,5 +1,5 @@
-const path = require('path');
-const fs = require('fs');
+import path from 'path';
+import fs from 'fs';
 
 function readFiles(path) {
     let flat = [];
@@ -27,13 +27,13 @@ function readFiles(path) {
     return flat;
 }
 
-function loadEndpoints(app, dir, utils = {}) {
-    let endpointDir = path.join(__dirname, dir);
-    
-    readFiles(endpointDir).forEach(file => {
+async function loadEndpoints(app, dir, utils = {}) {
+    let endpointDir = path.join(import.meta.dirname, dir);
+    let files = readFiles(endpointDir);
+    for (const file of files) {
         const endpointPath = path.join(endpointDir, file);
-        const endpoint = require(endpointPath);
+        const endpoint = (await import(endpointPath)).default;
         endpoint(app, utils);
-    });
+    };
 }
-module.exports = loadEndpoints;
+export default loadEndpoints;

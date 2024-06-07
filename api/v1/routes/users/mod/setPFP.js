@@ -1,8 +1,9 @@
-const fs = require('fs');
-const Magic = require('mmmagic').Magic;
+import fs from 'fs';
+import mmmagic from 'mmmagic';
+const Magic = mmagic.Magic;
 const magic = new Magic();
 
-module.exports = (app, utils) => {
+export default (app, utils) => {
     app.post('/api/v1/users/setpfpadmin', utils.upload.single("picture"), async (req, res) => {
         const packet = req.body;
 

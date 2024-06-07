@@ -1,4 +1,4 @@
-require('dotenv').config();
+import 'dotenv/config';
 
 const heatWebhook = process.env.HeatWebhook;
 const reportWebhook = process.env.ReportWebhook;
@@ -312,7 +312,7 @@ function modMessage(approver, target, messageID, message, color=0x70066e) {
     });
 }
 
-module.exports = {
+export default {
     sendHeatLog,
     sendBioUpdateLog,
     sendReportLog,

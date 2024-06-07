@@ -1,4 +1,4 @@
-module.exports = (app, utils) => {
+export default (app, utils) => {
     app.get("/api/v1/users/getpfp", async (req, res) => {
         const packet = req.query;
 

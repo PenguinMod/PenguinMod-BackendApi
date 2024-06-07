@@ -1,16 +1,18 @@
-require('dotenv').config();
-const { randomInt, randomBytes } = require('node:crypto');
-const bcrypt = require('bcrypt');
-const { MongoClient } = require('mongodb');
-const ULID = require('ulid');
-const Minio = require('minio');
-const protobuf = require('protobufjs');
-const sharp = require('sharp');
-const fs = require('fs');
-const path = require('path');
-var prompt = require('prompt-sync')();
+import 'dotenv/config';
+import { randomInt, randomBytes } from 'node:crypto';
+import bcrypt from 'bcrypt';
+import { MongoClient } from 'mongodb';
+import ULID from 'ulid';
+import * as Minio from 'minio';
+import protobuf from 'protobufjs';
+import sharp from 'sharp';
+import fs from 'fs';
+import path from 'path';
+import promptSync from 'prompt-sync';
 
-const basePFP = fs.readFileSync(path.join(__dirname, "./penguin.png"));
+const prompt = promptSync();
+
+const basePFP = fs.readFileSync(path.join(import.meta.dirname, "./penguin.png"));
 
 class UserManager {
     static loginInvalidationTime = 
@@ -3079,4 +3081,4 @@ class UserManager {
     }
 }
 
-module.exports = UserManager;
+export default UserManager;

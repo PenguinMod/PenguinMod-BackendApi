@@ -1,8 +1,8 @@
-const path = require('path');
-const fs = require('fs');
-const jszip = require('jszip');
+import path from 'path';
+import fs from 'fs';
+import jszip from 'jszip';
 
-module.exports = (app, utils) => {
+export default (app, utils) => {
     app.get("/api/v1/projects/getprojectwrapper", async (req, res) => {
         if (!await utils.UserManager.getRuntimeConfigItem("viewingEnabled")) {
             return utils.error(res, 503, "Viewing is disabled");

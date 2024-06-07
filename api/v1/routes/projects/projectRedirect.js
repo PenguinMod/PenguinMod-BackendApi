@@ -1,7 +1,7 @@
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
 
-module.exports = (app, utils) => {
+export default (app, utils) => {
     const projectTemplate = fs.readFileSync(path.join(utils.homeDir, 'project.html')).toString();
     app.get('/:id', async function (req, res) {
         const json = await utils.UserManager.getProjectMetadata(String(req.params.id));

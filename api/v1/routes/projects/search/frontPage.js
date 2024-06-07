@@ -1,6 +1,6 @@
-const softReject = require("../modActions/reject/softReject");
+import softReject from "../modActions/reject/softReject.js";
 
-module.exports = (app, utils) => {
+export default (app, utils) => {
     app.get('/api/v1/projects/frontpage', async (req, res) => {
         /* needed:
             - featured

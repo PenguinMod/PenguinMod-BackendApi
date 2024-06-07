@@ -1,4 +1,4 @@
-module.exports = (app, utils) => {
+export default (app, utils) => {
     app.post('/api/v1/users/sendmessage', async (req, res) => {
         // use this if you need to tell a certain user something but you're not responding to a dispute or smth
         const packet = req.body;

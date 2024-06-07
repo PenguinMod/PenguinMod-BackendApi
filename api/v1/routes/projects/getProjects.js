@@ -1,4 +1,4 @@
-module.exports = (app, utils) => {
+export default (app, utils) => {
     app.get('/api/v1/projects/getprojects', async (req, res) => {
         if (!await utils.UserManager.getRuntimeConfigItem("viewingEnabled")) {
             return utils.error(res, 503, "Viewing is disabled");

@@ -1,4 +1,4 @@
-module.exports = (app, utils) => {
+export default (app, utils) => {
     app.get("/api/v1/users/githubcallback/login", async function (req, res) {
         const packet = req.query;
 

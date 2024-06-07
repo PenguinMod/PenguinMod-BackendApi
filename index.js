@@ -1,18 +1,18 @@
-require('dotenv').config();
-const cors = require('cors');
-const rateLimit = require('express-rate-limit');
-const express = require("express");
-const endpointLoader = require("./api/endpointLoader");
-const um = require('./api/v1/db/UserManager');
-const cast = require("./utils/Cast");
-const logs = require('./utils/Logs');
-const path = require('path');
-const multer = require('multer');
-const fs = require('fs');
-const requestIp = require('request-ip');
-const {OAuth2Client} = require('google-auth-library');
-const ipaddr = require('ipaddr.js');
-const { promisify } = require('util');
+import 'dotenv/config'
+import cors from 'cors';
+import rateLimit from 'express-rate-limit';
+import express from 'express';
+import endpointLoader from "./api/endpointLoader.js";
+import um from './api/v1/db/UserManager.js';
+import cast from "./utils/Cast.js";
+import logs from './utils/Logs.js';
+import path from 'path';
+import multer from 'multer';
+import fs from 'fs';
+import requestIp from 'request-ip';
+import { OAuth2Client } from 'google-auth-library';
+import ipaddr from 'ipaddr.js';
+import { promisify } from 'util';
 
 function escapeXML(unsafe) {
     unsafe = String(unsafe);
@@ -67,65 +67,63 @@ app.use(requestIp.mw());
 const Cast = new cast();
 const UserManager = new um();
 
-(async () => {
-    await UserManager.init(MAXVIEWS, VIEWRESETRATE);
+await UserManager.init(MAXVIEWS, VIEWRESETRATE);
 
-    /*
-    app.get("/test", (req, res) => {
-        res.sendFile(path.join(__dirname, 'test.html'));
-    });
-    */
+/*
+app.get("/test", (req, res) => {
+    res.sendFile(path.join(import.meta.dirname, 'test.html'));
+});
+*/
 
-    app.use((req, res, next) => {
-        // get the actuall ip
-        req.realIP = ipaddr.process(process.env.isCFTunnel === "true" ? req.get("CF-Connecting-IP") : req.clientIp);
+app.use((req, res, next) => {
+    // get the actuall ip
+    req.realIP = ipaddr.process(process.env.isCFTunnel === "true" ? req.get("CF-Connecting-IP") : req.clientIp);
 
-        if (req.realIP.kind() === 'ipv6') {
-            req.realIP = req.realIP.toNormalizedString();
-        } else {
-            req.realIP = req.realIP.toIPv4MappedAddress().toNormalizedString();
-        }
-        
-        next();
-    });
+    if (req.realIP.kind() === 'ipv6') {
+        req.realIP = req.realIP.toNormalizedString();
+    } else {
+        req.realIP = req.realIP.toIPv4MappedAddress().toNormalizedString();
+    }
 
-    // ip banning
-    app.use(async (req, res, next) => {
-        if (await UserManager.isIPBanned(req.realIP)) {
-            return error(res, 418, "You are banned from using this service."); // 418 for the sillies
-        }
-        next();
-    });
+    next();
+});
 
-    app.get("/robots.txt", (req, res) => {
-        res.sendFile(path.join(__dirname, 'robots.txt'));
-    });
+// ip banning
+app.use(async (req, res, next) => {
+    if (await UserManager.isIPBanned(req.realIP)) {
+        return error(res, 418, "You are banned from using this service."); // 418 for the sillies
+    }
+    next();
+});
 
-    endpointLoader(app, 'v1/routes', {
-        UserManager: UserManager,
-        homeDir: path.join(__dirname, "./"),
-        Cast: Cast,
-        escapeXML: escapeXML,
-        error: error,
-        env: process.env,
-        upload: upload,
-        allowedSources: ["https://extensions.penguinmod.com", "https://extensions.turbowarp.org"],
-        uploadCooldown: Number(process.env.UploadCooldown) || 1000 * 60 * 8,
-        unlinkAsync: promisify(fs.unlink),
-        path: path,
-        PORT: PORT,
-        logs,
-        googleOAuth2Client: OAuth2Client,
-        ipaddr
-    });
+app.get("/robots.txt", (req, res) => {
+    res.sendFile(path.join(import.meta.dirname, 'robots.txt'));
+});
 
-    app.use((err, req, res, next) => {
-        console.log(`ERROR: ${err}`);
-        res.status(500);
-        res.send("An error occured, sorry about that.");
-    })
+await endpointLoader(app, 'v1/routes', {
+    UserManager: UserManager,
+    homeDir: path.join(import.meta.dirname, "./"),
+    Cast: Cast,
+    escapeXML,
+    error,
+    env: process.env,
+    upload: upload,
+    allowedSources: ["https://extensions.penguinmod.com", "https://extensions.turbowarp.org"],
+    uploadCooldown: Number(process.env.UploadCooldown) || 1000 * 60 * 8,
+    unlinkAsync: promisify(fs.unlink),
+    path: path,
+    PORT: PORT,
+    logs,
+    googleOAuth2Client: OAuth2Client,
+    ipaddr
+});
 
-    app.listen(PORT, () => {
-        console.log(`API is listening on port ${PORT}`);
-    });
-})();
+app.use((err, req, res, next) => {
+    console.log(`ERROR: ${err}`);
+    res.status(500);
+    res.send("An error occured, sorry about that.");
+})
+
+app.listen(PORT, () => {
+    console.log(`API is listening on port ${PORT}`);
+});

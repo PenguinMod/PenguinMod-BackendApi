@@ -1,8 +1,8 @@
-const fs = require('fs');
-const path = require('path');
-const child_process = require('child_process');
+import fs from 'fs';
+import path from 'path';
+import child_process from 'child_process';
 
-module.exports = function(app, utils) {
+export default function(app, utils) {
     app.get("/api/v1/", (req, res) => {
         // read the json file
         const metadata = JSON.parse(fs.readFileSync(path.join(utils.homeDir, './metadata.json'), 'utf8'));

@@ -1,9 +1,9 @@
-const fs = require('fs');
-const path = require('path');
-const Magic = require('mmmagic');
+import fs from 'fs';
+import path from 'path';
+import Magic from 'mmmagic';
 const magic = new Magic.Magic(Magic.MAGIC_MIME_TYPE);
 
-module.exports = (app, utils) => {
+export default (app, utils) => {
     app.post('/api/v1/users/setpfp', utils.upload.single("picture"), async (req, res) => {
         const packet = req.query;
 

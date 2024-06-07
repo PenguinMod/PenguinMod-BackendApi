@@ -122,4 +122,4 @@ class Cast {
     }
 }
 
-module.exports = Cast;
+export default Cast;

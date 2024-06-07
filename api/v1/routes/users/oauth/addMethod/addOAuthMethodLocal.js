@@ -1,4 +1,4 @@
-module.exports = (app, utils) => {
+export default (app, utils) => {
     app.get("/api/v1/users/addoauthmethodlocal", async function (req, res) {
         // get the method
         const packet = req.query;

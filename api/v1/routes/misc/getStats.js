@@ -1,4 +1,4 @@
-module.exports = (app, utils) => {
+export default (app, utils) => {
     app.get('/api/v1/misc/getStats', async (req, res) => {
         const stats = await utils.UserManager.getStats();
         
