@@ -6,6 +6,12 @@ module.exports = (app, utils) => {
         const password = packet.password;
 
         const email = packet.email || "";
+
+        const validateEmail = (email) => {
+            return email.match(
+                /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+            );
+        };
         
         if (typeof username !== "string" || typeof password !== "string" || typeof email !== "string") {
             utils.error(res, 400, "InvalidData");
@@ -40,6 +46,17 @@ module.exports = (app, utils) => {
         if (await utils.UserManager.existsByUsername(username)) {
             utils.error(res, 400, "AccountExists");
             return;
+        }
+
+        if (email) {
+            if (!validateEmail(email)) {
+                utils.error(res, 400, "InvalidEmail");
+                return;
+            }
+            if (await utils.UserManager.emailInUse(email)) {
+                utils.error(res, 400, "EmailInUse");
+                return;
+            }
         }
 
         let token = await utils.UserManager.createAccount(username, packet.password, email);

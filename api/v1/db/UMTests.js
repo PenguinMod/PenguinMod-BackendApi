@@ -187,7 +187,7 @@ async function tests() {
     }
     console.log("[ PASS ]".green, "Set/get moderator");
 
-    let setBanned = await manager.setBanned('newtest', true);
+    let setBanned = await manager.setPermBanned('newtest', true);
     let banned = await manager.isBanned('newtest');
     if (!banned) {
         console.log("[ FAIL ]".red, "Failed to set/get banned");
@@ -230,7 +230,7 @@ async function tests() {
     console.log("[ PASS ]".green, "Got reports by reportee");
 
     let getReports = await manager.getReports(0, 2);
-    if (getReports[0].data.length !== 1) {
+    if (getReports.length !== 1) {
         console.log("[ FAIL ]".red, "Failed to get reports");
         return false;
     }
@@ -416,8 +416,8 @@ async function tests() {
     }
     console.log("[ PASS ]".green, "Followed user and checked if following user");
 
-    let getFollowers = await manager.getFollowers("newtest", 0, 2);
-    if (getFollowers.length !== 1) {
+    let getFollowers = await manager.getFollowerCount("newtest",);
+    if (getFollowers !== 1) {
         console.log("[ FAIL ]".red, "Failed to get followers");
         return false;
     }

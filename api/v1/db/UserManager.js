@@ -22,8 +22,8 @@ class UserManager {
 
     /**
      * Initialize the database
-     * @param {number} maxviews - maximum amount of views before the view counter resets
-     * @param {number} viewresetrate - time in milliseconds before the view counter resets
+     * @param {number} maxviews maximum amount of views before the view counter resets
+     * @param {number} viewresetrate time in milliseconds before the view counter resets
      * @async
      */
     async init(maxviews, viewresetrate) {
@@ -144,7 +144,7 @@ class UserManager {
 
     /**
      * Reset a minio bucket
-     * @param {string} bucketName - Name of the bucket
+     * @param {string} bucketName Name of the bucket
      * @async
      */
     async resetBucket(bucketName) {
@@ -153,7 +153,7 @@ class UserManager {
 
     /**
      * Reset the database
-     * @param {boolean} understands - skip the prompt if true
+     * @param {boolean} understands skip the prompt if true
      * @async
      */
     async reset(understands = false) {
@@ -199,10 +199,10 @@ class UserManager {
 
     /**
      * Create an account
-     * @param {string} username - new username of the user
-     * @param {string} password - new password of the user
-     * @param {string} email - email of the user, if provided
-     * @returns {Promise<string|boolean>} - token if successful, false if not
+     * @param {string} username new username of the user
+     * @param {string} password new password of the user
+     * @param {string} email email of the user, if provided
+     * @returns {Promise<string|boolean>} token if successful, false if not
      * @async
      */
     async createAccount(username, password, email) {
@@ -251,9 +251,9 @@ class UserManager {
 
     /**
      * Login with a password
-     * @param {string} username - username of the user
-     * @param {string} password - password of the user
-     * @returns {Promise<string|boolean>} - token if successful, false if not
+     * @param {string} username username of the user
+     * @param {string} password password of the user
+     * @returns {Promise<string|boolean>} token if successful, false if not
      * @async
      */
     async loginWithPassword(username, password, allowBanned) {
@@ -274,10 +274,10 @@ class UserManager {
 
     /**
      * Login with a token
-     * @param {string} username - username of the user
-     * @param {string} token - token of the user
-     * @param {boolean} allowBanned - allow banned users to login
-     * @returns {Promise<boolean>} - true if successful, false if not
+     * @param {string} username username of the user
+     * @param {string} token token of the user
+     * @param {boolean} allowBanned allow banned users to login
+     * @returns {Promise<boolean>} true if successful, false if not
      * @async
      */ 
     async loginWithToken(username, token, allowBanned) {
@@ -305,8 +305,8 @@ class UserManager {
 
     /**
      * Check if a user exists by username
-     * @param {string} username - username of the user 
-     * @returns {Promise<boolean>} - true if the user exists, false if not
+     * @param {string} username username of the user 
+     * @returns {Promise<boolean>} true if the user exists, false if not
      * @async
      */
     async existsByUsername(username) {
@@ -317,8 +317,8 @@ class UserManager {
 
     /**
      * Check if a user exists by ID
-     * @param {string} id - id of the user
-     * @returns {Promise<boolean>} - true if the user exists, false if not
+     * @param {string} id id of the user
+     * @returns {Promise<boolean>} true if the user exists, false if not
      * @async
      */
     async existsByID(id) {
@@ -329,8 +329,8 @@ class UserManager {
 
     /**
      * Get the ID of a user by username
-     * @param {string} username - username of the user
-     * @returns {Promise<string>} - id of the user
+     * @param {string} username username of the user
+     * @returns {Promise<string>} id of the user
      * @async
      */
     async getIDByUsername(username) {
@@ -340,8 +340,8 @@ class UserManager {
 
     /**
      * Get the username of a user by ID
-     * @param {string} id - id of the user
-     * @returns {Promise<string>} - username of the user
+     * @param {string} id id of the user
+     * @returns {Promise<string>} username of the user
      * @async
      */
     async getUsernameByID(id) {
@@ -351,8 +351,8 @@ class UserManager {
 
     /**
      * Change the username of a user
-     * @param {string} id - id of the user
-     * @param {string} newUsername - new username of the user
+     * @param {string} id id of the user
+     * @param {string} newUsername new username of the user
      * @async
      */
     async changeUsername(id, newUsername) {
@@ -361,8 +361,8 @@ class UserManager {
 
     /**
      * Change the password of a user
-     * @param {string} username - username of the user
-     * @param {string} newPassword - new password of the user
+     * @param {string} username username of the user
+     * @param {string} newPassword new password of the user
      * @async
      */
     async changePassword(username, newPassword) {
@@ -372,8 +372,8 @@ class UserManager {
 
     /**
      * Check if a user can login using a password
-     * @param {string} username - The user's username
-     * @returns {Promise<boolean>} - Whether the user can login with a password
+     * @param {string} username The user's username
+     * @returns {Promise<boolean>} Whether the user can login with a password
      */
     async canPasswordLogin(username) {
         const result = await this.users.findOne({ username: username });
@@ -383,8 +383,8 @@ class UserManager {
 
     /**
      * Get a user's oauth login methods
-     * @param {string} username - Username of the user
-     * @returns {Promise<Array<string>>} - Array of the user's oauth methods
+     * @param {string} username Username of the user
+     * @returns {Promise<Array<string>>} Array of the user's oauth methods
      */
     async getOAuthMethods(username) {
         const id = await this.getIDByUsername(username);
@@ -406,8 +406,8 @@ class UserManager {
 
     /**
      * Add an oauth login method to a user
-     * @param {string} username - Username of the user
-     * @param {string} method - Method to add
+     * @param {string} username Username of the user
+     * @param {string} method Method to add
      */
     async addOAuthMethod(username, method, code) {
         const id = await this.getIDByUsername(username);
@@ -417,8 +417,8 @@ class UserManager {
 
     /**
      * Remove an oauth login method from a user
-     * @param {string} username - Username of the user 
-     * @param {string} method - Method to remove
+     * @param {string} username Username of the user 
+     * @param {string} method Method to remove
      */
     async removeOAuthMethod(username, method) {
         const id = await this.getIDByUsername(username);
@@ -428,9 +428,9 @@ class UserManager {
 
     /**
      * Get the ID of a user by their oauth ID
-     * @param {string} method - The oauth method the id is from
-     * @param {string} id - The id from the oauth service
-     * @returns {Promise<string>} - The id of the user
+     * @param {string} method The oauth method the id is from
+     * @param {string} id The id from the oauth service
+     * @returns {Promise<string>} The id of the user
      */
     async getUserIDByOAuthID(method, id) {
         const result = await this.oauthIDs.findOne({ method: method, code: id });
@@ -442,8 +442,8 @@ class UserManager {
 
     /**
      * Get the bio of a user
-     * @param {string} username - username of the user
-     * @returns {Promise<string>} - bio of the user
+     * @param {string} username username of the user
+     * @returns {Promise<string>} bio of the user
      * @async
      */
     async getBio(username) {
@@ -453,8 +453,8 @@ class UserManager {
 
     /**
      * Set the bio of a user
-     * @param {string} username - username of the user
-     * @param {string} newBio - new bio of the user
+     * @param {string} username username of the user
+     * @param {string} newBio new bio of the user
      * @async
      */
     async setBio(username, newBio) {
@@ -463,9 +463,9 @@ class UserManager {
 
     /**
      * Change the favorite project of a user
-     * @param {string} username - username of the user
-     * @param {number} type - type of the project (the description that will be shown)
-     * @param {number} id - id of the project
+     * @param {string} username username of the user
+     * @param {number} type type of the project (the description that will be shown)
+     * @param {number} id id of the project
      * @async
      */
     async changeFavoriteProject(username, type, id) {
@@ -474,8 +474,8 @@ class UserManager {
 
     /**
      * Get the user's first login
-     * @param {string} username - Username of the user
-     * @returns {Promise<number>} - When the user first logged in - Unix time
+     * @param {string} username Username of the user
+     * @returns {Promise<number>} When the user first logged in Unix time
      */
     async getFirstLogin(username) {
         const result = await this.users.findOne({ username: username });
@@ -485,8 +485,8 @@ class UserManager {
 
     /**
      * Get the user's last login
-     * @param {string} username - Username of the user
-     * @returns {Promise<number>} - Last time the user logged in - Unix time
+     * @param {string} username Username of the user
+     * @returns {Promise<number>} Last time the user logged in Unix time
      * @async
      */
     async getLastLogin(username) {
@@ -497,8 +497,8 @@ class UserManager {
     
     /**
      * Get the amount of cubes a user has
-     * @param {string} username - username of the user
-     * @returns {Promise<number>} - amount of cubes the user has
+     * @param {string} username username of the user
+     * @returns {Promise<number>} amount of cubes the user has
      * @async
      */
     async getCubes(username) {
@@ -509,8 +509,8 @@ class UserManager {
 
     /**
      * Set the amount of cubes a user has
-     * @param {string} username - username of the user
-     * @param {number} amount - amount of cubes the user has
+     * @param {string} username username of the user
+     * @param {number} amount amount of cubes the user has
      * @async
      */
     async setCubes(username, amount) {
@@ -519,8 +519,8 @@ class UserManager {
 
     /**
      * Get the rank of a user
-     * @param {string} username - username of the user
-     * @returns {Promise<number>} - rank of the user
+     * @param {string} username username of the user
+     * @returns {Promise<number>} rank of the user
      * @async
      */
     async getRank(username) {
@@ -531,8 +531,8 @@ class UserManager {
 
     /**
      * Set the rank of a user
-     * @param {string} username - username of the user
-     * @param {number} rank - new rank of the user
+     * @param {string} username username of the user
+     * @param {number} rank new rank of the user
      * @async
      */
     async setRank(username, rank) {
@@ -541,8 +541,8 @@ class UserManager {
 
     /**
      * Get the last upload time of a user
-     * @param {string} username - username of the user
-     * @returns {Promise<number>} - time of the last upload
+     * @param {string} username username of the user
+     * @returns {Promise<number>} time of the last upload
      * @async
      */
     async getLastUpload(username) {
@@ -553,8 +553,8 @@ class UserManager {
 
     /**
      * Set the last upload time of a user
-     * @param {string} username - username of the user
-     * @param {number} lastUpload - time of the last upload
+     * @param {string} username username of the user
+     * @param {number} lastUpload time of the last upload
      * @async
      */
     async setLastUpload(username, lastUpload) {
@@ -563,8 +563,8 @@ class UserManager {
 
     /**
      * Get the badges of a user
-     * @param {string} username - username of the user 
-     * @returns {Promise<Array<string>>} - array of badges the user has
+     * @param {string} username username of the user 
+     * @returns {Promise<Array<string>>} array of badges the user has
      * @async
      */
     async getBadges(username) {
@@ -575,8 +575,8 @@ class UserManager {
 
     /**
      * Add a badge to a user
-     * @param {string} username - username of the user 
-     * @param {string} badge - the badge to add
+     * @param {string} username username of the user 
+     * @param {string} badge the badge to add
      * @async
      */
     async addBadge(username, badge) {
@@ -589,9 +589,9 @@ class UserManager {
 
     /**
      * Check if a user has a badge
-     * @param {string} username - username of the user 
-     * @param {string} badge - badge to check for 
-     * @returns {Promise<boolean>} - true if the user has the badge, false if not
+     * @param {string} username username of the user 
+     * @param {string} badge badge to check for 
+     * @returns {Promise<boolean>} true if the user has the badge, false if not
      */
     async hasBadge(username, badge) {
         const result = await this.users.findOne({ username: username });
@@ -601,8 +601,8 @@ class UserManager {
 
     /**
      * Remove a badge from a user
-     * @param {string} username - username of the user 
-     * @param {string} badge - the badge to remove 
+     * @param {string} username username of the user 
+     * @param {string} badge the badge to remove 
      * @async
      */
     async removeBadge(username, badge) {
@@ -611,8 +611,8 @@ class UserManager {
 
     /**
      * Get a user's featured project
-     * @param {string} username - Username of the user
-     * @returns {Promise<number>} - ID of the user's favorite project
+     * @param {string} username Username of the user
+     * @returns {Promise<number>} ID of the user's favorite project
      */
     async getFeaturedProject(username) {
         const result = await this.users.findOne({ username: username });
@@ -622,8 +622,8 @@ class UserManager {
 
     /**
      * Set a user's featured project
-     * @param {string} username - Username of the user 
-     * @param {number} id - ID of the project
+     * @param {string} username Username of the user 
+     * @param {number} id ID of the project
      * @async
      */
     async setFeaturedProject(username, id) {
@@ -636,8 +636,8 @@ class UserManager {
 
     /**
      * Get a user's featured project title
-     * @param {string} username - Username of the user
-     * @returns {Promise<number>} - Index of the title in the array of titles
+     * @param {string} username Username of the user
+     * @returns {Promise<number>} Index of the title in the array of titles
      * @async
      */
     async getFeaturedProjectTitle(username) {
@@ -648,8 +648,8 @@ class UserManager {
 
     /**
      * Set a user's featured project title
-     * @param {string} username - Username of the user 
-     * @param {number} title - Index of the title in the array of titles
+     * @param {string} username Username of the user 
+     * @param {number} title Index of the title in the array of titles
      * @async
      */
     async setFeaturedProjectTitle(username, title) {
@@ -663,7 +663,7 @@ class UserManager {
     /**
      * Check if a user is an admin
      * @param {string} username 
-     * @returns {Promise<boolean>} - true if the user is an admin, false if not
+     * @returns {Promise<boolean>} true if the user is an admin, false if not
      * @async
      */
     async isAdmin(username) {
@@ -674,8 +674,8 @@ class UserManager {
 
     /**
      * Set a user as an admin
-     * @param {string} username - username of the user 
-     * @param {boolean} admin - true if setting to admin, false if not 
+     * @param {string} username username of the user 
+     * @param {boolean} admin true if setting to admin, false if not 
      * @async
      */
     async setAdmin(username, admin) {
@@ -684,8 +684,8 @@ class UserManager {
 
     /**
      * Check if a user is a moderator
-     * @param {string} username - username of the user
-     * @returns {Promise<boolean>} - true if the user is a moderator, false if not
+     * @param {string} username username of the user
+     * @returns {Promise<boolean>} true if the user is a moderator, false if not
      * @async
      */
     async isModerator(username) {
@@ -696,8 +696,8 @@ class UserManager {
 
     /**
      * Set a user as a moderator
-     * @param {string} username - username of the user
-     * @param {boolean} moderator - true if setting to moderator, false if not
+     * @param {string} username username of the user
+     * @param {boolean} moderator true if setting to moderator, false if not
      * @async
      */
     async setModerator(username, moderator) {
@@ -706,7 +706,7 @@ class UserManager {
 
     /**
      * Get all admins
-     * @returns {Promise<Array<object>>} - Array of all admins
+     * @returns {Promise<Array<object>>} Array of all admins
      * @async
      */
     async getAllAdmins() {
@@ -720,7 +720,7 @@ class UserManager {
 
     /**
      * Get all moderators
-     * @returns {Promise<Array<Object>>} - Array of all moderators
+     * @returns {Promise<Array<Object>>} Array of all moderators
      * @async
      */
     async getAllModerators() {
@@ -734,8 +734,8 @@ class UserManager {
 
     /**
      * Check if a user is banned
-     * @param {string} username - username of the user
-     * @returns {Promise<boolean>} - true if the user is banned, false if not
+     * @param {string} username username of the user
+     * @returns {Promise<boolean>} true if the user is banned, false if not
      * @async
      */
     async isBanned(username) {
@@ -746,8 +746,8 @@ class UserManager {
 
     /**
      * Ban/unban a user
-     * @param {string} username - username of the user
-     * @param {boolean} banned - true if banning, false if unbanning
+     * @param {string} username username of the user
+     * @param {boolean} banned true if banning, false if unbanning
      * @async
      */
     async setPermBanned(username, banned, reason) {
@@ -756,8 +756,8 @@ class UserManager {
 
     /**
      * Get the email of a user
-     * @param {string} username - username of the user
-     * @returns {Promise<string>} - email of the user
+     * @param {string} username username of the user
+     * @returns {Promise<string>} email of the user
      * @async
      */
     async getEmail(username) {
@@ -768,8 +768,8 @@ class UserManager {
 
     /**
      * Set the email of a user
-     * @param {string} username - username of the user
-     * @param {string} email - email of the user
+     * @param {string} username username of the user
+     * @param {string} email email of the user
      * @async
      */
     async setEmail(username, email) {
@@ -778,7 +778,7 @@ class UserManager {
 
     /**
      * Logout a user
-     * @param {string} username - username of the user
+     * @param {string} username username of the user
      * @async
      */
     async logout(username) {
@@ -787,10 +787,10 @@ class UserManager {
 
     /**
      * Report something
-     * @param {number} type - Type of report. 0 = user, 1 = project 
-     * @param {string} reportee - ID of the person/project being reported 
-     * @param {string} reason - Reason for the report 
-     * @param {string} reporter - ID of the person reporting 
+     * @param {number} type Type of report. 0 = user, 1 = project 
+     * @param {string} reportee ID of the person/project being reported 
+     * @param {string} reason Reason for the report 
+     * @param {string} reporter ID of the person reporting 
      * @async
      */
     async report(type, reportee, reason, reporter) {
@@ -806,8 +806,8 @@ class UserManager {
 
     /**
      * Check if a report exists
-     * @param {string} id - ID of the report
-     * @returns {Promise<boolean>} - true if the report exists, false if not
+     * @param {string} id ID of the report
+     * @returns {Promise<boolean>} true if the report exists, false if not
      */
     async reportExists(id) {
         const result = await this.reports.findOne({ id: id });
@@ -817,10 +817,10 @@ class UserManager {
 
     /**
      * Get reports by type
-     * @param {number} type - The type of reports to get 
-     * @param {number} page - The page of reports to get
-     * @param {number} pageSize - The amount of reports to get
-     * @returns {Promise<Array<object>>} - Array of reports of the specified type
+     * @param {number} type The type of reports to get 
+     * @param {number} page The page of reports to get
+     * @param {number} pageSize The amount of reports to get
+     * @returns {Promise<Array<object>>} Array of reports of the specified type
      * @async
      */
     async getReportsByType(type, page, pageSize) {
@@ -847,10 +847,10 @@ class UserManager {
 
     /**
      * Get reports by reportee
-     * @param {string} reportee - ID of the person/project being reported
-     * @param {number} page - The page of reports to get
-     * @param {number} pageSize - The amount of reports to get
-     * @returns {Promise<Array<object>>} - Array of reports on the specified reportee
+     * @param {string} reportee ID of the person/project being reported
+     * @param {number} page The page of reports to get
+     * @param {number} pageSize The amount of reports to get
+     * @returns {Promise<Array<object>>} Array of reports on the specified reportee
      * @async
      */
     async getReportsByReportee(reportee, page, pageSize) {
@@ -877,10 +877,10 @@ class UserManager {
 
     /**
      * Get reports by reporter
-     * @param {string} reporter - ID of the person reporting
-     * @param {number} page - The page of reports to get
-     * @param {number} pageSize - The amount of reports to get
-     * @returns {Promise<Array<object>>} - Array of reports by the specified reporter
+     * @param {string} reporter ID of the person reporting
+     * @param {number} page The page of reports to get
+     * @param {number} pageSize The amount of reports to get
+     * @returns {Promise<Array<object>>} Array of reports by the specified reporter
      * @async 
      */
     async getReportsByReporter(reporter, page, pageSize) {
@@ -907,9 +907,9 @@ class UserManager {
 
     /**
      * Check if a user has already reported a person/project
-     * @param {string} reporter - ID of the person reporting
-     * @param {string} reportee - ID of the person/project being reported
-     * @returns {Promise<boolean>} - true if the user has already reported the person/project, false if not
+     * @param {string} reporter ID of the person reporting
+     * @param {string} reportee ID of the person/project being reported
+     * @returns {Promise<boolean>} true if the user has already reported the person/project, false if not
      */
     async hasAlreadyReported(reporter, reportee) {
         const result = await this.reports.findOne({ reporter: reporter, reportee: reportee });
@@ -919,9 +919,9 @@ class UserManager {
 
     /**
      * Get reports to a specified size
-     * @param {number} page - page of reports to get
-     * @param {number} pageSize - amount of reports to get
-     * @returns {Promise<Array<object>>} - Reports in the specified amount
+     * @param {number} page page of reports to get
+     * @param {number} pageSize amount of reports to get
+     * @returns {Promise<Array<object>>} Reports in the specified amount
      * @async
      */
     async getReports(page, pageSize) {
@@ -945,7 +945,7 @@ class UserManager {
 
     /**
      * Delete a report
-     * @param {string} id - ID of the report to delete
+     * @param {string} id ID of the report to delete
      * @async
      */
     async deleteReport(id) {
@@ -1007,7 +1007,7 @@ class UserManager {
     /**
      * Get remixes of a project
      * @param {number} id 
-     * @returns {Promise<Array<Object>>} - Array of remixes of the specified project
+     * @returns {Promise<Array<Object>>} Array of remixes of the specified project
      * @async
      */
     async getRemixes(id, page, pageSize) {
@@ -1042,14 +1042,14 @@ class UserManager {
 
     /**
      * Update a project
-     * @param {number} id - ID of the project 
-     * @param {Buffer} projectBuffer - The file buffer for the project. This is a zip.
-     * @param {Array<Object>} assetBuffers - asset buffers
-     * @param {string} title - Title of the project.
-     * @param {Buffer} imageBuffer - The file buffer for the thumbnail.
-     * @param {string} instructions - The instructions for the project.
-     * @param {string} notes - The notes for the project 
-     * @param {string} rating - Rating of the project. 
+     * @param {number} id ID of the project 
+     * @param {Buffer} projectBuffer The file buffer for the project. This is a zip.
+     * @param {Array<Object>} assetBuffers asset buffers
+     * @param {string} title Title of the project.
+     * @param {Buffer} imageBuffer The file buffer for the thumbnail.
+     * @param {string} instructions The instructions for the project.
+     * @param {string} notes The notes for the project 
+     * @param {string} rating Rating of the project. 
      * @async
      */
     async updateProject(id, projectBuffer, assetBuffers, title, imageBuffer, instructions, notes, rating) {
@@ -1077,10 +1077,10 @@ class UserManager {
 
     /**
      * get projects to a specified size
-     * @param {number} page - page of projects to get
-     * @param {number} pageSize - amount of projects to get
-     * @param {boolean} reverse - if you should get newest or oldest first
-     * @returns {Promise<Array<Object>>} - Projects in the specified amount
+     * @param {number} page page of projects to get
+     * @param {number} pageSize amount of projects to get
+     * @param {boolean} reverse if you should get newest or oldest first
+     * @returns {Promise<Array<Object>>} Projects in the specified amount
      * @async
      */
     async getProjects(page, pageSize, reverse=false) {
@@ -1116,8 +1116,8 @@ class UserManager {
 
     /**
      * Get projects by a specified author
-     * @param {string} author - ID of the author
-     * @returns {Promise<Array<Object>>} - Array of projects by the specified author
+     * @param {string} author ID of the author
+     * @returns {Promise<Array<Object>>} Array of projects by the specified author
      * @async
      */
     async getProjectsByAuthor(author, page, pageSize, getPrivate, getSoftRejected=false) {
@@ -1148,9 +1148,9 @@ class UserManager {
 
     /**
      * Read an object from a bucket
-     * @param {string} bucketName - Name of the bucket
-     * @param {string} objectName - Name of the object
-     * @returns {Promise<Buffer>} - The object
+     * @param {string} bucketName Name of the bucket
+     * @param {string} objectName Name of the object
+     * @returns {Promise<Buffer>} The object
      */
     async readObjectFromBucket(bucketName, objectName) {
         const stream = await this.minioClient.getObject(bucketName, objectName);
@@ -1166,8 +1166,8 @@ class UserManager {
 
     /**
      * Get a project file
-     * @param {number} id - ID of the project wanted.
-     * @returns {Promise<Buffer>} - The project file.
+     * @param {number} id ID of the project wanted.
+     * @returns {Promise<Buffer>} The project file.
      * @async
      */
     async getProjectFile(id) {
@@ -1178,8 +1178,8 @@ class UserManager {
 
     /**
      * Get a project image
-     * @param {number} id - ID of the project image wanted. 
-     * @returns {Promise<Buffer>} - The project image file.
+     * @param {number} id ID of the project image wanted. 
+     * @returns {Promise<Buffer>} The project image file.
      */
     async getProjectImage(id) {
         const file = await this.readObjectFromBucket("project-thumbnails", id);
@@ -1189,8 +1189,8 @@ class UserManager {
 
     /**
      * Delete objects from a bucket with a specified prefix
-     * @param {string} bucketName - Name of the bucket 
-     * @param {*} prefix - Prefix to search
+     * @param {string} bucketName Name of the bucket 
+     * @param {*} prefix Prefix to search
      */
     async deleteMultipleObjects(bucketName, prefix) {
         const stream = this.minioClient.listObjects(bucketName, prefix);
@@ -1213,8 +1213,8 @@ class UserManager {
 
     /**
      * Get a projects assets
-     * @param {string} id - ID of the project
-     * @returns {Promise<Array<Object>>} - Array of project assets
+     * @param {string} id ID of the project
+     * @returns {Promise<Array<Object>>} Array of project assets
      */
     async getProjectAssets(id) {
         const stream = this.minioClient.listObjects("project-assets", id);
@@ -1242,8 +1242,8 @@ class UserManager {
 
     /**
      * Get project metadata for a specified project
-     * @param {number} id - ID of the project wanted.
-     * @returns {Promise<Object>} - The project data.
+     * @param {number} id ID of the project wanted.
+     * @returns {Promise<Object>} The project data.
      * @async
      */
     async getProjectMetadata(id) {
@@ -1269,9 +1269,9 @@ class UserManager {
 
     /**
      * Check if a user has seen a project
-     * @param {number} id - ID of the project. 
-     * @param {string} ip - IP we are checking
-     * @returns {Promise<boolean>} - True if they have seen the project, false if not. 
+     * @param {number} id ID of the project. 
+     * @param {string} ip IP we are checking
+     * @returns {Promise<boolean>} True if they have seen the project, false if not. 
      * @async
      */
     async hasSeenProject(id, ip) {
@@ -1282,8 +1282,8 @@ class UserManager {
 
     /**
      * Add a view to a project
-     * @param {number} id - ID of the project.
-     * @param {string} ip - IP of the person seeing the project.
+     * @param {number} id ID of the project.
+     * @param {string} ip IP of the person seeing the project.
      * @async
      */
     async projectView(id, ip) {
@@ -1300,8 +1300,8 @@ class UserManager {
 
     /**
      * Get the amount of views a project has
-     * @param {number} id - ID of the project
-     * @returns {Promise<number>} - The number of views the project has
+     * @param {number} id ID of the project
+     * @returns {Promise<number>} The number of views the project has
      */
     async getProjectViews(id) {
         const result = this.views.filter((view) => view.id === id);
@@ -1311,9 +1311,9 @@ class UserManager {
 
     /**
      * Check if a user has loved a project
-     * @param {number} id - ID of the project.
-     * @param {string} userId - ID of the person loving the project.
-     * @returns {Promise<boolean>} - True if they have loved the project, false if not.
+     * @param {number} id ID of the project.
+     * @param {string} userId ID of the person loving the project.
+     * @returns {Promise<boolean>} True if they have loved the project, false if not.
      * @async
      */
     async hasLovedProject(id, userId) {
@@ -1328,9 +1328,9 @@ class UserManager {
 
     /**
      * Love/unlove a project
-     * @param {number} id - ID of the project.
-     * @param {string} userId - ID of the person loving the project.
-     * @param {boolean} love - True if loving, false if unloving.
+     * @param {number} id ID of the project.
+     * @param {string} userId ID of the person loving the project.
+     * @param {boolean} love True if loving, false if unloving.
      * @async
      */
     async loveProject(id, userId, love) {
@@ -1351,8 +1351,8 @@ class UserManager {
 
     /**
      * Get the amount of loves a project has
-     * @param {number} id - ID of the project
-     * @returns {Promise<number>} - Amount of loves the project has
+     * @param {number} id ID of the project
+     * @returns {Promise<number>} Amount of loves the project has
      */
     async getProjectLoves(id) {
         const result = await this.projectStats.find({projectId: id, type: "love"}).toArray();
@@ -1362,10 +1362,10 @@ class UserManager {
 
     /**
      * Get who loved a project
-     * @param {string} projectID - ID of the project
-     * @param {number} page - Page to get
-     * @param {number} pageSize - Page size
-     * @returns {Array<string>} - Array of user ids
+     * @param {string} projectID ID of the project
+     * @param {number} page Page to get
+     * @param {number} pageSize Page size
+     * @returns {Array<string>} Array of user ids
      */
     async getWhoLoved(projectID, page, pageSize) {
         const result = await this.projectStats.aggregate([
@@ -1388,10 +1388,10 @@ class UserManager {
 
     /**
      * Get who voted for a project
-     * @param {string} projectID - ID of the project
-     * @param {number} page - Page to get
-     * @param {number} pageSize - Page size
-     * @returns {Array<string>} - Array of user ids
+     * @param {string} projectID ID of the project
+     * @param {number} page Page to get
+     * @param {number} pageSize Page size
+     * @returns {Array<string>} Array of user ids
      */
     async getWhoVoted(projectID, page, pageSize) {
         const result = await this.projectStats.aggregate([
@@ -1414,9 +1414,9 @@ class UserManager {
 
     /**
      * Check if a user has voted on a project
-     * @param {number} id - ID of the project.
-     * @param {string} userId - ID of the person voting on the project.
-     * @returns {Promise<boolean>} - True if they have voted on the project, false if not.
+     * @param {number} id ID of the project.
+     * @param {string} userId ID of the person voting on the project.
+     * @returns {Promise<boolean>} True if they have voted on the project, false if not.
      * @async
      */
     async hasVotedProject(id, userId) {
@@ -1431,9 +1431,9 @@ class UserManager {
 
     /**
      * Vote/unvote a project
-     * @param {number} id - ID of the project.
-     * @param {string} userId - ID of the person voting on the project.
-     * @param {boolean} vote - True if voting, false if unvoting.
+     * @param {number} id ID of the project.
+     * @param {string} userId ID of the person voting on the project.
+     * @param {boolean} vote True if voting, false if unvoting.
      * @async
      */
     async voteProject(id, userId, vote) {
@@ -1454,8 +1454,8 @@ class UserManager {
 
     /**
      * Get the amount of votes a project has
-     * @param {number} id - ID of the project
-     * @returns {Promise<number>} - Amount of votes the project has
+     * @param {number} id ID of the project
+     * @returns {Promise<number>} Amount of votes the project has
      * @async
      */
     async getProjectVotes(id) {
@@ -1466,9 +1466,9 @@ class UserManager {
 
     /**
      * Get a list of featured projects to a specified size
-     * @param {number} page - page of projects to get
-     * @param {number} pageSize - amount of projects to get
-     * @returns {Promise<Array<Object>>} - Array of all projects
+     * @param {number} page page of projects to get
+     * @param {number} pageSize amount of projects to get
+     * @returns {Promise<Array<Object>>} Array of all projects
      * @async
      */
     async getFeaturedProjects(page, pageSize) {
@@ -1503,8 +1503,8 @@ class UserManager {
 
     /**
      * Feature/unfeature a project
-     * @param {number} id - ID of the project.
-     * @param {boolean} feature - True if featuring, false if unfeaturing.
+     * @param {number} id ID of the project.
+     * @param {boolean} feature True if featuring, false if unfeaturing.
      * @async
      */
     async featureProject(id, feature) {
@@ -1513,8 +1513,8 @@ class UserManager {
 
     /**
      * Set a projects metadata
-     * @param {string} id - ID of the project
-     * @param {Object} data - Data to set
+     * @param {string} id ID of the project
+     * @param {Object} data Data to set
      */
     async setProjectMetadata(id, data) {
         await this.projects.updateOne({id: id}, {$set: data});
@@ -1522,7 +1522,7 @@ class UserManager {
 
     /**
      * Get the amount of projects
-     * @returns {Promise<number>} - Amount of projects
+     * @returns {Promise<number>} Amount of projects
      * @async
      */
     async getProjectCount() {
@@ -1533,7 +1533,7 @@ class UserManager {
 
     /**
      * delete a project
-     * @param {number} id - ID of the project
+     * @param {number} id ID of the project
      * @async
      */
     async deleteProject(id) {
@@ -1579,9 +1579,9 @@ class UserManager {
 
     /**
      * Follow/unfollow a user
-     * @param {string} follower - ID of the person following 
-     * @param {string} followee - ID of the person being followed
-     * @param {boolean} follow - True if following, false if unfollowing
+     * @param {string} follower ID of the person following 
+     * @param {string} followee ID of the person being followed
+     * @param {boolean} follow True if following, false if unfollowing
      * @async
      */
     async followUser(follower, followee, follow) {
@@ -1603,9 +1603,9 @@ class UserManager {
 
     /**
      * Check if a user is following another user
-     * @param {string} follower - ID of the person following
-     * @param {string} followee - ID of the person being followed
-     * @returns {Promise<boolean>} - True if they are following, false if not
+     * @param {string} follower ID of the person following
+     * @param {string} followee ID of the person being followed
+     * @returns {Promise<boolean>} True if they are following, false if not
      * @async
      */
     async isFollowing(follower, followee) {
@@ -1616,10 +1616,10 @@ class UserManager {
 
     /**
      * Get the people a person is being followed by
-     * @param {string} username - username of the person
-     * @param {number} page - page of followers to get
-     * @param {number} pageSize - amount of followers to get
-     * @returns {Promise<Array<string>>} - Array of the people the person is being followed by
+     * @param {string} username username of the person
+     * @param {number} page page of followers to get
+     * @param {number} pageSize amount of followers to get
+     * @returns {Promise<Array<string>>} Array of the people the person is being followed by
      * @async
      */
     async getFollowers(username, page, pageSize) {
@@ -1646,8 +1646,8 @@ class UserManager {
 
     /**
      * Get the people a person is following
-     * @param {string} id - username of the person
-     * @returns {Promise<Array<string>>} - Array of the people the person is following
+     * @param {string} id username of the person
+     * @returns {Promise<Array<string>>} Array of the people the person is following
      * @async
      */
     async getFollowing(username, page, pageSize) {
@@ -1674,9 +1674,9 @@ class UserManager {
 
     /**
      * Check if a person has ever followed another person
-     * @param {string} follower - ID of the person following
-     * @param {*} followee - ID of the person being followed
-     * @returns {Promise<boolean>} - True if the person has followed/is following the other person, false if not
+     * @param {string} follower ID of the person following
+     * @param {*} followee ID of the person being followed
+     * @returns {Promise<boolean>} True if the person has followed/is following the other person, false if not
      */
     async hasFollowed(follower, followee) {
         const result = await this.followers.findOne({ follower, target: followee });
@@ -1686,8 +1686,8 @@ class UserManager {
 
     /**
      * Get the amount of people following a user
-     * @param {string} username - Username of the user
-     * @returns {Promise<number>} - Amount of people following the user
+     * @param {string} username Username of the user
+     * @returns {Promise<number>} Amount of people following the user
      */
     async getFollowerCount(username) {
         const result = await this.users.findOne({username: username});
@@ -1697,10 +1697,10 @@ class UserManager {
 
     /**
      * Send a message
-     * @param {string} receiver - ID of the person receiving the message
-     * @param {string} message - The message - should follow the format specified in the schema
-     * @param {boolean} disputable - True if the message is disputable, false if not
-     * @returns {Promise<string>} - ID of the message
+     * @param {string} receiver ID of the person receiving the message
+     * @param {string} message The message should follow the format specified in the schema
+     * @param {boolean} disputable True if the message is disputable, false if not
+     * @returns {Promise<string>} ID of the message
      * @async
      */
     async sendMessage(receiver, message, disputable, projectID=0) {
@@ -1721,10 +1721,10 @@ class UserManager {
 
     /**
      * Get messages sent to a person
-     * @param {string} receiver - ID of the person receiving the message
-     * @param {number} page - page of messages to get
-     * @param {number} pageSize - amount of messages to get
-     * @returns {Promise<Array<Object>>} - Array of the messages sent to the person
+     * @param {string} receiver ID of the person receiving the message
+     * @param {number} page page of messages to get
+     * @param {number} pageSize amount of messages to get
+     * @returns {Promise<Array<Object>>} Array of the messages sent to the person
      * @async
      */
     async getMessages(receiver, page, pageSize) {
@@ -1751,8 +1751,8 @@ class UserManager {
 
     /**
      * Get the amount of messages sent to a person
-     * @param {string} receiver - ID of the person who received the messages 
-     * @returns {Promise<number>} - Amount of messages sent to the person
+     * @param {string} receiver ID of the person who received the messages 
+     * @returns {Promise<number>} Amount of messages sent to the person
      */
     async getMessageCount(receiver) {
         const result = await this.messages.countDocuments({receiver: receiver});
@@ -1762,8 +1762,8 @@ class UserManager {
 
     /**
      * Get a message
-     * @param {string} messageID - ID of the message
-     * @returns {Promise<Object>} - The message
+     * @param {string} messageID ID of the message
+     * @returns {Promise<Object>} The message
      */
     async getMessage(messageID) {
         const result = await this.messages.findOne({ id: messageID });
@@ -1773,8 +1773,8 @@ class UserManager {
 
     /**
      * Get unread messages sent to a person
-     * @param {string} receiver - ID of the person you're getting the messages from
-     * @returns {Promise<Array<Object>>} - Array of the unread messages sent to the person
+     * @param {string} receiver ID of the person you're getting the messages from
+     * @returns {Promise<Array<Object>>} Array of the unread messages sent to the person
      * @async
      */
     async getUnreadMessages(receiver, page, pageSize) {
@@ -1807,8 +1807,8 @@ class UserManager {
 
     /**
      * Modify a message
-     * @param {string} id - ID of the message
-     * @param {function} modifierFunction - the function that modifies the message
+     * @param {string} id ID of the message
+     * @param {function} modifierFunction the function that modifies the message
      * @async
      */
     async modifyMessage(id, modifierFunction) {
@@ -1819,8 +1819,8 @@ class UserManager {
 
     /**
      * Mark a message as read
-     * @param {string} id - ID of the message
-     * @param {boolean} read - Toggle between read and not read
+     * @param {string} id ID of the message
+     * @param {boolean} read Toggle between read and not read
      */
     async markMessageAsRead(id, read) {
         await this.messages.updateOne({id: id}, {$set: {read: read}});
@@ -1834,7 +1834,7 @@ class UserManager {
 
     /**
      * Mark all messages sent to a user as read
-     * @param {string} receiver - ID of the person receiving the messages
+     * @param {string} receiver ID of the person receiving the messages
      */
     async markAllMessagesAsRead(receiver) {
         await this.messages.updateMany({receiver: receiver}, {$set: {read: true}});
@@ -1842,7 +1842,7 @@ class UserManager {
 
     /**
      * Delete a message
-     * @param {string} id - ID of the message
+     * @param {string} id ID of the message
      * @async
      */
     async deleteMessage(id) {
@@ -1851,8 +1851,8 @@ class UserManager {
 
     /**
      * Check if a message is disputable
-     * @param {string} id - ID of the message
-     * @returns {Promise<boolean>} - True if the message is disputable, false if not
+     * @param {string} id ID of the message
+     * @returns {Promise<boolean>} True if the message is disputable, false if not
      */
     async isMessageDisputable(id) {
         const result = await this.messages.findOne({id: id});
@@ -1862,8 +1862,8 @@ class UserManager {
 
     /**
      * Dispute a message
-     * @param {string} id - ID of the message
-     * @param {string} dispute - The dispute
+     * @param {string} id ID of the message
+     * @param {string} dispute The dispute
      */
     async dispute(id, dispute) {
         await this.messages.updateOne({id: id}, {$set: {dispute: dispute, disputable: false}});
@@ -1873,8 +1873,8 @@ class UserManager {
 
     /**
      * Check if a project exists
-     * @param {string} id - ID of the project
-     * @returns {Promise<boolean>} - True if the project exists, false if not
+     * @param {string} id ID of the project
+     * @returns {Promise<boolean>} True if the project exists, false if not
      * @async
      */
     async projectExists(id, nonPublic) {
@@ -1887,8 +1887,8 @@ class UserManager {
 
     /**
      * Check for illegal wording on text
-     * @param {string} text - The text to check for illegal wording 
-     * @returns {Promise<boolean>} - True if the text contains illegal wording, false if not
+     * @param {string} text The text to check for illegal wording 
+     * @returns {Promise<boolean>} True if the text contains illegal wording, false if not
      * @async
      */
     async checkForIllegalWording(text) {
@@ -1915,8 +1915,8 @@ class UserManager {
 
     /**
      * Get the index of illegal wording
-     * @param {string} text - Text to get the index from
-     * @returns {Promise<number>} - Index of the illegal wording
+     * @param {string} text Text to get the index from
+     * @returns {Promise<number>} Index of the illegal wording
      */
     async getIndexOfIllegalWording(text) {
         const illegalWords = (await this.illegalList.findOne
@@ -1937,8 +1937,8 @@ class UserManager {
 
     /**
      * Check for slightly illegal wording on text
-     * @param {string} text - The text to check for slightly illegal wording
-     * @returns {Promise<boolean>} - True if the text contains slightly illegal wording, false if not
+     * @param {string} text The text to check for slightly illegal wording
+     * @returns {Promise<boolean>} True if the text contains slightly illegal wording, false if not
      * @async
      */
     async checkForSlightlyIllegalWording(text) {
@@ -1962,8 +1962,8 @@ class UserManager {
 
     /**
      * Get the index of slightly illegal wording
-     * @param {string} text - Text to get the index from
-     * @returns {Promise<number>} - Index of the slightly illegal wording
+     * @param {string} text Text to get the index from
+     * @returns {Promise<number>} Index of the slightly illegal wording
      */
     async getIndexOfSlightlyIllegalWording(text) {
         const potentiallyUnsafeWords = (await this.illegalList.findOne
@@ -1982,8 +1982,8 @@ class UserManager {
 
     /**
      * Set a new list of illegal words
-     * @param {Array<string>} words - The new list of illegal words
-     * @param {string} type - The type of the illegal item
+     * @param {Array<string>} words The new list of illegal words
+     * @param {string} type The type of the illegal item
      * @async
      */
     async setIllegalWords(type, words) {
@@ -1992,8 +1992,8 @@ class UserManager {
 
     /**
      * Add an illegal word
-     * @param {string} word - The item to add
-     * @param {string} type - The type of the illegal item
+     * @param {string} word The item to add
+     * @param {string} type The type of the illegal item
      * @async
      */
     async addIllegalWord(word, type) {
@@ -2002,8 +2002,8 @@ class UserManager {
 
     /**
      * Remove an illegal word
-     * @param {string} word - The item to remove 
-     * @param {string} type - The type of the illegal item
+     * @param {string} word The item to remove 
+     * @param {string} type The type of the illegal item
      * @async
      */
     async removeIllegalWord(word, type) {
@@ -2012,7 +2012,7 @@ class UserManager {
 
     /**
      * Get all illegal words
-     * @returns {Promise<Object>} - Object containing all the illegal words
+     * @returns {Promise<Object>} Object containing all the illegal words
      * @async
      */
     async getIllegalWords() {
@@ -2040,8 +2040,8 @@ class UserManager {
 
     /**
      * Verify the state from an OAuth2 request
-     * @param {string} state - The state to verify 
-     * @returns {Promise<boolean>} - True if the state is valid, false if not
+     * @param {string} state The state to verify 
+     * @returns {Promise<boolean>} True if the state is valid, false if not
      * @async
      */
     async verifyOAuth2State(state) {
@@ -2057,7 +2057,7 @@ class UserManager {
 
     /**
      * Generate a new OAuth2 state and save it for verification
-     * @returns {Promise<string>} - The state
+     * @returns {Promise<string>} The state
      */
     async generateOAuth2State(extra="") {
         const state = randomBytes(32).toString("hex") + extra;
@@ -2072,8 +2072,8 @@ class UserManager {
 
     /**
      * Make an OAuth2 request
-     * @param {string} code - The from the original OAuth2 request
-     * @param {string} method - The method of OAuth2 request
+     * @param {string} code The from the original OAuth2 request
+     * @param {string} method The method of OAuth2 request
      * @returns 
      */
     async makeOAuth2Request(code, method) {
@@ -2147,8 +2147,8 @@ class UserManager {
 
     /**
      * Convert a project json to protobuf format
-     * @param {Object} json - The project json 
-     * @returns {Buffer} - The project protobuf
+     * @param {Object} json The project json 
+     * @returns {Buffer} The project protobuf
      */
     projectJsonToProtobuf(json) {
         // get the protobuf schema
@@ -2351,8 +2351,8 @@ class UserManager {
 
     /**
      * Convert a project protobuf to json format
-     * @param {Buffer} buffer - The project protobuf
-     * @returns {Object} - The project json
+     * @param {Buffer} buffer The project protobuf
+     * @returns {Object} The project json
      */
     protobufToProjectJson(buffer) {
         // get the protobuf schema
@@ -2512,8 +2512,8 @@ class UserManager {
     
     /**
      * Cast a value to a string
-     * @param {any} value - The value to cast 
-     * @returns {string} - The value as a string
+     * @param {any} value The value to cast 
+     * @returns {string} The value as a string
      */
     castToString(value) {
         if (typeof value !== "object") {
@@ -2525,7 +2525,7 @@ class UserManager {
 
     /**
      * Set the legal extensions
-     * @param {Array<string>} extensions - Array of extension IDs to set the legal list to
+     * @param {Array<string>} extensions Array of extension IDs to set the legal list to
      */
     async setLegalExtensions(extensions) {
         await this.illegalList.updateOne({id: "legalExtensions"}, {$set: {items: extensions}});
@@ -2533,7 +2533,7 @@ class UserManager {
 
     /**
      * Add an extension to the legal list
-     * @param {string} extension - Extension ID
+     * @param {string} extension Extension ID
      */
     async addLegalExlegalExtentension(extension) {
         await this.illegalList.updateOne({id: "legalExtensions"}, {$push: {items: extension}});
@@ -2541,7 +2541,7 @@ class UserManager {
 
     /**
      * Remove an extension from the legal list
-     * @param {string} extension - Extension ID
+     * @param {string} extension Extension ID
      */
     async removeLegalExtension(extension) {
         await this.illegalList.updateOne({id: "legalExtensions"}, {$pull: {items: extension}});
@@ -2555,8 +2555,8 @@ class UserManager {
 
     /**
      * Check if an extension is allowed
-     * @param {string} extension - The extension to check
-     * @returns {Promise<boolean>} - True if the extension is allowed, false if not
+     * @param {string} extension The extension to check
+     * @returns {Promise<boolean>} True if the extension is allowed, false if not
      */
     async checkExtensionIsAllowed(extension) {
         if (!extension) return true;
@@ -2569,8 +2569,8 @@ class UserManager {
 
     /**
      * Make a token for a user
-     * @param {string} username - Username of the user to make the token for
-     * @returns {Promise<string>} - the new token
+     * @param {string} username Username of the user to make the token for
+     * @returns {Promise<string>} the new token
      */
     async newTokenGen(username) {
         const token = randomBytes(32).toString("hex");
@@ -2582,10 +2582,10 @@ class UserManager {
 
     /**
      * Search project names/instructions/notes by query
-     * @param {string} query - Query to search for
-     * @param {number} page - Page of projects to get 
-     * @param {number} pageSize - Amount of projects to get 
-     * @returns {Promise<Array<object>>} - Array of projects
+     * @param {string} query Query to search for
+     * @param {number} page Page of projects to get 
+     * @param {number} pageSize Amount of projects to get 
+     * @returns {Promise<Array<object>>} Array of projects
      */
     async searchProjects(query, page, pageSize) {
         const result = await this.projects.aggregate([
@@ -2635,10 +2635,10 @@ class UserManager {
 
     /**
      * Search users by a query
-     * @param {string} query - Query to search for
-     * @param {number} page - Page of projects to get 
-     * @param {number} pageSize - Amount of projects to get 
-     * @returns {Promise<Array<object>>} - Array of users
+     * @param {string} query Query to search for
+     * @param {number} page Page of projects to get 
+     * @param {number} pageSize Amount of projects to get 
+     * @returns {Promise<Array<object>>} Array of users
      */
     async searchUsers(query, page, pageSize) {
         const result = await this.users.aggregate([
@@ -2660,7 +2660,7 @@ class UserManager {
 
         // sort by how well it matches
         final.sort((a, b) => {
-            return (a.username.indexOf(query)+a.username.length) - (b.username.indexOf(query)-b.username.length);
+            return (a.username.indexOf(query)+a.username.length) (b.username.indexOf(query)-b.username.length);
         });
 
         return final;
@@ -2668,10 +2668,10 @@ class UserManager {
 
     /**
      * Search for a tag
-     * @param {string} tag - tag to search for
-     * @param {*} page - page of projects to get
-     * @param {*} pageSize - amount of projects to get
-     * @returns {Array<Object>} - Array of projects
+     * @param {string} tag tag to search for
+     * @param {*} page page of projects to get
+     * @param {*} pageSize amount of projects to get
+     * @returns {Array<Object>} Array of projects
      */
     async searchForTag(tag, page, pageSize) {
         const aggResult = await this.projects.aggregate([
@@ -2705,10 +2705,10 @@ class UserManager {
 
     /**
      * Specialized search for a query, like { author: abc } or another metadata item
-     * @param {Object} query - Query to search for 
-     * @param {number} page - Page of projects to get
-     * @param {number} pageSize - Amount of projects to get
-     * @returns {Array<Object>} - Array of projects
+     * @param {Object} query Query to search for 
+     * @param {number} page Page of projects to get
+     * @param {number} pageSize Amount of projects to get
+     * @returns {Array<Object>} Array of projects
      */
     async specializedSearch(query, page, pageSize) {
         const aggResult = await this.projects.aggregate([
@@ -2740,8 +2740,8 @@ class UserManager {
 
     /**
      * Set a project to soft rejected
-     * @param {string} id - ID of the project
-     * @param {boolean} toggle - True if soft rejecting, false if undoing it
+     * @param {string} id ID of the project
+     * @param {boolean} toggle True if soft rejecting, false if undoing it
      */
     async softReject(id, toggle) {
         // dont change if public as you should still be able to go to it if you have the id
@@ -2750,7 +2750,7 @@ class UserManager {
 
     /**
      * Check if a project is soft rejected
-     * @param {string} id - ID of the project
+     * @param {string} id ID of the project
      * @returns {Promise<boolean>}
      */
     async isSoftRejected(id) {
@@ -2761,8 +2761,8 @@ class UserManager {
 
     /**
      * Set a project to private/not private
-     * @param {string} id - ID of the project
-     * @param {boolean} toggle - True if making private, false if not
+     * @param {string} id ID of the project
+     * @param {boolean} toggle True if making private, false if not
      */
     async privateProject(id, toggle) {
         await this.projects.updateOne({id: id}, { $set: { public: !toggle } });
@@ -2786,8 +2786,8 @@ class UserManager {
 
     /**
      * Get a users feed
-     * @param {string} username - Username of the user
-     * @param {number} size - Size of the feed 
+     * @param {string} username Username of the user
+     * @param {number} size Size of the feed 
      * @returns {Promise<ARray<Object>>}
      */
     async getUserFeed(username, size) {
@@ -2816,9 +2816,9 @@ class UserManager {
 
     /**
      * 
-     * @param {string} userID - ID of the user
-     * @param {string} type - Type of the feed item
-     * @param {string} data - Data of the feed item, for example the project id and name
+     * @param {string} userID ID of the user
+     * @param {string} type Type of the feed item
+     * @param {string} data Data of the feed item, for example the project id and name
      */
     async addToFeed(userID, type, data) {
         await this.userFeed.insertOne({
@@ -2832,8 +2832,8 @@ class UserManager {
 
     /**
      * Set a users pfp
-     * @param {string} username - Username of the user
-     * @param {Buffer} buffer - Buffer of the pfp
+     * @param {string} username Username of the user
+     * @param {Buffer} buffer Buffer of the pfp
      */
     async setProfilePicture(username, buffer) {
         const id = await this.getIDByUsername(username);
@@ -2845,8 +2845,8 @@ class UserManager {
 
     /**
      * Get a user's profile picture
-     * @param {string} username - Username of the user
-     * @returns {Promise<Buffer>} - User's pfp
+     * @param {string} username Username of the user
+     * @returns {Promise<Buffer>} User's pfp
      */
     async getProfilePicture(username) {
         const id = await this.getIDByUsername(username);
@@ -2948,9 +2948,9 @@ class UserManager {
 
     /**
      * Temporarily ban a user
-     * @param {string} username - Username of the user
-     * @param {string} reason - Reason for temp ban
-     * @param {number} length - Length of ban in milliseconds
+     * @param {string} username Username of the user
+     * @param {string} reason Reason for temp ban
+     * @param {number} length Length of ban in milliseconds
      * @returns {Promise<void>}
      */
     async tempBanUser(username, reason, length) {
@@ -2992,9 +2992,9 @@ class UserManager {
 
     /**
      * 
-     * @param {string} username - Username of the user
-     * @param {string} ip - Ip they logged in with
-     * @returns {Promise<boolean>} - Whether or not its new
+     * @param {string} username Username of the user
+     * @param {string} ip Ip they logged in with
+     * @returns {Promise<boolean>} Whether or not its new
      */
     async addIP(username, ip) {
         const id = await this.getIDByUsername(username);
@@ -3065,6 +3065,8 @@ class UserManager {
     }
 
     async setEmail(username, email) {
+        if (await this.emailInUse(email)) return;
+
         await this.users.updateOne({ username: username }, { $set: { email: email } });
     }
 
@@ -3077,6 +3079,30 @@ class UserManager {
     async setEmailVerified(username, toggle) {
         await this.users.updateOne({ username: username }, { $set: { emailVerified: toggle } });
     }
+
+    async emailInUse(email) {
+        const result = await this.users.findOne({ email: email });
+
+        return result ? true : false;
+    }
+
+    async getUsernameByEmail(email) {
+        const result = await this.users.findOne({ email: email });
+
+        return result.username;
+    }
+
+    /**
+     * Get the ID of a user by their email
+     * @param {string} email Email of the user
+     * @returns {Promise<string>}  The ID of the user
+     */
+    async getIDByEmail(email) {
+        const result = await this.users.findOne({ email: email });
+
+        return result.id;
+    }
+
 }
 
 module.exports = UserManager;

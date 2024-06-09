@@ -13,6 +13,7 @@ const requestIp = require('request-ip');
 const {OAuth2Client} = require('google-auth-library');
 const ipaddr = require('ipaddr.js');
 const { promisify } = require('util');
+require('colors');
 
 function escapeXML(unsafe) {
     unsafe = String(unsafe);
@@ -67,6 +68,10 @@ app.use(requestIp.mw());
 const Cast = new cast();
 const UserManager = new um();
 
+const log = (txt) => {
+    console.log(txt);
+}
+
 (async () => {
     await UserManager.init(MAXVIEWS, VIEWRESETRATE);
 
@@ -116,13 +121,14 @@ const UserManager = new um();
         PORT: PORT,
         logs,
         googleOAuth2Client: OAuth2Client,
-        ipaddr
+        ipaddr,
+        rateLimiter: rateLimit,
     });
 
     app.use((err, req, res, next) => {
-        console.log(`ERROR: ${err}`);
+        console.error(err);
         res.status(500);
-        res.send("An error occured, sorry about that.");
+        res.send(`An error occured, sorry about that. abc ${"test".red}`);
     })
 
     app.listen(PORT, () => {

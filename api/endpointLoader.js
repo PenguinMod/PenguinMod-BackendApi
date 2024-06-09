@@ -1,5 +1,6 @@
 const path = require('path');
 const fs = require('fs');
+require('colors');
 
 function readFiles(path) {
     let flat = [];
@@ -32,8 +33,12 @@ function loadEndpoints(app, dir, utils = {}) {
     
     readFiles(endpointDir).forEach(file => {
         const endpointPath = path.join(endpointDir, file);
-        const endpoint = require(endpointPath);
-        endpoint(app, utils);
+        try {
+            const endpoint = require(endpointPath);
+            endpoint(app, utils);
+        } catch (e) {
+            console.error(`${"[ ERROR ]".red} loading endpoint ${file}: ${e}`);
+        }
     });
 }
 module.exports = loadEndpoints;
