@@ -22,52 +22,7 @@ Please report any security vulnerabilities using GitHub's security tab on the re
 3. Run `npm i`. if this doesn't work run it with --force
 4. Install minio
    - [Minio](https://docs.min.io/docs/minio-quickstart-guide.html)
-5. Add a `.env` file with the following:
-
-    ```env
-    # General
-    PORT=8080
-
-    MinioClientID=yourID
-    MinioClientSecret=yourSecret
-
-    # OAuth
-    ScratchOAuthClientID=id
-    ScratchOAuthClientSecret=secret
-
-    GithubOAuthClientID=id
-    GithubOAuthClientSecret=secret
-
-    GoogleOAuthClientID=id
-    GoogleOAuthClientSecret=secret
-
-    #Misc
-    MaxViews=maxViewsBeforeViewCheckerReset (ex: 100)
-    ViewResetRate=resetRateOfViewChecker (ex: 1 hour)
-
-    HardRejectExpirationTime=hardRejectExpirationTime (ex: 5 days) (this is in seconds)
-
-    PageSize=pageSize
-    MaxPageSize=maxPageSize
-
-    UploadingEnabled=bool
-    ViewingEnabled=bool
-
-    FeatureAmount=10 # amount of votes to be featured
-    FollowAmount=50 # amount of followers to get badge
-    LoveAmount=50 # amount of loves to get badge
-
-    FeedExpirationTime=86400000 # amount of time before an item in your feed expires (in milliseconds) (this is 1 day)
-    FeedSize=25 # max items in someones feed
-
-    # Moderator logs
-    HeatWebhook=abc
-    BioWebhook=def
-    ReportWebhook=ghi
-    ModWebhook=jkl
-    AdminWebhook=mno
-    ```
-
+5. Add a `.env` file copied from the .env.template file and fill in the values.
 6. Run `npm run dev` to start the server in development mode.
 
 ## Deployment

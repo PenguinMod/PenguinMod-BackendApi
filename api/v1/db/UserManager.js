@@ -9,6 +9,7 @@ const sharp = require('sharp');
 const fs = require('fs');
 const path = require('path');
 var prompt = require('prompt-sync')();
+const Mailjet = require('node-mailjet');
 
 const basePFP = fs.readFileSync(path.join(__dirname, "./penguin.png"));
 
@@ -32,6 +33,9 @@ class UserManager {
         this.db = this.client.db('pm_apidata');
         this.users = this.db.collection('users');
         this.loggedIPs = this.db.collection('loggedIPs');
+        this.passwordResetStates = this.db.collection('passwordResetStates');
+        this.sentEmails = this.db.collection('sentEmails');
+        await this.sentEmails.createIndex({ 'expireAt': 1 }, { expireAfterSeconds: 60 * 60 * 24 });
         this.followers = this.db.collection("followers");
         this.oauthIDs = this.db.collection('oauthIDs');
         this.reports = this.db.collection('reports');
@@ -166,6 +170,8 @@ class UserManager {
 
         await this.users.deleteMany({});
         await this.loggedIPs.deleteMany({});
+        await this.passwordResetStates.deleteMany({});
+        await this.sentEmails.deleteMany({});
         await this.followers.deleteMany({});
         await this.oauthIDs.deleteMany({});
         await this.reports.deleteMany({});
@@ -177,14 +183,6 @@ class UserManager {
         await this.userFeed.deleteMany({});
         await this.illegalList.deleteMany({});
         // dont reset policy stuff, we need that :normal:
-        await this.illegalList.insertMany([
-            { id: "illegalWords", items: [] },
-            { id: "illegalWebsites", items: [] },
-            { id: "spacedOutWordsOnly", items: [] },
-            { id: "potentiallyUnsafeWords", items: [] },
-            { id: "potentiallyUnsafeWordsSpacedOut", items: [] },
-            { id: "legalExtensions", items: []}
-        ]);
 
         // reset minio buckets
         await this.resetBucket("projects");
@@ -3103,6 +3101,77 @@ class UserManager {
         return result.id;
     }
 
+    async getEmailCount() {
+        const result = await this.sentEmails.countDocuments();
+
+        return result;
+    }
+
+    /**
+     * Send an email
+     * @param {string} userid ID of who you're sending it to
+     * @param {string} email Email of who you're sending it to
+     * @param {string} subject Subject of the email
+     * @param {string} message Message of the email
+     * @param {string} messageHtml Message of the email but html (use this as primary)
+     * @returns {Promise<boolean>} Success or not
+     */
+    async sendEmail(userid, type, email, name, subject, message, messageHtml) {
+        if (await this.getEmailCount() > process.env.EmailLimit) return false;
+
+        await this.sentEmails.insertOne({
+            userid,
+            sentAt: Date.now(),
+            expireAt: Date.now() + 1000 * 60 * 60 * 24,
+            type
+        });
+
+        /*/
+         * Send email
+         * with node-mailjet
+         * if it fails return false
+        /*/
+
+        const mailjet = new Mailjet({
+            apiKey: process.env.MJ_APIKEY_PUBLIC,
+            apiSecret: process.env.MJ_APIKEY_PRIVATE
+        });
+
+        try {
+            await mailjet.post('send', { version: 'v3.1' })
+            .request({
+                Messages: [
+                    {
+                        "From": {
+                        "Email": "no-reply@penguinmod.com",
+                        "Name": "Penguinmod"
+                        },
+                        "To": [
+                        {
+                            "Email": email,
+                            "Name": name
+                        }
+                        ],
+                        "Subject": subject,
+                        "TextPart": message,
+                        "HTMLPart": messageHtml,
+                    }
+                ]
+            })
+        } catch (e) {
+            return false;
+        }
+
+        return true;
+    }
+
+    async lastEmailSent(userid) {
+        const result = await this.sentEmails.findOne({ userid });
+
+        if (!result) return 0;
+
+        return result.sentAt;
+    }
 }
 
 module.exports = UserManager;
