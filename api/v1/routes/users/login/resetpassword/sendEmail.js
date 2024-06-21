@@ -18,7 +18,7 @@ module.exports = (app, utils) => {
             return;
         }
 
-        const state = await utils.UserManager.generateOAuth2State();
+        const state = await utils.UserManager.generatePasswordResetState();
 
         const username = await utils.UserManager.getUsernameByEmail(email); // just so we can send the email like "Hello, username"
 
@@ -27,7 +27,14 @@ module.exports = (app, utils) => {
             return;
         }
 
-        const forgotPasswordUrl = "https://example.com/";
+        const userid = await utils.UserManager.getIDByUsername(username);
+
+        if (Date.now() - await utils.UserManager.lastEmailSentByID(userid) < 1000 * 60 * 60 * 2) {
+            utils.error(res, 400, "Cooldown");
+            return;
+        }
+
+        const forgotPasswordUrl = `${utils.env.HomeURL}/resetpassword?state=${state}&email=${email}`;
 
         const emailHtml = `<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd">
         <html><body>
@@ -61,19 +68,10 @@ module.exports = (app, utils) => {
 
         PenguinMod`;
 
-        /*/ 
-         * BTODO:
-         * Send email here
-         * Link should be something like: https://penguinmod.com/resetpassword?state=STATE&email=EMAIL
-         * Make sure to include that the link will expire 5 minutes after it's sent, this can be changed later
-        /*/
-
-        const userid = await utils.UserManager.getIDByUsername(username);
-
         await utils.UserManager.sendEmail(userid, req.realIP, "reset", email, username, "Reset Your Password", emailPlainText, emailHtml);
 
-        res.send(200);
+        res.status(200);
         res.header("Content-Type", 'application/json');
-        res.send({ url: `https://penguinmod.com/resetpassword?state=${state}&email=${email}` }); // BTODO: once the email sending stuff is done, change this to just res.send({ "success": true });
+        res.send({ url: `https://penguinmod.com/resetpassword?state=${state}&email=${email}` });
     });
 }

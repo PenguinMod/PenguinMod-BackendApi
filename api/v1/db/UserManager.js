@@ -3170,7 +3170,15 @@ class UserManager {
     }
 
     async lastEmailSentByID(userid) {
-        const result = await this.sentEmails.findOne({ userid });
+        const result = (await this.sentEmails.aggregate([{
+            $match: { userid }
+        },
+        {
+            $sort: { sentAt: -1 }
+        },
+        {
+            $limit: 1
+        }]).toArray())[0];
 
         if (!result) return 0;
 
@@ -3178,7 +3186,15 @@ class UserManager {
     }
 
     async lastEmailSentByIP(userip) {
-        const result = await this.sentEmails.findOne({ userip });
+        const result = (await this.sentEmails.aggregate([{
+            $match: { userip }
+        },
+        {
+            $sort: { sentAt: -1 }
+        },
+        {
+            $limit: 1
+        }]).toArray())[0];
 
         if (!result) return 0;
 

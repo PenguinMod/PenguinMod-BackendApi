@@ -50,6 +50,8 @@ module.exports = (app, utils) => {
 
         const email = await utils.UserManager.getEmail(username);
 
+        const emailIsVerified = await utils.UserManager.isEmailVerified(username);
+
         if (await utils.UserManager.canPasswordLogin(username)) loginMethods.push("password");
 
         const user = {
@@ -70,7 +72,9 @@ module.exports = (app, utils) => {
             lastPolicyRead: lastPolicyRead,
             privateProfile,
             canFollowingSeeProfile,
-            standing
+            standing,
+            email,
+            isEmailVerified: emailIsVerified
         };
 
         res.status(200);

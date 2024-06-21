@@ -6,7 +6,6 @@ module.exports = (app, utils) => {
         const token = packet.token;
 
         if (!await utils.UserManager.loginWithToken(username, token)) {
-            console.log("abc");
             utils.error(res, 400, "Reauthenticate");
             return;
         }
@@ -20,59 +19,66 @@ module.exports = (app, utils) => {
         };
 
         if (email === "") {
-            utils.error(res, 400, "NoEmail");
+            utils.error(res, 400, "EmailInvalid");
+            return;
         }
 
         if (!validateEmail(email)) {
             utils.error(res, 400, "EmailInvalid");
+            return;
         }
 
         const state = await utils.UserManager.generatePasswordResetState();
 
         if (await utils.UserManager.isEmailVerified(username)) {
-            console.log("def");
             utils.error(res, 400, "EmailAlreadyVerified");
             return;
         }
 
-        const forgotPasswordUrl = `https://projects.penguinmod.com/api/v1/resetpassword/verifyemail?email=${email}&state=${state}`;
+        const userid = await utils.UserManager.getIDByUsername(username);
+
+        if (Date.now() - await utils.UserManager.lastEmailSentByID(userid) < 1000 * 60 * 60 * 2) {
+            utils.error(res, 400, "Cooldown");
+            return;
+        }
+
+        const verifyEmailUrl = `https://projects.penguinmod.com/api/v1/resetpassword/verifyemail?email=${email}&state=${state}`;
 
         const emailHtml = `<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd">
         <html><body>
-        <p style='background-color: #129aeb; color: white; font-size: 48px; font-weight: bold; font-family: "Helvetica Neue", Arial, sans-serif; padding: 60px 10%;' align="center">PenguinMod Password Reset</p>
+        <p style='background-color: #129aeb; color: white; font-size: 48px; font-weight: bold; font-family: "Helvetica Neue", Arial, sans-serif; padding: 60px 10%;' align="center">PenguinMod Email Verification</p>
             <h1 style='font-family: "Helvetica Neue", Arial, sans-serif;'>Hello ${username}!</h1>
-            <p style='font-family: "Helvetica Neue", Arial, sans-serif;'>You are getting this email as someone has asked to reset the password for this PenguinMod account.</p>
-        <p style='font-family: "Helvetica Neue", Arial, sans-serif;'><a href="${forgotPasswordUrl}">Reset Password</a></p>
+            <p style='font-family: "Helvetica Neue", Arial, sans-serif;'>You are getting this email as someone has requested to set this email address as an email for the &quot;${username}&quot; PenguinMod account.</p>
+            <p style='font-family: "Helvetica Neue", Arial, sans-serif;'>Opening the link below will set this as the email address for the &quot;${username}&quot; PenguinMod account.</p>
+        <p style='font-family: "Helvetica Neue", Arial, sans-serif;'><a href="${verifyEmailUrl}">Verify this email</a></p>
         <br>
-        <p style='font-family: "Helvetica Neue", Arial, sans-serif;'>If you did not ask to reset your password, you can delete this email or ignore it.</p>
+        <p style='font-family: "Helvetica Neue", Arial, sans-serif;'>If you did not request for this to be a PenguinMod account's email, you can delete this email or ignore it.</p>
             <p style='font-family: "Helvetica Neue", Arial, sans-serif;'>Do not forward, share, or reply to this email. Replies will not be seen or answered.</p>
 
         <img src="https://penguinmod.com/favicon.png" alt="PenguinMod" width="64" height="64" style="width: 64px; height: 64px;">
         </body></html>`;
-        const emailPlainText = `PenguinMod Password Reset
+        const emailPlainText = `PenguinMod Email Verification
 
         ********************
         Hello ${username}!
         ********************
 
-        You are getting this email as someone has asked to reset the
-        password for this PenguinMod account.
+        You are getting this email as someone has requested to set
+        this email address as an email for the "${username}" PenguinMod account.
 
-        Reset Password:
-        ${forgotPasswordUrl}
+        Opening the link below will set this as the email address
+        for the "${username}" PenguinMod account.
 
-        If you did not ask to reset your password, you can delete this
-        email or ignore it.
+        Verify this email:
+        ${verifyEmailUrl}
+
+        If you did not request for this to be a PenguinMod account's email,
+        you can delete this email or ignore it.
 
         Do not forward, share, or reply to this email. Replies will
         not be seen or answered.
 
         PenguinMod`;
-
-        // BTODO: make sure they havent sent an email in the last like 2 hours
-
-
-        const userid = await utils.UserManager.getIDByUsername(username);
 
         const worked = await utils.UserManager.sendEmail(userid, req.realIP, "reset", email, username, "Reset Your Password", emailPlainText, emailHtml);
 

@@ -35,7 +35,7 @@ module.exports = (app, utils) => {
 
         await utils.UserManager.setEmail(username, email);
 
-        res.send(200);
+        res.status(200);
         res.header("Content-Type", 'application/json');
         res.send({ "success": true });
     });
