@@ -34,6 +34,7 @@ class UserManager {
         this.users = this.db.collection('users');
         this.loggedIPs = this.db.collection('loggedIPs');
         this.passwordResetStates = this.db.collection('passwordResetStates');
+        await this.passwordResetStates.createIndex({ 'expireAt': 1 }, { expireAfterSeconds: 60 * 60 * 2 }); // give 2 hours
         this.sentEmails = this.db.collection('sentEmails');
         await this.sentEmails.createIndex({ 'expireAt': 1 }, { expireAfterSeconds: 60 * 60 * 24 });
         this.followers = this.db.collection("followers");
@@ -3110,17 +3111,19 @@ class UserManager {
     /**
      * Send an email
      * @param {string} userid ID of who you're sending it to
+     * @param {string} userip IP of who you're sending it to (ipv6)
      * @param {string} email Email of who you're sending it to
      * @param {string} subject Subject of the email
      * @param {string} message Message of the email
      * @param {string} messageHtml Message of the email but html (use this as primary)
      * @returns {Promise<boolean>} Success or not
      */
-    async sendEmail(userid, type, email, name, subject, message, messageHtml) {
+    async sendEmail(userid, userip, type, email, name, subject, message, messageHtml) {
         if (await this.getEmailCount() > process.env.EmailLimit) return false;
 
         await this.sentEmails.insertOne({
             userid,
+            userip,
             sentAt: Date.now(),
             expireAt: Date.now() + 1000 * 60 * 60 * 24,
             type
@@ -3133,8 +3136,8 @@ class UserManager {
         /*/
 
         const mailjet = new Mailjet({
-            apiKey: process.env.MJ_APIKEY_PUBLIC,
-            apiSecret: process.env.MJ_APIKEY_PRIVATE
+            apiKey: process.env.MJApiKeyPublic,
+            apiSecret: process.env.MJApiKeyPrivate
         });
 
         try {
@@ -3159,18 +3162,49 @@ class UserManager {
                 ]
             })
         } catch (e) {
+            console.log("hi", e);
             return false;
         }
 
         return true;
     }
 
-    async lastEmailSent(userid) {
+    async lastEmailSentByID(userid) {
         const result = await this.sentEmails.findOne({ userid });
 
         if (!result) return 0;
 
         return result.sentAt;
+    }
+
+    async lastEmailSentByIP(userip) {
+        const result = await this.sentEmails.findOne({ userip });
+
+        if (!result) return 0;
+
+        return result.sentAt;
+    }
+
+    async generatePasswordResetState(prefix="") {
+        const state = randomBytes(32).toString("hex") + prefix;
+
+        await this.passwordResetStates.insertOne({
+            state: state,
+            expireAt: Date.now() + 1000 * 60 * 60 * 2
+        });
+
+        return state;
+    }
+
+    async verifyPasswordResetState(state) {
+        const result = await this.passwordResetStates.findOne({ state: state });
+
+        // now get rid of the state cuz uh we dont need it anymore
+
+        if (result)
+            await this.passwordResetStates.deleteOne({ state: state })
+
+        return result ? true : false;
     }
 }
 
