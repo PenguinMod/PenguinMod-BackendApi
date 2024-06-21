@@ -100,8 +100,6 @@ module.exports = (app, utils) => {
             return utils.error(res, 400, "Invalid data");
         }
 
-        utils.UserManager.setLastUpload(username, Date.now());
-
         // the jsonfile is in protobuf format so convert it to json
         const protobufFile = fs.readFileSync(req.files.jsonFile[0].path);
         let jsonFile;
@@ -199,6 +197,7 @@ module.exports = (app, utils) => {
             remix,
             packet.rating
         );
+        await utils.UserManager.setLastUpload(username, Date.now());
 
         if (remix) {
             await utils.UserManager.sendMessage(
