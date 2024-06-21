@@ -29,7 +29,15 @@ module.exports = (app, utils) => {
         })
         .then(async res => {
             return {"user": await res.json(), "status": res.status};
-        });
+        })
+        .catch(e => {
+            utils.error(res, 500, "OAuthServerDidNotRespond");
+            return new Promise();
+        })
+
+        if (!user) {
+            return;
+        }
 
         if (user.status !== 200) {
             utils.error(res, 500, "InternalError");

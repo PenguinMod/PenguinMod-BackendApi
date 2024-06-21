@@ -25,14 +25,22 @@ module.exports = (app, utils) => {
             return;
         }
 
-        const user = await fetch("https://oauth2.scratch-wiki.info/w/rest.php/soa2/v0/user", {
+        const user = await fetch("https://api.github.com/user", {
             headers: {
-                Authorization: `Bearer ${btoa(response.access_token)}`
+                Authorization: `Bearer ${response.access_token}`
             }
         })
         .then(async res => {
             return {"user": await res.json(), "status": res.status};
-        });
+        })
+        .catch(e => {
+            utils.error(res, 500, "OAuthServerDidNotRespond");
+            return new Promise();
+        })
+
+        if (!user) {
+            return;
+        }
 
         if (user.status !== 200) {
             utils.error(res, 500, "InternalError");
