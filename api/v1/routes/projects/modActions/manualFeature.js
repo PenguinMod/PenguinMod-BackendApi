@@ -8,7 +8,7 @@ module.exports = (app, utils) => {
         const toggle = packet.toggle;
         const projectID = packet.projectID;
 
-        if (!username || !token || !toggle || !projectID) {
+        if (!username || !token || typeof toggle !== "boolean" || typeof projectID !== "string") {
             return utils.error(res, 400, "InvalidData");
         }
 
