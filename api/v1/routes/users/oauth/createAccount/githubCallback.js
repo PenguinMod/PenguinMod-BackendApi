@@ -19,6 +19,11 @@ module.exports = (app, utils) => {
 
         const response = await utils.UserManager.makeOAuth2Request(code, "github");
 
+        if (!response) {
+            utils.error(res, 500, "OAuthServerDidNotRespond")
+            return;
+        }
+
         const username = await fetch("https://api.github.com/user", {
             headers: {
                 Authorization: `Bearer ${response.access_token}`

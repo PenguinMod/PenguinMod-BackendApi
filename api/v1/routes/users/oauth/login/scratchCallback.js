@@ -18,6 +18,11 @@ module.exports = (app, utils) => {
         // now make the request
         const response = await utils.UserManager.makeOAuth2Request(code, "scratch");
 
+        if (!response) {
+            utils.error(res, 500, "OAuthServerDidNotRespond")
+            return;
+        }
+
         const user = await fetch("https://oauth2.scratch-wiki.info/w/rest.php/soa2/v0/user", {
             headers: {
                 Authorization: `Bearer ${btoa(response.access_token)}`

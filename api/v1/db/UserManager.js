@@ -2077,35 +2077,39 @@ class UserManager {
      */
     async makeOAuth2Request(code, method) {
         let response;
-        switch (method) {
-            case "scratch":
-                response = await fetch(`https://oauth2.scratch-wiki.info/w/rest.php/soa2/v0/tokens`, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        client_id: Number(process.env.ScratchOAuthClientID),
-                        client_secret: process.env.ScratchOAuthClientSecret,
-                        code: code,
-                        scopes: ["identify"]
-                    })
-                }).then(res => res.json());
-                return response;
-            case "github":
-                response = await fetch(`https://github.com/login/oauth/access_token`, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Accept": "application/json"
-                    },
-                    body: JSON.stringify({
-                        client_id: process.env.GithubOAuthClientID,
-                        client_secret: process.env.GithubOAuthClientSecret,
-                        code: code
-                    })
-                }).then(res => res.json());
-                return response;
+        try {
+            switch (method) {
+                case "scratch":
+                    response = await fetch(`https://oauth2.scratch-wiki.info/w/rest.php/soa2/v0/tokens`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            client_id: Number(process.env.ScratchOAuthClientID),
+                            client_secret: process.env.ScratchOAuthClientSecret,
+                            code: code,
+                            scopes: ["identify"]
+                        })
+                    }).then(res => res.json());
+                    return response;
+                case "github":
+                    response = await fetch(`https://github.com/login/oauth/access_token`, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Accept": "application/json"
+                        },
+                        body: JSON.stringify({
+                            client_id: process.env.GithubOAuthClientID,
+                            client_secret: process.env.GithubOAuthClientSecret,
+                            code: code
+                        })
+                    }).then(res => res.json());
+                    return response;
+            }
+        } catch (e) {
+            return false;
         }
     }
 

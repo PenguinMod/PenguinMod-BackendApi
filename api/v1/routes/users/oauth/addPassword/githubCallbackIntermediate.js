@@ -18,6 +18,11 @@ module.exports = (app, utils) => {
         // now make the request
         const response = await utils.UserManager.makeOAuth2Request(code, "github");
 
+        if (!response) {
+            utils.error(res, 500, "OAuthServerDidNotRespond")
+            return;
+        }
+
         res.status(200);
         res.redirect(`${utils.env.HomeURL}/oauthchangepasswordintermediate?method=github&at=${response.access_token}`);
     });
