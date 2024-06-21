@@ -24,11 +24,15 @@ function sendHeatLog(text, type, location, color=0xff0000) {
             timestamp: new Date().toISOString()
         }]
     });
-    fetch(heatWebhook, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body
-    });
+    try {
+        fetch(heatWebhook, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body
+        });
+    } catch (e) {
+        console.error(e);
+    }
 }
 
 function sendBioUpdateLog(username, target, oldBio, newBio) {
@@ -63,11 +67,15 @@ function sendBioUpdateLog(username, target, oldBio, newBio) {
             timestamp: new Date().toISOString()
         }]
     });
-    fetch(adminWebhook, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body
-    });
+    try {
+        fetch(adminWebhook, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body
+        });
+    } catch (e) {
+        console.error(e);
+    }
 }
 
 function sendReportLog(type, username, targetID, target, reason) {
@@ -103,11 +111,15 @@ function sendReportLog(type, username, targetID, target, reason) {
         }]
     });
 
-    fetch(reportWebhook, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body
-    });
+    try {
+        fetch(reportWebhook, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body
+        });
+    } catch (e) {
+        console.error(e);
+    }
 }
 
 function sendMultiReportLog(username, id, target, targetID, reason) {
@@ -143,11 +155,15 @@ function sendMultiReportLog(username, id, target, targetID, reason) {
         }]
     });
 
-    fetch(reportWebhook, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body
-    });
+    try {
+        fetch(reportWebhook, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body
+        });
+    } catch (e) {
+        console.error(e);
+    }
 }
 
 function sendAdminUserLog(username, target, action, color=0xff0000) {
@@ -200,11 +216,15 @@ function sendAdminLog(data, author, color=0xff0000) {
         }]
     });
 
-    fetch(adminWebhook, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body
-    });
+    try {
+        fetch(adminWebhook, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body
+        });
+    } catch (e) {
+        console.error(e);
+    }
 }
 
 function disputeLog(username, originalID, originalReason, reply, projectID=0, color=0x8fdc3d) {
@@ -239,11 +259,15 @@ function disputeLog(username, originalID, originalReason, reply, projectID=0, co
             timestamp: new Date().toISOString()
         }]
     });
-    fetch(modWebhook, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body
-    });
+    try {
+        fetch(modWebhook, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body
+        });
+    } catch (e) {
+        console.error(e);
+    }
 }
 
 function modResponse(approver, disputer, messageID, originalDispute, reply, color=0x70066e) {
@@ -274,11 +298,16 @@ function modResponse(approver, disputer, messageID, originalDispute, reply, colo
             timestamp: new Date().toISOString()
         }]
     });
-    fetch(modWebhook, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body
-    });
+
+    try {
+        fetch(modWebhook, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body
+        });
+    } catch (e) {
+        console.error(e);
+    }
 }
 
 function modMessage(approver, target, messageID, message, color=0x70066e) {
@@ -305,11 +334,16 @@ function modMessage(approver, target, messageID, message, color=0x70066e) {
             timestamp: new Date().toISOString()
         }]
     });
-    fetch(modWebhook, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body
-    });
+
+    try {
+        fetch(modWebhook, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body
+        });
+    } catch (e) {
+        console.error(e);
+    }
 }
 
 module.exports = {
