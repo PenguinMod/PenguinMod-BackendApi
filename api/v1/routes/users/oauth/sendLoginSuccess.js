@@ -15,7 +15,7 @@ module.exports = (app, utils) => {
 
         let html = fs.readFileSync(path.join(utils.homeDir, 'success.html'), 'utf8');
 
-        html = html.replace("{{ HOMEPAGE }}", utils.env.HomeURL);
+        html = html.replace("{{ HOMEPAGE }}", `"${utils.env.HomeURL}"`);
 
         res.status(200);
         res.header("Content-Type", "text/html");

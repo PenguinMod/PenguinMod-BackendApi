@@ -44,7 +44,7 @@ module.exports = (app, utils) => {
             return;
         }
 
-        if (await utils.UserManager.getUserIDByOAuthID("scratch", username.user.id)) {
+        if (await utils.UserManager.getUserIDByOAuthID("scratch", username.user.user_id)) {
             utils.error(res, 400, "AccountExists");
             return;
         }
