@@ -70,7 +70,12 @@ module.exports = (app, utils) => {
 
         PenguinMod`;
 
-        await utils.UserManager.sendEmail(userid, req.realIP, "reset", email, username, "Reset Your Password", emailPlainText, emailHtml);
+        const success = await utils.UserManager.sendEmail(userid, req.realIP, "reset", email, username, "Reset Your Password", emailPlainText, emailHtml);
+
+        if (!success) {
+            utils.error(res, 500, "EmailFailed");
+            return;
+        }
 
         res.status(200);
         res.header("Content-Type", 'application/json');
