@@ -28,8 +28,6 @@ module.exports = (app, utils) => {
             return;
         }
 
-        const state = await utils.UserManager.generatePasswordResetState();
-
         if (await utils.UserManager.isEmailVerified(username)) {
             utils.error(res, 400, "EmailAlreadyVerified");
             return;
@@ -37,10 +35,14 @@ module.exports = (app, utils) => {
 
         const userid = await utils.UserManager.getIDByUsername(username);
 
-        if (Date.now() - await utils.UserManager.lastEmailSentByID(userid) < 1000 * 60 * 60 * 2) {
+        const lastEmailSent = await utils.UserManager.lastEmailSentByID(userid);
+
+        if (Date.now() - (lastEmailSent ? lastEmailSent : Infinity) < 1000 * 60 * 60 * 2) {
             utils.error(res, 400, "Cooldown");
             return;
         }
+
+        const state = await utils.UserManager.generatePasswordResetState();
 
         const verifyEmailUrl = `https://projects.penguinmod.com/api/v1/resetpassword/verifyemail?email=${email}&state=${state}`;
 

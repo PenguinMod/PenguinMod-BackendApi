@@ -18,9 +18,7 @@ module.exports = (app, utils) => {
             return;
         }
 
-        const state = await utils.UserManager.generatePasswordResetState();
-
-        const username = await utils.UserManager.getUsernameByEmail(email); // just so we can send the email like "Hello, username"
+        const username = await utils.UserManager.getUsernameByEmail(email);
 
         if (!await utils.UserManager.isEmailVerified(username)) {
             utils.error(res, 400, "EmailNotVerified");
@@ -29,10 +27,14 @@ module.exports = (app, utils) => {
 
         const userid = await utils.UserManager.getIDByUsername(username);
 
-        if (Date.now() - await utils.UserManager.lastEmailSentByID(userid) < 1000 * 60 * 60 * 2) {
+        const lastEmailSent = await utils.UserManager.lastEmailSentByID(userid);
+
+        if (Date.now() - (lastEmailSent ? lastEmailSent : Infinity) < 1000 * 60 * 60 * 2) {
             utils.error(res, 400, "Cooldown");
             return;
         }
+
+        const state = await utils.UserManager.generatePasswordResetState();
 
         const forgotPasswordUrl = `${utils.env.HomeURL}/resetpassword?state=${state}&email=${email}`;
 
