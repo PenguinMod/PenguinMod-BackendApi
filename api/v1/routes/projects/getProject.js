@@ -21,6 +21,13 @@ module.exports = (app, utils) => {
             return utils.error(res, 400, "Missing requestType");
         }
 
+        if (!projectID) {
+            if (safe) {
+                return safeReturn();
+            }
+            return utils.error(res, 400, "Missing projectId");
+        }
+
         const safeReturn = () => {
             switch (requestType) {
                 case "protobuf":
@@ -58,13 +65,6 @@ module.exports = (app, utils) => {
                 default:
                     return utils.error(res, 400, "Invalid requestType");
                 }
-        }
-
-        if (!packet.projectID) {
-            if (safe) {
-                return safeReturn();
-            }
-            return utils.error(res, 400, "Missing projectId");
         }
 
         if (!await utils.UserManager.projectExists(projectID)) {
