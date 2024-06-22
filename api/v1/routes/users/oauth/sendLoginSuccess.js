@@ -1,3 +1,4 @@
+const fs = require('fs');
 const path = require('path');
 
 module.exports = (app, utils) => {
@@ -12,8 +13,12 @@ module.exports = (app, utils) => {
             return;
         }
 
+        const html = fs.readFileSync(path.join(utils.homeDir, 'success.html'), 'utf8');
+
+        html = html.replace("{{ HOMEPAGE }}", utils.env.HomeURL);
+
         res.status(200);
         res.header("Content-Type", "text/html");
-        res.sendFile(path.join(utils.homeDir, 'success_local.html')); // BTODO: in prod send the non local file
+        res.send(html);
     });
 }
