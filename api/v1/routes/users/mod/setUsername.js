@@ -23,9 +23,7 @@ module.exports = (app, utils) => {
             return;
         }
 
-        const targetID = await utils.UserManager.getIDByUsername(target);
-
-        await utils.UserManager.changeUsername(targetID, newUsername);
+        await utils.UserManager.changeUsername(target, newUsername);
 
         utils.logs.sendAdminUserLog(username, newUsername, `Admin or mod has updated user's username.\nOld username: ${target}\nNew username: ${newUsername}`, 0xf47420);
 

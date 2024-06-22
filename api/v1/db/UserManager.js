@@ -354,8 +354,12 @@ class UserManager {
      * @param {string} newUsername new username of the user
      * @async
      */
-    async changeUsername(id, newUsername) {
+    async changeUsernameByID(id, newUsername) {
         await this.users.updateOne({ id: id }, { $set: { username: newUsername } });
+    }
+
+    async changeUsername(username, newUsername) {
+        await this.users.updateOne({ username: username }, { $set: { username: newUsername } });
     }
 
     /**

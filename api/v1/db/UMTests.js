@@ -109,7 +109,7 @@ async function tests() {
     // Change User Data //
     //////////////////////
 
-    let changeUsername = await manager.changeUsername(getID, 'newtest');
+    let changeUsername = await manager.changeUsernameByID(getID, 'newtest');
     if (!await manager.existsByUsername("newtest")) {
         console.log("[ FAIL ]".red, "Failed to change username");
         return false;
