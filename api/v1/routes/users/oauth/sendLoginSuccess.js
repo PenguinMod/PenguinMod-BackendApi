@@ -13,7 +13,7 @@ module.exports = (app, utils) => {
             return;
         }
 
-        const html = fs.readFileSync(path.join(utils.homeDir, 'success.html'), 'utf8');
+        let html = fs.readFileSync(path.join(utils.homeDir, 'success.html'), 'utf8');
 
         html = html.replace("{{ HOMEPAGE }}", utils.env.HomeURL);
 
