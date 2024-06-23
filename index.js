@@ -39,7 +39,10 @@ const app = express();
 const PORT = process.env.PORT || 8080;
 const MAXVIEWS = process.env.MaxViews || 10000; // it will take up to 10000 views then reset after
 const VIEWRESETRATE = process.env.ViewResetRate || 1000 * 60 * 60; // reset every hour
-const upload = multer({ dest: 'tmp/uploads/' });
+const upload = multer({
+    dest: 'tmp/uploads/',
+    limits: { fileSize: Number(process.env.UploadSize) || 1000000 * 5 } // 5mb - max size per asset
+});
 
 app.use(cors({
     origin: '*',
@@ -67,10 +70,6 @@ app.use(requestIp.mw());
 
 const Cast = new cast();
 const UserManager = new um();
-
-const log = (txt) => {
-    console.log(txt);
-}
 
 (async () => {
     await UserManager.init(MAXVIEWS, VIEWRESETRATE);
