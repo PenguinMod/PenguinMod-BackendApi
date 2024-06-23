@@ -31,6 +31,14 @@ module.exports = (app, utils) => {
             return utils.error(res, 401, "Invalid credentials");
         }
 
+        const isAdmin = await utils.UserManager.isAdmin(username);
+        const isModerator = await utils.UserManager.isModerator(username);
+
+        if (await utils.UserManager.getLastUpload(username) > Date.now() - utils.uploadCooldown && (!isAdmin && !isModerator)) {
+            await unlink();
+            return utils.error(res, 400, "Uploaded in the last 8 minutes");
+        }
+
         const projectID = packet.projectID;
 
         // check if the project exists
@@ -39,15 +47,9 @@ module.exports = (app, utils) => {
             return utils.error(res, 400, "Project does not exist");
         }
 
-        if (packet.author !== username && !await utils.UserManager.isAdmin(username)) {
+        if (packet.author !== username && !isAdmin) {
             await unlink();
             return utils.error(res, 403, "Unauthorized");
-        }
-
-        // make sure its been 8 minutes since last upload
-        if (await utils.UserManager.getLastUpload(username) > Date.now() - utils.uploadCooldown && (!await utils.UserManager.isAdmin(username) && !await utils.UserManager.isModerator(username))) {
-            await unlink();
-            return utils.error(res, 400, "Uploaded in the last 8 minutes");
         }
 
         const illegalWordingError = async (text, type) => {
@@ -137,23 +139,24 @@ module.exports = (app, utils) => {
                 return (extId in jsonFile.extensionURLs);
             };
 
-            if (jsonFile.extensions) {
+            if (jsonFile.extensions && !isAdmin && !isModerator) {
                 for (let extension of jsonFile.extensions) {
                     if (isUrlExtension(extension)) { // url extension names can be faked (if not trusted source)
                         let found = false;
                         for (let source of utils.allowedSources) {
-                            if (extension.startswith(source)) {
+                            if (jsonFile.extensionURLs[extension].startsWith(source)) {
                                 found = true;
                             }
                         }
                         if (!found) {
                             await unlink();
-                            return utils.error(res, 400, "Extension not allowed");
+                            return utils.error(res, 400, `Extension not allowed: ${extension}`);
                         }
                     }
+                    
                     if (!await utils.UserManager.checkExtensionIsAllowed(extension)) {
                         await unlink();
-                        return utils.error(res, 400, "Extension not allowed");
+                        return utils.error(res, 400, `Extension not allowed: ${extension}`);
                     }
                 }
             }

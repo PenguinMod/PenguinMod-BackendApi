@@ -54,8 +54,8 @@ message costume {
     string dataFormat = 3;
     string assetId = 4;
     string md5ext = 5;
-    int32 rotationCenterX = 6;
-    int32 rotationCenterY = 7;
+    double rotationCenterX = 6;
+    double rotationCenterY = 7;
 }
 
 message sound {

@@ -8,7 +8,9 @@ module.exports = (app, utils) => {
         { name: 'assets' }
     ]), async (req, res) => {
         const unlink = async () => {
+            if (req.files.jsonFile)
             await utils.unlinkAsync(req.files.jsonFile[0].path);
+            if (req.files.thumbnail)
             await utils.unlinkAsync(req.files.thumbnail[0].path);
             for (let asset of req.files.assets) {
                 await utils.unlinkAsync(asset.path);
@@ -30,8 +32,10 @@ module.exports = (app, utils) => {
             return utils.error(res, 401, "Invalid credentials");
         }
 
-        // make sure its been 8 minutes since last upload
-        if (await utils.UserManager.getLastUpload(username) > Date.now() - utils.uploadCooldown && (!await utils.UserManager.isAdmin(username) && !await utils.UserManager.isModerator(username))) {
+        const isAdmin = await utils.UserManager.isAdmin(username);
+        const isModerator = await utils.UserManager.isModerator(username);
+
+        if (await utils.UserManager.getLastUpload(username) > Date.now() - utils.uploadCooldown && (!isAdmin && !isModerator)) {
             await unlink();
             return utils.error(res, 400, "Uploaded in the last 8 minutes");
         }
@@ -121,7 +125,7 @@ module.exports = (app, utils) => {
 
         // check the extensions
         const userRank = await utils.UserManager.getRank(username);
-        if (userRank < 1) {
+        if (userRank < 1 && !isAdmin && !isModerator) {
             const isUrlExtension = (extId) => {
                 if (!jsonFile.extensionURLs) return false;
                 return (extId in jsonFile.extensionURLs);

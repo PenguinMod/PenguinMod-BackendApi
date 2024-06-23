@@ -7,7 +7,6 @@ module.exports = (app, utils) => {
         const newUsername = packet.newUsername;
 
         if (!username || !token || !newUsername) {
-            console.log(username, token, newUsername);
             utils.error(res, 400, "InvalidData");
             return;
         }

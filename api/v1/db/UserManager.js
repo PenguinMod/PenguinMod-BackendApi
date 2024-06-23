@@ -32,6 +32,7 @@ class UserManager {
         await this.client.connect();
         this.db = this.client.db('pm_apidata');
         this.users = this.db.collection('users');
+        this.accountCustomization = this.db.collection('accountCustomization');
         this.loggedIPs = this.db.collection('loggedIPs');
         this.passwordResetStates = this.db.collection('passwordResetStates');
         await this.passwordResetStates.createIndex({ 'expireAt': 1 }, { expireAfterSeconds: 60 * 60 * 2 }); // give 2 hours
@@ -3170,7 +3171,7 @@ class UserManager {
                 ]
             })
         } catch (e) {
-            console.log("hi", e);
+            console.log("mail error", e);
             return false;
         }
 
@@ -3229,6 +3230,16 @@ class UserManager {
             await this.passwordResetStates.deleteOne({ state: state })
 
         return result ? true : false;
+    }
+
+    async getUserCustomization(username) {
+        const result = await this.accountCustomization.findOne({ username: username });
+
+        return result.text;
+    }
+
+    async setUserCustomization(username, text) {
+        await this.accountCustomization.updateOne({ username: username }, { $set: { text: text } });
     }
 }
 
