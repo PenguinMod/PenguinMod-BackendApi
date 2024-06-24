@@ -2,9 +2,9 @@ module.exports = (app, utils) => {
     app.post("/api/v1/users/changeUsername", async (req, res) => {
         const packet = req.body;
 
-        const username = packet.username;
+        const username = String(packet.username).toLowerCase();
         const token = packet.token;
-        const newUsername = packet.newUsername;
+        const newUsername = String(packet.newUsername).toLowerCase();
 
         if (!username || !token || !newUsername) {
             utils.error(res, 400, "InvalidData");
