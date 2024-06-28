@@ -2669,11 +2669,6 @@ class UserManager {
 
         const final = cleaned.map((user) => ({username: user.username, id: user.id}))
 
-        // sort by how well it matches
-        final.sort((a, b) => {
-            return (a.username.indexOf(query)+a.username.length), (b.username.indexOf(query)-b.username.length);
-        });
-
         return final;
     }
 
