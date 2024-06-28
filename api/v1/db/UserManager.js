@@ -2605,14 +2605,14 @@ class UserManager {
                 ] },
             },
             {
+                $sort: { views: -1 }
+            },
+            {
                 $facet: {
                     metadata: [{ $count: "count" }],
                     data: [{ $skip: page * pageSize }, { $limit: pageSize }]
                 }
             },
-            {
-                $sort: { score: { $meta: "textScore" } }
-            }
         ])
         .toArray();
 
@@ -2652,6 +2652,9 @@ class UserManager {
         const result = await this.users.aggregate([
             {
                 $match: { username: { $regex: `.*${query}.*`, $options: "i" } }
+            },
+            {
+                $sort: { followers: 1 }
             },
             {
                 $facet: {
