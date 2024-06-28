@@ -45,7 +45,7 @@ module.exports = (app, utils) => {
                     },
                     {
                         name: "URL",
-                        value: `https://studio.penguinmod.com/#${projectID}`
+                        value: `${utils.env.StudioURL}/#${projectID}`
                     }
                 ]
             },
