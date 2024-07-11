@@ -4,29 +4,29 @@ package project;
 import "sprite.proto";
 
 message monitor {
-    string id = 1;
-    string mode = 2;
-    string opcode = 3;
+    optional string id = 1;
+    optional string mode = 2;
+    optional string opcode = 3;
     map<string, string> params = 4;
-    string spriteName = 5;
-    string value = 6;
-    int32 width = 7;
-    int32 height = 8;
-    int32 x = 9;
-    int32 y = 10;
-    bool visible = 11;
-    int32 sliderMin = 12;
-    int32 sliderMax = 13;
-    bool isDiscrete = 14;
+    optional string spriteName = 5;
+    optional string value = 6;
+    optional int32 width = 7;
+    optional int32 height = 8;
+    optional int32 x = 9;
+    optional int32 y = 10;
+    optional bool visible = 11;
+    optional int32 sliderMin = 12;
+    optional int32 sliderMax = 13;
+    optional bool isDiscrete = 14;
 }
 
 message Project {
-    repeated Sprite.Sprite targets = 1;
-    repeated monitor monitors = 2;
-    map<string, string> extensionData = 3; // just store a string because the ext can give arbitrary data
-    repeated string extensions = 4;
-    map<string, string> extensionURLs = 5;
-    string metaSemver = 6;
-    string metaVm = 7;
-    string agent = 8;
+    optional string metaSemver = 1;
+    optional string metaVm = 2;
+    optional string agent = 3;
+    repeated Sprite.Sprite targets = 4; // optional not required and i think not allowed either?
+    repeated monitor monitors = 5; // same with above
+    map<string, string> extensionData = 6; // just store a string because the ext can give arbitrary data.   also same with above
+    repeated string extensions = 7;
+    map<string, string> extensionURLs = 8; // same with above
 }

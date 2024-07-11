@@ -2,102 +2,102 @@ syntax = "proto3";
 package Sprite;
 
 message _varValue {
-    string name = 1;
-    string value = 2;
+    optional string name = 1;
+    optional string value = 2;
 }
 
 message _listValue {
-    string name = 1;
+    optional string name = 1;
     repeated string value = 2;
 }
 
 message _mutation {
-    string tagName = 1;
+    optional string tagName = 1;
     // children (prob not needed?)
-    string proccode = 3;
-    string argumentids = 4;
-    string argumentnames = 5;
-    string argumentdefaults = 6;
-    bool warp = 7;
-    string _returns = 8;
-    bool edited = 9;
-    string optype = 10;
-    string color = 11;
+    optional string proccode = 3;
+    optional string argumentids = 4;
+    optional string argumentnames = 5;
+    optional string argumentdefaults = 6;
+    optional bool warp = 7;
+    optional string _returns = 8;
+    optional bool edited = 9;
+    optional string optype = 10;
+    optional string color = 11;
 }
 
 message block {
-    string opcode = 1;
-    string next = 2;
-    string parent = 3;
+    optional string opcode = 1;
+    optional string next = 2;
+    optional string parent = 3;
     map<string, string> inputs = 4; // im lazy and these are weird
     map<string, string> fields = 5; // ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    bool shadow = 6;
-    bool topLevel = 7;
-    int32 x = 8;
-    int32 y = 9;
+    optional bool shadow = 6;
+    optional bool topLevel = 7;
+    optional int32 x = 8;
+    optional int32 y = 9;
     optional _mutation mutation = 10;
 }
 
 message comment {
-    string blockId = 1;
-    float x = 2;
-    float y = 3;
-    int32 width = 4;
-    int32 height = 5;
-    bool minimized = 6;
-    string text = 7;
+    optional string blockId = 1;
+    optional float x = 2;
+    optional float y = 3;
+    optional int32 width = 4;
+    optional int32 height = 5;
+    optional bool minimized = 6;
+    optional string text = 7;
 }
 
 message costume {
-    string name = 1;
-    int32 bitmapResolution = 2;
-    string dataFormat = 3;
-    string assetId = 4;
-    string md5ext = 5;
-    double rotationCenterX = 6;
-    double rotationCenterY = 7;
+    optional string name = 1;
+    optional int32 bitmapResolution = 2;
+    optional string dataFormat = 3;
+    optional string assetId = 4;
+    optional string md5ext = 5;
+    optional double rotationCenterX = 6;
+    optional double rotationCenterY = 7;
 }
 
 message sound {
-    string name = 1;
-    string assetId = 2;
-    string dataFormat = 3;
-    int32 rate = 4;
-    int32 sampleCount = 5;
-    string md5ext = 6;
+    optional string name = 1;
+    optional string assetId = 2;
+    optional string dataFormat = 3;
+    optional int32 rate = 4;
+    optional int32 sampleCount = 5;
+    optional string md5ext = 6;
 }
 
 message customVar {
-    string type = 1;
-    string id = 2;
-    string name = 3;
-    string value = 4;
+    optional string type = 1;
+    optional string id = 2;
+    optional string name = 3;
+    optional string value = 4;
 }
 
 message Sprite {
-    string id = 1;
-    bool isStage = 2;
-    string name = 3;
+    optional string id = 1;
+    optional bool isStage = 2;
+    optional string name = 3;
     map<string, _varValue> variables = 4;
     map<string, _listValue> lists = 5;
     map<string, string> broadcasts = 6;
     repeated customVar customVars = 7;
     map<string, block> blocks = 8;
     map<string, comment> comments = 9;
-    int32 currentCostume = 10;
+    optional int32 currentCostume = 10;
     repeated costume costumes = 11;
     repeated sound sounds = 12;
-    int32 volume = 13;
-    int32 layerOrder = 14;
-    int32 x = 15;
-    int32 y = 16;
-    int32 size = 17;
-    int32 direction = 18; // should be int 16 or smth but that dont exist for some reason
-    bool draggable = 19;
-    string rotationStyle = 20;
-    int32 tempo = 21;
-    int32 videoTransparency = 22;
-    string videoState = 23;
-    string textToSpeechLanguage = 24;
-    bool visible = 25;
+    optional int32 volume = 13;
+    optional int32 layerOrder = 14;
+    optional int32 x = 15;
+    optional int32 y = 16;
+    optional int32 size = 17;
+    optional int32 direction = 18; // should be int 16 or smth but that dont exist for some reason
+    optional bool draggable = 19;
+    optional string rotationStyle = 20;
+    optional int32 tempo = 21;
+    optional int32 videoTransparency = 22;
+    optional string videoState = 23;
+    optional string textToSpeechLanguage = 24;
+    optional bool visible = 25;
 }
