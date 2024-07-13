@@ -37,7 +37,7 @@ module.exports = (app, utils) => {
 
         const lastEmailSent = await utils.UserManager.lastEmailSentByID(userid);
 
-        if (Date.now() - (lastEmailSent ? lastEmailSent : Infinity) < 1000 * 60 * 60 * 2) {
+        if (Date.now() - (lastEmailSent ? lastEmailSent : 0) < 1000 * 60 * 60 * 2) {
             utils.error(res, 400, "Cooldown");
             return;
         }
