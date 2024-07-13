@@ -29,7 +29,7 @@ module.exports = (app, utils) => {
         }
 
         if (await utils.UserManager.emailInUse(email)) {
-            utils.error(res, 400, "EmailInUse");
+            utils.error(res, 400, "EmailAlreadyInUse");
             return;
         }
 
