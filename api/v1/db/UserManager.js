@@ -2171,7 +2171,8 @@ class UserManager {
             extensionURLs: {},
             metaSemver: "",
             metaVm: "",
-            metaAgent: ""
+            metaAgent: "",
+            fonts: json.fonts,
         }
 
         newjson.metaSemver = json.meta.semver;
@@ -2380,7 +2381,8 @@ class UserManager {
                 semver: json.metaSemver,
                 vm: json.metaVm,
                 agent: json.metaAgent || ""
-            }
+            },
+            customFonts: json.fonts
         };
 
         for (const target of json.targets) {

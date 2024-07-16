@@ -56,12 +56,32 @@ monitor._FieldEntry4.write = function (obj, pbf) {
     if (obj.value) pbf.writeStringField(2, obj.value);
 };
 
+// font ========================================
+
+var font = self.font = {};
+
+font.read = function (pbf, end) {
+    return pbf.readFields(font._readField, {system: false, family: "", fallback: "", md5ext: ""}, end);
+};
+font._readField = function (tag, obj, pbf) {
+    if (tag === 1) obj.system = pbf.readBoolean();
+    else if (tag === 2) obj.family = pbf.readString();
+    else if (tag === 3) obj.fallback = pbf.readString();
+    else if (tag === 4) obj.md5ext = pbf.readString();
+};
+font.write = function (obj, pbf) {
+    if (obj.system) pbf.writeBooleanField(1, obj.system);
+    if (obj.family) pbf.writeStringField(2, obj.family);
+    if (obj.fallback) pbf.writeStringField(3, obj.fallback);
+    if (obj.md5ext) pbf.writeStringField(4, obj.md5ext);
+};
+
 // Project ========================================
 
 var Project = self.Project = {};
 
 Project.read = function (pbf, end) {
-    return pbf.readFields(Project._readField, {metaSemver: "", metaVm: "", agent: "", targets: [], monitors: [], extensionData: {}, extensions: [], extensionURLs: {}}, end);
+    return pbf.readFields(Project._readField, {metaSemver: "", metaVm: "", agent: "", targets: [], monitors: [], extensionData: {}, extensions: [], extensionURLs: {}, fonts: []}, end);
 };
 Project._readField = function (tag, obj, pbf) {
     if (tag === 1) obj.metaSemver = pbf.readString();
@@ -72,6 +92,7 @@ Project._readField = function (tag, obj, pbf) {
     else if (tag === 6)  { var entry = Project._FieldEntry6.read(pbf, pbf.readVarint() + pbf.pos); obj.extensionData[entry.key] = entry.value; }
     else if (tag === 7) obj.extensions.push(pbf.readString());
     else if (tag === 8)  { entry = Project._FieldEntry8.read(pbf, pbf.readVarint() + pbf.pos); obj.extensionURLs[entry.key] = entry.value; }
+    else if (tag === 9) obj.fonts.push(font.read(pbf, pbf.readVarint() + pbf.pos));
 };
 Project.write = function (obj, pbf) {
     if (obj.metaSemver) pbf.writeStringField(1, obj.metaSemver);
@@ -82,6 +103,7 @@ Project.write = function (obj, pbf) {
     if (obj.extensionData) for (i in obj.extensionData) if (Object.prototype.hasOwnProperty.call(obj.extensionData, i)) pbf.writeMessage(6, Project._FieldEntry6.write, { key: i, value: obj.extensionData[i] });
     if (obj.extensions) for (i = 0; i < obj.extensions.length; i++) pbf.writeStringField(7, obj.extensions[i]);
     if (obj.extensionURLs) for (i in obj.extensionURLs) if (Object.prototype.hasOwnProperty.call(obj.extensionURLs, i)) pbf.writeMessage(8, Project._FieldEntry8.write, { key: i, value: obj.extensionURLs[i] });
+    if (obj.fonts) for (i = 0; i < obj.fonts.length; i++) pbf.writeMessage(9, font.write, obj.fonts[i]);
 };
 
 // Project._FieldEntry6 ========================================

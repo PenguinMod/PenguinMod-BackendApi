@@ -20,6 +20,13 @@ message monitor {
     optional bool isDiscrete = 14;
 }
 
+message font {
+    optional bool system = 1;
+    optional string family = 2;
+    optional string fallback = 3;
+    optional string md5ext = 4;
+}
+
 message Project {
     optional string metaSemver = 1;
     optional string metaVm = 2;
@@ -29,4 +36,5 @@ message Project {
     map<string, string> extensionData = 6; // just store a string because the ext can give arbitrary data.   also same with above
     repeated string extensions = 7;
     map<string, string> extensionURLs = 8; // same with above
+    repeated font fonts = 9;
 }
