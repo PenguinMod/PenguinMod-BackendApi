@@ -364,7 +364,7 @@ function sendServerLog(text, color=0xff0000) {
         });
     } catch (e) {
         console.error(e);
-    }
+    } 
 }
 
 module.exports = {
