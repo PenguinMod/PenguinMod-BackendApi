@@ -154,15 +154,19 @@ module.exports = (app, utils) => {
             }
         }
 
-        if (!packet.title || typeof packet.title !== "string") {
+        let title = atob(packet.title || "");
+        let instructions = atob(packet.instructions || "");
+        let notes = atob(packet.notes || "");
+
+        if (!title || typeof title !== "string") {
             packet.title = "";
         }
 
-        if (!packet.instructions || typeof packet.instructions !== "string") {
+        if (!instructions || typeof instructions !== "string") {
             packet.instructions = "";
         }
 
-        if (!packet.notes || typeof packet.notes !== "string") {
+        if (!notes || typeof notes !== "string") {
             packet.notes = "";
         }
 
@@ -196,7 +200,7 @@ module.exports = (app, utils) => {
             userid,
             packet.title,
             thumbnail,
-            packet.instructions,
+            instructions,
             packet.notes,
             remix,
             packet.rating

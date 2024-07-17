@@ -19,7 +19,7 @@ module.exports = (app, utils) => {
         }
 
         if (await utils.UserManager.existsByUsername(newUsername)) {
-            utils.error(res, 400, "AccountExists");
+            utils.error(res, 400, "UsernameInUse");
             return;
         }
 
