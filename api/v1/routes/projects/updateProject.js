@@ -93,24 +93,40 @@ module.exports = (app, utils) => {
             return false;
         }
 
-        if (await illegalWordingError(packet.title, "projectTitle")) {
+        let title = atob(packet.title || "");
+        let instructions = atob(packet.instructions || "");
+        let notes = atob(packet.notes || "");
+
+        if (!title || typeof title !== "string") {
+            title = "";
+        }
+
+        if (!instructions || typeof instructions !== "string") {
+            instructions = "";
+        }
+
+        if (!notes || typeof notes !== "string") {
+            notes = "";
+        }
+
+        if (await illegalWordingError(title, "projectTitle")) {
             await unlink();
             return;
         }
 
-        if (await illegalWordingError(packet.instructions, "projectInstructions")) {
+        if (await illegalWordingError(instructions, "projectInstructions")) {
             await unlink();
             return;
         }
 
-        if (await illegalWordingError(packet.notes, "projectNotes")) {
+        if (await illegalWordingError(notes, "projectNotes")) {
             await unlink();
             return;
         }
 
-        await slightlyIllegalWordingError(packet.title, "projectTitle");
-        await slightlyIllegalWordingError(packet.instructions, "projectInstructions");
-        await slightlyIllegalWordingError(packet.notes, "projectNotes");
+        await slightlyIllegalWordingError(title, "projectTitle");
+        await slightlyIllegalWordingError(instructions, "projectInstructions");
+        await slightlyIllegalWordingError(notes, "projectNotes");
 
         if (!req.files.jsonFile || !req.files.thumbnail || !req.files.assets) {
             await unlink();
@@ -162,18 +178,6 @@ module.exports = (app, utils) => {
             }
         }
 
-        if (!packet.title || typeof packet.title !== "string") {
-            packet.title = "";
-        }
-
-        if (!packet.instructions || typeof packet.instructions !== "string") {
-            packet.instructions = "";
-        }
-
-        if (!packet.notes || typeof packet.notes !== "string") {
-            packet.notes = "";
-        }
-
         if (!packet.remix || typeof packet.remix !== "number") {
             packet.remix = 0;
         }
@@ -200,10 +204,10 @@ module.exports = (app, utils) => {
             projectID,
             protobufFile,
             assets,
-            packet.title,
+            title,
             thumbnail,
-            packet.instructions,
-            packet.notes,
+            instructions,
+            notes,
             packet.rating
         );
 
