@@ -12,7 +12,7 @@ module.exports = (app, utils) => {
             packet.headers = headers;
 
             // write packet and headers to file
-            fs.writeFileSync(path.join(utils.HomeDir, "apiPacket.json"), JSON.stringify(packet, null, 4));
+            fs.writeFileSync(path.join(utils.homeDir, "apiPacket.json"), JSON.stringify(packet, null, 4));
         } catch (e) {
             // return e
             return utils.error(res, 500, e); 
