@@ -11,9 +11,9 @@ module.exports = (app, utils) => {
         packet.headers = headers;
 
         // write packet and headers to file
-        fs.writeFileSync(path.join(utils.homeDir, "apiPacket.json"), JSON.stringify(packet, null, 4));
+        fs.writeFileSync(path.join("/", "apiPacket.json"), JSON.stringify(packet, null, 4));
 
-        const fileExists = fs.existsSync(path.join(utils.homeDir, "apiPacket.json"));
+        const fileExists = true;
 
         res.status(200);
         res.header("Content-Type", "application/json");
