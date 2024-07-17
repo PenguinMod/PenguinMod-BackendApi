@@ -1,22 +1,34 @@
-const fs = require("fs");
-const path = require("path");
+const { createHash, timingSafeEqual } = require("crypto");
 
 module.exports = (app, utils) => {
+    if (utils.env.IncludeReload !== "true") {
+        return;
+    }
     app.post("/api/v1/misc/updateApi", async (req, res) => {
-        let packet = req.body;
-
-        // get headers
+        const packet = req.body;
         const headers = req.headers;
 
-        packet.headers = headers;
+        const secretHash = "sha256=".concat(createHash("sha256").update(utils.env.ReloadApiKey).update(JSON.stringify(packet)).digest("hex"));
+        const providedHash = headers["x-hub-signature-256"];
 
-        // write packet and headers to file
-        fs.writeFileSync(path.join("/", "apiPacket.json"), JSON.stringify(packet, null, 4));
+        if (!timingSafeEqual(Buffer.from(secretHash), Buffer.from(providedHash))) {
+            res.sendStatus(401);
+            return;
+        }
 
-        const fileExists = true;
+        // Now we send a request to the host machine since we're in a docker container
+        utils.logs.sendServerLog("Received update request, restarting server...", 0x11c195);
 
-        res.status(200);
-        res.header("Content-Type", "application/json");
-        res.send({ success: true, fileExists: fileExists, path: path.join(utils.homeDir, "apiPacket.json") });
+        res.sendStatus(200);
+
+        fetch("http://host.docker.internal:3000/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                token: utils.env.ReloadApiKey
+            })
+        });
     });
 }

@@ -4,6 +4,7 @@ const heatWebhook = process.env.HeatWebhook;
 const reportWebhook = process.env.ReportWebhook;
 const modWebhook = process.env.ModWebhook;
 const adminWebhook = process.env.AdminWebhook;
+const apiUpdatesWebhook = process.env.ApiUpdatesWebhook;
 
 function sendHeatLog(text, type, location, color=0xff0000) {
     const body = JSON.stringify({
@@ -346,6 +347,26 @@ function modMessage(approver, target, messageID, message, color=0x70066e) {
     }
 }
 
+function sendServerLog(text, color=0xff0000) {
+    const body = JSON.stringify({
+        embeds: [{
+            title: `Server Log`,
+            color: color,
+            description: `\`\`\`ansi\n${text}\n\`\`\``,
+            timestamp: new Date().toISOString()
+        }]
+    });
+    try {
+        fetch(apiUpdatesWebhook, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body
+        });
+    } catch (e) {
+        console.error(e);
+    }
+}
+
 module.exports = {
     sendHeatLog,
     sendBioUpdateLog,
@@ -355,5 +376,6 @@ module.exports = {
     sendAdminLog,
     disputeLog,
     modResponse,
-    modMessage
+    modMessage,
+    sendServerLog,
 };
