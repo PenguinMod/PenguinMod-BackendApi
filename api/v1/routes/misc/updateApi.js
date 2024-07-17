@@ -19,4 +19,4 @@ module.exports = (app, utils) => {
         res.header("Content-Type", "application/json");
         res.send({ success: true, fileExists: fileExists, path: path.join(utils.homeDir, "apiPacket.json") });
     });
-} 
+}
