@@ -11,6 +11,8 @@ module.exports = (app, utils) => {
         const secretHash = "sha256=".concat(createHash("sha256").update(utils.env.ReloadApiKey).update(JSON.stringify(packet)).digest("hex"));
         const providedHash = headers["x-hub-signature-256"];
 
+        utils.logs.sendServerLog(`in server: ${secretHash}\nsent: ${providedHash}`, 0x11c195);
+
         if (!timingSafeEqual(Buffer.from(secretHash), Buffer.from(providedHash))) {
             res.sendStatus(401);
             return;
