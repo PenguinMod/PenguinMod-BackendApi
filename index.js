@@ -1,6 +1,7 @@
 require('dotenv').config();
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
+const bodyParser = require('body-parser');
 const express = require("express");
 const endpointLoader = require("./api/endpointLoader");
 const um = require('./api/v1/db/UserManager');
@@ -48,6 +49,7 @@ app.use(cors({
     origin: '*',
     utilsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
 }));
+app.use(bodyParser.json());
 app.use(express.urlencoded({
     limit: process.env.ServerSize,
     extended: false
