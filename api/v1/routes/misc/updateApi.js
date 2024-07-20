@@ -27,7 +27,7 @@ async function verifySignature(secret, header, payload) {
         dataBytes,
     );
 
-    return equal;
+    return equal; 
 }
 
 function hexToBytes(hex) {
