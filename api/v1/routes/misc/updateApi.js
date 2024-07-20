@@ -43,7 +43,7 @@ function hexToBytes(hex) {
     }
 
     return bytes;
-}
+} 
 
 module.exports = (app, utils) => {
     if (utils.env.IncludeReload !== "true") {
