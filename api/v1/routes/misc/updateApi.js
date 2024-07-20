@@ -47,7 +47,7 @@ function hexToBytes(hex) {
 
 module.exports = (app, utils) => {
     if (utils.env.IncludeReload !== "true") {
-        return;
+        return; 
     }
     app.post("/api/v1/misc/updateApi", async (req, res) => {
         try {
