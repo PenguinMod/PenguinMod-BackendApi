@@ -72,7 +72,7 @@ module.exports = (app, utils) => {
         // Now we send a request to the host machine since we're in a docker container
         utils.logs.sendServerLog("Received update request, restarting server...\n", 0x11c195); 
 
-        res.sendStatus(200);
+        res.sendStatus(200); 
 
         fetch("http://host.docker.internal:3000/", {
             method: "POST",
