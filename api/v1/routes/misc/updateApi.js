@@ -86,7 +86,7 @@ module.exports = (app, utils) => {
             await utils.logs.sendServerLog(JSON.stringify(res), 0x11c195);
         })
         .catch(async e => {
-            await utils.logs.sendServerLog("Received update request, but failed to restart server", 0x11c195);
+            await utils.logs.sendServerLog(`Received update request, but failed to restart server at http://${utils.env.HostIP}:3000/`, 0x11c195);
             await utils.logs.sendServerLog(e.stack, 0x11c195);
         });
     }); 
