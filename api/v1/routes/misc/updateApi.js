@@ -80,6 +80,9 @@ module.exports = (app, utils) => {
             body: JSON.stringify({
                 token: utils.env.ReloadApiKey
             })
-        });
+        }).then(res => res.json())
+        .then(async res => {
+            await utils.logs.sendServerLog(JSON.stringify(res), 0x11c195);
+        })
     });
 }
