@@ -50,45 +50,43 @@ module.exports = (app, utils) => {
         return;
     }
     app.post("/api/v1/misc/updateApi", async (req, res) => {
-        const packet = req.body;
-        const headers = req.headers;
-
-        const providedHash = headers["x-hub-signature-256"];
-
-        if (!providedHash) {
-            res.sendStatus(400);
-            return;
-        }
-
-        let verified;
         try {
-            verified = await verifySignature(utils.env.ReloadApiKey, providedHash, JSON.stringify(packet));
+            const packet = req.body;
+            const headers = req.headers;
+
+            const providedHash = headers["x-hub-signature-256"];
+
+            if (!providedHash) {
+                res.sendStatus(400);
+                return;
+            }
+
+            const verified = await verifySignature(utils.env.ReloadApiKey, providedHash, JSON.stringify(packet));
+
+            utils.log.sendServerLog(`Verified: ${verified}`, 0x11c195);
+
+            if (!verified) {
+                res.sendStatus(400);
+                return;
+            }
+
+            // Now we send a request to the host machine since we're in a docker container
+            utils.logs.sendServerLog("Received update request, restarting server...\n", 0x11c195); 
+
+            res.sendStatus(200);
+
+            fetch("http://host.docker.internal:3000/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    token: utils.env.ReloadApiKey
+                })
+            });
         } catch (e) {
-            utils.log.sendServerLog(`verification failed\n`, 0x11c195);
-            res.sendStatus(500);
-            return;
-        } 
-
-        utils.log.sendServerLog(`Verified: ${verified}`, 0x11c195);
-
-        if (!verified) {
-            res.sendStatus(400);
-            return;
+            utils.log.sendServerLog(e, 0xff0000);
+            utils.error(res, 500, "InternalError");
         }
-
-        // Now we send a request to the host machine since we're in a docker container
-        utils.logs.sendServerLog("Received update request, restarting server...\n", 0x11c195); 
-
-        res.sendStatus(200);
-
-        fetch("http://host.docker.internal:3000/", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                token: utils.env.ReloadApiKey
-            })
-        });
     });
 }
