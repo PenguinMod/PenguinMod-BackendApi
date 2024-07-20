@@ -17,6 +17,7 @@ module.exports = (app, utils) => {
                 res.redirect(`https://oauth2.scratch-wiki.info/wiki/Special:ScratchOAuth2/authorize?client_id=${utils.env.ScratchOAuthClientID}&redirect_uri=${utils.env.ApiURL}/api/v1/users/scratchoauthcreate&scopes=identify&state=${state}`);
                 break;
             case "github":
+                console.log(`${utils.env.ApiURL}/api/v1/users/githubcallback/createaccount`);
                 res.redirect(`https://github.com/login/oauth/authorize?client_id=${utils.env.GithubOAuthClientID}&redirect_uri=${utils.env.ApiURL}/api/v1/users/githubcallback/createaccount&state=${state}&scope=read:user`);
                 break;
             case "google":
