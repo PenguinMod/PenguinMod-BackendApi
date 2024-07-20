@@ -73,7 +73,7 @@ module.exports = (app, utils) => {
         res.sendStatus(200); 
 
         fetch("http://172.17.0.1:3000/", {
-            method: "POST",
+            method: "POST", 
             headers: {
                 "Content-Type": "application/json"
             },
