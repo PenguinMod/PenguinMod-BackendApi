@@ -70,7 +70,7 @@ module.exports = (app, utils) => {
         // Now we send a request to the host machine since we're in a docker container
         
 
-        res.sendStatus(200); 
+        res.sendStatus(200);
 
         fetch(`http://${utils.env.HostIP}:3000/`, {
             method: "POST", 
