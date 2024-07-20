@@ -72,7 +72,7 @@ module.exports = (app, utils) => {
 
         res.sendStatus(200); 
 
-        fetch("http://host.docker.internal:3000/", {
+        fetch(`http://${utils.env.HostIP}:3000/`, {
             method: "POST", 
             headers: {
                 "Content-Type": "application/json"
