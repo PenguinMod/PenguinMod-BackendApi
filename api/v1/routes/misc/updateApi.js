@@ -60,7 +60,7 @@ module.exports = (app, utils) => {
             return;
         }
 
-        const verified = await verifySignature(utils.env.GithubWebhookSecret, providedHash, JSON.stringify(packet));
+        const verified = await verifySignature(utils.env.ReloadApiKey, providedHash, JSON.stringify(packet));
 
         if (!verified) {
             res.sendStatus(400);
