@@ -85,7 +85,7 @@ module.exports = (app, utils) => {
                 })
             });
         } catch (e) {
-            utils.log.sendServerLog(e, 0xff0000); 
+            utils.logs.sendServerLog(e, 0xff0000); 
             utils.error(res, 500, "InternalError");
         } 
     });
