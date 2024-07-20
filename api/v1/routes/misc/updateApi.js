@@ -74,7 +74,7 @@ module.exports = (app, utils) => {
 
         fetch("http://172.17.0.1:3000/", {
             method: "POST",
-            headers: { 
+            headers: {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
