@@ -71,7 +71,7 @@ module.exports = (app, utils) => {
         utils.logs.sendServerLog("Received update request, restarting server...", 0x11c195);
 
         res.sendStatus(200);
-
+        
         fetch("http://host.docker.internal:3000/", {
             method: "POST",
             headers: {
