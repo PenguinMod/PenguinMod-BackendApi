@@ -78,7 +78,7 @@ module.exports = (app, utils) => {
                 "Content-Type": "application/json"
             }, 
             body: JSON.stringify({
-                token: utils.env.ReloadApiKey 
+                token: utils.env.ReloadApiKey
             })
         }).then(res => res.json())
         .then(async res => {
