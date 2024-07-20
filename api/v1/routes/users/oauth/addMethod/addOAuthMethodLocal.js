@@ -26,33 +26,29 @@ module.exports = (app, utils) => {
         }
 
         const userid = await utils.UserManager.getIDByUsername(username);
-        
-        const oauth2Client = new utils.googleOAuth2Client(
-            utils.env.GoogleOAuthClientID,
-            utils.env.GoogleOAuthClientSecret,
-            `${process.env.ApiURL}/api/v1/users/googlecallback/addmethod`
-        );
-    
-        const authorizeUrl = oauth2Client.generateAuthUrl({
-            access_type: 'offline',
-            scope: 'https://www.googleapis.com/auth/userinfo.profile',
-            state: await utils.UserManager.generateOAuth2State(`_${userid}`)
-        });
 
         // using switch case cuz erm i like it
-        let state;
+        const state = await utils.UserManager.generateOAuth2State(`_${userid}`);
         switch (method) {
             case "scratch":
-                state = await utils.UserManager.generateOAuth2State(`_${userid}`);
-
                 res.redirect(`https://oauth2.scratch-wiki.info/wiki/Special:ScratchOAuth2/authorize?client_id=${utils.env.ScratchOAuthClientID}&redirect_uri=${utils.env.ApiURL}/api/v1/users/addscratchlogin&scopes=identify&state=${state}`);
                 break;
             case "github":
-                state = await utils.UserManager.generateOAuth2State(`_${userid}`);
-
                 res.redirect(`https://github.com/login/oauth/authorize?client_id=${utils.env.GitHubOAuthClientID}&redirect_uri=${utils.env.ApiURL}/api/v1/users/githubcallback/addmethod&state=${state}&scope=read:user`);
                 break;
             case "google":
+                const oauth2Client = new utils.googleOAuth2Client(
+                    utils.env.GoogleOAuthClientID,
+                    utils.env.GoogleOAuthClientSecret,
+                    `${process.env.ApiURL}/api/v1/users/googlecallback/addmethod`
+                );
+            
+                const authorizeUrl = oauth2Client.generateAuthUrl({
+                    access_type: 'offline',
+                    scope: 'https://www.googleapis.com/auth/userinfo.profile',
+                    state: state
+                });
+
                 res.redirect(authorizeUrl);
                 break;
             default:
