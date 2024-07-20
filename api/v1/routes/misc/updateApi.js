@@ -68,7 +68,7 @@ module.exports = (app, utils) => {
         }
 
         // Now we send a request to the host machine since we're in a docker container
-        utils.logs.sendServerLog("Received update request, restarting server...\n", 0x11c195);
+        utils.logs.sendServerLog("Received update request, restarting server...\n", 0x11c195); 
 
         res.sendStatus(200);
 
