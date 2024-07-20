@@ -68,7 +68,7 @@ module.exports = (app, utils) => {
         }
 
         // Now we send a request to the host machine since we're in a docker container
-        await utils.logs.sendServerLog("Received update request, restarting server...", 0x11c195); 
+        
 
         res.sendStatus(200); 
 
@@ -82,6 +82,7 @@ module.exports = (app, utils) => {
             })
         }).then(res => res.json())
         .then(async res => {
+            await utils.logs.sendServerLog("Received update request, restarting server...", 0x11c195);
             await utils.logs.sendServerLog(JSON.stringify(res), 0x11c195);
         }) 
     });
