@@ -6,11 +6,13 @@ module.exports = (app, utils) => {
         const code = packet.code;
 
         if (!state || !code) {
+            console.log("missing data");
             utils.error(res, 400, "InvalidData");
             return;
         }
 
         if (!await utils.UserManager.verifyOAuth2State(state)) {
+            console.log(state);
             utils.error(res, 400, "InvalidData");
             return;
         }
@@ -25,7 +27,7 @@ module.exports = (app, utils) => {
 
         const user = await fetch("https://api.github.com/user", {
             headers: {
-                Authorization: `Bearer ${btoa(response.access_token)}`
+                Authorization: `Bearer ${response.access_token}`
             }
         })
         .then(async res => {
@@ -41,7 +43,8 @@ module.exports = (app, utils) => {
         }
 
         if (user.status !== 200) {
-            utils.error(res, 500, "InternalError");
+            console.log(user);
+            utils.error(res, 500, "OAuthServerError");
             return;
         }
 
@@ -49,6 +52,7 @@ module.exports = (app, utils) => {
 
         if (!userid) {
             // the method is not connected with an account
+            console.log("No account connected");
             utils.error(res, 400, "InvalidData");
         }
 

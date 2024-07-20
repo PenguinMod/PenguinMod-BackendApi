@@ -18,7 +18,7 @@ module.exports = (app, utils) => {
         const oauth2Client = new utils.googleOAuth2Client(
             utils.env.GoogleOAuthClientID,
             utils.env.GoogleOAuthClientSecret,
-            `${utils.env.ApiUrl}/api/v1/users/googlecallback/login`
+            `${utils.env.ApiURL}/api/v1/users/googlecallback/login`
         );
 
         let r;

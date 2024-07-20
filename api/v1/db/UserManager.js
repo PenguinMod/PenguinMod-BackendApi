@@ -2064,7 +2064,7 @@ class UserManager {
      * @returns {Promise<string>} The state
      */
     async generateOAuth2State(extra="") {
-        const state = randomBytes(32).toString("base64") + extra;
+        const state = (randomBytes(32).toString("base64") + extra).replaceAll("+", "-");
 
         await this.oauthStates.insertOne({
             state: state,
