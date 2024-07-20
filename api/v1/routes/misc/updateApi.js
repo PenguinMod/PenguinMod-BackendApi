@@ -60,7 +60,14 @@ module.exports = (app, utils) => {
             return;
         }
 
-        const verified = await verifySignature(utils.env.ReloadApiKey, providedHash, JSON.stringify(packet));
+        let verified;
+        try {
+            verified = await verifySignature(utils.env.ReloadApiKey, providedHash, JSON.stringify(packet));
+        } catch (e) {
+            utils.log.sendServerLog(`verification failed\n`, 0x11c195);
+            res.sendStatus(500);
+            return;
+        }
 
         utils.log.sendServerLog(`Verified: ${verified}`, 0x11c195);
 
