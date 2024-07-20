@@ -6,13 +6,11 @@ module.exports = (app, utils) => {
         const code = packet.code;
 
         if (!state || !code) {
-            console.log("missing data");
             utils.error(res, 400, "InvalidData");
             return;
         }
 
         if (!await utils.UserManager.verifyOAuth2State(state)) {
-            console.log(state);
             utils.error(res, 400, "InvalidData");
             return;
         }
@@ -43,7 +41,6 @@ module.exports = (app, utils) => {
         }
 
         if (user.status !== 200) {
-            console.log(user);
             utils.error(res, 500, "OAuthServerError");
             return;
         }
@@ -52,7 +49,6 @@ module.exports = (app, utils) => {
 
         if (!userid) {
             // the method is not connected with an account
-            console.log("No account connected");
             utils.error(res, 400, "InvalidData");
         }
 
