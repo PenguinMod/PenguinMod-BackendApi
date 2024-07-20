@@ -74,7 +74,7 @@ module.exports = (app, utils) => {
 
         fetch("http://host.docker.internal:3000/", {
             method: "POST",
-            headers: {
+            headers: { 
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
