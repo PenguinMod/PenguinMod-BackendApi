@@ -357,7 +357,7 @@ function sendServerLog(text, color=0xff0000) {
         }]
     });
     try {
-        fetch(apiUpdatesWebhook, {
+        return fetch(apiUpdatesWebhook, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body
