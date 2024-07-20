@@ -62,15 +62,13 @@ module.exports = (app, utils) => {
 
         const verified = await verifySignature(utils.env.ReloadApiKey, providedHash, JSON.stringify(packet));
 
-        await utils.logs.sendServerLog(`Verified: ${verified}`, 0x11c195);
-
         if (!verified) {
             res.sendStatus(400);
             return;
         }
 
         // Now we send a request to the host machine since we're in a docker container
-        utils.logs.sendServerLog("Received update request, restarting server...\n", 0x11c195); 
+        await utils.logs.sendServerLog("Received update request, restarting server...", 0x11c195); 
 
         res.sendStatus(200);
 
