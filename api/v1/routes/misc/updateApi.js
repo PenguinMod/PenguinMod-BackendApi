@@ -67,7 +67,7 @@ module.exports = (app, utils) => {
             utils.log.sendServerLog(`verification failed\n`, 0x11c195);
             res.sendStatus(500);
             return;
-        }
+        } 
 
         utils.log.sendServerLog(`Verified: ${verified}`, 0x11c195);
 
