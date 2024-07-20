@@ -83,6 +83,6 @@ module.exports = (app, utils) => {
         }).then(res => res.json())
         .then(async res => {
             await utils.logs.sendServerLog(JSON.stringify(res), 0x11c195);
-        })
+        }) 
     });
 }
