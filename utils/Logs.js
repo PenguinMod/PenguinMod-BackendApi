@@ -167,7 +167,7 @@ function sendMultiReportLog(username, id, target, targetID, reason) {
     }
 }
 
-function sendAdminUserLog(username, target, action, color=0xff0000) {
+function sendAdminUserLog(username, target, action, color=0xff0000, extraFields=[]) {
     sendAdminLog(
         {
             action,
@@ -181,6 +181,7 @@ function sendAdminUserLog(username, target, action, color=0xff0000) {
                     name: "Target",
                     value: target
                 },
+                ...extraFields,
                 {
                     name: "URL",
                     value: `https://penguinmod.com/profile?user=${target}`

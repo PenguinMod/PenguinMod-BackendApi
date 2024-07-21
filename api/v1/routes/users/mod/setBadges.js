@@ -30,7 +30,12 @@ module.exports = (app, utils) => {
 
         await utils.UserManager.setBadges(target, badges);
 
-        utils.logs.sendAdminUserLog(username, target, "Admin has updated user's badges.", 0x3d4ddc);
+        utils.logs.sendAdminUserLog(username, target, "Admin has updated user's badges.", 0x3d4ddc, [
+            {
+                name: "Badges",
+                value: badges.join(", ")
+            }
+        ]);
 
         res.status(200);
         res.header('Content-type', "application/json");

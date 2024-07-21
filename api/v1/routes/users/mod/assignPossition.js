@@ -23,10 +23,28 @@ module.exports = (app, utils) => {
             return;
         }
 
+        const isAdmin = await utils.UserManager.isAdmin(target);
+        const isModerator = await utils.UserManager.isModerator(target);
+
         await utils.UserManager.setAdmin(target, Boolean(admin));
         await utils.UserManager.setModerator(target, Boolean(approver));
 
-        utils.logs.sendAdminUserLog(username, target, "Admin or mod has updated user's permissions.", 0x7f3ddc);
+        let fields = [];
+
+        if (isAdmin !== admin) {
+            fields.push({
+                name: "Admin",
+                value: `${isAdmin} -> ${admin}`
+            });
+        }
+        if (isModerator !== approver) {
+            fields.push({
+                name: "Approver",
+                value: `${isModerator} -> ${approver}`
+            });
+        }
+
+        utils.logs.sendAdminUserLog(username, target, "Admin or mod has updated user's permissions.", 0x7f3ddc, fields);
 
         res.status(200);
         res.header("Content-Type", 'application/json');

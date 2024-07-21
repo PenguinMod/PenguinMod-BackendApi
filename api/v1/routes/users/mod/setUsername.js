@@ -25,7 +25,16 @@ module.exports = (app, utils) => {
 
         await utils.UserManager.changeUsername(target, newUsername);
 
-        utils.logs.sendAdminUserLog(username, newUsername, `Admin or mod has updated user's username.\nOld username: ${target}\nNew username: ${newUsername}`, 0xf47420);
+        utils.logs.sendAdminUserLog(username, newUsername, `Admin or mod has updated user's username.`, 0xf47420, [
+            {
+                name: "Old Username",
+                value: target
+            },
+            {
+                name: "New Username",
+                value: newUsername
+            }
+        ]);
 
         res.status(200);
         res.header("Content-Type", 'application/json');

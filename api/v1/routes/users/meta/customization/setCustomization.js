@@ -16,8 +16,6 @@ module.exports = (app, utils) => {
             return;
         }
 
-        const badges = await utils.UserManager.getBadges(username);
-
         if (!await utils.UserManager)
 
         await utils.UserManager.setUserCustomization(username, customization);
