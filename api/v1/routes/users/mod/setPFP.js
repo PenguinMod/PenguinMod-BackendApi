@@ -1,4 +1,6 @@
 const fs = require('fs');
+const path = require('path');
+const sharp = require('sharp');
 const Magic = require('mmmagic').Magic;
 const magic = new Magic();
 
@@ -29,7 +31,7 @@ module.exports = (app, utils) => {
             return utils.error(res, 400, "InvalidData");
         }
 
-        const picture = fs.readFileSync(pictureName);
+        const picture = fs.readFileSync(path.join(utils.HomeDir, pictureName.path));
 
         const allowedTypes = ["image/png", "image/jpeg"];
 
@@ -42,7 +44,9 @@ module.exports = (app, utils) => {
                 return utils.error(res, 400, "Invalid file type");
             }
 
-            await utils.UserManager.setProfilePicture(target, picture);
+            const resized_picture = await sharp(picture).resize(100, 100).toBuffer()
+
+            await utils.UserManager.setProfilePicture(target, resized_picture);
 
             utils.logs.sendAdminUserLog(username, target, "Admin or mod has updated user's profile picture.", 0xf4a220);
 

@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const sharp = require('sharp');
 const Magic = require('mmmagic');
 const magic = new Magic.Magic(Magic.MAGIC_MIME_TYPE);
 
@@ -35,7 +36,9 @@ module.exports = (app, utils) => {
                 return utils.error(res, 400, "Invalid file type");
             }
 
-            await utils.UserManager.setProfilePicture(username, picture);
+            const resized_picture = await sharp(picture).resize(100, 100).toBuffer()
+
+            await utils.UserManager.setProfilePicture(username, resized_picture);
 
             res.status(200);
             res.header("Content-Type", 'application/json');
