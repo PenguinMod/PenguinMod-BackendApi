@@ -24,7 +24,7 @@ module.exports = (app, utils) => {
 
         const user = await fetch("https://api.github.com/user", {
             headers: {
-                Authorization: `Bearer ${btoa(access_token)}`
+                Authorization: `Bearer ${access_token}`
             }
         })
         .then(async res => {
@@ -44,7 +44,7 @@ module.exports = (app, utils) => {
             return;
         }
 
-        const userid = await utils.UserManager.getUserIDByOAuthID("scratch", user.user.id);
+        const userid = await utils.UserManager.getUserIDByOAuthID("github", user.user.id);
         const username = await utils.UserManager.getUsernameByID(userid);
 
         await utils.UserManager.changePassword(username, password);

@@ -24,7 +24,7 @@ module.exports = (app, utils) => {
             return;
         }
 
-        const userid = await utils.UserManager.getUserID(username);
+        const userid = await utils.UserManager.getIDByUsername(username);
         
         // using switch case cuz erm i like it
         let state = await utils.UserManager.generateOAuth2State(`_${userid}`);
