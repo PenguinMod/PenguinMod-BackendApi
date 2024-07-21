@@ -22,7 +22,7 @@ module.exports = (app, utils) => {
             return utils.error(res, 503, "Uploading is disabled");
         }
 
-        const packet = req.query; // because body is used for the files i think
+        const packet = req.body;
 
         const username = (String(packet.username)).toLowerCase();
 
@@ -93,9 +93,9 @@ module.exports = (app, utils) => {
             return false;
         }
 
-        let title = atob(packet.title || "");
-        let instructions = atob(packet.instructions || "");
-        let notes = atob(packet.notes || "");
+        let title = packet.title;
+        let instructions = packet.instructions;
+        let notes = packet.notes;
 
         if (!title || typeof title !== "string") {
             title = "";
