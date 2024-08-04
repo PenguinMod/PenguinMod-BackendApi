@@ -33,7 +33,7 @@ module.exports = (app, utils) => {
         const canFollowingSeeProfile = await utils.UserManager.canFollowingSeeProfile(target);
 
         let user = {
-            username: target,
+            username: await utils.UserManager.getRealUsername(username),
             badges: [],
             donator: false,
             rank: 0,

@@ -314,6 +314,10 @@ class UserManager {
         }
     }
 
+    async getRealUsername(username) {
+        return (await this.users.findOne({username})).real_username;
+    }
+
     /**
      * Check if a user exists by username
      * @param {string} username username of the user 
