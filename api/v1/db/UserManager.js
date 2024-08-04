@@ -231,8 +231,8 @@ class UserManager {
             following: 0,
             followers: 0,
             bio: "",
-            favoriteProjectType: -1,
-            favoriteProjectID: -1,
+            featuredProjectTitle: -1,
+            featuredProject: -1,
             cubes: 0,
             firstLogin: current_time,
             lastLogin: current_time,
@@ -249,6 +249,15 @@ class UserManager {
         await this.minioClient.putObject("profile-pictures", id, basePFP);
 
         return token;
+    }
+
+    /**
+     * BE CAREFUL WITH THIS. DO NOT SEND IT IN ITS ENTIRETY. gets the entire user metadata.
+     * @param {string} username username of the user 
+     * @returns {Promise<object>}
+     */
+    async getUserData(username) {
+        return await this.users.findOne({username: username});
     }
 
     /**
@@ -623,7 +632,7 @@ class UserManager {
     async getFeaturedProject(username) {
         const result = await this.users.findOne({ username: username });
 
-        return result.myFeaturedProject;
+        return result.featuredProject;
     }
 
     /**
@@ -636,7 +645,7 @@ class UserManager {
         await this.users.updateOne({
             username: username
         }, {
-            $set: { myFeaturedProject: id }
+            $set: { featuredProject: id }
         });
     }
 
@@ -649,7 +658,7 @@ class UserManager {
     async getFeaturedProjectTitle(username) {
         const result = await this.users.findOne({ username: username });
 
-        return result.myFeaturedProjectTitle;
+        return result.featuredProjectTitle;
     }
 
     /**
@@ -662,7 +671,7 @@ class UserManager {
         await this.users.updateOne({
             username: username
         }, {
-            $set: { myFeaturedProjectTitle: title }
+            $set: { featuredProjectTitle: title }
         });
     }
 

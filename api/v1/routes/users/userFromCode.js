@@ -14,48 +14,53 @@ module.exports = (app, utils) => {
             return utils.error(res, 401, "Reauthenticate");
         }
 
-        const id = await utils.UserManager.getIDByUsername(username);
+        const user_meta = await utils.UserManager.getUserData(username);
 
-        const badges = await utils.UserManager.getBadges(username);
+        const id = user_meta.id;
+        const badges = user_meta.badges;
         const isDonator = badges.includes('donator');
+        const isBanned = user_meta.permBanned || user_meta > Date.now();
+        const rank = user_meta.rank;
+        const signUpDate = user_meta.firstLogin;
 
-        const isBanned = await utils.UserManager.isBanned(username);
-
-        const rank = await utils.UserManager.getRank(username);
-
-        const signInDate = await utils.UserManager.getFirstLogin(username);
-
+        // its fine to do this since its just metadata
         const userProjects = await utils.UserManager.getProjectsByAuthor(id, 0, 3);
-
         const canRequestRankUp = (userProjects.length >= 3 // if we have 3 projects and
-            && (Date.now() - signInDate) >= 4.32e+8) // first signed in 5 days ago
+            && (Date.now() - signUpDate) >= 4.32e+8) // first signed in 5 days ago
             || badges.length > 0; // or we have a badge
 
-        const myFeaturedProject = await utils.UserManager.getFeaturedProject(username);
-        const myFeaturedProjectTitle = await utils.UserManager.getFeaturedProjectTitle(username);
+        const myFeaturedProject = user_meta.featuredProject
+        const myFeaturedProjectTitle = user_meta.featuredProjectTitle;
 
-        const isAdmin = await utils.UserManager.isAdmin(username);
-        const isModerator = await utils.UserManager.isModerator(username);
+        const isAdmin = user_meta.admin;
+        const isModerator = user_meta.moderator;
 
         const loginMethods = await utils.UserManager.getOAuthMethods(username);
 
-        const followers = await utils.UserManager.getFollowerCount(username);
+        const followers = user_meta.followers;
 
-        const lastPolicyRead = await utils.UserManager.getLastPolicyRead(username);
+        const lastPolicyRead = {
+            privacyPolicy: user_meta.lastPrivacyPolicyRead,
+            TOS: user_meta.lastTOSRead,
+            guidelines: user_meta.lastGuidelinesRead
+        };
 
-        const privateProfile = await utils.UserManager.isPrivateProfile(username);
-        const canFollowingSeeProfile = await utils.UserManager.canFollowingSeeProfile(username);
+        const privateProfile = user_meta.privateProfile;
+        const canFollowingSeeProfile = user_meta.allowFollowingView;
 
-        const standing = await utils.UserManager.getStanding(username);
+        const standing =result.unbanTime > Date.now() ? 2 :
+                        result.permBanned ? 3 : 0;
+        // ATODO: 2 is limited, not yet implemented
 
-        const email = await utils.UserManager.getEmail(username);
+        const email = user_meta.email;
 
-        const emailIsVerified = await utils.UserManager.isEmailVerified(username);
+        const emailIsVerified = user_meta.emailVerified;
 
-        if (await utils.UserManager.canPasswordLogin(username)) loginMethods.push("password");
+        if (user_meta.password) loginMethods.push("password");
 
         const user = {
             username,
+            real_username,
             admin: isAdmin,
             approver: isModerator,
             isBanned: isBanned,
@@ -67,7 +72,6 @@ module.exports = (app, utils) => {
             followers: followers,
             canrankup: canRequestRankUp && rank === 0,
             viewable: userProjects.length > 0,
-            projects: userProjects.length, // we check projects anyways so might aswell,
             loginMethods: loginMethods,
             lastPolicyRead: lastPolicyRead,
             privateProfile,
