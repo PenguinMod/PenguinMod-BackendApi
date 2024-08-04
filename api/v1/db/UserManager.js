@@ -205,7 +205,7 @@ class UserManager {
      * @returns {Promise<string|boolean>} token if successful, false if not
      * @async
      */
-    async createAccount(username, password, email) {
+    async createAccount(username, real_username, password, email) {
         const result = await this.users.findOne({ username: username });
         if (result) {
             return false;
@@ -214,9 +214,11 @@ class UserManager {
         const hash = await bcrypt.hash(password, 10);
         const id = ULID.ulid();
         const token = randomBytes(32).toString('hex');
+        const current_time = Date.now();
         await this.users.insertOne({
-            id: id,
-            username: username,
+            id,
+            username,
+            real_username,
             password: hash,
             token: token,
             admin: false,
@@ -232,14 +234,14 @@ class UserManager {
             favoriteProjectType: -1,
             favoriteProjectID: -1,
             cubes: 0,
-            firstLogin: Date.now(),
-            lastLogin: Date.now(),
+            firstLogin: current_time,
+            lastLogin: current_time,
             lastUpload: 0,
-            email: email,
+            email,
             emailVerified: false,
-            lastPrivacyPolicyRead: Date.now(),
-            lastTOSRead: Date.now(),
-            lastGuidelinesRead: Date.now(),
+            lastPrivacyPolicyRead: current_time,
+            lastTOSRead: current_time,
+            lastGuidelinesRead: current_time,
             privateProfile: false,
             allowFollowingView: false,
         });
@@ -756,6 +758,26 @@ class UserManager {
      */
     async setPermBanned(username, banned, reason) {
         await this.users.updateOne({ username: username }, { $set: { permBanned: banned, banReason: reason } });
+        
+        const user_id = await this.getIDByUsername(username);
+        await this.privateAllProjects(user_id, banned);
+    }
+
+    /**
+     * private all of a user's projects
+     * @param {string} user_id id of the user
+     * @param {boolean} toggle toggle for the privatization. true if you want them to be hidden, false if otherwise.
+     */
+    async privateAllProjects(user_id, toggle) {
+        await this.projects.updateMany({
+            author: user_id
+        }, {
+            $set: {
+            
+            public: !toggle
+
+            }
+        });
     }
 
     /**

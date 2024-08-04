@@ -20,7 +20,7 @@ module.exports = (app, utils) => {
 
         if (await utils.UserManager.isBanned(target)) {
             if (username !== target) {
-                if (loggedIn && isMod) {
+                if (isMod) {
                     // continue
                 } else {
                     utils.error(res, 404, "NotFound")
@@ -49,9 +49,8 @@ module.exports = (app, utils) => {
             success: false
         };
 
-        if (loggedIn) {
+        if (loggedIn)
             user.isFollowing = await utils.UserManager.isFollowing(username, target);
-        }
 
         if (privateProfile) {
             if (!loggedIn) {

@@ -3,6 +3,7 @@ module.exports = (app, utils) => {
         const packet = req.body;
 
         const username = (String(packet.username)).toLowerCase();
+        const real_username = packet.username;
         const password = packet.password;
 
         const email = packet.email || "";
@@ -59,7 +60,7 @@ module.exports = (app, utils) => {
             }
         }
 
-        let token = await utils.UserManager.createAccount(username, packet.password, email);
+        let token = await utils.UserManager.createAccount(username, real_username, packet.password, email);
 
         await utils.UserManager.addIP(username, req.realIP);
 
