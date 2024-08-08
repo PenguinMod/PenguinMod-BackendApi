@@ -129,7 +129,7 @@ const UserManager = new um();
     app.use((err, req, res, next) => {
         console.error(err);
         res.status(500);
-        res.send(`An error occured, sorry about that. abc ${"test".red}`);
+        res.send(`An error occured, sorry about that.`);
     })
 
     app.listen(PORT, () => {
