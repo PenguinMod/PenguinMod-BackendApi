@@ -24,7 +24,7 @@ module.exports = (app, utils) => {
         }
 
         if (packet.title < 0 || packet.title > 500) {
-            utils.error("InvalidTitleType")
+            utils.error(res, 400, "InvalidTitle");
         }
 
         await utils.UserManager.setFeaturedProject(username, project);
