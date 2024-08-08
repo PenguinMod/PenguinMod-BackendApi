@@ -52,6 +52,8 @@ module.exports = (app, utils) => {
         if (loggedIn)
             user.isFollowing = await utils.UserManager.isFollowing(username, target);
 
+        const targetID = await utils.UserManager.getIDByUsername(target);
+
         if (privateProfile) {
             if (!loggedIn) {
                 res.status(200);
@@ -62,7 +64,6 @@ module.exports = (app, utils) => {
 
             if (username !== target) {
                 const usernameID = await utils.UserManager.getIDByUsername(username);
-                const targetID = await utils.UserManager.getIDByUsername(target);
             
                 const isFollowing = await utils.UserManager.isFollowing(usernameID, targetID);
 
@@ -96,6 +97,7 @@ module.exports = (app, utils) => {
         const bio = await utils.UserManager.getBio(target);
 
         user = {
+            id,
             username: target,
             badges,
             donator: isDonator,
