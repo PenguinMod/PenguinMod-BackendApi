@@ -48,8 +48,8 @@ module.exports = (app, utils) => {
         const privateProfile = user_meta.privateProfile;
         const canFollowingSeeProfile = user_meta.allowFollowingView;
 
-        const standing =result.unbanTime > Date.now() ? 2 :
-                        result.permBanned ? 3 : 0;
+        const standing =user_meta.unbanTime > Date.now() ? 2 :
+                        user_meta.permBanned ? 3 : 0;
         // ATODO: 2 is limited, not yet implemented
 
         const email = user_meta.email;
@@ -60,7 +60,7 @@ module.exports = (app, utils) => {
 
         const user = {
             username,
-            real_username,
+            real_username: user_meta.real_username,
             admin: isAdmin,
             approver: isModerator,
             isBanned: isBanned,
