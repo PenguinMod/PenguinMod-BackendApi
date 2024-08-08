@@ -2159,17 +2159,11 @@ class UserManager {
             case "scratch":
                 username = data.user_name.toLowerCase();
                 id = data.user_id;
-
                 break;
+            case "google":
             case "github":
                 username = data.login.toLowerCase();
                 id = data.id;
-
-                break;
-            case "google":
-                username = data.username.toLowerCase();
-                id = data.id;
-
                 break;
         }
 

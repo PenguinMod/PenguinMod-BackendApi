@@ -52,7 +52,14 @@ module.exports = (app, utils) => {
             utils.error(res, 400, "InvalidData");
         }
 
-        const username = await utils.UserManager.getUsernameByID(userid);
+
+        let username;
+        try {
+            username = await utils.UserManager.getUsernameByID(userid);
+        } catch (e) {
+            utils.error(res, 500, "This is an error. Please report this stuff: " + JSON.stringify({scratch_id: user.user.user_id, userid: userid}));
+            return;
+        }
 
         const token = await utils.UserManager.newTokenGen(username);
 
