@@ -127,7 +127,7 @@ const UserManager = new um();
     });
 
     app.use((err, req, res, next) => {
-        error(res, 404, 'Requested endpoint fell through')
+        error(res, 500, 'Requested endpoint fell through from an unexpected internal error')
     })
 
     app.listen(PORT, () => {
