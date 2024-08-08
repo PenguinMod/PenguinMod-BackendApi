@@ -59,6 +59,7 @@ module.exports = (app, utils) => {
         if (user_meta.password) loginMethods.push("password");
 
         const user = {
+            id,
             username,
             real_username: user_meta.real_username,
             admin: isAdmin,
