@@ -97,7 +97,7 @@ module.exports = (app, utils) => {
         const bio = await utils.UserManager.getBio(target);
 
         user = {
-            id,
+            id: targetID,
             username: target,
             badges,
             donator: isDonator,
