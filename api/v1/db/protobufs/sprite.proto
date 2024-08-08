@@ -25,6 +25,14 @@ message _mutation {
     optional string color = 11;
 }
 
+message var_reporter_block {
+    optional int32 first_num = 1;
+    optional string name = 2;
+    optional string id = 3;
+    optional int32 second_num = 4;
+    optional int32 third_num = 5;
+}
+
 message block {
     optional string opcode = 1;
     optional string next = 2;
@@ -36,6 +44,9 @@ message block {
     optional int32 x = 8;
     optional int32 y = 9;
     optional _mutation mutation = 10;
+    optional bool is_variable_reporter = 11;
+    optional var_reporter_block varReporterBlock = 12;
+
 }
 
 message comment {

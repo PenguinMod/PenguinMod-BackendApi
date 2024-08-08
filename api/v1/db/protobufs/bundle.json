@@ -478,6 +478,72 @@
             }
           }
         },
+        "var_reporter_block": {
+          "oneofs": {
+            "_first_num": {
+              "oneof": [
+                "first_num"
+              ]
+            },
+            "_name": {
+              "oneof": [
+                "name"
+              ]
+            },
+            "_id": {
+              "oneof": [
+                "id"
+              ]
+            },
+            "_second_num": {
+              "oneof": [
+                "second_num"
+              ]
+            },
+            "_third_num": {
+              "oneof": [
+                "third_num"
+              ]
+            }
+          },
+          "fields": {
+            "first_num": {
+              "type": "int32",
+              "id": 1,
+              "options": {
+                "proto3_optional": true
+              }
+            },
+            "name": {
+              "type": "string",
+              "id": 2,
+              "options": {
+                "proto3_optional": true
+              }
+            },
+            "id": {
+              "type": "string",
+              "id": 3,
+              "options": {
+                "proto3_optional": true
+              }
+            },
+            "second_num": {
+              "type": "int32",
+              "id": 4,
+              "options": {
+                "proto3_optional": true
+              }
+            },
+            "third_num": {
+              "type": "int32",
+              "id": 5,
+              "options": {
+                "proto3_optional": true
+              }
+            }
+          }
+        },
         "block": {
           "oneofs": {
             "_opcode": {
@@ -518,6 +584,11 @@
             "_mutation": {
               "oneof": [
                 "mutation"
+              ]
+            },
+            "_varReporterBlock": {
+              "oneof": [
+                "varReporterBlock"
               ]
             }
           },
@@ -584,6 +655,17 @@
             "mutation": {
               "type": "_mutation",
               "id": 10,
+              "options": {
+                "proto3_optional": true
+              }
+            },
+            "is_variable_reporter": {
+              "type": "bool",
+              "id": 11
+            },
+            "varReporterBlock": {
+              "type": "var_reporter_block",
+              "id": 12,
               "options": {
                 "proto3_optional": true
               }
