@@ -7,9 +7,7 @@ module.exports = (app, utils) => {
         const json = await utils.UserManager.getProjectMetadata(String(req.params.id));
     
         if (!json) {
-            res.status(404);
-            res.send('Not found');
-            return;
+            return utils.error(res, 404, 'Not Found');
         }
 
         let html = projectTemplate;
