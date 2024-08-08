@@ -127,7 +127,9 @@ const UserManager = new um();
     });
 
     app.use((err, req, res, next) => {
-        error(res, 404, 'Requested endpoint fell through')
+        console.error(err);
+        res.status(500);
+        res.send(`An error occured, sorry about that. abc ${"test".red}`);
     })
 
     app.listen(PORT, () => {
