@@ -315,7 +315,9 @@ class UserManager {
     }
 
     async getRealUsername(username) {
-        return (await this.users.findOne({username})).real_username;
+        const user = await this.users.findOne({username: username});
+
+        return user.real_username || username;
     }
 
     /**
