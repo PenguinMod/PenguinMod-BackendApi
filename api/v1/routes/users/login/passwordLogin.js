@@ -1,6 +1,6 @@
 module.exports = (app, utils) => {
-    app.get("/api/v1/users/passwordLogin", async function (req, res) {
-        const packet = req.query;
+    app.post("/api/v1/users/passwordLogin", async function (req, res) {
+        const packet = req.body;
 
         const username = (String(packet.username)).toLowerCase();
         const password = packet.password;
@@ -11,7 +11,7 @@ module.exports = (app, utils) => {
         }
 
         if (!await utils.UserManager.existsByUsername(username)) {
-            utils.error(res, 401, "InvalidCredentials"); // same error as wrong password to prevent that botting thing
+            utils.error(res, 401, "InvalidCredentials");
             return;
         }
 
