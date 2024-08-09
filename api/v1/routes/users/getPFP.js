@@ -13,6 +13,7 @@ module.exports = (app, utils) => {
 
         res.status(200);
         res.header("Content-Type", "application/octet-stream");
+        res.header("Cache-Control", "public, max-age=90");
         res.send(pfp);
     });
 }
