@@ -2162,7 +2162,12 @@ class UserManager {
                 break;
             case "google":
             case "github":
-                username = data.login.toLowerCase();
+                try {
+                    username = data.login.toLowerCase();
+                } catch(e) {
+                    console.error("it broke", data, e);
+                    throw new e;
+                }
                 id = data.id;
                 break;
         }
