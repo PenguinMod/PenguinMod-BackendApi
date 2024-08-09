@@ -41,7 +41,7 @@ module.exports = (app, utils) => {
             return;
         }
 
-        if (username.status !== 200) {
+        if (user.status !== 200) {
             utils.error(res, 500, "InternalError");
             return;
         }
