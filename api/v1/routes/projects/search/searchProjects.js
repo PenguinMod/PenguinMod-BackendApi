@@ -4,8 +4,9 @@ module.exports = (app, utils) => {
 
         const query = packet.query || "";
         const page = Number(packet.page) || 0;
+        const type = packet.type || "";
 
-        const projects = await utils.UserManager.searchProjects(query, page, Number(utils.env.PageSize));
+        const projects = await utils.UserManager.searchProjects(query, type, page, Number(utils.env.PageSize));
 
         res.status(200);
         res.header({"Content-Type": "application/json"})

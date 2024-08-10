@@ -2656,8 +2656,11 @@ class UserManager {
      * @param {number} pageSize Amount of projects to get 
      * @returns {Promise<Array<object>>} Array of projects
      */
-    async searchProjects(query, page, pageSize) {
-        const result = await this.projects.aggregate([
+    async searchProjects(query, type, page, pageSize) {
+        let aggregateList = [
+            {
+                $match: { softRejected: false, hardReject: false, public: true }
+            },
             {
                 $match: { $or: [
                     { title: { $regex: `.*${query}.*`, $options: "i" } },
@@ -2665,6 +2668,27 @@ class UserManager {
                     { notes: { $regex: `.*${query}.*`, $options: "i" } }
                 ] },
             },
+        ]
+
+        switch (type) {
+            case "featured":
+                aggregateList.push({
+                    $match: { featured: true }
+                });
+                break;
+            case "newest":
+                aggregateList.push({
+                    $sort: { lastUpdate: -1 }
+                });
+                break;
+            case "views":
+                aggregateList.push({
+                    $sort: { views: -1 }
+                });
+                break;
+        }
+
+        aggregateList = aggregateList.concat([
             {
                 $sort: { views: -1 }
             },
@@ -2674,7 +2698,9 @@ class UserManager {
                     data: [{ $skip: page * pageSize }, { $limit: pageSize }]
                 }
             },
-        ])
+        ]);
+
+        const result = await this.projects.aggregate(aggregateList)
         .toArray();
 
         const final = [];
