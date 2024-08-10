@@ -50,6 +50,7 @@ module.exports = (app, utils) => {
         if (!userid) {
             // the method is not connected with an account
             utils.error(res, 400, "InvalidData");
+            return;
         }
 
 
