@@ -23,18 +23,6 @@ module.exports = (app, utils) => {
             utils.error(res, 400, "InvalidData");
             return;
         }
-
-        const oauth2Client = new utils.googleOAuth2Client(
-            utils.env.GoogleOAuthClientID,
-            utils.env.GoogleOAuthClientSecret,
-            `${utils.env.ApiURL}/api/v1/users/googlecallback/addpassword`
-        );
-    
-        const authorizeUrl = oauth2Client.generateAuthUrl({
-            access_type: 'offline',
-            scope: 'https://www.googleapis.com/auth/userinfo.profile',
-            state: await utils.UserManager.generateOAuth2State()
-        });
         
         // using switch case cuz erm i like it
         const state = await utils.UserManager.generateOAuth2State();
@@ -46,6 +34,22 @@ module.exports = (app, utils) => {
                 res.redirect(`https://github.com/login/oauth/authorize?client_id=${utils.env.GithubOAuthClientID}&redirect_uri=${utils.env.ApiURL}/api/v1/users/githubcallback/addpassword&state=${state}&scope=read:user`);
                 break;
             case "google":
+                // __DISABLE
+                utils.error(res, 400, "Google OAuth Disabled");
+                return;
+
+                const oauth2Client = new utils.googleOAuth2Client(
+                    utils.env.GoogleOAuthClientID,
+                    utils.env.GoogleOAuthClientSecret,
+                    `${utils.env.ApiURL}/api/v1/users/googlecallback/addpassword`
+                );
+            
+                const authorizeUrl = oauth2Client.generateAuthUrl({
+                    access_type: 'offline',
+                    scope: 'https://www.googleapis.com/auth/userinfo.profile',
+                    state: state
+                });
+
                 res.redirect(authorizeUrl);
                 break;
             default:
