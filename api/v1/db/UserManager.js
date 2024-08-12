@@ -2741,7 +2741,7 @@ class UserManager {
                 $match: { username: { $regex: `.*${query}.*`, $options: "i" } }
             },
             {
-                $sort: { followers: 1 }
+                $sort: { followers: -1 }
             },
             {
                 $facet: {
