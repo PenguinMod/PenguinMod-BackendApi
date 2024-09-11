@@ -85,9 +85,9 @@ module.exports = (app, utils) => {
 
         const userProjects = await utils.UserManager.getProjectsByAuthor(target, 0, 3, true, true);
 
-        const canRequestRankUp = (userProjects.length >= 3 // if we have 3 projects and
-            && (Date.now() - signInDate) >= 4.32e+8) // first signed in 5 days ago
-            || badges.length > 0; // or we have a badge
+        const canRequestRankUp = ((userProjects.length >= 3) // if we have 3 projects and
+            && ((Date.now() - signInDate) >= 4.32e+8)) // first signed in 5 days ago
+            || (badges.length > 0); // or we have a badge
 
         const followers = await utils.UserManager.getFollowerCount(target);
 
@@ -106,7 +106,7 @@ module.exports = (app, utils) => {
             myFeaturedProject,
             myFeaturedProjectTitle,
             followers: followers,
-            canrankup: canRequestRankUp && rank === 0,
+            canrankup: canRequestRankUp && rank !== 1,
             projects: userProjects.length, // we check projects anyways so might aswell,
             privateProfile,
             canFollowingSeeProfile,
