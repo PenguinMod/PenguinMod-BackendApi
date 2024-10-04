@@ -83,10 +83,10 @@ module.exports = (app, utils) => {
 
         const signInDate = await utils.UserManager.getFirstLogin(target);
 
-        const userProjects = await utils.UserManager.getProjectsByAuthor(target, 0, 3, true, true);
+        const userProjects = await utils.UserManager.getProjectsByAuthor(targetID, 0, 3, true, true);
 
         const canRequestRankUp = ((userProjects.length >= 3) // if we have 3 projects and
-            && ((Date.now() - signInDate) >= 4.32e+8)) // first signed in 5 days ago
+            && ((Date.now() - signInDate) / 1000 >= 432000)) // first signed in 5 days ago
             || (badges.length > 0); // or we have a badge
 
         const followers = await utils.UserManager.getFollowerCount(target);
