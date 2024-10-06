@@ -2161,12 +2161,14 @@ class UserManager {
                 id = data.user_id;
                 break;
             case "google":
+                username = data.username.toLowerCase();
+                break;
             case "github":
                 try {
-                    username = data.login.toLowerCase();
+                    username = data.id.toLowerCase();
                 } catch(e) {
                     console.error("it broke", data, e);
-                    throw new e;
+                    throw e;
                 }
                 id = data.id;
                 break;
