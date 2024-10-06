@@ -25,9 +25,9 @@ module.exports = (app, utils) => {
             return;
         }
 
-        const user = await fetch("https://api.github.com/user", {
+        const user = await fetch("https://oauth2.scratch-wiki.info/w/rest.php/soa2/v0/user", {
             headers: {
-                Authorization: `Bearer ${response.access_token}`
+                Authorization: `Bearer ${btoa(response.access_token)}`
             }
         })
         .then(async res => {
@@ -43,6 +43,7 @@ module.exports = (app, utils) => {
         }
 
         if (user.status !== 200) {
+            console.log(`Error with oauth status: ${JSON.stringify(user)}`)
             utils.error(res, 500, "InternalError");
             return;
         }
