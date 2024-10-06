@@ -222,7 +222,7 @@ module.exports = (app, utils) => {
         );
         await utils.UserManager.setLastUpload(username, Date.now());
 
-        if (remix) {
+        if (remix !== "0") {
             // get original creator
 
             const originalProject = await utils.UserManager.getProjectMetadata(remix);
