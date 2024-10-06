@@ -34,9 +34,11 @@ module.exports = (app, utils) => {
                 res.redirect(`https://github.com/login/oauth/authorize?client_id=${utils.env.GithubOAuthClientID}&redirect_uri=${utils.env.ApiURL}/api/v1/users/githubcallback/addpassword&state=${state}&scope=read:user`);
                 break;
             case "google":
+                /*
                 // __DISABLE
                 utils.error(res, 400, "Google OAuth Disabled");
                 return;
+                */
 
                 const oauth2Client = new utils.googleOAuth2Client(
                     utils.env.GoogleOAuthClientID,
