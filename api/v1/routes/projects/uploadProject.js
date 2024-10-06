@@ -144,7 +144,7 @@ module.exports = (app, utils) => {
             return utils.error(res, 400, "Invalid protobuf file");
         }
 
-        let remix = Number(packet.remix);
+        let remix = String(packet.remix);
 
         if (remix) {
             if (!await utils.UserManager.projectExists(remix)) {
@@ -184,7 +184,7 @@ module.exports = (app, utils) => {
             }
         }
 
-        if (!remix || typeof remix !== "number") {
+        if (!remix || typeof remix !== "string") {
             remix = 0;
         }
 
@@ -222,8 +222,14 @@ module.exports = (app, utils) => {
         await utils.UserManager.setLastUpload(username, Date.now());
 
         if (remix) {
+            // get original creator
+
+            const originalProject = await utils.UserManager.getProjectMetadata(remix);
+
+            const original_creator = originalProject.author.id;
+
             await utils.UserManager.sendMessage(
-                userid,
+                original_creator,
                 {
                     type: "remix",
                     projectID: remix,

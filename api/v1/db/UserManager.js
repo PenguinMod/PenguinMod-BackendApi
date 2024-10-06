@@ -1286,9 +1286,11 @@ class UserManager {
      * @async
      */
     async getProjectMetadata(id) {
-        if (!await this.projectExists(id)) return false;
-        
-        const tempresult = await this.projects.findOne({id: id})
+        const p_id = String(id);
+
+        if (!await this.projectExists(p_id)) return false;
+
+        const tempresult = await this.projects.findOne({id: p_id})
 
         tempresult.author = {
             id: tempresult.author,
@@ -1298,9 +1300,9 @@ class UserManager {
         // add the views, loves, and votes
         const result = {
             ...tempresult,
-            views: await this.getProjectViews(id),
-            loves: await this.getProjectLoves(id),
-            votes: await this.getProjectVotes(id),
+            views: await this.getProjectViews(p_id),
+            loves: await this.getProjectLoves(p_id),
+            votes: await this.getProjectVotes(p_id),
         }
 
         return result;
