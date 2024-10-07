@@ -5,9 +5,7 @@ module.exports = (app, utils) => {
         const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
-        const target = (String(packet.target)).toLowerCase();
-
-        if (!username || !token || typeof target !== "string") {
+        if (!username || !token) {
             return utils.error(res, 400, "Missing username or token");
         }
 

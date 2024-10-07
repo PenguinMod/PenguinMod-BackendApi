@@ -252,6 +252,57 @@ class UserManager {
     }
 
     /**
+     * Delete an account
+     * @param {string} username username of the user
+     * @returns {Promise<bool>} bool on if it was successful
+     * @async
+     */
+    async deleteAccount(username) {
+        const result = await this.users.findOne({ username: username });
+
+        if (!result) return false;
+
+        const deletionSuccess = (await this.users.deleteOne({
+            username: username
+        })).deletedCount > 0;
+
+        if (!deletionSuccess) return false;
+
+        await this.minioClient.removeObject("profile-pictures", result.id);
+
+        // search for all projects by the user and delete them
+        const user_id = result.id;
+
+        const projects = await this.projects.find({ author: user_id }).toArray();
+
+        for (const project of projects) {
+            await this.deleteProject(project.id);
+        }
+
+        // delete all references to the user in the followers collection
+        await this.followers.deleteMany({ target: user_id });
+        const target_deletes = await this.followers.find({ follower: user_id }).toArray();
+
+        for (const target of target_deletes) {
+            await this.followers.deleteOne({ _id: target._id });
+            // decrement the follower count of the target
+            await this.users.updateOne({ id: target.target }, { $inc: { followers: -1 } });
+        }
+
+        // remove all reports by the user
+        await this.reports.deleteMany({ reporter: user_id });
+        await this.reports.deleteMany({ reportee: user_id });
+
+        // remove all oauth methods
+        await this.oauthIDs.deleteMany({ id: user_id });
+        
+        // remove logged IPs
+        await this.loggedIPs.deleteMany({ id: user_id });
+
+        return true;
+    }
+
+    /**
      * BE CAREFUL WITH THIS. DO NOT SEND IT IN ITS ENTIRETY. gets the entire user metadata.
      * @param {string} username username of the user 
      * @returns {Promise<object>}
