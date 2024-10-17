@@ -1,4 +1,4 @@
-/api/users/login
+//api/users/login
 
 module.exports = (app, utils) => {
     app.get('/api/users/login', async (req, res) => {
