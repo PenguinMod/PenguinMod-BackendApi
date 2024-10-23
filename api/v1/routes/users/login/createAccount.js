@@ -1,3 +1,5 @@
+const countryLookup = require("../../../db/country-lookup.json");
+
 module.exports = (app, utils) => {
     app.post("/api/v1/users/createAccount", async function (req, res) {
         const packet = req.body;
@@ -7,11 +9,27 @@ module.exports = (app, utils) => {
         const password = packet.password;
 
         const email = packet.email || "";
+        const birthday = packet.birthday;
+        const countryCode = packet.country;
 
         const validateEmail = (email) => {
             return email.match(
                 /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
             );
+        };
+        const parseBirthday = (birthday) => {
+            if (!birthday) return;
+            if (typeof birthday !== "string") return;
+            try {
+                const date = new Date(birthday);
+                if (isNaN(date.getTime())) {
+                    return; // invalid format
+                }
+
+                return date.toISOString();
+            } catch {
+                return;
+            }
         };
         
         if (typeof username !== "string" || typeof password !== "string" || typeof email !== "string") {
@@ -60,7 +78,23 @@ module.exports = (app, utils) => {
             }
         }
 
-        let token = await utils.UserManager.createAccount(username, real_username, packet.password, email);
+        const parsedBirthday = parseBirthday(birthday); // will be null if not provided
+        if (birthday && !parsedBirthday) {
+            utils.error(res, 400, "InvalidBirthday");
+            return;
+        }
+        if (countryCode) {
+            if (typeof countryCode !== "string") {
+                utils.error(res, 400, "InvalidCountry");
+                return;
+            }
+            if (!countryLookup.countryCodes.includes(countryCode)) {
+                utils.error(res, 400, "UnsupportedCountry");
+                return;
+            }
+        }
+
+        let token = await utils.UserManager.createAccount(username, real_username, packet.password, email, parsedBirthday, countryCode);
 
         await utils.UserManager.addIP(username, req.realIP);
 

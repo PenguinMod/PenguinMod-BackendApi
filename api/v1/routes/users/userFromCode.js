@@ -48,13 +48,16 @@ module.exports = (app, utils) => {
         const privateProfile = user_meta.privateProfile;
         const canFollowingSeeProfile = user_meta.allowFollowingView;
 
-        const standing =user_meta.unbanTime > Date.now() ? 2 :
+        const standing = user_meta.unbanTime > Date.now() ? 2 :
                         user_meta.permBanned ? 3 : 0;
         // ATODO: 2 is limited, not yet implemented
 
         const email = user_meta.email;
-
         const emailIsVerified = user_meta.emailVerified;
+        
+        // there doesnt seem to be a particular reason to return the user's birthday at the moment
+        const birthdayEntered = user_meta.birthdayEntered;
+        const countryEntered = user_meta.countryEntered;
 
         if (user_meta.password) loginMethods.push("password");
 
@@ -79,7 +82,10 @@ module.exports = (app, utils) => {
             canFollowingSeeProfile,
             standing,
             email,
-            isEmailVerified: emailIsVerified
+            isEmailVerified: emailIsVerified,
+            birthdayEntered,
+            countryEntered,
+            country: user_meta.country
         };
 
         res.status(200);

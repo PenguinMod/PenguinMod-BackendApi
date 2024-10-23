@@ -201,11 +201,13 @@ class UserManager {
      * Create an account
      * @param {string} username new username of the user
      * @param {string} password new password of the user
-     * @param {string} email email of the user, if provided
+     * @param {string?} email email of the user, if provided
+     * @param {string?} birthday birth date of the user formatted as an ISO string "1990-01-01T00:00:00.000Z", if provided
+     * @param {string?} country country code if the user as defined by ISO 3166-1 Alpha-2, if provided
      * @returns {Promise<string|boolean>} token if successful, false if not
      * @async
      */
-    async createAccount(username, real_username, password, email) {
+    async createAccount(username, real_username, password, email, birthday, country) {
         const result = await this.users.findOne({ username: username });
         if (result) {
             return false;
@@ -239,6 +241,10 @@ class UserManager {
             lastUpload: 0,
             email,
             emailVerified: false,
+            birthdayEntered: !!birthday,
+            countryEntered: !!country,
+            birthday,
+            country,
             lastPrivacyPolicyRead: current_time,
             lastTOSRead: current_time,
             lastGuidelinesRead: current_time,
