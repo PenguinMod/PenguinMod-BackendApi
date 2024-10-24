@@ -3011,6 +3011,27 @@ class UserManager {
 
         return buffer;
     }
+    
+    /**
+     * Set a user's birthday and or country
+     * This function will error if neither are provided, you need to provide at least one of the inputs
+     * @param {string} username Username of the user
+     * @param {string?} birthday birth date of the user formatted as an ISO string "1990-01-01T00:00:00.000Z", if provided
+     * @param {string?} country country code if the user as defined by ISO 3166-1 Alpha-2, if provided
+     */
+    async setUserBirthdayAndOrCountry(username, birthday, country) {
+        if (!birthday && !country) throw new Error("Both birthday and country cannot be null");
+        const updateObj = {};
+        if (birthday) {
+            updateObj.birthday = birthday;
+            updateObj.birthdayEntered = true;
+        }
+        if (country) {
+            updateObj.country = country;
+            updateObj.countryEntered = true;
+        }
+        await this.users.updateOne({ username: username }, { $set: updateObj });
+    }
 
     async getStats() {
         const userCount = await this.users.countDocuments();
