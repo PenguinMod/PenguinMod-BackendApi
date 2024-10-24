@@ -3019,7 +3019,10 @@ class UserManager {
      * @param {string?} country country code if the user as defined by ISO 3166-1 Alpha-2, if provided
      */
     async setUserBirthdayAndOrCountry(username, birthday, country) {
-        if (!birthday && !country) return;
+        if (!birthday && !country) {
+            console.log("neither birthday nor country entered");
+            return;
+        }
         const updateObj = {};
         if (birthday) {
             updateObj.birthday = birthday;
