@@ -3014,13 +3014,12 @@ class UserManager {
     
     /**
      * Set a user's birthday and or country
-     * This function will error if neither are provided, you need to provide at least one of the inputs
      * @param {string} username Username of the user
      * @param {string?} birthday birth date of the user formatted as an ISO string "1990-01-01T00:00:00.000Z", if provided
      * @param {string?} country country code if the user as defined by ISO 3166-1 Alpha-2, if provided
      */
     async setUserBirthdayAndOrCountry(username, birthday, country) {
-        if (!birthday && !country) throw new Error("Both birthday and country cannot be null");
+        if (!birthday && !country) return;
         const updateObj = {};
         if (birthday) {
             updateObj.birthday = birthday;
