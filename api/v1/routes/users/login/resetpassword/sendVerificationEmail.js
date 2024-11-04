@@ -35,7 +35,10 @@ module.exports = (app, utils) => {
 
         const userid = await utils.UserManager.getIDByUsername(username);
 
-        const lastEmailSent = await utils.UserManager.lastEmailSentByID(userid);
+        const lastEmailSentID = await utils.UserManager.lastEmailSentByID(userid);
+        const lastEmailSendIP = await utils.UserManager.lastEmailSentByIP(req.realIP);
+
+        const lastEmailSent = lastEmailSentID > lastEmailSendIP ? lastEmailSentID : lastEmailSendIP;
 
         if (Date.now() - (lastEmailSent ? lastEmailSent : 0) < 1000 * 60 * 60 * 2) {
             utils.error(res, 400, "Cooldown");
