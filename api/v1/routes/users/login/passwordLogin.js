@@ -5,8 +5,8 @@ module.exports = (app, utils) => {
         const username = (String(packet.username)).toLowerCase();
         const password = packet.password;
 
-        if (!username || !packet.password) {
-            utils.error(res, 400, "InvalidData");
+        if (!username || !password) {
+            utils.error(res, 400, "Missing username or password");
             return;
         }
 

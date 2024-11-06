@@ -7,7 +7,7 @@ module.exports = (app, utils) => {
         const customization = packet.customization;
 
         if (!username || !token || !customization) {
-            utils.error(res, 400, "InvalidData");
+            utils.error(res, 400, "Missing username, token, or customization");
             return;
         }
 

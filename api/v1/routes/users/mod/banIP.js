@@ -15,12 +15,12 @@ module.exports = (app, utils) => {
             }
             targetIP = targetIP.toNormalizedString();
         } catch (e) {
-            utils.error(res, 400, "InvalidData");
+            utils.error(res, 400, "Could not convert to IPv6");
             return;
         }
 
         if (!username || !token || typeof toggle !== "boolean") {
-            utils.error(res, 400, "InvalidData");
+            utils.error(res, 400, "Missing username, token, or toggle");
             return;
         }
 

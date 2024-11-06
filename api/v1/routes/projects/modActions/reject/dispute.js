@@ -9,7 +9,7 @@ module.exports = (app, utils) => {
         const dispute = packet.dispute;
 
         if (!username || !token || typeof messageID !== "string" || typeof dispute !== "string") {
-            return utils.error(res, 400, "InvalidData");
+            return utils.error(res, 400, "Missing username, token, messageID, or dispute");
         }
 
         if (!await utils.UserManager.loginWithToken(username, token)) {

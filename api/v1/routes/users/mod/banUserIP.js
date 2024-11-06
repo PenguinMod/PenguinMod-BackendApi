@@ -9,7 +9,7 @@ module.exports = (app, utils) => {
         const toggle = packet.toggle;
 
         if (!username || !token || !target || typeof toggle !== "boolean") {
-            utils.error(res, 400, "InvalidData");
+            utils.error(res, 400, "Missing username, token, target, or toggle");
             return;
         }
 

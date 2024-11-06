@@ -6,12 +6,12 @@ module.exports = (app, utils) => {
         const state = packet.state;
 
         if (!code || !state) {
-            utils.error(res, 400, "InvalidData");
+            utils.error(res, 400, "Missing code or state");
             return;
         }
 
         if (!await utils.UserManager.verifyOAuth2State(state)) {
-            utils.error(res, 400, "InvalidData");
+            utils.error(res, 400, "Invalid state");
             return;
         }
 
@@ -26,7 +26,7 @@ module.exports = (app, utils) => {
             r = await oauth2Client.getToken(code);
         }
         catch (e) {
-            utils.error(res, 400, "InvalidData");
+            utils.error(res, 400, "Failed to get token");
             return;
         }
         const tokens = r.tokens;

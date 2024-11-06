@@ -10,7 +10,7 @@ module.exports = (app, utils) => {
         const message = packet.message;
 
         if (!username || !token || typeof message !== "string") {
-            return utils.error(res, 400, "InvalidData");
+            return utils.error(res, 400, "Missing username, token, or message");
         }
 
         if (!await utils.UserManager.loginWithToken(username, token)) {

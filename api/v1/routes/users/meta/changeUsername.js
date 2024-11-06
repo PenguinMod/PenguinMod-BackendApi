@@ -7,7 +7,7 @@ module.exports = (app, utils) => {
         const newUsername = String(packet.newUsername).toLowerCase();
 
         if (!username || !token || !newUsername) {
-            utils.error(res, 400, "InvalidData");
+            utils.error(res, 400, "Missing username, token, or newUsername");
             return;
         }
 

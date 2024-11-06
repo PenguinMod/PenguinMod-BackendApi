@@ -6,7 +6,7 @@ module.exports = (app, utils) => {
         const password = packet.password;
 
         if (!tokens || !password) {
-            utils.error(res, 400, "InvalidData");
+            utils.error(res, 400, "Missing access token or password");
             return;
         }
 
@@ -31,7 +31,7 @@ module.exports = (app, utils) => {
         try {
             oauth2Client.setCredentials(JSON.parse(tokens));
         } catch (e) {
-            utils.error(res, 400, "InvalidData");
+            utils.error(res, 400, "Failed to set credentials");
             return;
         }
 
@@ -40,7 +40,7 @@ module.exports = (app, utils) => {
         try {
             user = await oauth2Client.request({url});
         } catch (e) {
-            utils.error(res, 400, "InvalidData");
+            utils.error(res, 400, "Failed to request user data");
             return;
         }
 
@@ -49,7 +49,7 @@ module.exports = (app, utils) => {
         const userid = await utils.UserManager.getUserIDByOAuthID("google", id);
 
         if (!userid) {
-            utils.error(res, 400, "InvalidData");
+            utils.error(res, 400, "User not found");
             return;
         }
 

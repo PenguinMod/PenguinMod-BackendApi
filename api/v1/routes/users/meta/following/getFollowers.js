@@ -6,7 +6,7 @@ module.exports = (app, utils) => {
         const page = Number(packet.page) || 0;
 
         if (!username) {
-            utils.error(res, 400, "InvalidData");
+            utils.error(res, 400, "Missing username");
             return;
         }
 

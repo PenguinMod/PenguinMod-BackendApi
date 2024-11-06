@@ -6,7 +6,7 @@ module.exports = (app, utils) => {
         const method = packet.method;
 
         if (!method) {
-            utils.error(res, 400, "InvalidData");
+            utils.error(res, 400, "Missing method");
             return;
         }
         
@@ -40,7 +40,7 @@ module.exports = (app, utils) => {
                 res.redirect(authorizeUrl);
                 break;
             default:
-                utils.error(res, 400, "InvalidData");
+                utils.error(res, 400, "Invalid method");
                 return;
         }
     });

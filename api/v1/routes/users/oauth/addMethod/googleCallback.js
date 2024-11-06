@@ -6,12 +6,12 @@ module.exports = (app, utils) => {
         const state = packet.state;
 
         if (!state || !code) {
-            utils.error(res, 400, "InvalidData");
+            utils.error(res, 400, "Missing state or code");
             return;
         }
 
         if (!await utils.UserManager.verifyOAuth2State(state)) {
-            utils.error(res, 400, "InvalidData");
+            utils.error(res, 400, "InvalidState");
             return;
         }
 
@@ -28,7 +28,7 @@ module.exports = (app, utils) => {
             r = await oauth2Client.getToken(code);
         }
         catch (e) {
-            utils.error(res, 400, "InvalidData");
+            utils.error(res, 400, "Invalid code");
             return;
         }
         const tokens = r.tokens;
@@ -45,7 +45,7 @@ module.exports = (app, utils) => {
         const methods = await utils.UserManager.getOAuthMethods(username);
 
         if (methods.includes("google")) {
-            utils.error(res, 400, "InvalidData");
+            utils.error(res, 400, "Method already added");
             return;
         }
 

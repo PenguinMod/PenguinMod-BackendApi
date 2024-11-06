@@ -8,7 +8,7 @@ module.exports = (app, utils) => {
         const page = Number(packet.page) || 0;
 
         if (!username || !token) {
-            return utils.error(res, 400, "InvalidData");
+            return utils.error(res, 400, "Missing username or token");
         }
 
         if (!await utils.UserManager.loginWithToken(username, token, true)) {

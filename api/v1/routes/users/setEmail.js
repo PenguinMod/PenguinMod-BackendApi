@@ -14,7 +14,7 @@ module.exports = (app, utils) => {
         };
 
         if (!username || !token || typeof email !== "string") {
-            utils.error(res, 400, "InvalidData");
+            utils.error(res, 400, "Missing username, token, or email");
             return;
         }
 

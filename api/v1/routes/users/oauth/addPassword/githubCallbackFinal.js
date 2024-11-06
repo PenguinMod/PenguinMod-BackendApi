@@ -6,7 +6,7 @@ module.exports = (app, utils) => {
         const password = packet.password;
 
         if (!access_token || !password) {
-            utils.error(res, 400, "InvalidData");
+            utils.error(res, 400, "Missing access_token or password");
             return;
         }
 

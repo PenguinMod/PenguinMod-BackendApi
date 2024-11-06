@@ -24,7 +24,7 @@ module.exports = (app, utils) => {
         }
 
         if (!Array.isArray(badges)) {
-            utils.error(res, 400, "InvalidData");
+            utils.error(res, 400, "InvalidBadges");
             return;
         }
 

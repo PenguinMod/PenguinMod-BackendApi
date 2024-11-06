@@ -7,7 +7,7 @@ module.exports = (app, utils) => {
         const token = packet.token;
 
         if (!username || !token) {
-            utils.error(res, 400, "InvalidData");
+            utils.error(res, 400, "Missing username or token");
             return;
         }
 

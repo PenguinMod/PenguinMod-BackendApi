@@ -6,7 +6,7 @@ module.exports = (app, utils) => {
         const target = (String(packet.target)).toLowerCase();
 
         if (!username || !target) {
-            utils.error(res, 400, "InvalidData");
+            utils.error(res, 400, "Missing username or target");
             return;
         }
 

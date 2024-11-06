@@ -11,7 +11,7 @@ module.exports = (app, utils) => {
         const reason = packet.reason;
 
         if (!username || !token || !target || typeof toggle !== "boolean" || typeof reason !== "string" || reason.length > 512 || typeof time !== "number" || time < 0) {
-            utils.error(res, 400, "InvalidData");
+            utils.error(res, 400, "Missing username, token, target, toggle, reason, or time");
             return;
         }
 

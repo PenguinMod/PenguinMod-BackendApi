@@ -17,7 +17,7 @@ module.exports = (app, utils) => {
         const words = packet.json;
 
         if (typeof words !== 'object') {
-            utils.error(res, 400, "InvalidData");
+            utils.error(res, 400, "Invalid Words");
             return;
         }
 
@@ -25,18 +25,18 @@ module.exports = (app, utils) => {
         for (const key in words) {
             // make sure its an array of strings
             if (typeof words[key] !== 'object') {
-                utils.error(res, 400, "InvalidData");
+                utils.error(res, 400, "Invalid inner words object");
                 return;
             }
             for (const word of words[key]) {
                 if (typeof word !== 'string') {
-                    utils.error(res, 400, "InvalidData");
+                    utils.error(res, 400, "Invalid word");
                     return;
                 }
             }
 
             if (!types.includes(key)) {
-                utils.error(res, 400, "InvalidData");
+                utils.error(res, 400, "Invalid key");
                 return;
             }
         }

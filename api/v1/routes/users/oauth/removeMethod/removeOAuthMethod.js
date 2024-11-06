@@ -8,7 +8,7 @@ module.exports = (app, utils) => {
         const token = packet.token;
 
         if (!method || !username || !token) {
-            utils.error(res, 400, "InvalidData");
+            utils.error(res, 400, "Missing method, username, or token");
             return;
         }
 
@@ -20,7 +20,7 @@ module.exports = (app, utils) => {
         const methods = await utils.UserManager.getOAuthMethods(username);
 
         if (!methods.includes(method)) {
-            utils.error(res, 400, "InvalidData");
+            utils.error(res, 400, "Method not found");
             return;
         }
 

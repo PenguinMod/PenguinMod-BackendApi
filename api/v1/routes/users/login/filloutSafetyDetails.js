@@ -28,12 +28,12 @@ module.exports = (app, utils) => {
         };
 
         if (typeof username !== "string" && typeof token !== "string") {
-            utils.error(res, 400, "InvalidData");
+            utils.error(res, 400, "Missing username or token");
             return;
         }
 
         if (!await utils.UserManager.loginWithToken(username, token)) {
-            utils.error(res, 401, "InvalidData");
+            utils.error(res, 401, "Invalid login");
             return;
         }
         

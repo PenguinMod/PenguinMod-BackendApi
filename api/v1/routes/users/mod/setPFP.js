@@ -24,11 +24,11 @@ module.exports = (app, utils) => {
         }
 
         if (!await utils.UserManager.existsByUsername(target)) {
-            return utils.error(res, 400, "InvalidData");
+            return utils.error(res, 400, "TargetNotFound");
         }
 
         if (!pictureName) {
-            return utils.error(res, 400, "InvalidData");
+            return utils.error(res, 400, "InvalidPicture");
         }
 
         const picture = fs.readFileSync(path.join(utils.HomeDir, pictureName.path));

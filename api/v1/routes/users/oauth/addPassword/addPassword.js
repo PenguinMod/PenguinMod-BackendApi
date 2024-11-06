@@ -7,7 +7,7 @@ module.exports = (app, utils) => {
         const token = packet.token;
 
         if (!method || !username || !token) {
-            utils.error(res, 400, "InvalidData");
+            utils.error(res, 400, "Missing method, username, or token");
             return;
         }
 
@@ -20,7 +20,7 @@ module.exports = (app, utils) => {
 
         if (!methods) {
             
-            utils.error(res, 400, "InvalidData");
+            utils.error(res, 400, "No login methods (PLEASE REPORT THIS TO A DEVELOPER)");
             return;
         }
         
@@ -55,7 +55,7 @@ module.exports = (app, utils) => {
                 res.redirect(authorizeUrl);
                 break;
             default:
-                utils.error(res, 400, "InvalidData");
+                utils.error(res, 400, "Invalid method");
                 return;
         }
     });

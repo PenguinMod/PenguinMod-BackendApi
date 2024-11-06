@@ -11,7 +11,7 @@ module.exports = (app, utils) => {
         const disputable = packet.disputable || false;
 
         if (!username || !token || !target || typeof message !== "string") {
-            return utils.error(res, 400, "InvalidData");
+            return utils.error(res, 400, "Missing username, token, target, or message");
         }
 
         if (!await utils.UserManager.loginWithToken(username, token)) {

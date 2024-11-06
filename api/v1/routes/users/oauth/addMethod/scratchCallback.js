@@ -6,12 +6,12 @@ module.exports = (app, utils) => {
         const code = packet.code;
 
         if (!state || !code) {
-            utils.error(res, 400, "InvalidData");
+            utils.error(res, 400, "Missing state or code");
             return;
         }
 
         if (!await utils.UserManager.verifyOAuth2State(state)) {
-            utils.error(res, 400, "InvalidData");
+            utils.error(res, 400, "InvalidState");
             return;
         }
 
@@ -53,7 +53,7 @@ module.exports = (app, utils) => {
         const methods = await utils.UserManager.getOAuthMethods(username);
 
         if (methods.includes("scratch")) {
-            utils.error(res, 400, "InvalidData");
+            utils.error(res, 400, "Method already added");
             return;
         }
 

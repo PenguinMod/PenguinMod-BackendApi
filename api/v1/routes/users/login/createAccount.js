@@ -33,7 +33,7 @@ module.exports = (app, utils) => {
         };
         
         if (typeof username !== "string" || typeof password !== "string" || typeof email !== "string") {
-            utils.error(res, 400, "InvalidData");
+            utils.error(res, 400, "Missing username, password, or email");
             return;
         }
 

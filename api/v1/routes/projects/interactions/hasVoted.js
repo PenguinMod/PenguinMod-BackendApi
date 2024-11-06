@@ -8,7 +8,7 @@ module.exports = (app, utils) => {
         const projectID = packet.projectID;
 
         if (!username || !token || !projectID) {
-            return utils.error(res, 400, "InvalidData");
+            return utils.error(res, 400, "Missing username, token, or projectID");
         }
 
         if (!await utils.UserManager.loginWithToken(username, token)) {
