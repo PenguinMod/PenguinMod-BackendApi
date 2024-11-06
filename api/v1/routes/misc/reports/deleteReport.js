@@ -16,7 +16,7 @@ module.exports = (app, utils) => {
         const reportID = packet.reportID;
 
         if (!reportID) {
-            return utils.error(res, 400, "Invalid request");
+            return utils.error(res, 400, "Missing report ID");
         }
 
         if (!await utils.UserManager.reportExists(reportID)) {

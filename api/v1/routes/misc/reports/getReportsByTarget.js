@@ -17,7 +17,7 @@ module.exports = (app, utils) => {
         const page = Number(packet.page) || 0;
 
         if (!target) {
-            return utils.error(res, 400, "Invalid request");
+            return utils.error(res, 400, "Missing target");
         }
 
         if (await utils.UserManager.existsByUsername(target)) {
