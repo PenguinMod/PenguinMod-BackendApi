@@ -2225,7 +2225,7 @@ class UserManager {
                 break;
             case "github":
                 try {
-                    username = data.id.toLowerCase();
+                    username = String(data.login).toLowerCase();
                 } catch(e) {
                     console.error("it broke", data, e);
                     throw e;
