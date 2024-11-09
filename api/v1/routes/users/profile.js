@@ -1,5 +1,5 @@
 module.exports = (app, utils) => {
-    app.get('/api/v1/users/profile', async function (req, res) {
+    app.get('/api/v1/users/profile', utils.cors(), async function (req, res) {
         const packet = req.query;
 
         const target = String(packet.target).toLowerCase();

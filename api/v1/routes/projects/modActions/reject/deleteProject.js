@@ -1,5 +1,5 @@
 module.exports = (app, utils) => {
-    app.post('/api/v1/projects/hardDeleteProject', async (req, res) => {
+    app.post('/api/v1/projects/hardDeleteProject', utils.cors(), async (req, res) => {
         const packet = req.body;
 
         const projectID = String(packet.projectID);

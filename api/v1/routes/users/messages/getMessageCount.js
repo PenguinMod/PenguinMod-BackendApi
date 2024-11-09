@@ -1,5 +1,5 @@
 module.exports = (app, utils) => {
-    app.get('/api/v1/users/getmessagecount', async (req, res) => {
+    app.get('/api/v1/users/getmessagecount', utils.cors(), async (req, res) => {
         const packet = req.query;
 
         const username = (String(packet.username)).toLowerCase();

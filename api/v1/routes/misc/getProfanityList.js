@@ -1,5 +1,5 @@
 module.exports = (app, utils) => {
-    app.get('/api/v1/misc/getProfanityList', async function (req, res) {
+    app.get('/api/v1/misc/getProfanityList', utils.cors(), async function (req, res) {
         const packet = req.query;
 
         const username = (String(packet.username)).toLowerCase();

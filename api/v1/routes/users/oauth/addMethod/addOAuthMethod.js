@@ -1,5 +1,5 @@
 module.exports = (app, utils) => {
-    app.get("/api/v1/users/addoauthmethod", async function (req, res) {
+    app.get("/api/v1/users/addoauthmethod", utils.cors(), async function (req, res) {
         // get the method
         const packet = req.query;
 

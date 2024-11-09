@@ -46,9 +46,9 @@ const upload = multer({
 });
 
 app.use(cors({
-    origin: '*',
+    origin: '*', // this gets overwritten by some endpoints (all that use your login)
     utilsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
-}));
+})); 
 app.use(bodyParser.json());
 app.use(express.urlencoded({
     limit: process.env.ServerSize,
@@ -124,6 +124,9 @@ const UserManager = new um();
         googleOAuth2Client: OAuth2Client,
         ipaddr,
         rateLimiter: rateLimit,
+        cors: () => cors({
+            origin: process.env.HomeURL,
+        }),
     });
 
     app.use((err, req, res, next) => {

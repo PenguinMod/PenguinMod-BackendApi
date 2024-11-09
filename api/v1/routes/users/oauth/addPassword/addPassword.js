@@ -1,5 +1,5 @@
 module.exports = (app, utils) => {
-    app.get("/api/v1/users/addpasswordtooauth", async function (req, res) {
+    app.get("/api/v1/users/addpasswordtooauth", utils.cors(), async function (req, res) {
         const packet = req.query;
 
         const method = packet.method;

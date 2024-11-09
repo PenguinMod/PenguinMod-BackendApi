@@ -1,7 +1,7 @@
 const countryLookup = require("../../../db/country-lookup.json");
 
 module.exports = (app, utils) => {
-    app.post("/api/v1/users/filloutSafetyDetails", async function (req, res) {
+    app.post("/api/v1/users/filloutSafetyDetails", utils.cors(), async function (req, res) {
         const packet = req.body;
 
         const username = (String(packet.username)).toLowerCase();

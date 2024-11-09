@@ -1,5 +1,5 @@
 module.exports = (app, utils) => {
-    app.get('/api/v1/projects/downloadHardReject', async (req, res) => {
+    app.get('/api/v1/projects/downloadHardReject', utils.cors(), async (req, res) => {
         const packet = req.query;
 
         const username = (String(packet.username)).toLowerCase();

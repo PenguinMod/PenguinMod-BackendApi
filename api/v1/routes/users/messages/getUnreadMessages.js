@@ -1,5 +1,5 @@
 module.exports = (app, utils) => {
-    app.get('/api/v1/users/getunreadmessages', async (req, res) => {
+    app.get('/api/v1/users/getunreadmessages', utils.cors(), async (req, res) => {
         const packet = req.query;
 
         const username = (String(packet.username)).toLowerCase();

@@ -1,5 +1,5 @@
 module.exports = (app, utils) => {
-    app.get('/api/v1/users/getmyfeed', async function (req, res) {
+    app.get('/api/v1/users/getmyfeed', utils.cors(), async function (req, res) {
         const packet = req.query;
 
 

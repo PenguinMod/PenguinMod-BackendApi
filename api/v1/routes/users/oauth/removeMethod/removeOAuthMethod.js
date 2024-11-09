@@ -1,5 +1,5 @@
 module.exports = (app, utils) => {
-    app.post("/api/v1/users/removeoauthmethod", async function (req, res) {
+    app.post("/api/v1/users/removeoauthmethod", utils.cors(), async function (req, res) {
         // get the method
         const packet = req.body;
 

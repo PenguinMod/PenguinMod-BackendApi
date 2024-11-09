@@ -1,5 +1,5 @@
 module.exports = (app, utils) => {
-    app.get('/api/v1/misc/getLastPolicyRead', async function (req, res) {
+    app.get('/api/v1/misc/getLastPolicyRead', utils.cors(), async function (req, res) {
         const packet = req.body;
 
         const username = (String(packet.username)).toLowerCase();

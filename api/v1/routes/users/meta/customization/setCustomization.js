@@ -1,5 +1,5 @@
 module.exports = (app, utils) => {
-    app.post("/api/v1/users/customization/setCustomization", async (req, res) => {
+    app.post("/api/v1/users/customization/setCustomization", utils.cors(), async (req, res) => {
         const packet = req.body;
 
         const username = packet.username;

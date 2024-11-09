@@ -1,5 +1,5 @@
 module.exports = (app, utils) => {
-    app.post("/api/v1/users/resetpassword/reset", async (req, res) => {
+    app.post("/api/v1/users/resetpassword/reset", utils.cors(), async (req, res) => {
         const packet = req.body;
 
         const email = packet.email;

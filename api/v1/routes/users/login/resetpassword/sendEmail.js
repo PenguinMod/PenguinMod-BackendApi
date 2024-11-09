@@ -1,5 +1,5 @@
 module.exports = (app, utils) => {
-    app.post("/api/v1/users/resetpassword/sendEmail", utils.rateLimiter({
+    app.post("/api/v1/users/resetpassword/sendEmail", utils.cors(), utils.rateLimiter({
         validate: {
             trustProxy: true,
             xForwardedForHeader: true,

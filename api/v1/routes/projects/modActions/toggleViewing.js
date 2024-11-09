@@ -1,5 +1,5 @@
 module.exports = (app, utils) => {
-    app.post('/api/v1/projects/toggleviewing', async (req, res) => {
+    app.post('/api/v1/projects/toggleviewing', utils.cors(), async (req, res) => {
         const packet = req.body;
 
         const username = (String(packet.username)).toLowerCase();
