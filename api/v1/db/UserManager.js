@@ -2040,10 +2040,20 @@ class UserManager {
             ({ id: "illegalWebsites" })).items;
         const spacedOutWordsOnly = (await this.illegalList.findOne
             ({ id: "spacedOutWordsOnly" })).items;
-        const joined = illegalWords.concat(illegalWebsites, spacedOutWordsOnly);
+        const joined = illegalWords.concat(illegalWebsites);
+
+        const no_spaces = text.replace(/\s/g, "");
         
         for (const item of joined) {
-            const index = text.indexOf(item)
+            const index = no_spaces.indexOf(item)
+            if (index + 1) {
+                return [index, index+item.length];
+            }
+        }
+
+        for (const item of spacedOutWordsOnly) {
+            const with_spaces = " " + item + " ";
+            const index = text.indexOf(with_spaces)
             if (index + 1) {
                 return [index, index+item.length];
             }
