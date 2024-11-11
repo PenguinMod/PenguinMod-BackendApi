@@ -1284,6 +1284,7 @@ class UserManager {
      * @returns {Promise<Buffer>} The project image file.
      */
     async getProjectImage(id) {
+        console.log("getting image", id);
         const file = await this.readObjectFromBucket("project-thumbnails", id);
 
         return file;
