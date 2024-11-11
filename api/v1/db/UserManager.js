@@ -2807,7 +2807,7 @@ class UserManager {
     async searchUsers(query, page, pageSize) {
         const result = await this.users.aggregate([
             {
-                $match: { username: { $regex: `.*${query}.*`, $options: "i" } }
+                $match: { banned: false, username: { $regex: `.*${query}.*`, $options: "i" } }
             },
             {
                 $sort: { followers: -1 }
