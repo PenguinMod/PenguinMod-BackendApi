@@ -47,7 +47,9 @@ module.exports = (app, utils) => {
             return utils.error(res, 400, "Project does not exist");
         }
 
-        if (packet.author !== username && !isAdmin) {
+        const project = await utils.UserManager.getProjectMetadata(projectID);
+
+        if (project.author.username !== username && !isAdmin) {
             await unlink();
             return utils.error(res, 403, "Unauthorized");
         }
