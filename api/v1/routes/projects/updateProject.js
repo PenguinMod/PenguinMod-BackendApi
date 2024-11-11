@@ -47,7 +47,7 @@ module.exports = (app, utils) => {
             return utils.error(res, 400, "Project does not exist");
         }
 
-        if (packet.author !== username || !isAdmin) {
+        if (packet.author !== username && !isAdmin) {
             await unlink();
             return utils.error(res, 403, "Unauthorized");
         }
