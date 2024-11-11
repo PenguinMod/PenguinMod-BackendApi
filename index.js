@@ -76,6 +76,8 @@ const UserManager = new um();
 (async () => {
     await UserManager.init(MAXVIEWS, VIEWRESETRATE);
 
+    console.log("hello world test sigma");
+
     /*
     app.get("/test", (req, res) => {
         res.sendFile(path.join(__dirname, 'test.html'));
