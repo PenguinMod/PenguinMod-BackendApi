@@ -1353,7 +1353,7 @@ class UserManager {
 
         if (!await this.projectExists(p_id)) return false;
 
-        const tempresult = await this.projects.findOne({id: p_id})
+        const tempresult = await this.projects.findOne({id: p_id});
 
         tempresult.author = {
             id: tempresult.author,
@@ -1363,7 +1363,6 @@ class UserManager {
         // add the views, loves, and votes
         const result = {
             ...tempresult,
-            views: await this.getProjectViews(p_id),
             loves: await this.getProjectLoves(p_id),
             votes: await this.getProjectVotes(p_id),
         }
