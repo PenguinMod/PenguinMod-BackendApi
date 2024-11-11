@@ -2766,6 +2766,7 @@ class UserManager {
                 });
                 break;
             case "newest":
+            default:
                 aggregateList.push({
                     $sort: { lastUpdate: -1 }
                 });
@@ -2777,17 +2778,14 @@ class UserManager {
                 break;
         }
 
-        aggregateList = aggregateList.concat([
-            {
-                $sort: { views: -1 }
-            },
+        aggregateList.push(
             {
                 $facet: {
                     metadata: [{ $count: "count" }],
                     data: [{ $skip: page * pageSize }, { $limit: pageSize }]
                 }
             },
-        ]);
+        );
 
         const result = await this.projects.aggregate(aggregateList)
         .toArray();

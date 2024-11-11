@@ -104,7 +104,6 @@ module.exports = (app, utils) => {
                 res.header("Cache-Control", "public, max-age=90");
                 return res.send(thumbnail);
             case "metadata":
-                console.log(metadata);
                 return res.send(metadata);
             default:
                 return utils.error(res, 400, "Invalid requestType");

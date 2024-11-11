@@ -147,7 +147,6 @@ module.exports = (app, utils) => {
         let remix = String(packet.remix);
 
         if (remix !== "0") {
-            console.log(remix);
             if (!await utils.UserManager.projectExists(remix)) {
                 await unlink();
                 return utils.error(res, 400, "Remix project does not exist");
