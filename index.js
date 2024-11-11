@@ -76,7 +76,7 @@ const UserManager = new um();
 (async () => {
     await UserManager.init(MAXVIEWS, VIEWRESETRATE);
 
-    console.log("hello world test sigma");
+    console.log(`Starting at ${new Date().toLocaleString()}`);
 
     /*
     app.get("/test", (req, res) => {
