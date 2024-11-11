@@ -67,7 +67,7 @@ module.exports = (app, utils) => {
                 utils.logs.sendHeatLog(
                     before + "\x1b[31;1m" + illegalWord + "\x1b[0m" + after,
                     type,
-                    username,
+                    username
                 )
                 
                 return true;
