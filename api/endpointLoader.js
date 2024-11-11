@@ -33,10 +33,10 @@ function loadEndpoints(app, dir, utils = {}) {
     
     readFiles(endpointDir).forEach(file => {
         const endpointPath = path.join(endpointDir, file);
+        console.log(`Loading endpoint ${file}`);
         try {
             const endpoint = require(endpointPath);
             endpoint(app, utils);
-            console.log(`[ LOADED ]`.green, `endpoint ${file}`);
         } catch (e) {
             console.error(`${"[ ERROR ]".red} loading endpoint ${file}: ${e}`);
         }
