@@ -2073,14 +2073,20 @@ class UserManager {
 
         potentiallyUnsafeWords = potentiallyUnsafeWords ? potentiallyUnsafeWords : [];
         potentiallyUnsafeWordsSpacedOut = potentiallyUnsafeWordsSpacedOut ? potentiallyUnsafeWordsSpacedOut : [];
-
-        const joined = potentiallyUnsafeWords.concat(potentiallyUnsafeWordsSpacedOut);
         
-        for (const item of joined) {
+        for (const item of potentiallyUnsafeWords) {
             if (text.includes(item)) {
                 return true;
             }
         }
+
+        for (const item of potentiallyUnsafeWordsSpacedOut) {
+            const with_spaces = " " + item + " ";
+            if (text.includes(with_spaces)) {
+                return true;
+            }
+        }
+
         return false;
     }
 

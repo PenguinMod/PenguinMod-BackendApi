@@ -54,7 +54,8 @@ module.exports = (app, utils) => {
             utils.logs.sendHeatLog(
                 before + "\x1b[33;1m" + illegalWord + "\x1b[0m" + after,
                 "profileBio",
-                [username, userID]
+                [username, userID],
+                0xffbb00,
             )
         }
 
