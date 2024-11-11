@@ -100,6 +100,10 @@ module.exports = (app, utils) => {
             case "thumbnail":
                 const thumbnail = await utils.UserManager.getProjectImage(projectID);
 
+                if (!thumbnail) {
+                    return utils.error(res, 404, "Thumbnail not found");
+                }
+
                 res.status(200);
                 res.header("Cache-Control", "public, max-age=90");
                 return res.send(thumbnail);

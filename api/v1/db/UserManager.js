@@ -1284,7 +1284,11 @@ class UserManager {
      * @returns {Promise<Buffer>} The project image file.
      */
     async getProjectImage(id) {
-        console.log("getting image", id);
+        // check if the file exists
+        if (!await this.minioClient.bucketExists("project-thumbnails") || !await this.minioClient.exists("project-thumbnails", id)) {
+            return false;
+        }
+
         const file = await this.readObjectFromBucket("project-thumbnails", id);
 
         return file;
