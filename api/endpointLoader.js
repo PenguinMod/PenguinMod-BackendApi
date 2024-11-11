@@ -36,6 +36,7 @@ function loadEndpoints(app, dir, utils = {}) {
         try {
             const endpoint = require(endpointPath);
             endpoint(app, utils);
+            console.log(`[ LOADED ]`.green, `endpoint ${file}`);
         } catch (e) {
             console.error(`${"[ ERROR ]".red} loading endpoint ${file}: ${e}`);
         }
