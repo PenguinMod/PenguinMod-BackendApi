@@ -13,7 +13,7 @@ module.exports = (app, utils) => {
             return;
         }
 
-        if (!await utils.UserManager.isAdmin(username) || !await utils.UserManager.isModerator(username)) {
+        if (!await utils.UserManager.isAdmin(username) && !await utils.UserManager.isModerator(username)) {
             utils.error(res, 400, "Unauthorized");
             return;
         }
