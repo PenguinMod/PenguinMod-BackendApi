@@ -125,7 +125,14 @@ const UserManager = new um();
         ipaddr,
         rateLimiter: rateLimit,
         cors: () => cors({
-            origin: process.env.HomeURL,
+            origin: function (origin, callback) {
+                const whitelist = [process.env.HomeURL, "http://localhost:5173"];
+                if (whitelist.indexOf(origin) !== -1) {
+                  callback(null, true)
+                } else {
+                  callback(new Error('Not allowed by CORS'))
+                }
+            },
         }),
     });
 
