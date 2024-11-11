@@ -129,7 +129,8 @@ const UserManager = new um();
         cors: () => cors({
             origin: function (origin, callback) {
                 const whitelist = [process.env.HomeURL, "http://localhost:5173"];
-                if (whitelist.indexOf(origin) !== -1) {
+                const idxWebPreview = ".cloudworkstations.dev"; //project idx sigma development
+                if (whitelist.indexOf(origin) !== -1 || origin.endsWith(idxWebPreview)) {
                   callback(null, true)
                 } else {
                   callback(null, false)
