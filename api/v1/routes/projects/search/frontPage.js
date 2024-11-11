@@ -35,13 +35,13 @@ module.exports = (app, utils) => {
         const featured = await utils.UserManager.getFeaturedProjects(0, Number(utils.env.PageSize))
         
         const almostFeatured = await utils.UserManager.specializedSearch(
-            {$match: { featured: false, votes: { $gte: utils.env.FeatureAmount - 5 }, softRejected: false, hardReject: false }},
+            {$match: { featured: false, votes: { $gte: 2 }, softRejected: false, hardReject: false }},
             0,
             Number(utils.env.PageSize)
         )
         
         const liked = await utils.UserManager.specializedSearch(
-            { $match: { featured: false, votes: { $gte: 5 }, softRejected: false, hardReject: false } },
+            { $match: { featured: false, votes: { $gte: 2 }, softRejected: false, hardReject: false } },
             0,
             Number(utils.env.PageSize)
         )
