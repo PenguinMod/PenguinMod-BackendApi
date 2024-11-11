@@ -1285,11 +1285,17 @@ class UserManager {
      */
     async getProjectImage(id) {
         // check if the file exists
-        if (!await this.minioClient.bucketExists("project-thumbnails") || !await this.minioClient.exists("project-thumbnails", id)) {
+        if (!await this.minioClient.bucketExists("project-thumbnails")) {
             return false;
         }
 
-        const file = await this.readObjectFromBucket("project-thumbnails", id);
+        let file;
+
+        try {
+            file = await this.readObjectFromBucket("project-thumbnails", id);
+        } catch (e) {
+            return false;
+        }
 
         return file;
     }
