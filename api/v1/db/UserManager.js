@@ -1408,9 +1408,9 @@ class UserManager {
      * @returns {Promise<number>} The number of views the project has
      */
     async getProjectViews(id) {
-        const result = this.views.filter((view) => view.id === id);
+        const result = this.projects.findOne({ id: id });
 
-        return result.length;
+        return result.views;
     }
 
     /**
