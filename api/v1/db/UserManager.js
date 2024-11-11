@@ -1100,6 +1100,12 @@ class UserManager {
         return id;
     }
 
+    async isFeatured(projectId) {
+        const result = await this.projects.findOne({id: projectId});
+
+        return !!result;
+    }
+
     /**
      * Get remixes of a project
      * @param {number} id 
