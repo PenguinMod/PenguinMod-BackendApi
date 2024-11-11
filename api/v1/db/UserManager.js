@@ -2007,13 +2007,24 @@ class UserManager {
         illegalWebsites = illegalWebsites ? illegalWebsites : [];
         spacedOutWordsOnly = spacedOutWordsOnly ? spacedOutWordsOnly : [];
 
-        const joined = illegalWords.concat(illegalWebsites, spacedOutWordsOnly);
+        const joined = illegalWords.concat(illegalWebsites);
         
+        const no_spaces = text.replace(/\s/g, "");
+
         for (const item of joined) {
-            if (text.includes(item)) {
+            if (no_spaces.includes(item)) {
                 return true;
             }
         }
+
+        for (const item of spacedOutWordsOnly) {
+            const with_spaces = " " + item + " ";
+
+            if (text.includes(with_spaces)) {
+                return true;
+            }
+        }
+
         return false;
     }
 
