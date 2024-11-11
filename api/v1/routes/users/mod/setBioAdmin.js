@@ -30,7 +30,7 @@ module.exports = (app, utils) => {
 
         const oldBio = await utils.UserManager.getBio(target);
 
-        utils.logs.sendBioUpdatelog(username, target, await utils.UserManager.getBio(username), bio);
+        utils.logs.sendBioUpdateLog(username, target, await utils.UserManager.getBio(username), bio);
 
         await utils.UserManager.setBio(user, bio);
 
