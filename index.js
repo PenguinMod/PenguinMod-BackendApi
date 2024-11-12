@@ -110,17 +110,17 @@ const UserManager = new um();
     });
 
     function cumulative_file_size_limit(utils) {
-        const unlink = async () => {
-            if (req.files.jsonFile)
-            await utils.unlinkAsync(req.files.jsonFile[0].path);
-            if (req.files.thumbnail)
-            await utils.unlinkAsync(req.files.thumbnail[0].path);
-            for (let asset of req.files.assets) {
-                await utils.unlinkAsync(asset.path);
-            }
-        }
-
         return async function (req, res, next) {
+            const unlink = async () => {
+                if (req.files.jsonFile)
+                await utils.unlinkAsync(req.files.jsonFile[0].path);
+                if (req.files.thumbnail)
+                await utils.unlinkAsync(req.files.thumbnail[0].path);
+                for (let asset of req.files.assets) {
+                    await utils.unlinkAsync(asset.path);
+                }
+            }
+
             const maxCombinedSize = Number(process.env.CumulativeUploadSize) || 32 * 1024 * 1024;
             let combinedSize = 0;
 
