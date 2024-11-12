@@ -130,7 +130,7 @@ const UserManager = new um();
             origin: function (origin, callback) {
                 const whitelist = [process.env.HomeURL, "http://localhost:5173"];
                 const idxWebPreview = ".cloudworkstations.dev"; //project idx sigma development
-                if (whitelist.indexOf(origin) !== -1 || origin.endsWith(idxWebPreview)) {
+                if (!origin || whitelist.indexOf(origin) !== -1 || origin.endsWith(idxWebPreview)) {
                   callback(null, true)
                 } else {
                   callback(null, false)
