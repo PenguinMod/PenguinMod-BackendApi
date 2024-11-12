@@ -1266,7 +1266,7 @@ class UserManager {
             with_author_data.push(project);
         }
 
-        return final;
+        return with_author_data;
     }
 
     /**
