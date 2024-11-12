@@ -2,7 +2,7 @@ module.exports = (app, utils) => {
     app.get('/api/v1/projects/getprojectsbyauthor', async (req, res) => {
         const packet = req.query;
 
-        const authorUsername = packet.authorUsername;
+        const authorUsername = String.prototype.toLowerCase(packet.authorUsername);
         const page = Number(packet.page) || 0;
 
         if (!authorUsername) {
