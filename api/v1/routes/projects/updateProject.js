@@ -132,7 +132,7 @@ module.exports = (app, utils) => {
 
         if (!req.files.jsonFile || !req.files.thumbnail || !req.files.assets) {
             await unlink();
-            return utils.error(res, 400, "Invalid data");
+            return utils.error(res, 400, "Missing json file, thumbnail, or assets");
         }
 
         utils.UserManager.setLastUpload(username, Date.now());
@@ -189,6 +189,8 @@ module.exports = (app, utils) => {
         }
 
         const thumbnail = fs.readFileSync(req.files.thumbnail[0].path);
+
+        console.log("tn: ", thumbnail);
 
         // ATODO: use mmmagic to verify this is a valid image
 

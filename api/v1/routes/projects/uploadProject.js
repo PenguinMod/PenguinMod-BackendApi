@@ -131,7 +131,7 @@ module.exports = (app, utils) => {
 
         if (!req.files.jsonFile || !req.files.thumbnail || !req.files.assets) {
             await unlink();
-            return utils.error(res, 400, "Invalid data");
+            return utils.error(res, 400, "Missing json file, thumbnail, or assets");
         }
 
         // the jsonfile is in protobuf format so convert it to json
