@@ -96,6 +96,11 @@ module.exports = (app, utils) => {
 
         let token = await utils.UserManager.createAccount(username, real_username, packet.password, email, parsedBirthday, countryCode);
 
+        if (!token) {
+            utils.error(res, 400, "IllegalWording");
+            return;
+        }
+
         await utils.UserManager.addIP(username, req.realIP);
 
         res.status(200);

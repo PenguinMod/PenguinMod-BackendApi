@@ -6,7 +6,7 @@ module.exports = (app, utils) => {
         { name: 'thumbnail', maxCount: 1 },
         // assets
         { name: 'assets' }
-    ]), async (req, res) => {
+    ]), utils.cumulative_file_size_limit(utils), async (req, res) => {
         const unlink = async () => {
             if (req.files.jsonFile)
             await utils.unlinkAsync(req.files.jsonFile[0].path);
@@ -189,8 +189,6 @@ module.exports = (app, utils) => {
         }
 
         const thumbnail = fs.readFileSync(req.files.thumbnail[0].path);
-
-        console.log("tn: ", thumbnail);
 
         // ATODO: use mmmagic to verify this is a valid image
 

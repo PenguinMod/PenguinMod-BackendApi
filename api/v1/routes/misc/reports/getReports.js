@@ -39,6 +39,10 @@ module.exports = (app, utils) => {
             } else {
                 const metadata = await utils.UserManager.getProjectMetadata(pushing.targetID);
 
+                if (!metadata) {
+                    continue;
+                }
+
                 pushing.target = metadata.title;
                 pushing.author = metadata.author.username;
             }

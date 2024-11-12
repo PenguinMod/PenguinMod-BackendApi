@@ -5,7 +5,7 @@ const Magic = require('mmmagic');
 const magic = new Magic.Magic(Magic.MAGIC_MIME_TYPE);
 
 module.exports = (app, utils) => {
-    app.post('/api/v1/users/setpfp', utils.cors(), utils.upload.single("picture"), async (req, res) => {
+    app.post('/api/v1/users/setpfp', utils.cors(), utils.upload.single("picture"), utils.cumulative_file_size_limit(utils), async (req, res) => {
         const packet = req.query;
 
         const username = (String(packet.username)).toLowerCase();

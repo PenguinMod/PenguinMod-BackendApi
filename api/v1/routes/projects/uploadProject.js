@@ -6,7 +6,7 @@ module.exports = (app, utils) => {
         { name: 'thumbnail', maxCount: 1 },
         // assets
         { name: 'assets', maxCount: 500 }
-    ]), async (req, res) => {
+    ]), utils.cumulative_file_size_limit(utils), async (req, res) => {
         const unlink = async () => {
             if (req.files.jsonFile)
             await utils.unlinkAsync(req.files.jsonFile[0].path);
@@ -38,20 +38,6 @@ module.exports = (app, utils) => {
         if (await utils.UserManager.getLastUpload(username) > Date.now() - utils.uploadCooldown && (!isAdmin && !isModerator)) {
             await unlink();
             return utils.error(res, 400, "Uploaded in the last 8 minutes");
-        }
-
-        // make sure the files arent too big
-        const maxCombinedSize = 50 * 1024 * 1024; // 50mb (bytes)
-        let combinedSize = 0;
-
-        if (req.files.jsonFile) combinedSize += req.files.jsonFile[0].size;
-        if (req.files.thumbnail) combinedSize += req.files.thumbnail[0].size;
-        for (let asset of req.files.assets)
-            combinedSize += asset.size;
-
-        if (combinedSize > maxCombinedSize) {
-            await unlink();
-            return utils.error(res, 400, "Files too big");
         }
 
         const illegalWordingError = async (text, type) => {

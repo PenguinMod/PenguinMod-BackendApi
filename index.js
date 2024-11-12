@@ -109,6 +109,36 @@ const UserManager = new um();
         res.sendFile(path.join(__dirname, 'robots.txt'));
     });
 
+    function cumulative_file_size_limit(utils) {
+        const unlink = async () => {
+            if (req.files.jsonFile)
+            await utils.unlinkAsync(req.files.jsonFile[0].path);
+            if (req.files.thumbnail)
+            await utils.unlinkAsync(req.files.thumbnail[0].path);
+            for (let asset of req.files.assets) {
+                await utils.unlinkAsync(asset.path);
+            }
+        }
+
+        return async function (req, res, next) {
+            const maxCombinedSize = Number(process.env.CumulativeUploadSize) || 32 * 1024 * 1024;
+            let combinedSize = 0;
+
+            if (req.files.jsonFile) combinedSize += req.files.jsonFile[0].size;
+            if (req.files.thumbnail) combinedSize += req.files.thumbnail[0].size;
+            for (let asset of req.files.assets)
+                combinedSize += asset.size;
+
+            if (combinedSize > maxCombinedSize) {
+                await unlink();
+                return utils.error(res, 400, "Files too big");
+            }
+
+            next();
+        }
+    }
+
+
     endpointLoader(app, 'v1/routes', {
         UserManager: UserManager,
         homeDir: path.join(__dirname, "./"),
@@ -126,6 +156,7 @@ const UserManager = new um();
         googleOAuth2Client: OAuth2Client,
         ipaddr,
         rateLimiter: rateLimit,
+        cumulative_file_size_limit: cumulative_file_size_limit,
         cors: () => cors({
             origin: function (origin, callback) {
                 const whitelist = [process.env.HomeURL, "http://localhost:5173"];

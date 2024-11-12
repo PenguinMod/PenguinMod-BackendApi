@@ -213,6 +213,52 @@ class UserManager {
             return false;
         }
 
+        const illegalWordingError = async (text, type) => {
+            if (await this.checkForIllegalWording(text)) {
+                utils.error(res, 400, "IllegalWordsUsed")
+    
+                const illegalWordIndex = await this.getIndexOfIllegalWording(text);
+
+                const before = text.substring(0, illegalWordIndex[0]);
+                const after = text.substring(illegalWordIndex[1]);
+                const illegalWord = text.substring(illegalWordIndex[0], illegalWordIndex[1]);
+    
+                utils.logs.sendHeatLog(
+                    before + "\x1b[31;1m" + illegalWord + "\x1b[0m" + after,
+                    type,
+                    username
+                )
+                
+                return true;
+            }
+            return false;
+        }
+
+        const slightlyIllegalWordingError = async (text, type) => {
+            if (await this.checkForSlightlyIllegalWording(text)) {
+                const illegalWordIndex = await this.getIndexOfSlightlyIllegalWording(text);
+    
+                const before = text.substring(0, illegalWordIndex[0]);
+                const after = text.substring(illegalWordIndex[1]);
+                const illegalWord = text.substring(illegalWordIndex[0], illegalWordIndex[1]);
+    
+                utils.logs.sendHeatLog(
+                    before + "\x1b[33;1m" + illegalWord + "\x1b[0m" + after,
+                    type,
+                    username,
+                    0xffbb00,
+                )
+                return true;
+            }
+            return false;
+        }
+
+        if (await illegalWordingError(username, "username")) {
+            return false;
+        }
+
+        await slightlyIllegalWordingError(username, "username");
+
         const hash = await bcrypt.hash(password, 10);
         const id = ULID.ulid();
         const token = randomBytes(32).toString('hex');
