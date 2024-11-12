@@ -42,7 +42,7 @@ const MAXVIEWS = Number(process.env.MaxViews) || 10000; // it will take up to 10
 const VIEWRESETRATE = Number(process.env.ViewResetRate) || 1000 * 60 * 60; // reset every hour
 const upload = multer({
     dest: 'tmp/uploads/',
-    limits: { fileSize: (Number(process.env.UploadSize) * 1000000) || 5000000 } // 5mb - max size per asset
+    limits: { fileSize: ((Number(process.env.UploadSize)) || 5)  * 1024 * 1024 } // 5mb - max size per asset
 });
 
 app.use(cors({
@@ -137,7 +137,6 @@ const UserManager = new um();
             next();
         }
     }
-
 
     endpointLoader(app, 'v1/routes', {
         UserManager: UserManager,

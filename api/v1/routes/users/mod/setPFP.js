@@ -31,6 +31,10 @@ module.exports = (app, utils) => {
             return utils.error(res, 400, "InvalidPicture");
         }
 
+        if (pictureName.size > ((Number(process.env.UploadSize)) || 5)  * 1024 * 1024) {
+            return utils.error(res, 400, "File too large");
+        }
+
         const picture = fs.readFileSync(path.join(utils.HomeDir, pictureName.path));
 
         const allowedTypes = ["image/png", "image/jpeg"];
