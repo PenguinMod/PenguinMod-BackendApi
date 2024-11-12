@@ -1243,7 +1243,7 @@ class UserManager {
             {
                 $facet: {
                     metadata: [{ $count: "count" }],
-                    data: [{ $skip: page * pageSize }, { $limit: pageSize }]
+                    data: [{ $skip: page * pageSize }, { $limit: pageSize*10 }] // *10 to make sure we get enough (since many will get filtered)
                 }
             }
         ])
@@ -1266,7 +1266,10 @@ class UserManager {
             with_author_data.push(project);
         }
 
-        return with_author_data;
+        // get top pagesize projects
+        const final = with_author_data.slice(0, pageSize);
+
+        return final;
     }
 
     /**
