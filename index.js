@@ -121,7 +121,7 @@ const UserManager = new um();
                 }
             }
 
-            const maxCombinedSize = Number(process.env.CumulativeUploadSize) || 32 * 1024 * 1024;
+            const maxCombinedSize = (Number(process.env.CumulativeUploadSize) || 32) * 1024 * 1024;
             let combinedSize = 0;
 
             if (req.files.jsonFile) combinedSize += req.files.jsonFile[0].size;
