@@ -829,6 +829,8 @@ class UserManager {
     async isModeratorOrAdmin(username) {
         const result = await this.users.findOne({ username: username });
 
+        if (!result) return false;
+
         return result.moderator || result.admin;
     }
 
