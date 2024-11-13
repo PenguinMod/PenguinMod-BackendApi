@@ -14,6 +14,7 @@ module.exports = (app, utils) => {
         for (const prop in json) {
             html = html.replaceAll(`{project.${prop}}`, utils.escapeXML(json[prop]));
             html = html.replaceAll(`{studio_url}`, utils.env.StudioURL);
+            html = html.replaceAll(`{api_url}`, utils.env.ApiURL);
         }
         res.status(200);
         res.send(html);
