@@ -127,7 +127,7 @@ module.exports = (app, utils) => {
             jsonFile = utils.UserManager.protobufToProjectJson(protobufFile);
         } catch (e) {
             await unlink();
-            return utils.error(res, 400, "Invalid protobuf file");
+            return utils.error(res, 400, "Invalid protobuf file: " + (e.message ?? e));
         }
 
         let remix = String(packet.remix);
