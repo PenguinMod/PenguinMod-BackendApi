@@ -1249,21 +1249,14 @@ class UserManager {
         ])
         .toArray()
 
-        const with_author_data = []
+        const final = []
         for (const project of aggResult[0].data) {
             delete project._id;
-
-            const author = await this.users.findOne({id: project.author});
-
-            if (!author || author.rank < 1) {
-                continue;
-            }
-
             project.author = {
                 id: project.author,
-                username: author.username,
+                username: await this.getUsernameByID(project.author)
             }
-            with_author_data.push(project);
+            final.push(project);
         }
 
         return final;
@@ -2860,22 +2853,15 @@ class UserManager {
         const result = await this.projects.aggregate(aggregateList)
         .toArray();
 
-        const with_author_info = [];
+        const final = [];
         for (const project of result[0].data) {
             delete project._id;
             project.author = {
                 id: project.author,
                 username: await this.getUsernameByID(project.author)
             }
-            with_author_info.push(project);
+            final.push(project);
         }
-
-        // remove any projects by non ranked users
-        const final = with_author_info.filter(x => {
-            const result = this.users.findOne({id: x.author.id});
-
-            return result.rank > 0;
-        });
 
         final.sort((a, b) => {
             const firstVal = a.title.indexOf(query) - b.title.indexOf(query);
