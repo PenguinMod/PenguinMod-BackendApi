@@ -64,6 +64,7 @@ module.exports = (app, utils) => {
         const token = userdata.token;
 
         await utils.UserManager.addIP(accountUsername, req.realIP);
+        await utils.logs.sendCreationLog(accountUsername, userdata.id, "", "account");
 
         res.status(200);
         res.redirect(`/api/v1/users/sendloginsuccess?token=${token}&username=${accountUsername}`);

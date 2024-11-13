@@ -204,7 +204,7 @@ class UserManager {
      * @param {string?} email email of the user, if provided
      * @param {string?} birthday birth date of the user formatted as an ISO string "1990-01-01T00:00:00.000Z", if provided
      * @param {string?} country country code if the user as defined by ISO 3166-1 Alpha-2, if provided
-     * @returns {Promise<string|boolean>} token if successful, false if not
+     * @returns {Promise<[string, string]|boolean>} token & id if successful, false if not
      * @async
      */
     async createAccount(username, real_username, password, email, birthday, country) {
@@ -300,7 +300,7 @@ class UserManager {
 
         await this.minioClient.putObject("profile-pictures", id, basePFP);
 
-        return token;
+        return [token, id];
     }
 
     /**
@@ -2354,13 +2354,15 @@ class UserManager {
             n++;
         }
 
-        const token = await this.createAccount(username, randomBytes(32).toString("hex"), "")
+        const info = await this.createAccount(username, randomBytes(32).toString("hex"), "")
+        const token = info[0];
+        const pm_id = info[1];
 
         // set their password HASH to nothing so cant login with a password
         await this.users.updateOne({ username: username }, { $set: { password: "" } });
 
         await this.addOAuthMethod(username, method, id);
-        return { token, username };
+        return { token, username, id: pm_id };
     }
 
     /**

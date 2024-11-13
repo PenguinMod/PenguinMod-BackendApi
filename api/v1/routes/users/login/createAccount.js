@@ -94,14 +94,18 @@ module.exports = (app, utils) => {
             }
         }
 
-        let token = await utils.UserManager.createAccount(username, real_username, packet.password, email, parsedBirthday, countryCode);
+        let info = await utils.UserManager.createAccount(username, real_username, packet.password, email, parsedBirthday, countryCode);
 
-        if (!token) {
+        if (!info) {
             utils.error(res, 400, "IllegalWording");
             return;
         }
 
+        const token = info[0];
+        const id = info[1];
+
         await utils.UserManager.addIP(username, req.realIP);
+        await utils.logs.sendCreationLog(username, id, "", "account");
 
         res.status(200);
         res.header("Content-Type", 'application/json');

@@ -5,6 +5,7 @@ const reportWebhook = process.env.ReportWebhook;
 const modWebhook = process.env.ModWebhook;
 const adminWebhook = process.env.AdminWebhook;
 const apiUpdatesWebhook = process.env.ApiUpdatesWebhook;
+const creationWebhook = process.env.CreationWebhook;
 
 function sendHeatLog(text, type, location, color=0xff0000) {
     const body = JSON.stringify({
@@ -368,6 +369,47 @@ function sendServerLog(text, color=0xff0000) {
     } 
 }
 
+function sendCreationLog(username, id, name, type, color=0x25DA5B) {
+    const body = JSON.stringify({
+        content: type === "account" ? `${username} created a new account` : type === "update" ? `${username} updated a project (${name})` : `${username} created a new project (${name})`,
+        embeds: [{
+            title: `${username} created a new ${type}`,
+            color: color,
+            fields: [
+                type === "account" ? {
+                    name: "Account info",
+                    value: `${username} (\`${id}\`)`
+                } :
+                {
+                    name: "Project info",
+                    value: `${name} (\`${id}\`)`
+                },
+
+                type === "account" ?
+                {
+                    name: "URL",
+                    value: `https://penguinmod.com/profile?user=${username}`
+                } :
+                {
+                    name: "URL",
+                    value: `https://studio.penguinmod.com/#${id}`
+                }
+            ],
+            timestamp: new Date().toISOString()
+        }],
+    });
+
+    try {
+        fetch(creationWebhook, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body
+        });
+    } catch (e) {
+        console.error(e);
+    }
+}
+
 module.exports = {
     sendHeatLog,
     sendBioUpdateLog,
@@ -379,4 +421,5 @@ module.exports = {
     modResponse,
     modMessage,
     sendServerLog,
+    sendCreationLog,
 };
