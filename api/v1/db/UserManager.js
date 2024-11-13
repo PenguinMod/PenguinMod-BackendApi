@@ -826,6 +826,12 @@ class UserManager {
         await this.users.updateOne({ username: username }, { $set: { moderator: moderator } });
     }
 
+    async isModeratorOrAdmin(username) {
+        const result = await this.users.findOne({ username: username });
+
+        return result.moderator || result.admin;
+    }
+
     /**
      * Get all admins
      * @returns {Promise<Array<object>>} Array of all admins
@@ -1225,18 +1231,33 @@ class UserManager {
 
     /**
      * get projects to a specified size
+     * @param {boolean} show_nonranked show projects from non-ranked users
      * @param {number} page page of projects to get
      * @param {number} pageSize amount of projects to get
      * @param {boolean} reverse if you should get newest or oldest first
      * @returns {Promise<Array<Object>>} Projects in the specified amount
      * @async
      */
-    async getProjects(page, pageSize, reverse=false) {
-
-        const aggResult = await this.projects.aggregate([
+    async getProjects(show_nonranked, page, pageSize, reverse=false) {
+        let pipeline = [
             {
-                $match: { softRejected: false, hardReject: false, public: true }
-            },
+                $match: { softRejected: false, hardReject: false, public: true },
+                $lookup: {
+                    from: "users",
+                    localField: "author",
+                    foreignField: "id",
+                    as: "authorInfo"
+                }
+            }
+        ];
+
+        if (!show_nonranked) {
+            pipeline.push({
+                $match: { "authorInfo.rank": { $gt: 0 } }
+            });
+        }
+
+        pipeline.push(
             {
                 $sort: { lastUpdate: -1*(!reverse) }
             },
@@ -1246,7 +1267,9 @@ class UserManager {
                     data: [{ $skip: page * pageSize }, { $limit: pageSize }]
                 }
             }
-        ])
+        );
+
+        const aggResult = await this.projects.aggregate(pipeline)
         .toArray()
 
         const final = []
@@ -1254,8 +1277,9 @@ class UserManager {
             delete project._id;
             project.author = {
                 id: project.author,
-                username: await this.getUsernameByID(project.author)
+                username: project.authorInfo[0].username
             }
+            delete project.authorInfo; // dont include sensitive info!!!
             final.push(project);
         }
 
@@ -2803,24 +2827,45 @@ class UserManager {
 
     /**
      * Search project names/instructions/notes by query
+     * @param {boolean} show_unranked Show unranked users
      * @param {string} query Query to search for
      * @param {number} page Page of projects to get 
      * @param {number} pageSize Amount of projects to get 
      * @returns {Promise<Array<object>>} Array of projects
      */
-    async searchProjects(query, type, page, pageSize) {
+    async searchProjects(show_unranked, query, type, page, pageSize) {
         let aggregateList = [
             {
                 $match: { softRejected: false, hardReject: false, public: true }
             },
+            { // get user input
+                $lookup: {
+                    from: "users",
+                    localField: "author",
+                    foreignField: "id",
+                    as: "authorInfo"
+                }
+            },
+              
+        ];
+
+        if (!show_unranked) {
+            aggregateList.push(
+                { // only allow ranked users to show up
+                    $match: { "authorInfo.rank": { $gt: 0 } }
+                },
+            );
+        }
+
+        aggregateList.push(
             {
                 $match: { $or: [
                     { title: { $regex: `.*${query}.*`, $options: "i" } },
                     { instructions: { $regex: `.*${query}.*`, $options: "i" } },
                     { notes: { $regex: `.*${query}.*`, $options: "i" } }
                 ] },
-            },
-        ]
+            }
+        );
 
         switch (type) {
             case "featured":
@@ -2911,16 +2956,36 @@ class UserManager {
 
     /**
      * Search for a tag
+     * @param {boolean} show_nonranked Show nonranked users
      * @param {string} tag tag to search for
      * @param {*} page page of projects to get
      * @param {*} pageSize amount of projects to get
      * @returns {Array<Object>} Array of projects
      */
-    async searchForTag(tag, page, pageSize) {
-        const aggResult = await this.projects.aggregate([
+    async searchForTag(show_nonranked, tag, page, pageSize) {
+        let pipeline = [
             {
                 $match: { $text: { $search: tag }, public: true, softRejected: false, hardReject: false }
             },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "author",
+                    foreignField: "id",
+                    as: "authorInfo"
+                }
+            }
+        ];
+
+        if (!show_nonranked) {
+            pipeline.push(
+                {
+                    $match: { "authorInfo.rank": { $gt: 0 } }
+                }
+            );
+        }
+
+        pipeline.push(
             {
                 $sort: { lastUpdate: -1 }
             },
@@ -2930,7 +2995,9 @@ class UserManager {
                     data: [{ $skip: page * pageSize }, { $limit: pageSize }]
                 }
             }
-        ])
+        );
+
+        const aggResult = await this.projects.aggregate(pipeline)
         .toArray();
     
         const final = [];
@@ -2938,7 +3005,7 @@ class UserManager {
             delete project._id;
             project.author = {
                 id: project.author,
-                username: await this.getUsernameByID(project.author)
+                username: project.authorInfo[0].username
             }
             final.push(project);
         }
@@ -2948,14 +3015,34 @@ class UserManager {
 
     /**
      * Specialized search for a query, like { author: abc } or another metadata item
+     * @param {boolean} show_nonranked Show nonranked users
      * @param {Object} query Query to search for 
      * @param {number} page Page of projects to get
      * @param {number} pageSize Amount of projects to get
      * @returns {Array<Object>} Array of projects
      */
-    async specializedSearch(query, page, pageSize) {
-        const aggResult = await this.projects.aggregate([
+    async specializedSearch(show_nonranked, query, page, pageSize) {
+        let pipeline = [
             query,
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "author",
+                    foreignField: "id",
+                    as: "authorInfo"
+                }
+            },
+        ];
+
+        if (!show_nonranked) {
+            pipeline.push(
+                {
+                    $match: { "authorInfo.rank": { $gt: 0 } }
+                }
+            );
+        }
+
+        pipeline.push(
             {
                 $sort: { lastUpdate: -1 }
             },
@@ -2965,7 +3052,9 @@ class UserManager {
                     data: [{ $skip: page * pageSize }, { $limit: pageSize }]
                 }
             }
-        ])
+        );
+
+        const aggResult = await this.projects.aggregate(pipeline)
         .toArray();
 
         const final = []
@@ -2973,8 +3062,9 @@ class UserManager {
             delete project._id;
             project.author = {
                 id: project.author,
-                username: await this.getUsernameByID(project.author)
+                username: project.authorInfo[0].username
             }
+            delete project.authorInfo; // dont send sensitive info
             final.push(project);
         }
 

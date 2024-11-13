@@ -2,6 +2,7 @@ const softReject = require("../modActions/reject/softReject");
 
 module.exports = (app, utils) => {
     app.get('/api/v1/projects/frontpage', async (req, res) => {
+        const packet = req.query
         /* needed:
             - featured
             - almost featured
@@ -30,31 +31,36 @@ module.exports = (app, utils) => {
             "2d"
         ]
 
-        const tag = tags[Math.floor(Math.random() * tags.length)];
+        const username = packet.username;
+        const token = packet.token;
 
-        const featured = await utils.UserManager.getFeaturedProjects(0, Number(utils.env.PageSize))
+        const is_mod = username && token && utils.UserManager.loginWithToken(username, token) && utils.UserManager.isModeratorOrAdmin(username)
+
+        const tag = "#" + tags[Math.floor(Math.random() * tags.length)];
+
+        const featured = await utils.UserManager.getFeaturedProjects(0, Number(utils.env.PageSize));
         
-        const almostFeatured = await utils.UserManager.specializedSearch(
-            {$match: { featured: false, votes: { $gte: utils.env.FeatureAmount - 10 }, softRejected: false, hardReject: false }},
+        const almostFeatured = await utils.UserManager.specializedSearch(is_mod,
+            {$match: { featured: false, votes: { $gte: utils.env.FeatureAmount - 10 }, softRejected: false, public: true, hardReject: false }},
             0,
             Number(utils.env.PageSize)
         )
         
-        const liked = await utils.UserManager.specializedSearch(
-            { $match: { featured: false, votes: { $gte: 5 }, softRejected: false, hardReject: false } },
+        const liked = await utils.UserManager.specializedSearch(is_mod,
+            { $match: { featured: false, loves: { $gte: 5 }, softRejected: false, public: true, hardReject: false } },
             0,
             Number(utils.env.PageSize)
         )
 
-        const highViews = await utils.UserManager.specializedSearch(
+        const highViews = await utils.UserManager.specializedSearch(is_mod,
             { $match: { featured: false, views: { $gte: 30 }, softRejected: false, hardReject: false } },
             0,
             Number(utils.env.PageSize)
         )
 
-        const fitsTags = await utils.UserManager.searchForTag(tag, 0, Number(utils.env.PageSize))
+        const fitsTags = await utils.UserManager.searchForTag(is_mod, tag, 0, Number(utils.env.PageSize))
         
-        const latest = await utils.UserManager.getProjects(0, Number(utils.env.PageSize))
+        const latest = await utils.UserManager.getProjects(is_mod, 0, Number(utils.env.PageSize))
 
         const page = {
             featured: featured,
@@ -62,10 +68,11 @@ module.exports = (app, utils) => {
             liked: liked,
             viewed: highViews,
             tagged: fitsTags,
-            latest: latest
+            latest: latest,
+            selectedTag: tag,
         };
 
-        // if someone knows a better way to do this (preferably with mongodb in usermanager) please tell me
+        // TODO: swap to use lookup instead of multiple queries
         for (const key in page) {
             const newPage = []
             for (const project of page[key]) {
@@ -75,7 +82,6 @@ module.exports = (app, utils) => {
             }
             page[key] = newPage;
         }
-        page.selectedTag = tag;
 
         res.header("Content-Type", "application/json");
         res.status(200);

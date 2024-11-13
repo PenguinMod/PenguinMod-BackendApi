@@ -6,7 +6,12 @@ module.exports = (app, utils) => {
         const page = Number(packet.page) || 0;
         const type = packet.type || "";
 
-        const projects = await utils.UserManager.searchProjects(query, type, page, Number(utils.env.PageSize));
+        const username = packet.username;
+        const token = packet.token;
+
+        const is_mod = username && token && utils.UserManager.loginWithToken(username, token) && utils.UserManager.isModeratorOrAdmin(username);
+
+        const projects = await utils.UserManager.searchProjects(is_mod, query, type, page, Number(utils.env.PageSize));
 
         res.status(200);
         res.header({"Content-Type": "application/json"})
