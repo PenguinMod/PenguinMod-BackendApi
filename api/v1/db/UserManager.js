@@ -3126,7 +3126,7 @@ class UserManager {
         const userCount = await this.users.countDocuments();
         const projectCount = await this.projects.countDocuments();
         // check if remix is not 0
-        const remixCount = await this.projects.countDocuments({ remix: { $ne: 0 } });
+        const remixCount = await this.projects.countDocuments({ remix: { $ne: "0" } });
         const featuredCount = await this.projects.countDocuments({ featured: true });
 
         return {
