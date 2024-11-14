@@ -206,7 +206,7 @@ module.exports = (app, utils) => {
             packet.rating
         );
 
-        utils.logs.sendCreationLog(username, projectID, title, "update", 0x4A7FB5);
+        utils.logs.sendCreationLog(username, projectID, title, "upload", 0x4A7FB5);
         await utils.UserManager.setLastUpload(username, Date.now());
 
         if (remix !== "0") {
