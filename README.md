@@ -27,4 +27,4 @@ Please report any security vulnerabilities using GitHub's security tab on the re
 
 ## Deployment
 
-1. idk man follow [this](https://www.mongodb.com/docs/manual/administration/security-checklist/#std-label-security-checklist)
+1. idk man just make sure people cant access your mongodb or minio stuff. There is a docker-compose and a dockerfile, but we have not yet put it in the repo.
