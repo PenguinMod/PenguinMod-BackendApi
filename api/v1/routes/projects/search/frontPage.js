@@ -62,6 +62,8 @@ module.exports = (app, utils) => {
         
         const latest = await utils.UserManager.getProjects(is_mod, 0, Number(utils.env.PageSize))
 
+        console.log(fitsTags);
+
         const page = {
             featured: featured,
             voted: almostFeatured,
@@ -74,7 +76,6 @@ module.exports = (app, utils) => {
         // TODO: swap to use lookup instead of multiple queries
         for (const key in page) {
             const newPage = []
-            console.log(key);
             for (const project of page[key]) {
                 const isDonator = (await utils.UserManager.getBadges(project.author.username)).includes("donator");
                 project.fromDonator = isDonator;

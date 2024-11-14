@@ -3013,6 +3013,7 @@ class UserManager {
                 id: project.author,
                 username: project.authorInfo[0].username
             }
+            delete project.authorInfo; // dont send sensitive info
             final.push(project);
         }
 
