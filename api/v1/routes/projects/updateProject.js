@@ -210,7 +210,7 @@ module.exports = (app, utils) => {
             notes,
             packet.rating
         );
-        utils.logs.sendCreationLog(username, projectID, title, "update");
+        utils.logs.sendCreationLog(username, projectID, title, "update", 0x3DC2AD);
         await utils.UserManager.setLastUpload(username, Date.now());
 
         await unlink();
