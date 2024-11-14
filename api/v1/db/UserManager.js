@@ -3023,14 +3023,14 @@ class UserManager {
     /**
      * Specialized search for a query, like { author: abc } or another metadata item
      * @param {boolean} show_nonranked Show nonranked users
-     * @param {Object} query Query to search for 
+     * @param {Array<Object>} query Query to search for, will be expanded with ...
      * @param {number} page Page of projects to get
      * @param {number} pageSize Amount of projects to get
      * @returns {Array<Object>} Array of projects
      */
     async specializedSearch(show_nonranked, query, page, pageSize) {
         let pipeline = [
-            query,
+            ...query,
             {
                 $lookup: {
                     from: "users",
