@@ -8,7 +8,8 @@ module.exports = (app, utils) => {
         const page = Number(packet.page) || 0;
         const reverse = packet.reverse || false;
 
-        const projects = await utils.UserManager.getProjects(page, Number(utils.env.PageSize), reverse);
+        // TODO: temporary fix. PLEASE fix soon.
+        const projects = await utils.UserManager.getProjects(false, page, Number(utils.env.PageSize), reverse);
 
         res.status(200);
         res.setHeader('Content-Type', 'application/json');
