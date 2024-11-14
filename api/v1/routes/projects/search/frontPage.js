@@ -69,12 +69,12 @@ module.exports = (app, utils) => {
             viewed: highViews,
             tagged: fitsTags,
             latest: latest,
-            selectedTag: tag,
         };
 
         // TODO: swap to use lookup instead of multiple queries
         for (const key in page) {
             const newPage = []
+            console.log(key);
             for (const project of page[key]) {
                 const isDonator = (await utils.UserManager.getBadges(project.author.username)).includes("donator");
                 project.fromDonator = isDonator;
@@ -82,6 +82,8 @@ module.exports = (app, utils) => {
             }
             page[key] = newPage;
         }
+
+        page.selectedTag = tag;
 
         res.header("Content-Type", "application/json");
         res.status(200);
