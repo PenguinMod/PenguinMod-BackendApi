@@ -1243,7 +1243,9 @@ class UserManager {
     async getProjects(show_nonranked, page, pageSize, reverse=false) {
         let pipeline = [
             {
-                $match: { softRejected: false, hardReject: false, public: true },
+                $match: { softRejected: false, hardReject: false, public: true }
+            },
+            {
                 $lookup: {
                     from: "users",
                     localField: "author",
