@@ -2574,7 +2574,11 @@ class UserManager {
 
         // loop over the extensionData
         for (const extensionData in json.extensionData) {
-            newjson.extensionData[extensionData] = this.castToString(json.extensionData[extensionData]);
+            newjson.extensionData[extensionData] = {
+                data: castToString(json.extensionData[extensionData]),
+                // true if the extension data is not a string
+                parse: typeof json.extensionData[extensionData] !== "string"
+            }
         }
 
         // loop over the extensionURLs
@@ -2750,8 +2754,17 @@ class UserManager {
             newJson.monitors.push(newMonitor);
         }
 
+        for (const extensionData in json.antiSigmaExtensionData) {
+            // "legacy" shit
+            newJson.extensionData[extensionData] = json.extensionData[extensionData].data;
+        }
+
         for (const extensionData in json.extensionData) {
-            newJson.extensionData[extensionData] = JSON.parse(json.extensionData[extensionData]);
+            if (json.extensionData[extensionData].parse) {
+                newJson.extensionData[extensionData] = JSON.parse(json.extensionData[extensionData].data);
+            } else {
+                newJson.extensionData[extensionData] = json.extensionData[extensionData].data;
+            }
         }
 
         for (const extensionURL in json.extensionURLs) {

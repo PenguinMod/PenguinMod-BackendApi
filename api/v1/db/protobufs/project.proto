@@ -27,13 +27,19 @@ message font {
     optional string md5ext = 4;
 }
 
+message extensionData {
+    optional string data = 1;
+    optional bool parse = 2;
+}
+
 message Project {
     optional string metaSemver = 1;
     optional string metaVm = 2;
     optional string agent = 3;
     repeated Sprite.Sprite targets = 4; // optional not required and i think not allowed either?
     repeated monitor monitors = 5; // same with above
-    map<string, string> extensionData = 6; // just store a string because the ext can give arbitrary data.   also same with above
+    map<string, string> antiSigmaExtensionData = 6; // just store a string because the ext can give arbitrary data.   also same with above
+    map<string, extensionData> extensionData = 10; // we use this instead of above so that we can specify if we want to parse the data or not
     repeated string extensions = 7;
     map<string, string> extensionURLs = 8; // same with above
     repeated font fonts = 9;
