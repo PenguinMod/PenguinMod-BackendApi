@@ -83,10 +83,6 @@ module.exports = (app, utils) => {
             return utils.error(res, 404, "Project not found");
         }
 
-        if (!await utils.UserManager.hasSeenProject(projectID, req.clientIp)) {
-            await utils.UserManager.projectView(projectID, req.clientIp);
-        }
-
         switch (requestType) {
             case "protobuf":
                 const project = await utils.UserManager.getProjectFile(projectID);
