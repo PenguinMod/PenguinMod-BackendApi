@@ -3489,7 +3489,7 @@ class UserManager {
             userid,
             userip,
             sentAt: Date.now(),
-            expireAt: Date.now() + 1000 * 60 * 60 * 24,
+            expireAt: new Date(),
             type
         });
 
@@ -3595,6 +3595,10 @@ class UserManager {
 
     async setUserCustomization(username, text) {
         await this.accountCustomization.updateOne({ username: username }, { $set: { text: text } });
+    }
+
+    async clearAllEmails() {
+        await this.sentEmails.deleteMany({});
     }
 }
 
