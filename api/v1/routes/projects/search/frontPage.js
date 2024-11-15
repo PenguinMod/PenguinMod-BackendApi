@@ -142,7 +142,7 @@ module.exports = (app, utils) => {
             Number(utils.env.PageSize)
         )
 
-        const fitsTags = await utils.UserManager.searchProjects(is_mod, tag, 0, Number(utils.env.PageSize))
+        const fitsTags = await utils.UserManager.searchProjects(is_mod, tag, "newest", 0, Number(utils.env.PageSize))
 
         const latest = await utils.UserManager.getProjects(is_mod, 0, Number(utils.env.PageSize))
 
