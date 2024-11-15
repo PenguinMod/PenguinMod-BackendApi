@@ -2961,66 +2961,6 @@ class UserManager {
     }
 
     /**
-     * Search for a tag
-     * @param {boolean} show_nonranked Show nonranked users
-     * @param {string} tag tag to search for
-     * @param {*} page page of projects to get
-     * @param {*} pageSize amount of projects to get
-     * @returns {Array<Object>} Array of projects
-     */
-    async searchForTag(show_nonranked, tag, page, pageSize) {
-        let pipeline = [
-            {
-                $match: { $text: { $search: tag }, public: true, softRejected: false, hardReject: false }
-            },
-            {
-                $lookup: {
-                    from: "users",
-                    localField: "author",
-                    foreignField: "id",
-                    as: "authorInfo"
-                }
-            }
-        ];
-
-        if (!show_nonranked) {
-            pipeline.push(
-                {
-                    $match: { "authorInfo.rank": { $gt: 0 } }
-                }
-            );
-        }
-
-        pipeline.push(
-            {
-                $sort: { lastUpdate: -1 }
-            },
-            {
-                $facet: {
-                    metadata: [{ $count: "count" }],
-                    data: [{ $skip: page * pageSize }, { $limit: pageSize }]
-                }
-            }
-        );
-
-        const aggResult = await this.projects.aggregate(pipeline)
-        .toArray();
-    
-        const final = [];
-        for (const project of aggResult[0].data) {
-            delete project._id;
-            project.author = {
-                id: project.author,
-                username: project.authorInfo[0].username
-            }
-            delete project.authorInfo; // dont send sensitive info
-            final.push(project);
-        }
-
-        return final;
-    }
-
-    /**
      * Specialized search for a query, like { author: abc } or another metadata item
      * @param {boolean} show_nonranked Show nonranked users
      * @param {Array<Object>} query Query to search for, will be expanded with ...
