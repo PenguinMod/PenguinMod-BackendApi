@@ -53,7 +53,7 @@ module.exports = (app, utils) => {
                 {
                     $lookup: {
                         from: "projectStats",
-                        localField: "_id",
+                        localField: "id",
                         foreignField: "projectId",
                         as: "projectStatsData"
                     }
@@ -73,13 +73,15 @@ module.exports = (app, utils) => {
                 },
                 {
                     $match: {
-                        votes: { $gte: utils.env.FeatureAmount - 10 },
+                        votes: { $gte: Math.ceil(utils.env.FeatureAmount / 3 * 2) },
                     }
-                }
+                },
             ],
             0,
             Number(utils.env.PageSize)
-        )
+        );
+
+        console.log(Math.ceil(utils.env.FeatureAmount / 3 * 2));
         
         const liked = await utils.UserManager.specializedSearch(is_mod,
             [
@@ -94,7 +96,7 @@ module.exports = (app, utils) => {
                 {
                     $lookup: {
                         from: "projectStats",
-                        localField: "_id",
+                        localField: "id",
                         foreignField: "projectId",
                         as: "projectStatsData"
                     }
