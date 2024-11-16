@@ -1436,9 +1436,9 @@ class UserManager {
     async getProjectMetadata(id) {
         const p_id = String(id);
 
-        if (!await this.projectExists(p_id)) return false;
-
         const tempresult = await this.projects.findOne({id: p_id});
+
+        if (!tempresult) return false;
 
         tempresult.author = {
             id: tempresult.author,
