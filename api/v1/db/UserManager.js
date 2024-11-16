@@ -1155,7 +1155,7 @@ class UserManager {
     }
 
     async isFeatured(projectId) {
-        const result = await this.projects.findOne({id: projectId});
+        const result = await this.projects.findOne({id: projectId, featured: true});
 
         return !!result;
     }
