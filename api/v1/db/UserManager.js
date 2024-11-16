@@ -2892,16 +2892,78 @@ class UserManager {
                     $match: { featured: true }
                 });
                 break;
+            case "featured":
+                aggregateList.push({
+                    $match: { featured: true }
+                });
+                // dont break - we still sort by newest
             case "newest":
-            default:
                 aggregateList.push({
                     $sort: { lastUpdate: -1 }
                 });
                 break;
+            default:
             case "views":
                 aggregateList.push({
                     $sort: { views: -1 }
                 });
+                break;
+            case "loves":
+                // collect likes
+                aggregateList.push(
+                    {
+                        $lookup: {
+                            from: "projectStats",
+                            localField: "id",
+                            foreignField: "projectId",
+                            as: "projectStatsData"
+                        }
+                    },
+                    {
+                        $addFields: {
+                            loves: {
+                                $size: {
+                                    $filter: {
+                                        input: "$projectStatsData",
+                                        as: "stat",
+                                        cond: { $eq: ["$$stat.type", "love"] }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    {
+                        $sort: { loves: -1 }
+                    }
+                );
+                break;
+            case "votes":
+                aggregateList.push(
+                    {
+                        $lookup: {
+                            from: "projectStats",
+                            localField: "id",
+                            foreignField: "projectId",
+                            as: "projectStatsData"
+                        }
+                    },
+                    {
+                        $addFields: {
+                            loves: {
+                                $size: {
+                                    $filter: {
+                                        input: "$projectStatsData",
+                                        as: "stat",
+                                        cond: { $eq: ["$$stat.type", "love"] }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    {
+                        $sort: { loves: -1 }
+                    }
+                );
                 break;
         }
 
@@ -2924,20 +2986,13 @@ class UserManager {
                 id: project.author,
                 username: await this.getUsernameByID(project.author)
             }
+
+            if (project.projectStatsData) {
+                delete project.projectStatsData;
+            }
+
             final.push(project);
         }
-
-        final.sort((a, b) => {
-            const firstVal = a.title.indexOf(query) - b.title.indexOf(query);
-
-            if (firstVal !== 0) return firstVal;
-
-            const secondVal = a.instructions.indexOf(query) - b.instructions.indexOf(query);
-
-            if (secondVal !== 0) return secondVal;
-
-            return a.notes.indexOf(query) - b.notes.indexOf(query);
-        })
 
         return final;
     }
