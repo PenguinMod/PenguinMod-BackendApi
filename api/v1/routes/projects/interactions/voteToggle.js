@@ -37,7 +37,7 @@ module.exports = (app, utils) => {
         if (votes >= utils.env.FeatureAmount && !await utils.UserManager.isFeatured(projectID)) {
             const author = await utils.UserManager.getProjectMetadata(projectID);
 
-            console.log(author);
+            console.log(author.author);
 
             throw new Error("Temp");
 
