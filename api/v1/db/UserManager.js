@@ -2458,7 +2458,7 @@ class UserManager {
             const blocks = json.targets[target].blocks;
             // loop over the blocks
             for (const block in blocks) {
-                if (Array.isArray(target.blocks[block])) {
+                if (Array.isArray(blocks[block])) {
                     newtarget.blocks[block] = {
                         is_variable_reporter: true,
                         varReporterBlock: {
