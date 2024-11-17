@@ -94,7 +94,7 @@ module.exports = (app, utils) => {
             }
         }
 
-        let info = await utils.UserManager.createAccount(username, real_username, packet.password, email, parsedBirthday, countryCode);
+        let info = await utils.UserManager.createAccount(username, real_username, packet.password, email, parsedBirthday, countryCode, utils);
 
         if (!info) {
             utils.error(res, 400, "IllegalWording");

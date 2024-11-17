@@ -71,7 +71,7 @@ module.exports = (app, utils) => {
 
         const username = `${name1}${name2}${randomNum}`;
 
-        const userdata = await utils.UserManager.makeOAuth2Account("google", {id, username});
+        const userdata = await utils.UserManager.makeOAuth2Account("google", {id, username}, utils);
 
         const accountUsername = userdata.username;
         const token = userdata.token;
