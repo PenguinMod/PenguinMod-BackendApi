@@ -3424,7 +3424,8 @@ class UserManager {
 
     async getAllAccountsWithIP(ip) {
         const result = await this.loggedIPs.find({ ip: ip }).toArray()
-        .map(x => ({id: x.id, username: await this.getUsernameById(x.id)}));
+        const that = this
+        .map(x => {return {id: x.id, username: await that.getUsernameById(x.id)}});
 
         return result;
     }
