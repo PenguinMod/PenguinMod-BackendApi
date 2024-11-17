@@ -3423,10 +3423,18 @@ class UserManager {
     }
 
     async getAllAccountsWithIP(ip) {
-        const result = await this.loggedIPs.find({ ip: ip }).toArray()
-        .map(x => ({id: x.id, username: await this.getUsernameById(x.id)}));
+        const result = await this.loggedIPs.find({ ip: ip }).toArray();
+        //.map(x => ({id: x.id, username: await this.getUsernameByID(x.id)}));
 
-        return result;
+        const final = [];
+        for (const account of result) {
+            final.push({
+                id: account.id,
+                username: await this.getUsernameByID(account.id)
+            });
+        }
+
+        return final;
     }
 
     async getEmail(username) {
