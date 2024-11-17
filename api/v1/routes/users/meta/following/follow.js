@@ -24,6 +24,11 @@ module.exports = (app, utils) => {
             return;
         }
 
+        if (username === target) {
+            utils.error(res, 400, "CannotFollowSelf");
+            return;
+        }
+
         const userID = await utils.UserManager.getIDByUsername(username);
         const targetID = await utils.UserManager.getIDByUsername(target);
 
