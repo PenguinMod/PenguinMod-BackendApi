@@ -50,7 +50,7 @@ module.exports = (app, utils) => {
             return;
         }
 
-        const userdata = await utils.UserManager.makeOAuth2Account("github", username.user, utils);
+        const userdata = await utils.UserManager.makeOAuth2Account("github", username.user, utils, res);
 
         const profilePicture = await fetch(`https://github.com/${username.user.login.toLowerCase()}.png`).then(res => res.arrayBuffer()).catch(e => {utils.error(res, 500, "InternalError"); return new Promise();});
 

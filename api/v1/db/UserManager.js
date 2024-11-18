@@ -207,7 +207,7 @@ class UserManager {
      * @returns {Promise<[string, string]|boolean>} token & id if successful, false if not
      * @async
      */
-    async createAccount(username, real_username, password, email, birthday, country, utils) {
+    async createAccount(username, real_username, password, email, birthday, country, utils, res) {
         const result = await this.users.findOne({ username: username });
         if (result) {
             return false;
@@ -2329,7 +2329,7 @@ class UserManager {
         }
     }
 
-    async makeOAuth2Account(method, data, utils) {
+    async makeOAuth2Account(method, data, utils, res) {
         let username, id;
         switch (method) {
             case "scratch":
@@ -2358,7 +2358,7 @@ class UserManager {
             n++;
         }
 
-        const info = await this.createAccount(username, randomBytes(32).toString("hex"), "", null, null, null, utils)
+        const info = await this.createAccount(username, randomBytes(32).toString("hex"), "", null, null, null, utils, res)
         const token = info[0];
         const pm_id = info[1];
 
