@@ -1,7 +1,16 @@
 const countryLookup = require("../../../db/country-lookup.json");
 
 module.exports = (app, utils) => {
-    app.post("/api/v1/users/createAccount", utils.cors(), async function (req, res) {
+    app.post("/api/v1/users/createAccount", utils.cors(), utils.rateLimiter({
+        validate: {
+            trustProxy: true,
+            xForwardedForHeader: true,
+        },
+        windowMs: 10000,  // 1 requests per 10 seconds
+        limit: 1,
+        standardHeaders: 'draft-7',
+        legacyHeaders: false,
+    }), async function (req, res) {
         const packet = req.body;
 
         const username = (String(packet.username)).toLowerCase();
