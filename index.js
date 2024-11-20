@@ -126,8 +126,10 @@ const UserManager = new um();
 
             if (req.files.jsonFile) combinedSize += req.files.jsonFile[0].size;
             if (req.files.thumbnail) combinedSize += req.files.thumbnail[0].size;
-            for (let asset of req.files.assets)
-                combinedSize += asset.size;
+
+            if (req.files.assets)
+                for (let asset of req.files.assets)
+                    combinedSize += asset.size;
 
             if (combinedSize > maxCombinedSize) {
                 await unlink();

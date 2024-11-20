@@ -12,6 +12,8 @@ module.exports = (app, utils) => {
             await utils.unlinkAsync(req.files.jsonFile[0].path);
             if (req.files.thumbnail)
             await utils.unlinkAsync(req.files.thumbnail[0].path);
+
+            if (req.files.assets)
             for (let asset of req.files.assets) {
                 await utils.unlinkAsync(asset.path);
             }
@@ -113,66 +115,72 @@ module.exports = (app, utils) => {
 
         if (await illegalWordingError(title, "projectTitle")) {
             await unlink();
-            return;
+            return utils.error(res, 400, "IllegalWordsUsed");
         }
 
         if (await illegalWordingError(instructions, "projectInstructions")) {
             await unlink();
-            return;
+            return utils.error(res, 400, "IllegalWordsUsed");
         }
 
         if (await illegalWordingError(notes, "projectNotes")) {
             await unlink();
-            return;
+            return utils.error(res, 400, "IllegalWordsUsed");
         }
 
         await slightlyIllegalWordingError(title, "projectTitle");
         await slightlyIllegalWordingError(instructions, "projectInstructions");
         await slightlyIllegalWordingError(notes, "projectNotes");
 
-        if (!req.files.jsonFile || !req.files.thumbnail || !req.files.assets) {
+        const uploadingProject = !!req.files.jsonFile;
+
+        if (uploadingProject && req.files.assets === undefined) {
             await unlink();
-            return utils.error(res, 400, "Missing json file, thumbnail, or assets");
+            return utils.error(res, 400, "Missing assets");
         }
 
         // ATODO: make this only update, yk, the things that were updated
 
         // the jsonfile is in protobuf format so convert it to json
-        const protobufFile = fs.readFileSync(req.files.jsonFile[0].path);
-        let jsonFile;
-        try {
-            jsonFile = utils.UserManager.protobufToProjectJson(protobufFile);
-        } catch (e) {
-            await unlink();
-            return utils.error(res, 400, "Invalid protobuf file");
-        }
 
-        // check the extensions
-        const userRank = await utils.UserManager.getRank(username);
-        if (userRank < 1) {
-            const isUrlExtension = (extId) => {
-                if (!jsonFile.extensionURLs) return false;
-                return (extId in jsonFile.extensionURLs);
-            };
+        let protobufFile = null;
+        if (uploadingProject) {
+            protobufFile = fs.readFileSync(req.files.jsonFile[0].path);
+            let jsonFile;
+            try {
+                jsonFile = utils.UserManager.protobufToProjectJson(protobufFile);
+            } catch (e) {
+                await unlink();
+                return utils.error(res, 400, "Invalid protobuf file");
+            }
 
-            if (jsonFile.extensions && !isAdmin && !isModerator) {
-                for (let extension of jsonFile.extensions) {
-                    if (isUrlExtension(extension)) { // url extension names can be faked (if not trusted source)
-                        let found = false;
-                        for (let source of utils.allowedSources) {
-                            if (jsonFile.extensionURLs[extension].startsWith(source)) {
-                                found = true;
+            // check the extensions
+            const userRank = await utils.UserManager.getRank(username);
+            if (userRank < 1) {
+                const isUrlExtension = (extId) => {
+                    if (!jsonFile.extensionURLs) return false;
+                    return (extId in jsonFile.extensionURLs);
+                };
+
+                if (jsonFile.extensions && !isAdmin && !isModerator) {
+                    for (let extension of jsonFile.extensions) {
+                        if (isUrlExtension(extension)) { // url extension names can be faked (if not trusted source)
+                            let found = false;
+                            for (let source of utils.allowedSources) {
+                                if (jsonFile.extensionURLs[extension].startsWith(source)) {
+                                    found = true;
+                                }
+                            }
+                            if (!found) {
+                                await unlink();
+                                return utils.error(res, 400, `Extension not allowed: ${extension}`);
                             }
                         }
-                        if (!found) {
+                        
+                        if (!await utils.UserManager.checkExtensionIsAllowed(extension)) {
                             await unlink();
                             return utils.error(res, 400, `Extension not allowed: ${extension}`);
                         }
-                    }
-                    
-                    if (!await utils.UserManager.checkExtensionIsAllowed(extension)) {
-                        await unlink();
-                        return utils.error(res, 400, `Extension not allowed: ${extension}`);
                     }
                 }
             }
@@ -186,21 +194,24 @@ module.exports = (app, utils) => {
             packet.rating = "";
         }
 
-        const thumbnail = fs.readFileSync(req.files.thumbnail[0].path);
+        const thumbnail = !!req.files.thumbnail ? fs.readFileSync(req.files.thumbnail[0].path) : null;
 
         // ATODO: use mmmagic to verify this is a valid image
 
         // get the assets and their ids
-        const assets = [];
+        let assets = null;
+        if (uploadingProject) {
+            assets = [];
 
-        for (let i = 0; i < req.files.assets.length; i++) {
-            const asset = fs.readFileSync(req.files.assets[i].path);
-            const id = req.files.assets[i].originalname;
-            assets.push({id: id, buffer: asset});
+            for (let i = 0; i < req.files.assets.length; i++) {
+                const asset = fs.readFileSync(req.files.assets[i].path);
+                const id = req.files.assets[i].originalname;
+                assets.push({id: id, buffer: asset});
+            }
         }
 
         // upload the project
-        await utils.UserManager.updateProject(
+        const success = await utils.UserManager.updateProject(
             projectID,
             protobufFile,
             assets,
@@ -210,6 +221,12 @@ module.exports = (app, utils) => {
             notes,
             packet.rating
         );
+
+        if (!success) {
+            await unlink();
+            return utils.error(res, 500, "Failed to update project");
+        }
+
         utils.logs.sendCreationLog(username, projectID, title, "update", 0x3DC2AD);
         await utils.UserManager.setLastUpload(username, Date.now());
 

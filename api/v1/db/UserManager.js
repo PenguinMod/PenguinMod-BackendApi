@@ -1199,16 +1199,20 @@ class UserManager {
     /**
      * Update a project
      * @param {number} id ID of the project 
-     * @param {Buffer} projectBuffer The file buffer for the project. This is a zip.
-     * @param {Array<Object>} assetBuffers asset buffers
+     * @param {Buffer|null} projectBuffer The file buffer for the project. This is a zip.
+     * @param {Array<Object>|null} assetBuffers asset buffers
      * @param {string} title Title of the project.
-     * @param {Buffer} imageBuffer The file buffer for the thumbnail.
+     * @param {Buffer|null} imageBuffer The file buffer for the thumbnail.
      * @param {string} instructions The instructions for the project.
      * @param {string} notes The notes for the project 
      * @param {string} rating Rating of the project. 
      * @async
      */
     async updateProject(id, projectBuffer, assetBuffers, title, imageBuffer, instructions, notes, rating) {
+        if (projectBuffer === null && assetBuffers !== null || projectBuffer !== null && assetBuffers === null) {
+            return false;
+        }
+
         await this.projects.updateOne({id: id},
             {$set: {
                 title: title,
@@ -1220,15 +1224,22 @@ class UserManager {
         );
 
         // minio bucket shit
-        await this.minioClient.putObject("projects", id, projectBuffer);
-        await this.minioClient.putObject("project-thumbnails", id, imageBuffer);
-
-        await this.deleteMultipleObjects("project-assets", id) // delete all the old assets
-        // ATODO: instead of doing this just replace the ones that were edited
-
-        for (const asset of assetBuffers) {
-            await this.minioClient.putObject("project-assets", `${id}_${asset.id}`, asset.buffer);
+        if (imageBuffer !== null) {
+            await this.minioClient.putObject("project-thumbnails", id, imageBuffer);
         }
+
+        if (projectBuffer !== null) {
+            await this.minioClient.putObject("projects", id, projectBuffer);
+
+            await this.deleteMultipleObjects("project-assets", id) // delete all the old assets
+            // ATODO: instead of doing this just replace the ones that were edited
+
+            for (const asset of assetBuffers) {
+                await this.minioClient.putObject("project-assets", `${id}_${asset.id}`, asset.buffer);
+            }
+        }
+
+        return true;
     }
 
     /**
