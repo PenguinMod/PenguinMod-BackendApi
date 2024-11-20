@@ -3250,6 +3250,7 @@ class UserManager {
 
     async getStats() {
         const userCount = await this.users.countDocuments({ permBanned: false }); // dont count perm banned users :tongue:
+        const bannedCount = await this.users.countDocuments({ $or: [{ permBanned: true }, { unbanTime: { $gt: Date.now() } }] });
         const projectCount = await this.projects.countDocuments();
         // check if remix is not 0
         const remixCount = await this.projects.countDocuments({ remix: { $ne: "0" } });
@@ -3257,6 +3258,7 @@ class UserManager {
 
         return {
             userCount: userCount,
+            bannedCount: bannedCount,
             projectCount: projectCount,
             remixCount: remixCount,
             featuredCount: featuredCount
