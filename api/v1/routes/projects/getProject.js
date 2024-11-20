@@ -67,7 +67,7 @@ module.exports = (app, utils) => {
                 }
         }
 
-        if (!await utils.UserManager.projectExists(projectID)) {
+        if (!await utils.UserManager.projectExists(projectID, true)) {
             if (safe) {
                 return safeReturn();
             }
