@@ -10,12 +10,12 @@
         "url": ""
     },
     "version": {
-        "host": "local",
-        "string": "v3.0.0-stable",
-        "number": 3,
-        "start": "v3.0.0",
+        "host": "server",
+        "string": "v1.0.0-stable",
+        "number": 1,
+        "start": "v1.0.0",
         "agent": {
-            "name": "Local-Server-1"
+            "name": "Server-1"
         }
     },
     "detail": {}
