@@ -76,7 +76,8 @@ const UserManager = new um();
 (async () => {
     await UserManager.init(MAXVIEWS, VIEWRESETRATE);
 
-    console.log(`Starting at ${new Date().toLocaleString()}`);
+    // log when starting and what time zone (utc+-x)
+    console.log(`Starting at ${new Date().toLocaleString()} UTC${new Date().getTimezoneOffset() / 60}...`.green);
 
     /*
     app.get("/test", (req, res) => {
