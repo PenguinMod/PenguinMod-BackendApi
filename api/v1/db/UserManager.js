@@ -3249,7 +3249,7 @@ class UserManager {
     }
 
     async getStats() {
-        const userCount = await this.users.countDocuments();
+        const userCount = await this.users.countDocuments({ permBanned: false }); // dont count perm banned users :tongue:
         const projectCount = await this.projects.countDocuments();
         // check if remix is not 0
         const remixCount = await this.projects.countDocuments({ remix: { $ne: "0" } });
