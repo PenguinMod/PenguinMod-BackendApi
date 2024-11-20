@@ -7,12 +7,10 @@ module.exports = function(app, utils) {
         // read the json file
         const metadata = JSON.parse(fs.readFileSync(path.join(utils.homeDir, './metadata.json'), 'utf8'));
 
-        child_process.exec('git rev-parse HEAD', function(err, stdout) {
-            metadata.version.git = stdout.trim();
+        metadata.version.git = utils.env.__GIT ? utils.env.__GIT : "Unknown";
 
-            res.status(200);
-            res.header("Content-Type", 'application/json');
-            res.json(metadata);
-        });
+        res.status(200);
+        res.header("Content-Type", 'application/json');
+        res.json(metadata);
     });
 }
