@@ -427,8 +427,12 @@ class UserManager {
      * @returns {Promise<boolean>} true if the user exists, false if not
      * @async
      */
-    async existsByUsername(username) {
-        const result = await this.users.findOne({ username: username });
+    async existsByUsername(username, showBanned=false) {
+        let query = { $or: [ { username: username }, { real_username: username } ] };
+        if (!showBanned) {
+            query = { $and: [ query, { permBanned: false, unbanTime: { $lt: Date.now() } } ] };
+        }
+        const result = await this.users.findOne(query);
         if (result) return true;
         return false;
     }

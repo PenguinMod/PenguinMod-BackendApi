@@ -19,7 +19,7 @@ module.exports = (app, utils) => {
             return utils.error(res, 401, "Unauthorized");
         }
 
-        if (!await utils.UserManager.existsByUsername(target)) {
+        if (!await utils.UserManager.existsByUsername(target, true)) {
             return utils.error(res, 404, "TargetNotFound");
         }
 
