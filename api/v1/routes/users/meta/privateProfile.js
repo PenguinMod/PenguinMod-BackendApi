@@ -6,7 +6,8 @@ module.exports = (app, utils) => {
         const token = packet.token;
 
         if (!await utils.UserManager.loginWithToken(username, token)) {
-            utils.error(res, 401, "Reauthenticate")
+            utils.error(res, 401, "Reauthenticate");
+            return;
         }
 
         const privateProfile = packet.privateProfile;
