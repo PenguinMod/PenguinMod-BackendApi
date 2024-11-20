@@ -29,7 +29,7 @@ module.exports = (app, utils) => {
 
         const allowedTypes = ["image/png", "image/jpeg"];
 
-        // ATODO: make sure the pfp isnt too big, this is a pfp, not an open world video game
+        // ATODO: make sure the pfp isnt too big
 
         magic.detect(picture, async (err, result) => {
             if (err) {

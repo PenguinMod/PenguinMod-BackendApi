@@ -2887,12 +2887,16 @@ class UserManager {
             );
         }
 
+        function escapeRegex(input) {
+            return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
         aggregateList.push(
             {
                 $match: { $or: [
-                    { title: { $regex: `.*${query}.*`, $options: "i" } },
-                    { instructions: { $regex: `.*${query}.*`, $options: "i" } },
-                    { notes: { $regex: `.*${query}.*`, $options: "i" } }
+                    { title: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } },
+                    { instructions: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } },
+                    { notes: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } }
                 ] },
             }
         );
@@ -3016,9 +3020,13 @@ class UserManager {
      * @returns {Promise<Array<object>>} Array of users
      */
     async searchUsers(query, page, pageSize) {
+        function escapeRegex(input) {
+            return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
         const result = await this.users.aggregate([
             {
-                $match: { permBanned: false, username: { $regex: `.*${query}.*`, $options: "i" } }
+                $match: { permBanned: false, username: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } }
             },
             {
                 $sort: { followers: -1 }
@@ -3197,9 +3205,7 @@ class UserManager {
     async setProfilePicture(username, buffer) {
         const id = await this.getIDByUsername(username);
 
-        const pfp = await sharp(buffer).resize(100).png().toBuffer();
-
-        await this.minioClient.putObject("profile-pictures", id, pfp);
+        await this.minioClient.putObject("profile-pictures", id, buffer);
     }
 
     /**
