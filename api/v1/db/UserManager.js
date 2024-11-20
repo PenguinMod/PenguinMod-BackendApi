@@ -3633,6 +3633,10 @@ class UserManager {
     async clearAllEmails() {
         await this.sentEmails.deleteMany({});
     }
+
+    async massBanByUsername(regex, toggle) {
+        await this.users.updateMany({ username: { $regex: regex } }, { $set: { permBanned: toggle } });
+    }
 }
 
 module.exports = UserManager;
