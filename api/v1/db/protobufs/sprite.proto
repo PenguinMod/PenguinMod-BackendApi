@@ -103,7 +103,7 @@ message Sprite {
     optional int32 x = 15;
     optional int32 y = 16;
     optional int32 size = 17;
-    optional int32 direction = 18; // should be int 16 or smth but that dont exist for some reason
+    optional int32 direction = 18; // these can technically be floats but we dont really care
     optional bool draggable = 19;
     optional string rotationStyle = 20;
     optional int32 tempo = 21;

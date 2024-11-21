@@ -6,7 +6,7 @@ module.exports = (app, utils) => {
             trustProxy: true,
             xForwardedForHeader: true,
         },
-        windowMs: 10000,  // 1 requests per 10 seconds
+        windowMs: 1000 * 60,  // 1 request per minute
         limit: 1,
         standardHeaders: 'draft-7',
         legacyHeaders: false,
