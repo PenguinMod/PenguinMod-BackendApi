@@ -21,6 +21,11 @@ module.exports = (app, utils) => {
         const birthday = packet.birthday;
         const countryCode = packet.country;
 
+        res.status(500);
+        res.header("Content-Type", 'application/json');
+        res.json({ "disabled": true });
+        return;
+
         const validateEmail = (email) => {
             return email.match(
                 /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
