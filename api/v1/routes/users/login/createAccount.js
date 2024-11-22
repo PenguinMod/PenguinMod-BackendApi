@@ -20,11 +20,30 @@ module.exports = (app, utils) => {
         const email = packet.email || "";
         const birthday = packet.birthday;
         const countryCode = packet.country;
+        const captcha_token = packet.captcha_token;
 
+        // verify token
+        const success = await fetch("https://api.hcaptcha.com/siteverify", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: `response=${captcha_token}&secret=${process.env.HCaptchaSecret}`
+        }).then(res => res.json()).then(json => {
+            return json.success;
+        });
+
+        if (!success) {
+            utils.error(res, 400, "InvalidCaptcha");
+            return;
+        }
+
+        /*
         res.status(500);
         res.header("Content-Type", 'application/json');
         res.json({ "disabled": true });
         return;
+        */
 
         const validateEmail = (email) => {
             return email.match(

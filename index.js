@@ -161,7 +161,7 @@ const UserManager = new um();
         cumulative_file_size_limit: cumulative_file_size_limit,
         cors: () => cors({
             origin: function (origin, callback) {
-                const whitelist = [process.env.HomeURL, "http://localhost:5173"];
+                const whitelist = [process.env.HomeURL, "http://localhost:5173", "http://test.mydomain.com:5173"];
                 const idxWebPreview = ".cloudworkstations.dev"; //project idx sigma development
                 if (!origin || whitelist.indexOf(origin) !== -1 || origin.endsWith(idxWebPreview)) {
                   callback(null, true)
