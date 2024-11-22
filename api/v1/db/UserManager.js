@@ -1183,25 +1183,38 @@ class UserManager {
                 $sort: { lastUpdate: -1 }
             },
             {
-                $facet: {
-                    metadata: [{ $count: "count" }],
-                    data: [{ $skip: page * pageSize }, { $limit: pageSize }]
+                $skip: page * pageSize
+            },
+            {
+                $limit: pageSize
+            },
+            {
+                // collect author data
+                $lookup: {
+                    from: "users",
+                    localField: "author",
+                    foreignField: "id",
+                    as: "authorInfo"
                 }
+            },
+            {
+                $addFields: {
+                    "author": {
+                        id: "$author",
+                        username: { $arrayElemAt: ["$authorInfo.username", 0] }
+                    }
+                }
+            },
+            {
+                $unset: [
+                    "_id",
+                    "authorInfo"
+                ]
             }
         ])
         .toArray();
 
-        const final = []
-        for (const project of aggResult[0].data) {
-            delete project._id;
-            project.author = {
-                id: project.author,
-                username: await this.getUsernameByID(project.author)
-            }
-            final.push(project);
-        }
-
-        return final;
+        return aggResult;
     }
 
     /**
@@ -1343,18 +1356,19 @@ class UserManager {
                 $sort: { lastUpdate: -1 }
             },
             {
-                $facet: {
-                    metadata: [{ $count: "count" }],
-                    data: [{ $skip: page * pageSize }, { $limit: pageSize }]
-                }
+                $skip: page * pageSize
+            },
+            {
+                $limit: pageSize
+            },
+            {
+                $unset: "_id"
             }
         ])
         .toArray();
-
-        const result = _result[0].data.map(x => {let v = x;delete v._id;return v;})
         // you dont need to give it the user's username as... well... you prob already know it....
 
-        return result;
+        return _result;
     }
 
     /**
@@ -1705,25 +1719,38 @@ class UserManager {
                 $sort: { lastUpdate: -1 }
             },
             {
-                $facet: {
-                    metadata: [{ $count: "count" }],
-                    data: [{ $skip: page * pageSize }, { $limit: pageSize }]
+                $skip: page * pageSize
+            },
+            {
+                $limit: pageSize
+            },
+            {
+                // collect author data
+                $lookup: {
+                    from: "users",
+                    localField: "author",
+                    foreignField: "id",
+                    as: "authorInfo"
                 }
+            },
+            {
+                $addFields: {
+                    "author": {
+                        id: "$author",
+                        username: { $arrayElemAt: ["$authorInfo.username", 0] }
+                    }
+                }
+            },
+            {
+                $unset: [
+                    "_id",
+                    "authorInfo"
+                ]
             }
         ])
-        .toArray()
+        .toArray();
 
-        const final = []
-        for (const project of aggResult[0].data) {
-            delete project._id;
-            project.author = {
-                id: project.author,
-                username: await this.getUsernameByID(project.author)
-            }
-            final.push(project);
-        }
-
-        return final;
+        return aggResult;
     }
 
     /**
