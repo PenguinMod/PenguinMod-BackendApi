@@ -169,6 +169,7 @@ module.exports = (app, utils) => {
         page.selectedTag = tag;
 
         res.header("Content-Type", "application/json");
+        res.header("Cache-Control", "public, max-age=30");
         res.status(200);
         res.send(page);
     });

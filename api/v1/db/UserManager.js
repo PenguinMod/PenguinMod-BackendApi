@@ -986,17 +986,18 @@ class UserManager {
                 $sort: { date: -1 }
             },
             {
-                $facet: {
-                    metadata: [{ $count: "count" }],
-                    data: [{ $skip: page * pageSize }, { $limit: pageSize }]
-                }
+                $skip: page * pageSize
+            },
+            {
+                $limit: pageSize
+            },
+            {
+                $unset: "_id",
             }
         ])
         .toArray();
 
-        const cleaned = result[0].data.map(x => {let v = x;delete v._id;return v;})
-
-        return cleaned;
+        return result;
     }
 
     /**
@@ -1016,17 +1017,18 @@ class UserManager {
                 $sort: { date: -1 }
             },
             {
-                $facet: {
-                    metadata: [{ $count: "count" }],
-                    data: [{ $skip: page * pageSize }, { $limit: pageSize }]
-                }
+                $skip: page * pageSize
+            },
+            {
+                $limit: pageSize
+            },
+            {
+                $unset: "_id",
             }
         ])
         .toArray();
 
-        const cleaned = result[0].data.map(x => {let v = x;delete v._id;return v;})
-
-        return cleaned;
+        return result;
     }
 
     /**
@@ -1046,17 +1048,18 @@ class UserManager {
                 $sort: { date: -1 }
             },
             {
-                $facet: {
-                    metadata: [{ $count: "count" }],
-                    data: [{ $skip: page * pageSize }, { $limit: pageSize }]
-                }
+                $skip: page * pageSize
+            },
+            {
+                $limit: pageSize
+            },
+            {
+                $unset: "_id",
             }
         ])
         .toArray();
-        
-        const cleaned = result[0].data.map(x => {let v = x;delete v._id;return v;})
 
-        return cleaned;
+        return result;
     }
 
     /**
@@ -1084,17 +1087,18 @@ class UserManager {
                 $sort: { date: -1 }
             },
             {
-                $facet: {
-                    metadata: [{ $count: "count" }],
-                    data: [{ $skip: page * pageSize }, { $limit: pageSize }]
-                }
+                $skip: page * pageSize
+            },
+            {
+                $limit: pageSize
+            },
+            {
+                $unset: "_id"
             }
         ])
         .toArray();
 
-        const cleaned = result[0].data.map(x => {let v = x;delete v._id;return v;})
-
-        return cleaned;
+        return result;
     }
 
     /**
@@ -1281,16 +1285,31 @@ class UserManager {
                 $sort: { lastUpdate: -1*(!reverse) }
             },
             {
-                $facet: {
-                    metadata: [{ $count: "count" }],
-                    data: [{ $skip: page * pageSize }, { $limit: pageSize }]
+                $skip: page * pageSize
+            },
+            {
+                $limit: pageSize
+            },
+            {
+                $addFields: {
+                    "author": {
+                        id: "$author",
+                        username: { $arrayElemAt: ["$authorInfo.username", 0] }
+                    }
                 }
+            },
+            {
+                $unset: [
+                    "_id",
+                    "authorInfo"
+                ]
             }
         );
 
         const aggResult = await this.projects.aggregate(pipeline)
         .toArray()
 
+        /*
         const final = []
         for (const project of aggResult[0].data) {
             delete project._id;
@@ -1302,7 +1321,8 @@ class UserManager {
             final.push(project);
         }
 
-        return final;
+        return final;*/
+        return aggResult;
     }
 
     /**
@@ -1576,17 +1596,18 @@ class UserManager {
                 $match: { projectId: projectID, type: "love" }
             },
             {
-                $facet: {
-                    metadata: [{ $count: "count" }],
-                    data: [{ $skip: page * pageSize }, { $limit: pageSize }]
-                }
+                $skip: page * pageSize
+            },
+            {
+                $limit: pageSize
+            },
+            {
+                $unset: "_id"
             }
         ])
         .toArray();
 
-        const cleaned = result[0].data.map(x => {let v = x;delete v._id;return v;});
-
-        return cleaned;
+        return result;
     }
 
     /**
@@ -1602,17 +1623,18 @@ class UserManager {
                 $match: { projectId: projectID, type: "vote" }
             },
             {
-                $facet: {
-                    metadata: [{ $count: "count" }],
-                    data: [{ $skip: page * pageSize }, { $limit: pageSize }]
-                }
+                $skip: page * pageSize
+            },
+            {
+                $limit: pageSize
+            },
+            {
+                $unset: "_id"
             }
         ])
         .toArray();
 
-        const cleaned = result[0].data.map(x => {let v = x;delete v._id;return v;})
-
-        return cleaned;
+        return result;
     }
 
     /**
@@ -1831,20 +1853,23 @@ class UserManager {
                 $match: { target: username, active: true }
             },
             {
-                $facet: {
-                    metadata: [{ $count: "count" }],
-                    data: [{ $skip: page * pageSize }, { $limit: pageSize }]
-                }
+                $skip: page * pageSize
+            },
+            {
+                $limit: pageSize
+            },
+            {
+                // change it to just the follower
+                $project: { follower: 1 }
+            },
+            {
+                // we have the follower field only, now we need to have it just be the value of the field
+                $replaceRoot: { newRoot: "$follower" }
             }
         ])
         .toArray();
 
-        const cleaned = result[0].data.map(x => {let v = x;delete v._id;return v;})
-        .map(x => {
-            x = x.follower
-        })
-
-        return cleaned;
+        return result;
     }
 
     /**
@@ -1859,20 +1884,23 @@ class UserManager {
                 $match: { follower: username, active: true }
             },
             {
-                $facet: {
-                    metadata: [{ $count: "count" }],
-                    data: [{ $skip: page * pageSize }, { $limit: pageSize }]
-                }
+                $skip: page * pageSize
+            },
+            {
+                $limit: pageSize
+            },
+            {
+                // change it to just the target
+                $project: { target: 1 }
+            },
+            {
+                // we have the target field only, now we need to have it just be the value of the field
+                $replaceRoot: { newRoot: "$target" }
             }
         ])
         .toArray();
 
-        const cleaned = result[0].data.map(x => {let v = x;delete v._id;return v;})
-        .map(x => {
-            x = x.target
-        })
-
-        return cleaned;
+        return result;
     }
 
     /**
@@ -1939,17 +1967,18 @@ class UserManager {
                 $sort: { date: -1 }
             },
             {
-                $facet: {
-                    metadata: [{ $count: "count" }],
-                    data: [{ $skip: page * pageSize }, { $limit: pageSize }]
-                }
+                $skip: page * pageSize
+            },
+            {
+                $limit: pageSize
+            },
+            {
+                $unset: "_id"
             }
         ])
         .toArray();
-        
-        const cleaned = result[0].data.map(x => {let v = x;delete v._id;return v;})
 
-        return cleaned;
+        return result;
     }
 
     /**
@@ -1989,17 +2018,18 @@ class UserManager {
                 $sort: { date: -1 }
             },
             {
-                $facet: {
-                    metadata: [{ $count: "count" }],
-                    data: [{ $skip: page * pageSize }, { $limit: pageSize }]
-                }
+                $skip: page * pageSize
+            },
+            {
+                $limit: pageSize
+            },
+            {
+                $unset: "_id"
             }
         ])
         .toArray();
 
-        const cleaned = result[0].data.map(x => {let v = x;delete v._id;return v;})
-
-        return cleaned;
+        return result;
     }
 
     async getUnreadMessageCount(receiver) {
@@ -2988,16 +3018,33 @@ class UserManager {
 
         aggregateList.push(
             {
-                $facet: {
-                    metadata: [{ $count: "count" }],
-                    data: [{ $skip: page * pageSize }, { $limit: pageSize }]
+                $skip: page * pageSize
+            },
+            {
+                $limit: pageSize
+            },
+            {
+                // set author to { id: old_.author, username: authorInfo.username }
+                $addFields: {
+                    "author": {
+                        id: "$author",
+                        username: { $arrayElemAt: ["$authorInfo.username", 0] }
+                    }
                 }
             },
+            {
+                $unset: [
+                    "projectStatsData",
+                    "_id",
+                    "authorInfo",              
+                ]
+            }
         );
 
         const result = await this.projects.aggregate(aggregateList)
         .toArray();
 
+        /*
         const final = [];
         for (const project of result[0].data) {
             delete project._id;
@@ -3012,8 +3059,9 @@ class UserManager {
 
             final.push(project);
         }
+            */
 
-        return final;
+        return result;
     }
 
     /**
@@ -3036,19 +3084,28 @@ class UserManager {
                 $sort: { followers: -1 }
             },
             {
-                $facet: {
-                    metadata: [{ $count: "count" }],
-                    data: [{ $skip: page * pageSize }, { $limit: pageSize }]
-                }
+                $skip: page * pageSize
+            },
+            {
+                $limit: pageSize
+            },
+            // turn all the data into just {username, id}
+            {
+                $project: {
+                    username: true,
+                    id: true,
+                },
             }
         ])
         .toArray();
 
+        /*
         const cleaned = result[0].data.map(x => {let v = x;delete v._id;return v;})
 
         const final = cleaned.map((user) => ({username: user.username, id: user.id}))
+        */
 
-        return final;
+        return result;
     }
 
     /**
@@ -3085,16 +3142,31 @@ class UserManager {
                 $sort: { lastUpdate: -1 }
             },
             {
-                $facet: {
-                    metadata: [{ $count: "count" }],
-                    data: [{ $skip: page * pageSize }, { $limit: pageSize }]
+                $skip: page * pageSize
+            },
+            {
+                $limit: pageSize
+            },
+            {
+                $addFields: {
+                    "author": {
+                        id: "$author",
+                        username: { $arrayElemAt: ["$authorInfo.username", 0] }
+                    }
                 }
+            },
+            {
+                $unset: [
+                    "authorInfo",
+                    "_id"
+                ]
             }
         );
 
         const aggResult = await this.projects.aggregate(pipeline)
         .toArray();
 
+        /*
         const final = []
         for (const project of aggResult[0].data) {
             delete project._id;
@@ -3105,8 +3177,9 @@ class UserManager {
             delete project.authorInfo; // dont send sensitive info
             final.push(project);
         }
+            */
 
-        return final;
+        return aggResult;
     }
 
     /**
@@ -3172,10 +3245,10 @@ class UserManager {
                 $sort: { date: -1 }
             },
             {
-                $facet: {
-                    metadata: [{ $count: "count" }],
-                    data: [{ $skip: 0 }, { $limit: size }]
-                }
+                $limit: size
+            },
+            {
+                $unset: "_id"
             }
         ])
         .toArray();
