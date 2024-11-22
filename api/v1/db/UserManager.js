@@ -3253,9 +3253,7 @@ class UserManager {
         ])
         .toArray();
 
-        const cleaned = feed[0].data.map(x => {let v = x;delete v._id;return v;})
-
-        return cleaned;
+        return feed;
     }
 
     /**
