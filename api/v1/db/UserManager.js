@@ -428,7 +428,7 @@ class UserManager {
      * @async
      */
     async existsByUsername(username, showBanned=false) {
-        let query = { $or: [ { username: username }, { real_username: username } ] };
+        let query = { username: username };
         if (!showBanned) {
             query = { $and: [ query, { permBanned: false, unbanTime: { $lt: Date.now() } } ] };
         }
