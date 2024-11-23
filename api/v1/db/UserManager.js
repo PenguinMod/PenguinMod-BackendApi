@@ -1277,14 +1277,7 @@ class UserManager {
             {
                 $match: { softRejected: false, hardReject: false, public: true }
             },
-            {
-                $lookup: {
-                    from: "users",
-                    localField: "author",
-                    foreignField: "id",
-                    as: "authorInfo"
-                }
-            }
+            
         ];
 
         if (!show_nonranked) {
@@ -2928,25 +2921,8 @@ class UserManager {
         let aggregateList = [
             {
                 $match: { softRejected: false, hardReject: false, public: true }
-            },
-            { // get user input
-                $lookup: {
-                    from: "users",
-                    localField: "author",
-                    foreignField: "id",
-                    as: "authorInfo"
-                }
-            },
-              
+            },  
         ];
-
-        if (!show_unranked) {
-            aggregateList.push(
-                { // only allow ranked users to show up
-                    $match: { "authorInfo.rank": { $gt: 0 } }
-                },
-            );
-        }
 
         function escapeRegex(input) {
             return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -3041,6 +3017,25 @@ class UserManager {
                     }
                 );
                 break;
+        }
+
+        aggregateList.push(
+            { // get user input
+                $lookup: {
+                    from: "users",
+                    localField: "author",
+                    foreignField: "id",
+                    as: "authorInfo"
+                }
+            }
+        );
+
+        if (!show_unranked) {
+            aggregateList.push(
+                { // only allow ranked users to show up
+                    $match: { "authorInfo.rank": { $gt: 0 } }
+                },
+            );
         }
 
         aggregateList.push(
