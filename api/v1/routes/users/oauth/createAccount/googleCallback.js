@@ -44,11 +44,15 @@ module.exports = (app, utils) => {
             "Tall",
             "Short",
             "Long",
-            "Soft",
-            "Hard",
             "Swift",
             "Truthful",
             "Slippery",
+            "Sharp",
+            "Tricky",
+            "Red",
+            "Yellow",
+            "Green",
+            "Blue",
         ]
 
         const nameGroup2 = [
