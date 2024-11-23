@@ -14,6 +14,7 @@ const requestIp = require('request-ip');
 const {OAuth2Client} = require('google-auth-library');
 const ipaddr = require('ipaddr.js');
 const { promisify } = require('util');
+const mcache = require('memory-cache');
 require('colors');
 
 function escapeXML(unsafe) {
@@ -141,6 +142,22 @@ const UserManager = new um();
         }
     }
 
+    function save_cache(key, body, duration) {
+        mcache.put(key, body, duration * 1000);
+    }
+
+    function has_cache(key) {
+        return !!mcache.get(key);
+    }
+
+    function get_cache(key) {
+        return mcache.get(key);
+    }
+
+    function get_key(req) {
+        return "__express__" + (req.originalUrl || req.url);
+    }
+
     endpointLoader(app, 'v1/routes', {
         UserManager: UserManager,
         homeDir: path.join(__dirname, "./"),
@@ -157,6 +174,12 @@ const UserManager = new um();
         logs,
         googleOAuth2Client: OAuth2Client,
         ipaddr,
+        cache: {
+            save: save_cache,
+            has: has_cache,
+            get: get_cache,
+            key: get_key
+        },
         rateLimiter: rateLimit,
         cumulative_file_size_limit: cumulative_file_size_limit,
         cors: () => cors({

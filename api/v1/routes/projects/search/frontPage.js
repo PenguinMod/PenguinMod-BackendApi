@@ -36,6 +36,16 @@ module.exports = (app, utils) => {
 
         const is_mod = username && token && await utils.UserManager.loginWithToken(username, token) && await utils.UserManager.isModeratorOrAdmin(username)
 
+        // check for cache
+        const key = (is_mod ? "__mod__" : "__normal__") + utils.cache.key(req);
+        if (utils.cache.has(key)) {
+            res.header("Content-Type", "application/json");
+            res.header("Cache-Control", "public, max-age=90");
+            res.status(200);
+            res.send(utils.cache.get(key));
+            return;
+        }
+
         const tag = "#" + tags[Math.floor(Math.random() * tags.length)];
 
         const featured = await utils.UserManager.getFeaturedProjects(0, Number(utils.env.PageSize));
@@ -171,6 +181,9 @@ module.exports = (app, utils) => {
         }
 
         page.selectedTag = tag;
+
+        // cache
+        utils.cache.save(key, page, 90);
 
         res.header("Content-Type", "application/json");
         res.header("Cache-Control", "public, max-age=90");
