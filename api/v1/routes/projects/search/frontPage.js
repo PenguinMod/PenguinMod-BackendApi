@@ -38,11 +38,12 @@ module.exports = (app, utils) => {
 
         // check for cache
         const key = (is_mod ? "__mod__" : "__normal__") + utils.cache.key(req);
-        if (utils.cache.has(key)) {
+        const cached = utils.cache.get(key);
+        if (cached) {
             res.header("Content-Type", "application/json");
             res.header("Cache-Control", "public, max-age=90");
             res.status(200);
-            res.send(utils.cache.get(key));
+            res.send(cached);
             return;
         }
 
