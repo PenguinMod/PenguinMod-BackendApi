@@ -1283,7 +1283,14 @@ class UserManager {
         ];
 
         if (!show_nonranked) {
+            // get author data
             pipeline.push({
+                $lookup: {
+                    from: "users",
+                    localField: "author",
+                    foreignField: "id",
+                    as: "authorInfo"
+                },
                 $match: { "authorInfo.rank": { $gt: 0 } }
             });
         }
@@ -1298,6 +1305,23 @@ class UserManager {
             {
                 $limit: pageSize
             },
+        );
+
+        if (show_nonranked) {
+            pipeline.push(
+                {
+                    // collect author data
+                    $lookup: {
+                        from: "users",
+                        localField: "author",
+                        foreignField: "id",
+                        as: "authorInfo"
+                    }
+                }
+            );
+        }
+
+        pipeline.push(
             {
                 $addFields: {
                     "author": {
