@@ -1284,15 +1284,17 @@ class UserManager {
 
         if (!show_nonranked) {
             // get author data
-            pipeline.push({
-                $lookup: {
-                    from: "users",
-                    localField: "author",
-                    foreignField: "id",
-                    as: "authorInfo"
+            pipeline.push(
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "author",
+                        foreignField: "id",
+                        as: "authorInfo"
+                    },
                 },
-                $match: { "authorInfo.rank": { $gt: 0 } }
-            });
+                { $match: { "authorInfo.rank": { $gt: 0 } } }
+            );
         }
 
         pipeline.push(
