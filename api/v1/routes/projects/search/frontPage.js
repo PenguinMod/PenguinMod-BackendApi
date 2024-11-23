@@ -159,7 +159,11 @@ module.exports = (app, utils) => {
         for (const key in page) {
             const newPage = []
             for (const project of page[key]) {
-                const isDonator = (await utils.UserManager.getBadges(project.author.username)).includes("donator");
+                const badges = await utils.UserManager.getBadges(project.author.username);
+
+                if (!badges) continue;
+
+                const isDonator = badges.includes("donator");
                 project.fromDonator = isDonator;
                 newPage.push(project);
             }
