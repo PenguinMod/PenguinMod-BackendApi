@@ -52,7 +52,11 @@ module.exports = (app, utils) => {
         // create the user
         const userdata = await utils.UserManager.makeOAuth2Account("scratch", username.user, utils, res);
 
-        const profilePicture = await fetch(`https://trampoline.turbowarp.org/avatars/by-username/${username.user.user_name.toLowerCase()}`).then(res => res.arrayBuffer()).catch(e => {utils.error(res, 500, "InternalError"); return new Promise((resolve, reject) => resolve());});
+        const profilePicture = await fetch(`https://trampoline.turbowarp.org/avatars/by-username/${username.user.user_name.toLowerCase()}`).then(res => res.arrayBuffer())
+        .catch(e => {
+            utils.error(res, 500, "InternalError");
+            return new Promise((resolve, reject) => resolve());
+        });
 
         if (!profilePicture) {
             return;
