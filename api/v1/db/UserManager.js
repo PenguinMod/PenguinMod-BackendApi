@@ -3184,9 +3184,18 @@ class UserManager {
      * @param {number} pageSize Amount of projects to get
      * @returns {Array<Object>} Array of projects
      */
-    async specializedSearch(show_nonranked, query, page, pageSize) {
+    async specializedSearch(show_nonranked, query, page, pageSize, maxPageSize) {
         let pipeline = [
             ...query,
+            {
+                $sort: { lastUpdate: -1 }
+            },
+            {
+                $skip: page * pageSize
+            },
+            {
+                $limit: maxPageSize,
+            },
         ];
 
         if (!show_nonranked) {
@@ -3206,12 +3215,6 @@ class UserManager {
         }
 
         pipeline.push(
-            {
-                $sort: { lastUpdate: -1 }
-            },
-            {
-                $skip: page * pageSize
-            },
             {
                 $limit: pageSize
             },

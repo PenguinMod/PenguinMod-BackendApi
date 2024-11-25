@@ -78,7 +78,8 @@ module.exports = (app, utils) => {
                 },
             ],
             0,
-            Number(utils.env.PageSize)
+            Number(utils.env.PageSize),
+            Number(utils.env.MaxPageSize)
         );
 
         const almostFeatured = []
@@ -126,7 +127,8 @@ module.exports = (app, utils) => {
                 }
             ],
             0,
-            Number(utils.env.PageSize)
+            Number(utils.env.PageSize),
+            Number(utils.env.MaxPageSize)
         )
 
         const liked = []
@@ -139,7 +141,8 @@ module.exports = (app, utils) => {
         const highViews = await utils.UserManager.specializedSearch(is_mod,
             [{ $match: { featured: false, views: { $gte: 30 }, softRejected: false, hardReject: false } }],
             0,
-            Number(utils.env.PageSize)
+            Number(utils.env.PageSize),
+            Number(utils.env.MaxPageSize)
         )
 
         const fitsTags = await utils.UserManager.searchProjects(is_mod, tag, "newest", 0, Number(utils.env.PageSize))
