@@ -1307,9 +1307,6 @@ class UserManager {
 
         pipeline.push(
             {
-                $sort: { lastUpdate: -1*(!reverse) }
-            },
-            {
                 $skip: page * pageSize
             },
             {
@@ -3055,19 +3052,16 @@ class UserManager {
                 break;
         }
 
-        aggregateList.push(
-            { // get user input
-                $lookup: {
-                    from: "users",
-                    localField: "author",
-                    foreignField: "id",
-                    as: "authorInfo"
-                }
-            }
-        );
-
         if (!show_unranked) {
             aggregateList.push(
+                { // get user input
+                    $lookup: {
+                        from: "users",
+                        localField: "author",
+                        foreignField: "id",
+                        as: "authorInfo"
+                    }
+                },
                 { // only allow ranked users to show up
                     $match: { "authorInfo.rank": { $gt: 0 } }
                 },
@@ -3081,6 +3075,22 @@ class UserManager {
             {
                 $limit: pageSize
             },
+        )
+
+        if (show_unranked) {
+            pipeline.push(
+                { // get user input
+                    $lookup: {
+                        from: "users",
+                        localField: "author",
+                        foreignField: "id",
+                        as: "authorInfo"
+                    }
+                },
+            );
+        }
+        
+        pipeline.push(
             {
                 // set author to { id: old_.author, username: authorInfo.username }
                 $addFields: {
@@ -3167,7 +3177,7 @@ class UserManager {
     }
 
     /**
-     * Specialized search for a query, like { author: abc } or another metadata item
+     * Specialized search for a query, like { author: abc } or another metadata item, (you can also use cool mongodb stuff!!)
      * @param {boolean} show_nonranked Show nonranked users
      * @param {Array<Object>} query Query to search for, will be expanded with ...
      * @param {number} page Page of projects to get
@@ -3177,18 +3187,18 @@ class UserManager {
     async specializedSearch(show_nonranked, query, page, pageSize) {
         let pipeline = [
             ...query,
-            {
-                $lookup: {
-                    from: "users",
-                    localField: "author",
-                    foreignField: "id",
-                    as: "authorInfo"
-                }
-            },
         ];
 
         if (!show_nonranked) {
             pipeline.push(
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "author",
+                        foreignField: "id",
+                        as: "authorInfo"
+                    }
+                },
                 {
                     $match: { "authorInfo.rank": { $gt: 0 } }
                 }
@@ -3205,6 +3215,22 @@ class UserManager {
             {
                 $limit: pageSize
             },
+        )
+
+        if (show_nonranked) {
+            pipeline.push(
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "author",
+                        foreignField: "id",
+                        as: "authorInfo"
+                    }
+                },
+            );
+        }
+
+        pipeline.push(
             {
                 $addFields: {
                     "author": {
