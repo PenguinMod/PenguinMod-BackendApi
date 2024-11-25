@@ -1274,12 +1274,20 @@ class UserManager {
      * @returns {Promise<Array<Object>>} Projects in the specified amount
      * @async
      */
-    async getProjects(show_nonranked, page, pageSize, reverse=false) {
+    async getProjects(show_nonranked, page, pageSize, maxLookup, reverse=false) {
         let pipeline = [
             {
                 $match: { softRejected: false, hardReject: false, public: true }
             },
-            
+            {
+                $sort: { lastUpdate: -1*(!reverse) }
+            },
+            {
+                $skip: page * pageSize
+            },
+            {
+                $limit: maxLookup,
+            }
         ];
 
         if (!show_nonranked) {
