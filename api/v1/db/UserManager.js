@@ -3078,7 +3078,7 @@ class UserManager {
         )
 
         if (show_unranked) {
-            pipeline.push(
+            aggregateList.push(
                 { // get user input
                     $lookup: {
                         from: "users",
@@ -3090,7 +3090,7 @@ class UserManager {
             );
         }
         
-        pipeline.push(
+        aggregateList.push(
             {
                 // set author to { id: old_.author, username: authorInfo.username }
                 $addFields: {
