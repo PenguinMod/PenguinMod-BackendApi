@@ -919,6 +919,8 @@ class UserManager {
     async getEmail(username) {
         const result = await this.users.findOne({ username: username });
 
+        if (!result) return false;
+
         return result.email;
     }
 
@@ -3616,12 +3618,6 @@ class UserManager {
         }
 
         return final;
-    }
-
-    async getEmail(username) {
-        const result = await this.users.findOne({ username: username });
-
-        return result.email;
     }
 
     async setEmail(username, email) {

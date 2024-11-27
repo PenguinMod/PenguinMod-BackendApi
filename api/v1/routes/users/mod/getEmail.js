@@ -19,14 +19,14 @@ module.exports = (app, utils) => {
             return utils.error(res, 401, "Unauthorized");
         }
 
-        const data = await utils.UserManager.getUserData(target);
+        const email = await utils.UserManager.getEmail(target);
 
-        if (!data) {
+        if (!email) {
             return utils.error(res, 404, "UserNotFound");
         }
 
         res.status(200);
         res.header('Content-type', "application/json");
-        res.send({ email: data.email });
+        res.send({ email });
     });
 }
