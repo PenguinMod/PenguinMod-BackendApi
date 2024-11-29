@@ -1923,7 +1923,7 @@ class UserManager {
             },
             {
                 // we have the follower field only, now we need to have it just be the value of the field
-                $replaceRoot: { newRoot: "$follower" }
+                $replaceRoot: { newRoot: "follower" }
             }
         ])
         .toArray();
