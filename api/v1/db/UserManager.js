@@ -1919,12 +1919,8 @@ class UserManager {
             },
             {
                 // change it to just the follower
-                $project: { follower: 1 }
+                $project: { follower: 1, _id: 0 }
             },
-            {
-                // we have the follower field only, now we need to have it just be the value of the field
-                $replaceRoot: { newRoot: "follower" }
-            }
         ])
         .toArray();
 
