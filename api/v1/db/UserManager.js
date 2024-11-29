@@ -468,6 +468,9 @@ class UserManager {
      */
     async getUsernameByID(id) {
         const result = await this.users.findOne({ id: id });
+
+        if (!result) return false; // prevent crashes
+
         return result.username;
     }
 
@@ -1917,10 +1920,10 @@ class UserManager {
                 // change it to just the follower
                 $project: { follower: 1 }
             },
-            {
+            /*{
                 // we have the follower field only, now we need to have it just be the value of the field
                 $replaceRoot: { newRoot: "$follower" }
-            }
+            }*/
         ])
         .toArray();
 
