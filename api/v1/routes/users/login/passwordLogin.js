@@ -17,6 +17,7 @@ module.exports = (app, utils) => {
 
         if (!captcha_token) {
             utils.error(res, 400, "MissingCaptchaToken");
+            return;
         }
 
         if (captcha_token.length > 2048) {

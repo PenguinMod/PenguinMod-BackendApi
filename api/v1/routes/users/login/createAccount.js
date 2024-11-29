@@ -23,6 +23,11 @@ module.exports = (app, utils) => {
         const captcha_token = packet.captcha_token;
 
         // verify token
+        if (!captcha_token) {
+            utils.error(res, 400, "MissingCaptchaToken");
+            return;
+        }
+
         if (captcha_token.length > 2048) {
             utils.error(res, 400, "InvalidCaptcha");
             return;
