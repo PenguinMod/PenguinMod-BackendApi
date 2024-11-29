@@ -1906,24 +1906,25 @@ class UserManager {
      * @async
      */
     async getFollowers(username, page, pageSize) {
+        const id = await this.getIDByUsername(username);
         const result = await this.followers.aggregate([
-            /*{
-                $match: { target: username, active: true }
-            },*/
+            {
+                $match: { target: id, active: true }
+            },
             {
                 $skip: page * pageSize
             },
             {
                 $limit: pageSize
             },
-            /*{
+            {
                 // change it to just the follower
                 $project: { follower: 1 }
             },
             {
                 // we have the follower field only, now we need to have it just be the value of the field
                 $replaceRoot: { newRoot: "$follower" }
-            }*/
+            }
         ])
         .toArray();
 
