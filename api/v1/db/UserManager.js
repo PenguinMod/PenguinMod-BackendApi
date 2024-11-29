@@ -1918,9 +1918,28 @@ class UserManager {
                 $limit: pageSize
             },
             {
-                // change it to just the follower
-                $project: { follower: 1, _id: 0 }
+                // collect author data
+                $lookup: {
+                    from: "users",
+                    localField: "follower",
+                    foreignField: "id",
+                    as: "followerInfo"
+                }
             },
+            {
+                $addFields: {
+                    "follower": {
+                        id: "$follower",
+                        username: { $arrayElemAt: ["$followerInfo.username", 0] }
+                    }
+                }
+            },
+            {
+                // only leave the follower field
+                $replaceRoot: { newRoot: "$follower" }
+            }
+            // get the usernames of the followers
+            
         ])
         .toArray();
 
