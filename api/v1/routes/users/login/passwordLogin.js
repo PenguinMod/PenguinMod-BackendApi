@@ -14,46 +14,27 @@ module.exports = (app, utils) => {
         const username = (String(packet.username)).toLowerCase();
         const password = packet.password;
         const captcha_token = packet.captcha_token;
-        const use_cf = packet.temp_use_cf || false;
 
         if (!captcha_token) {
             utils.error(res, 400, "MissingCaptchaToken");
         }
 
-        if (!use_cf) {
-            // verify token
-            const success = await fetch("https://api.hcaptcha.com/siteverify", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded"
-                },
-                body: `response=${captcha_token}&secret=${process.env.HCaptchaSecret}`
-            }).then(res => res.json()).then(json => {
-                return json.success;
-            });
+        if (captcha_token.length > 2048) {
+            utils.error(res, 400, "InvalidCaptcha");
+            return;
+        }
 
-            if (!success) {
-                utils.error(res, 400, "InvalidCaptcha");
-                return;
-            }
-        } else {
-            if (captcha_token.length > 2048) {
-                utils.error(res, 400, "InvalidCaptcha");
-                return;
-            }
+        const success = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: `secret=${utils.env.CFCaptchaSecret}&response=${captcha_token}`
+        }).then(res => res.json());
 
-            const success = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded"
-                },
-                body: `secret=${process.env.CFCaptchaSecret}&response=${captcha_token}`
-            }).then(res => res.json());
-
-            if (!success.success) {
-                utils.error(res, 400, "InvalidCaptcha");
-                return;
-            }
+        if (!success.success) {
+            utils.error(res, 400, "InvalidCaptcha");
+            return;
         }
 
         if (!username || !password) {
