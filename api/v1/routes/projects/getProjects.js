@@ -5,7 +5,7 @@ module.exports = (app, utils) => {
         }
 
         const packet = req.query;
-        const page = Number(packet.page) || 0;
+        const page = utils.handle_page(packet.page);
         const reverse = packet.reverse || false;
 
         // TODO: temporary fix. PLEASE fix soon.

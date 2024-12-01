@@ -22,6 +22,7 @@ module.exports = (app, utils) => {
         const countryCode = packet.country;
         const captcha_token = packet.captcha_token;
 
+        /*
         // verify token
         if (!captcha_token) {
             utils.error(res, 400, "MissingCaptchaToken");
@@ -45,6 +46,7 @@ module.exports = (app, utils) => {
             utils.error(res, 400, "InvalidCaptcha");
             return;
         }
+        */
 
         /*
         res.status(500);

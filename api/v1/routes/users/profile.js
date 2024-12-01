@@ -107,7 +107,7 @@ module.exports = (app, utils) => {
             myFeaturedProjectTitle,
             followers: followers,
             canrankup: canRequestRankUp && rank !== 1,
-            projects: userProjects.length, // we check projects anyways so might aswell,
+            projects: userProjects.length, // NOTE: dont use this shit its just gonna return 0-3
             privateProfile,
             canFollowingSeeProfile,
             isFollowing: user.isFollowing,

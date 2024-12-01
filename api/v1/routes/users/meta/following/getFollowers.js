@@ -3,7 +3,7 @@ module.exports = (app, utils) => {
         const packet = req.query;
 
         const username = (String(packet.username)).toLowerCase();
-        const page = Number(packet.page) || 0;
+        const page = utils.handle_page(packet.page);
 
         if (!username) {
             utils.error(res, 400, "Missing username");

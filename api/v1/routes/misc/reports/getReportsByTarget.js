@@ -14,7 +14,7 @@ module.exports = (app, utils) => {
         }
 
         let target = packet.target;
-        const page = Number(packet.page) || 0;
+        const page = utils.handle_page(packet.page);
 
         if (!target) {
             return utils.error(res, 400, "Missing target");

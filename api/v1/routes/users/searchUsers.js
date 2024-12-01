@@ -3,7 +3,7 @@ module.exports = (app, utils) => {
         const packet = req.query;
 
         const query = packet.query || "";
-        const page = Number(packet.page) || 0;
+        const page = utils.handle_page(packet.page);
 
         const users = await utils.UserManager.searchUsers(query, page, Number(utils.env.PageSize));
 

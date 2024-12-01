@@ -5,7 +5,7 @@ module.exports = (app, utils) => {
         const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
-        const page = packet.page;
+        const page = utils.handle_page(packet.page);
 
         const projectID = packet.projectID;
 

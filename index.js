@@ -158,6 +158,10 @@ const UserManager = new um();
         return "__express__" + (req.originalUrl || req.url);
     }
 
+    function handle_page(page) {
+        return Math.max(0, Number(page) || 0);
+    }
+
     endpointLoader(app, 'v1/routes', {
         UserManager: UserManager,
         homeDir: path.join(__dirname, "./"),
@@ -171,6 +175,7 @@ const UserManager = new um();
         unlinkAsync: promisify(fs.unlink),
         path: path,
         PORT: PORT,
+        handle_page,
         logs,
         googleOAuth2Client: OAuth2Client,
         ipaddr,
