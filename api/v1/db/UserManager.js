@@ -3850,6 +3850,21 @@ class UserManager {
             await this.setPermBanned(user.username, toggle, reason, true);
         }
     }
+
+    async verifyFollowers(username) {
+        // what this means: go through the followers. if they are banned, remove them.
+        const id = await this.getIDByUsername(username);
+
+        const followers = await this.followers.find({ target: id }).toArray();
+
+        for (const follower of followers) {
+            const user = await this.users.findOne({ id: follower.follower });
+
+            if (user.permBanned) {
+                await this.followers.updateOne({ follower: follower.follower, target: id }, { $set: { active: false } });
+            }
+        }
+    }
 }
 
 module.exports = UserManager;
