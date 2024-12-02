@@ -3861,12 +3861,15 @@ class UserManager {
             const user = await this.users.findOne({ id: follower.follower });
 
             if (user.permBanned) {
+                console.log("helloooo");
                 await this.followers.updateOne({ follower: follower.follower, target: id }, { $set: { active: false } });
             }
         }
 
         // count the amount of followers
         const count = await this.followers.countDocuments({ target: id, active: true });
+
+        console.log("count", count);
 
         await this.users.updateOne({ id: id }, { $set: { followers: count } });
     }
