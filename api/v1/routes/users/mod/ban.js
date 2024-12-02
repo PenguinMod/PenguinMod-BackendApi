@@ -9,6 +9,7 @@ module.exports = (app, utils) => {
         const toggle = packet.toggle;
         const time = packet.time || 0;
         const reason = packet.reason;
+        const remove_follows = packet.remove_follows || false;
 
         if (!username || !token || !target || typeof toggle !== "boolean" || typeof reason !== "string" || reason.length > 512 || typeof time !== "number" || time < 0) {
             utils.error(res, 400, "Missing username, token, target, toggle, reason, or time");
@@ -43,7 +44,7 @@ module.exports = (app, utils) => {
         } else if (toggle && time) {
             await utils.UserManager.tempBanUser(target, reason, time);
         } else {
-            await utils.UserManager.setPermBanned(target, toggle, reason)
+            await utils.UserManager.setPermBanned(target, toggle, reason, remove_follows);
         }
 
 

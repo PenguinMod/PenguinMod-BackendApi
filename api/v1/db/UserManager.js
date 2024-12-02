@@ -889,11 +889,23 @@ class UserManager {
      * @param {boolean} banned true if banning, false if unbanning
      * @async
      */
-    async setPermBanned(username, banned, reason) {
+    async setPermBanned(username, banned, reason, remove_follows=false) {
         await this.users.updateOne({ username: username }, { $set: { permBanned: banned, banReason: reason } });
         
         const user_id = await this.getIDByUsername(username);
         await this.privateAllProjects(user_id, banned);
+
+        // remove all reports by the user
+        await this.reports.deleteMany({ reporter: user_id });
+
+        // remove all reports on the user
+        await this.reports.deleteMany({ reportee: user_id });
+
+        if (remove_follows) {
+            // remove all references to the user in the followers collection
+            await this.followers.deleteMany({ target: user_id });
+            await this.followers.deleteMany({ follower: user_id });
+        }
     }
 
     /**
@@ -3611,16 +3623,34 @@ class UserManager {
     }
 
     async banIP(ip, toggle) {
-        await this.loggedIPs.updateOne({ ip: ip }, { $set: { banned: toggle } });
+        await this.loggedIPs.updateMany({ ip: ip }, { $set: { banned: toggle } });
+
+        if (toggle) {
+            // ban all accounts with this ip
+            const accounts = await this.loggedIPs.find({ ip: ip }).toArray();
+            for (const account of accounts) {
+                await this.setPermBanned(await this.getUsernameByID(account.id), true, "IP banned", true);
+            }
+        }
     }
 
     async banUserIP(username, toggle) {
         const id = await this.getIDByUsername(username);
 
-        const result = await this.loggedIPs.find({ id: id }).toArray();
+        await this.loggedIPs.updateMany({ id: id }, { $set: { banned: toggle } });
 
-        for (const ip of result) {
-            await this.loggedIPs.updateOne({ ip: ip.ip }, { $set: { banned: toggle } });
+        if (toggle) {
+            // ban all accounts with the same ip
+            const ips = await this.getIPs(username);
+
+            for (const ip of ips) {
+                // find all accounts with this ip
+                const accounts = await this.loggedIPs.find({ ip: ip.ip }).toArray();
+                
+                for (const account of accounts) {
+                    await this.setPermBanned(await this.getUsernameByID(account.id), true, "IP banned", true);
+                }
+            }
         }
     }
 
@@ -3813,8 +3843,12 @@ class UserManager {
         await this.sentEmails.deleteMany({});
     }
 
-    async massBanByUsername(regex, toggle) {
-        await this.users.updateMany({ username: { $regex: regex } }, { $set: { permBanned: toggle } });
+    async massBanByUsername(regex, toggle, reason="Banned by staff") {
+        const users = await this.users.find({ username: { $regex: regex } }).toArray();
+
+        for (const user of users) {
+            await this.setPermBanned(user.username, toggle, reason, true);
+        }
     }
 }
 

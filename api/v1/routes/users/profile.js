@@ -18,15 +18,9 @@ module.exports = (app, utils) => {
         if (loggedIn)
             isMod = await utils.UserManager.isAdmin(username) || await utils.UserManager.isModerator(username);
 
-        if (await utils.UserManager.isBanned(target)) {
-            if (username !== target) {
-                if (isMod) {
-                    // continue
-                } else {
-                    utils.error(res, 404, "NotFound")
-                    return;
-                }
-            }
+        if (await utils.UserManager.isBanned(target) && username !== target && !isMod) {
+            utils.error(res, 404, "NotFound")
+            return;
         }
 
         const privateProfile = await utils.UserManager.isPrivateProfile(target);
