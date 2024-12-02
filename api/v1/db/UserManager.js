@@ -1892,8 +1892,8 @@ class UserManager {
             await this.followers.insertOne({ follower, target: followee, active: follow})
         }
 
-        await this.users.updateOne({ id: follower }, { $inc: { following: 1 } });
-        await this.users.updateOne({ id: followee }, { $inc: { followers: 1 } });
+        await this.users.updateOne({ id: follower }, { $inc: { following: follow ? 1 : -1 } });
+        await this.users.updateOne({ id: followee }, { $inc: { followers: follow ? 1 : -1 } });
     }
 
     /**
@@ -3864,6 +3864,11 @@ class UserManager {
                 await this.followers.updateOne({ follower: follower.follower, target: id }, { $set: { active: false } });
             }
         }
+
+        // count the amount of followers
+        const count = await this.followers.countDocuments({ target: id, active: true });
+
+        await this.users.updateOne({ id: id }, { $set: { followers: count } });
     }
 }
 
