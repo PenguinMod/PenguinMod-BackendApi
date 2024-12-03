@@ -1,0 +1,9 @@
+module.exports = (app, utils) => {
+    app.get('/api/v1/projects/getfeaturedprojects', async (req, res) => {
+        const project = await utils.UserManager.getRandomProjects(1);
+
+        res.status(200);
+        res.header("Content-Type", 'application/json');
+        return res.send(project);
+    });
+}

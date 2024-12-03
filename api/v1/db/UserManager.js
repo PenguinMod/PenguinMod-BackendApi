@@ -1381,6 +1381,22 @@ class UserManager {
         return aggResult;
     }
 
+    async getRandomProjects(size) {
+        const result = await this.projects.aggregate([
+            {
+                $match: { softRejected: false, hardReject: false, public: true }
+            },
+            {
+                $sample: { size }
+            },
+            {
+                $unset: "_id"
+            }
+        ]).toArray();
+
+        return result;
+    }
+
     /**
      * Get projects by a specified author
      * @param {string} author ID of the author
