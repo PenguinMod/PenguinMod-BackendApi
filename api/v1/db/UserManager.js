@@ -1775,7 +1775,7 @@ class UserManager {
                 $match: { featured: true, public: true, softRejected: false, hardReject: false }
             },
             {
-                $sort: { lastUpdate: -1 }
+                $sort: { date: -1 }
             },
             {
                 $skip: page * pageSize
