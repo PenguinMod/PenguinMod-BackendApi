@@ -9,11 +9,7 @@ module.exports = (app, utils) => {
         const username = packet.username;
         const token = packet.token;
 
-        console.log(query, page, type, username, token);
-
         const is_mod = username && token && await utils.UserManager.loginWithToken(username, token) && await utils.UserManager.isModeratorOrAdmin(username);
-
-        console.log(is_mod);
 
         const projects = await utils.UserManager.searchProjects(is_mod, query, type, page, Number(utils.env.PageSize));
 
