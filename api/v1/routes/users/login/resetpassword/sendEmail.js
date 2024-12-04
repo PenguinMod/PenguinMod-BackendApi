@@ -12,6 +12,30 @@ module.exports = (app, utils) => {
         const packet = req.body;
 
         const email = packet.email;
+        const captcha_token = packet.captcha_token;
+
+        if (!email || !captcha_token) {
+            utils.error(res, 400, "MissingFields");
+            return;
+        }
+
+        if (captcha_token.length > 2048) {
+            utils.error(res, 400, "InvalidCaptcha");
+            return;
+        }
+
+        const captcha_success = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: `secret=${utils.env.CFCaptchaSecret}&response=${captcha_token}`
+        }).then(res => res.json());
+
+        if (!captcha_success.success) {
+            utils.error(res, 400, "InvalidCaptcha");
+            return;
+        }
 
         if (!await utils.UserManager.emailInUse(email)) {
             utils.error(res, 400, "EmailNotFound");
