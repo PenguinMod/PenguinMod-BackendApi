@@ -1138,7 +1138,7 @@ class UserManager {
      * @param {Buffer} imageBuffer The file buffer for the thumbnail.
      * @param {string} instructions The instructions for the project.
      * @param {string} notes The notes for the project
-     * @param {number} remix ID of the project this is a remix of. Undefined if not a remix.
+     * @param {String} remix ID of the project this is a remix of. Undefined if not a remix.
      * @param {string} rating Rating of the project.
      * @async
      */
@@ -1176,7 +1176,7 @@ class UserManager {
             await this.minioClient.putObject("project-assets", `${id}_${asset.id}`, asset.buffer);
         }
 
-        await this.addToFeed(author, remix ? "remix" : "upload", id);
+        await this.addToFeed(author, remix !== "0" ? "remix" : "upload", id);
 
         return id;
     }
@@ -3434,7 +3434,7 @@ class UserManager {
      * 
      * @param {string} userID ID of the user
      * @param {string} type Type of the feed item
-     * @param {string} data Data of the feed item, for example the project id and name
+     * @param {string} data Data of the feed item, for example the project id
      */
     async addToFeed(userID, type, data) {
         await this.userFeed.insertOne({

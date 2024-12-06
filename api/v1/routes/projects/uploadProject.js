@@ -171,7 +171,7 @@ module.exports = (app, utils) => {
         }
 
         if (!remix || typeof remix !== "string") {
-            remix = 0;
+            remix = "0";
         }
 
         if (!packet.rating || typeof packet.rating !== "string") {
