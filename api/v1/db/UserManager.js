@@ -2477,19 +2477,22 @@ class UserManager {
     }
 
     async makeOAuth2Account(method, data, utils, res) {
-        let username, id;
+        let username, id, real_username;
         switch (method) {
             case "scratch":
                 username = data.user_name.toLowerCase();
+                real_username = data.user_name;
                 id = data.user_id;
                 break;
             case "google":
                 id = data.id;
                 username = data.username.toLowerCase();
+                real_username = data.username;
                 break;
             case "github":
                 try {
                     username = String(data.login).toLowerCase();
+                    real_username = String(data.login);
                 } catch(e) {
                     console.error("it broke", data, e);
                     throw e;
@@ -2505,7 +2508,7 @@ class UserManager {
             n++;
         }
 
-        const info = await this.createAccount(username, randomBytes(32).toString("hex"), "", null, null, null, utils, res)
+        const info = await this.createAccount(username, real_username, "", null, null, null, utils, res)
         const token = info[0];
         const pm_id = info[1];
 
