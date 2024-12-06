@@ -32,7 +32,7 @@ module.exports = (app, utils) => {
             await utils.UserManager.sendMessage(author.id, {type: "projectFeatured"}, false, projectID);
 
             await utils.UserManager.featureProject(projectID, true);
-            utils.logs.sendFeatureLog(projectID, title, author.username);
+            utils.logs.sendFeatureLog(projectID, title, author.username, true);
 
             if (!await utils.UserManager.hasBadge(author.username, "featured")) {
                 await utils.UserManager.addBadge(author.username, "featured");

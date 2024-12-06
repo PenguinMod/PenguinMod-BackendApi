@@ -411,11 +411,11 @@ function sendCreationLog(username, id, name, type, color=0x25DA5B) {
     }
 }
 
-function sendFeatureLog(id, title, creator) {
+function sendFeatureLog(id, title, creator, manual=false) {
     const projectImage = String(`https://projects.penguinmod.com/api/v1/projects/getproject?requestType=thumbnail&projectID=${id}`);
     const projectTitle = String(title).substring(0, 250);
     const body = JSON.stringify({
-        content: `⭐ **${projectTitle}** has been **community featured!** ⭐`,
+        content: `⭐ **${projectTitle}** has been **${manual ? "manually" : "community"} featured!** ⭐`,
         embeds: [{
             title: projectTitle,
             image: { url: projectImage },
