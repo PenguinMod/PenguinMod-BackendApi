@@ -397,7 +397,7 @@ function sendCreationLog(username, id, name, type, color=0x25DA5B) {
                 }
             ],
             author: {
-                name: String(creator).substring(0, 50),
+                name: String(username).substring(0, 50),
                 icon_url: String("https://projects.penguinmod.com/api/v1/users/getpfp?username=" + String(username).substring(0, 50)),
                 url: String("https://penguinmod.com/profile?user=" + String(username).substring(0, 50))
             },
