@@ -1176,7 +1176,7 @@ class UserManager {
             await this.minioClient.putObject("project-assets", `${id}_${asset.id}`, asset.buffer);
         }
 
-        await this.addToFeed(author, remix !== "0" ? "remix" : "upload", id);
+        await this.addToFeed(author, remix !== "0" ? "remix" : "upload", remix !== "0" ? remix : id);
 
         return id;
     }

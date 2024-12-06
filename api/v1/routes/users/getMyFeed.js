@@ -29,6 +29,7 @@ module.exports = (app, utils) => {
                     }
                     final.push(item);
                     break;
+                case "upload":
                 case "remix":
                     item.data = {
                         id: item.data,
@@ -36,7 +37,6 @@ module.exports = (app, utils) => {
                     }
                     final.push(item);
                     break;
-                case "upload":
                 default:
                     final.push(item);
                     break;
