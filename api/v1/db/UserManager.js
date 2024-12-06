@@ -3501,12 +3501,15 @@ class UserManager {
         const remixCount = await this.projects.countDocuments({ remix: { $ne: "0" } });
         const featuredCount = await this.projects.countDocuments({ featured: true });
 
+        const mongodb_stats = await this.db.serverStatus();
+
         return {
             userCount: userCount,
             bannedCount: bannedCount,
             projectCount: projectCount,
             remixCount: remixCount,
-            featuredCount: featuredCount
+            featuredCount: featuredCount,
+            mongodb_stats: mongodb_stats
         }
     }
 
