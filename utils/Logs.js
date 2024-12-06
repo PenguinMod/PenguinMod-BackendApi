@@ -401,6 +401,7 @@ function sendCreationLog(username, id, name, type, color=0x25DA5B) {
                 icon_url: String("https://projects.penguinmod.com/api/v1/users/getpfp?username=" + String(username).substring(0, 50)),
                 url: String("https://penguinmod.com/profile?user=" + String(username).substring(0, 50))
             },
+            description: type === "account" ? "" : `Project ID: \`${id}\``,
             timestamp: new Date().toISOString()
         }],
     };
@@ -411,6 +412,7 @@ function sendCreationLog(username, id, name, type, color=0x25DA5B) {
             url,
         };
     }
+
 
     const body = JSON.stringify(body_json);
 
@@ -432,6 +434,7 @@ function sendFeatureLog(id, title, creator, manual=false) {
         content: `⭐ **${projectTitle}** has been **${manual ? "manually" : "community"} featured!** ⭐`,
         embeds: [{
             title: projectTitle,
+            description: `Project ID: \`${id}\``,
             image: { url: projectImage },
             color: 16771677,
             url: String("https://studio.penguinmod.com/#" + String(id)),
