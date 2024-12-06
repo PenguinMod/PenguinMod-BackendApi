@@ -16,20 +16,23 @@ module.exports = (app, utils) => {
             return;
         }
 
-        const feed = (await utils.UserManager.getUserFeed(username, Number(utils.env.FeedSize)))
-        
+        const feed = await utils.UserManager.getUserFeed(username, Number(utils.env.FeedSize));
+
         const final = []
 
         for (const item of feed) {
             switch (item.type) {
                 case "follow":
-                    item.user = {
-                        id: item.userID,
-                        username: await utils.UserManager.getUsernameByID(item.userID)
-                    }
                     item.data = {
                         id: item.data,
                         username: await utils.UserManager.getUsernameByID(item.data)
+                    }
+                    final.push(item);
+                    break;
+                case "remix":
+                    item.data = {
+                        id: item.data,
+                        name: (await utils.UserManager.getProjectMetadata(item.data)).title
                     }
                     final.push(item);
                     break;

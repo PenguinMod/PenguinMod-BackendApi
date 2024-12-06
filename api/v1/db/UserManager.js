@@ -1537,7 +1537,7 @@ class UserManager {
 
     /**
      * Get project metadata for a specified project
-     * @param {number} id ID of the project wanted.
+     * @param {String} id ID of the project wanted.
      * @returns {Promise<Object>} The project data.
      * @async
      */
@@ -3348,20 +3348,43 @@ class UserManager {
         await this.projects.updateOne({id: id}, { $set: { public: !toggle } });
     }
 
-    async getAllFollowing(username) {
+    async getAllFollowing(id, page, pageSize) {
         const result = await this.followers.aggregate([
             {
-                $match: { follower: username, active: true }
+                $match: { follower: id, active: true }
+            },
+            {
+                $skip: page * pageSize
+            },
+            {
+                $limit: pageSize
+            },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "target",
+                    foreignField: "id",
+                    as: "userInfo"
+                },
+            },
+            {
+                $addFields: {
+                    username: { $arrayElemAt: ["$userInfo.username", 0] },
+                    // target
+                    id: "$target"
+                }
+            },
+            {
+                $project: {
+                    username: true,
+                    id: true,
+                    _id: false,
+                }
             }
         ])
         .toArray();
 
-        const cleaned = result.map(x => {let v = x;delete v._id;return v;})
-        .map(x => {
-            x = x.target
-        })
-
-        return cleaned;
+        return result;
     }
 
     /**
@@ -3371,11 +3394,12 @@ class UserManager {
      * @returns {Promise<ARray<Object>>}
      */
     async getUserFeed(username, size) {
-        const followers = await this.getAllFollowing(username);
+        const id = await this.getIDByUsername(username);
+        const followers = await this.getAllFollowing(id, 0, Number(process.env.MaxPageSize || 0));
 
         const feed = await this.userFeed.aggregate([
             {
-                $match: { userID: { $in: followers } }
+                $match: { userID: { $in: followers.map(x => x.id) }, expireAt: { $gt: Date.now() } }
             },
             {
                 $sort: { date: -1 }
@@ -3384,7 +3408,21 @@ class UserManager {
                 $limit: size
             },
             {
-                $unset: "_id"
+                $lookup: {
+                    from: "users",
+                    localField: "userID",
+                    foreignField: "id",
+                    as: "userInfo"
+                }
+            },
+            {
+                $addFields: {
+                    username: { $arrayElemAt: ["$userInfo.username", 0] },
+                    id: "$userID"
+                },
+            },
+            {
+                $unset: ["_id", "userInfo", "userID"]
             }
         ])
         .toArray();
