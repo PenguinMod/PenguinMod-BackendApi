@@ -3501,7 +3501,7 @@ class UserManager {
         const remixCount = await this.projects.countDocuments({ remix: { $ne: "0" } });
         const featuredCount = await this.projects.countDocuments({ featured: true });
 
-        const mongodb_stats = await this.db.runCommand(
+        const mongodb_stats = await this.db.command(
             {
               serverStatus: 1
             }
