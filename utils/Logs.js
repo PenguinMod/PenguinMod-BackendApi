@@ -371,7 +371,7 @@ function sendServerLog(text, color=0xff0000) {
 }
 
 function sendCreationLog(username, id, name, type, color=0x25DA5B) {
-    const body = JSON.stringify({
+    const body_json = {
         content: type === "account" ? `${username} created a new account` : type === "update" ? `${username} updated a project (${name})` : `${username} created a new project (${name})`,
         embeds: [{
             title: `${username} created a new ${type}`,
@@ -396,9 +396,23 @@ function sendCreationLog(username, id, name, type, color=0x25DA5B) {
                     value: `https://studio.penguinmod.com/#${id}`
                 }
             ],
+            author: {
+                name: String(creator).substring(0, 50),
+                icon_url: String("https://projects.penguinmod.com/api/v1/users/getpfp?username=" + String(username).substring(0, 50)),
+                url: String("https://penguinmod.com/profile?user=" + String(username).substring(0, 50))
+            },
             timestamp: new Date().toISOString()
         }],
-    });
+    };
+
+    if (type === "upload" || type === "update") {
+        const url = `https://projects.penguinmod.com/api/v1/projects/getproject?requestType=thumbnail&projectID=${id}&rnd=${Math.random()}`;
+        body_json.embeds[0].image = {
+            url,
+        };
+    }
+
+    const body = JSON.stringify(body_json);
 
     try {
         fetch(creationWebhook, {
