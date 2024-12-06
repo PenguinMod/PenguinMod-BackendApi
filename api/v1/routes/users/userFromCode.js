@@ -24,7 +24,7 @@ module.exports = (app, utils) => {
         const signUpDate = user_meta.firstLogin;
 
         // its fine to do this since its just metadata
-        const userProjects = await utils.UserManager.getProjectsByAuthor(id, 0, 3);
+        const userProjects = await utils.UserManager.getProjectsByAuthor(id, 0, 3, true, true);
         const canRequestRankUp = (userProjects.length >= 3 // if we have 3 projects and
             && (Date.now() - signUpDate) >= 4.32e+8) // first signed in 5 days ago
             || badges.length > 0; // or we have a badge

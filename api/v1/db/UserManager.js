@@ -1403,8 +1403,8 @@ class UserManager {
      * @returns {Promise<Array<Object>>} Array of projects by the specified author
      * @async
      */
-    async getProjectsByAuthor(author, page, pageSize, getPrivate, getSoftRejected=false) {
-        const match = { author: author }
+    async getProjectsByAuthor(author, page, pageSize, getPrivate=false, getSoftRejected=false) {
+        const match = { author: author, hardReject: false }
         if (!getPrivate) match.public = true;
         if (!getSoftRejected) match.softRejected = false;
         const _result = await this.projects.aggregate([
