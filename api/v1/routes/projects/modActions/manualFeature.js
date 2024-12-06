@@ -44,7 +44,7 @@ module.exports = (app, utils) => {
 
         utils.logs.sendAdminLog(
             {
-                action: "Project has been manually featured",
+                action: `Project has been manually ${toggle ? "" : "un"}featured`,
                 content: `${username} manually featured project ${projectID}`,
                 fields: [
                     {
