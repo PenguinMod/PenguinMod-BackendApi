@@ -16,7 +16,12 @@ module.exports = (app, utils) => {
             return;
         }
 
-        if (!await utils.UserManager)
+        const badges = await utils.UserManager.getBadges(username);
+
+        if (!badges.includes("donator")) {
+            utils.error(res, 403, "MissingPermission");
+            return;
+        }
 
         await utils.UserManager.setUserCustomization(username, customization);
 
