@@ -6,6 +6,7 @@ const modWebhook = process.env.ModWebhook;
 const adminWebhook = process.env.AdminWebhook;
 const apiUpdatesWebhook = process.env.ApiUpdatesWebhook;
 const creationWebhook = process.env.CreationWebhook;
+const featuredWebhook = process.env.FeaturedWebhook;
 
 function sendHeatLog(text, type, location, color=0xff0000) {
     const body = JSON.stringify({
@@ -410,6 +411,34 @@ function sendCreationLog(username, id, name, type, color=0x25DA5B) {
     }
 }
 
+function sendFeatureLog(id, title, creator) {
+    const projectImage = String(`https://projects.penguinmod.com/api/v1/projects/getproject?requestType=thumbnail&projectID=${id}`);
+    const projectTitle = String(title).substring(0, 250);
+    const body = JSON.stringify({
+        content: `⭐ **${projectTitle}** has been **community featured!** ⭐`,
+        embeds: [{
+            title: projectTitle,
+            image: { url: projectImage },
+            color: 16771677,
+            url: String("https://studio.penguinmod.com/#" + String(id)),
+            author: {
+                name: String(creator).substring(0, 50),
+                icon_url: String("https://projects.penguinmod.com/api/v1/users/getpfp?username=" + String(creator).substring(0, 50)),
+                url: String("https://penguinmod.com/profile?user=" + String(creator).substring(0, 50))
+            }
+        }]
+    });
+    try {
+        fetch(featuredWebhook, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body
+        });
+    } catch (e) {
+        console.error(e);
+    }
+}
+
 module.exports = {
     sendHeatLog,
     sendBioUpdateLog,
@@ -422,4 +451,5 @@ module.exports = {
     modMessage,
     sendServerLog,
     sendCreationLog,
+    sendFeatureLog,
 };

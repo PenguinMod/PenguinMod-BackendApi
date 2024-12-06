@@ -25,6 +25,11 @@ module.exports = (app, utils) => {
 
         const username = await utils.UserManager.getUsernameByEmail(email);
 
+        if (!username) {
+            utils.error(res, 400, "InvalidEmail");
+            return;
+        }
+
         await utils.UserManager.changePassword(username, password);
 
         res.status(200);

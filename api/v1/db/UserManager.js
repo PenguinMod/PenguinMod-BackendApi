@@ -3748,6 +3748,8 @@ class UserManager {
     async getUsernameByEmail(email) {
         const result = await this.users.findOne({ email: email });
 
+        if (!result) return false;
+
         return result.username;
     }
 

@@ -44,6 +44,11 @@ module.exports = (app, utils) => {
 
         const username = await utils.UserManager.getUsernameByEmail(email);
 
+        if (!username) {
+            utils.error(res, 400, "InvalidEmail");
+            return;
+        }
+
         if (!await utils.UserManager.isEmailVerified(username)) {
             utils.error(res, 400, "EmailNotVerified");
             return;
