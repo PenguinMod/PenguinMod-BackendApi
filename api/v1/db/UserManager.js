@@ -3775,7 +3775,7 @@ class UserManager {
     }
 
     async getEmailCount() {
-        const result = await this.sentEmails.countDocuments();
+        const result = await this.sentEmails.countDocuments({expireAt: { $gt: Date.now() }});
 
         return result;
     }
