@@ -19,22 +19,26 @@ module.exports = (app, utils) => {
             return;
         }
 
-        if (captcha_token.length > 2048) {
-            utils.error(res, 400, "InvalidCaptcha");
-            return;
-        }
-
-        const captcha_success = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded"
-            },
-            body: `secret=${utils.env.CFCaptchaSecret}&response=${captcha_token}`
-        }).then(res => res.json());
-
-        if (!captcha_success.success) {
-            utils.error(res, 400, "InvalidCaptcha");
-            return;
+        if (utils.env.CFCaptchaEnabled !== "false") {
+            if (captcha_token.length > 2048) {
+                utils.error(res, 400, "InvalidCaptcha");
+                return;
+            }
+    
+            const captcha_success = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: `secret=${utils.env.CFCaptchaSecret}&response=${captcha_token}`
+            }).then(res => res.json());
+    
+            if (!captcha_success.success) {
+                utils.error(res, 400, "InvalidCaptcha");
+                return;
+            }
+        } else {
+            console.warn("resetpassword/sendEmail ran with CFCaptchaEnabled set to false");
         }
 
         if (!await utils.UserManager.emailInUse(email)) {

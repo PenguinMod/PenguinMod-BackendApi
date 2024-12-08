@@ -4,7 +4,7 @@ module.exports = (app, utils) => {
             trustProxy: true,
             xForwardedForHeader: true,
         },
-        windowMs: 1000 * 10,  // 1 requests per 10 seconds
+        windowMs: 1000,  // 1 requests per 1 second
         limit: 1,
         standardHeaders: 'draft-7',
         legacyHeaders: false,
@@ -15,27 +15,31 @@ module.exports = (app, utils) => {
         const password = packet.password;
         const captcha_token = packet.captcha_token;
 
-        if (!captcha_token) {
-            utils.error(res, 400, "MissingCaptchaToken");
-            return;
-        }
-
-        if (captcha_token.length > 2048) {
-            utils.error(res, 400, "InvalidCaptcha");
-            return;
-        }
-
-        const success = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded"
-            },
-            body: `secret=${utils.env.CFCaptchaSecret}&response=${captcha_token}`
-        }).then(res => res.json());
-
-        if (!success.success) {
-            utils.error(res, 400, "InvalidCaptcha");
-            return;
+        if (utils.env.CFCaptchaEnabled !== "false") {
+            if (!captcha_token) {
+                utils.error(res, 400, "MissingCaptchaToken");
+                return;
+            }
+    
+            if (captcha_token.length > 2048) {
+                utils.error(res, 400, "InvalidCaptcha");
+                return;
+            }
+    
+            const success = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: `secret=${utils.env.CFCaptchaSecret}&response=${captcha_token}`
+            }).then(res => res.json());
+    
+            if (!success.success) {
+                utils.error(res, 400, "InvalidCaptcha");
+                return;
+            }
+        } else {
+            console.warn("passwordLogin ran with CFCaptchaEnabled set to false");
         }
 
         if (!username || !password) {

@@ -22,31 +22,33 @@ module.exports = (app, utils) => {
         const countryCode = packet.country;
         const captcha_token = packet.captcha_token;
 
-        /*
-        // verify token
-        if (!captcha_token) {
-            utils.error(res, 400, "MissingCaptchaToken");
-            return;
+        if (utils.env.CFCaptchaEnabled !== "false") {
+            // verify token
+            if (!captcha_token) {
+                utils.error(res, 400, "MissingCaptchaToken");
+                return;
+            }
+    
+            if (captcha_token.length > 2048) {
+                utils.error(res, 400, "InvalidCaptcha");
+                return;
+            }
+    
+            const success = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: `secret=${utils.env.CFCaptchaSecret}&response=${captcha_token}`
+            }).then(res => res.json());
+    
+            if (!success.success) {
+                utils.error(res, 400, "InvalidCaptcha");
+                return;
+            }
+        } else {
+            console.warn("createAccount ran with CFCaptchaEnabled set to false");
         }
-
-        if (captcha_token.length > 2048) {
-            utils.error(res, 400, "InvalidCaptcha");
-            return;
-        }
-
-        const success = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded"
-            },
-            body: `secret=${utils.env.CFCaptchaSecret}&response=${captcha_token}`
-        }).then(res => res.json());
-
-        if (!success.success) {
-            utils.error(res, 400, "InvalidCaptcha");
-            return;
-        }
-        */
 
         /*
         res.status(500);
