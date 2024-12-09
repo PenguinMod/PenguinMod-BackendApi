@@ -3402,7 +3402,7 @@ class UserManager {
 
         const feed = await this.userFeed.aggregate([
             {
-                $match: { userID: { $in: followers.map(x => x.id) }, expireAt: { $gt: Date.now() } }
+                $match: { userID: { $in: followers.map(x => x.id) } }//, expireAt: { $gt: Date.now() } }
             },
             {
                 $sort: { date: -1 }
