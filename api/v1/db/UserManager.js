@@ -945,8 +945,8 @@ class UserManager {
      * @param {string} email email of the user
      * @async
      */
-    async setEmail(username, email) {
-        await this.users.updateOne({ username: username }, { $set: { email: email } });
+    async setEmail(username, email, verify=false) {
+        await this.users.updateOne({ username: username }, { $set: { email: email, emailVerified: verify } });
     }
 
     /**
