@@ -49,6 +49,8 @@ class UserManager {
         this.projects = this.db.collection('projects');
         //this.projects.dropIndexes();
         await this.projects.createIndex({ title: "text", instructions: "text", notes: "text"});
+        // index for front page, sort by newest
+        await this.projects.createIndex({ lastUpdate: -1 });
         if (!await this.projects.indexExists("Partial-TTL-Index")) {
             await this.projects.createIndex(
                 { hardRejectTime: 1 },
