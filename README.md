@@ -21,7 +21,9 @@ Please report any security vulnerabilities using GitHub's security tab on the re
 2. Run `mongod` to start mongodb
 3. Run `npm i`. if this doesn't work run it with --force
 4. Install minio
-   - [Minio](https://docs.min.io/docs/minio-quickstart-guide.html)
+   - [Linux](https://min.io/docs/minio/linux/index.html)
+   - [Mac](https://min.io/docs/minio/macos/index.html)
+   - [Windows](https://min.io/docs/minio/windows/index.html)
 5. Add a `.env` file copied from the .env.template file and fill in the values.
 6. Run `npm run dev` to start the server in development mode.
 
