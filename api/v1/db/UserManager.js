@@ -3294,6 +3294,14 @@ class UserManager {
                 $limit: pageSize
             },
             {
+                $lookup: {
+                    from: "users",
+                    localField: "author",
+                    foreignField: "id",
+                    as: "authorInfo"
+                }
+            },
+            {
                 $addFields: {
                     "author": {
                         id: "$author",

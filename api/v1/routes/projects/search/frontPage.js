@@ -161,6 +161,8 @@ module.exports = (app, utils) => {
             latest: latest,
         };
 
+        console.log(liked);
+
         // TODO: swap to use lookup instead of multiple queries
         for (const key in page) {
             const newPage = []
