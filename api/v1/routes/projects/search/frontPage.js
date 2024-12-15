@@ -1,7 +1,15 @@
-const softReject = require("../modActions/reject/softReject");
-
 module.exports = (app, utils) => {
-    app.get('/api/v1/projects/frontpage', async (req, res) => {
+    app.get('/api/v1/projects/frontpage', utils.rateLimiter({
+        validate: {
+            trustProxy: true,
+            xForwardedForHeader: true,
+        },
+        windowMs: 1000 * 10,  // 1 requests per 10 seconds
+        limit: 1,
+        standardHeaders: 'draft-7',
+        legacyHeaders: false,
+    }),
+    async (req, res) => {
         const packet = req.query
         /* needed:
             - featured
