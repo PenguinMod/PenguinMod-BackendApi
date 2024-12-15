@@ -9,7 +9,7 @@ module.exports = (app, utils) => {
 
         const projectID = packet.projectID;
 
-        if (!username || !token || !projectID || !page) {
+        if (!username || !token || !projectID || typeof page !== "number") {
             return utils.error(res, 400, "Missing username, token, projectID, or page");
         }
 
