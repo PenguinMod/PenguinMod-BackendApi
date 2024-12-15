@@ -48,7 +48,7 @@ module.exports = (app, utils) => {
 
         const featured = await utils.UserManager.getFeaturedProjects(0, Number(utils.env.PageSize));
         
-        const almostFeatured_inter = await utils.UserManager.specializedSearch(is_mod,
+        const almostFeatured = await utils.UserManager.specializedSearch(
             [
                 {
                     $match: { 
@@ -90,14 +90,7 @@ module.exports = (app, utils) => {
             Number(utils.env.MaxPageSize),
         );
 
-        const almostFeatured = []
-        for (const project of almostFeatured_inter) {
-            // remove projectstatsdata
-            delete project.projectStatsData;
-            almostFeatured.push(project);
-        }
-
-        const liked_inter = await utils.UserManager.specializedSearch(is_mod,
+        const liked_inter = await utils.UserManager.specializedSearch(
             [
                 {
                     $match: { 
@@ -147,7 +140,7 @@ module.exports = (app, utils) => {
         }
 
         /*
-        const highViews = await utils.UserManager.specializedSearch(is_mod,
+        const highViews = await utils.UserManager.specializedSearch(
             [{ $match: { featured: false, views: { $gte: 30 }, softRejected: false, hardReject: false } }],
             0,
             Number(utils.env.PageSize),

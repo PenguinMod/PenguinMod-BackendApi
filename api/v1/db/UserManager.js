@@ -3278,7 +3278,7 @@ class UserManager {
      * @param {number} pageSize Amount of projects to get
      * @returns {Array<Object>} Array of projects
      */
-    async specializedSearch(show_nonranked, query, page, pageSize, maxPageSize) {
+    async specializedSearch(query, page, pageSize, maxPageSize) {
         let pipeline = [
             {
                 $sort: { lastUpdate: -1 }
@@ -3290,44 +3290,9 @@ class UserManager {
                 $limit: maxPageSize,
             },
             ...query,
-        ];
-
-        if (!show_nonranked) {
-            pipeline.push(
-                {
-                    $lookup: {
-                        from: "users",
-                        localField: "author",
-                        foreignField: "id",
-                        as: "authorInfo"
-                    }
-                },
-                {
-                    $match: { "authorInfo.rank": { $gt: 0 } }
-                }
-            );
-        }
-
-        pipeline.push(
             {
                 $limit: pageSize
             },
-        )
-
-        if (show_nonranked) {
-            pipeline.push(
-                {
-                    $lookup: {
-                        from: "users",
-                        localField: "author",
-                        foreignField: "id",
-                        as: "authorInfo"
-                    }
-                },
-            );
-        }
-
-        pipeline.push(
             {
                 $addFields: {
                     "author": {
@@ -3339,10 +3304,11 @@ class UserManager {
             {
                 $unset: [
                     "authorInfo",
-                    "_id"
+                    "_id",
+                    "projectStatsData"
                 ]
             }
-        );
+        ];
 
         const aggResult = await this.projects.aggregate(pipeline)
         .toArray();
