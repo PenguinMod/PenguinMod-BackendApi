@@ -86,8 +86,8 @@ module.exports = (app, utils) => {
                 },
             ],
             0,
-            Number(utils.env.PageSize),
-            Number(utils.env.MaxPageSize),
+            Number(utils.env.PageSize) || 20,
+            (Number(utils.env.MaxPageSize) || 100) * 2,
         );
 
         const liked_inter = await utils.UserManager.specializedSearch(
@@ -128,8 +128,8 @@ module.exports = (app, utils) => {
                 }
             ],
             0,
-            Number(utils.env.PageSize),
-            Number(utils.env.MaxPageSize)
+            Number(utils.env.PageSize) || 20,
+            (Number(utils.env.MaxPageSize) || 100) * 2,
         )
 
         const liked = []
