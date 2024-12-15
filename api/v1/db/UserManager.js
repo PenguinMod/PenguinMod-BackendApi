@@ -32,7 +32,8 @@ class UserManager {
         await this.client.connect();
         this.db = this.client.db('pm_apidata');
         this.users = this.db.collection('users');
-        await this.users.createIndex({ username: 1 }, { unique: true });
+        // remove indexes
+        await this.users.dropIndexes();
         this.accountCustomization = this.db.collection('accountCustomization');
         this.loggedIPs = this.db.collection('loggedIPs');
         this.passwordResetStates = this.db.collection('passwordResetStates');
