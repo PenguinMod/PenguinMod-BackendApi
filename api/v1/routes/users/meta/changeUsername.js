@@ -27,7 +27,7 @@ module.exports = (app, utils) => {
             return;
         }
 
-        const exists = await utils.UserManager.existsByUsername(newUsername);
+        const exists = await utils.UserManager.existsByUsername(newUsername, true);
         if (exists) {
             utils.error(res, 404, "UsernameTaken");
             return;
