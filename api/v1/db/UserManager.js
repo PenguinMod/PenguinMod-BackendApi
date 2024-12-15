@@ -32,6 +32,8 @@ class UserManager {
         await this.client.connect();
         this.db = this.client.db('pm_apidata');
         this.users = this.db.collection('users');
+        await this.users.createIndex({ username: 1 }, { unique: true });
+        await this.users.createIndex({ id: 1 }, { unique: true });
         this.accountCustomization = this.db.collection('accountCustomization');
         this.loggedIPs = this.db.collection('loggedIPs');
         this.passwordResetStates = this.db.collection('passwordResetStates');
@@ -3028,28 +3030,59 @@ class UserManager {
         switch (type) {
             case "featured":
                 aggregateList.push({
-                    $match: { featured: true }
+                    $match: { featured: true },
+                }, {
+                    $match: { $or: [
+                        { title: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } },
+                        { instructions: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } },
+                        { notes: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } }
+                    ] },
                 });
                 break;
             case "featured":
                 aggregateList.push({
                     $match: { featured: true }
+                }, {
+                    $match: { $or: [
+                        { title: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } },
+                        { instructions: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } },
+                        { notes: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } }
+                    ] },
                 });
                 // dont break - we still sort by newest
             case "newest":
                 aggregateList.push({
                     $sort: { lastUpdate: -1 }
+                }, {
+                    $match: { $or: [
+                        { title: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } },
+                        { instructions: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } },
+                        { notes: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } }
+                    ] },
                 });
                 break;
             default:
             case "views":
                 aggregateList.push({
                     $sort: { views: -1 }
+                }, {
+                    $match: { $or: [
+                        { title: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } },
+                        { instructions: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } },
+                        { notes: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } }
+                    ] },
                 });
                 break;
             case "loves":
                 // collect likes
                 aggregateList.push(
+                    {
+                        $match: { $or: [
+                            { title: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } },
+                            { instructions: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } },
+                            { notes: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } }
+                        ] },
+                    },
                     {
                         $lookup: {
                             from: "projectStats",
@@ -3078,6 +3111,13 @@ class UserManager {
                 break;
             case "votes":
                 aggregateList.push(
+                    {
+                        $match: { $or: [
+                            { title: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } },
+                            { instructions: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } },
+                            { notes: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } }
+                        ] },
+                    },
                     {
                         $lookup: {
                             from: "projectStats",
