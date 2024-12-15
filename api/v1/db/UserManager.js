@@ -32,7 +32,6 @@ class UserManager {
         await this.client.connect();
         this.db = this.client.db('pm_apidata');
         this.users = this.db.collection('users');
-        await this.users.dropIndexes(); // temp
         this.accountCustomization = this.db.collection('accountCustomization');
         this.loggedIPs = this.db.collection('loggedIPs');
         this.passwordResetStates = this.db.collection('passwordResetStates');
@@ -3241,7 +3240,6 @@ class UserManager {
      */
     async specializedSearch(show_nonranked, query, page, pageSize, maxPageSize) {
         let pipeline = [
-            ...query,
             {
                 $sort: { lastUpdate: -1 }
             },
@@ -3251,6 +3249,7 @@ class UserManager {
             {
                 $limit: maxPageSize,
             },
+            ...query,
         ];
 
         if (!show_nonranked) {
