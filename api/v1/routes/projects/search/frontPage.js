@@ -87,7 +87,7 @@ module.exports = (app, utils) => {
             ],
             0,
             Number(utils.env.PageSize),
-            Number(utils.env.MaxPageSize) * 10,
+            Number(utils.env.MaxPageSize),
         );
 
         const almostFeatured = []
