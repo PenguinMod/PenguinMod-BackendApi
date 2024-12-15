@@ -30,10 +30,10 @@ module.exports = (app, utils) => {
         // convert to usernames
         const usernames = [];
         for (const vote of votes) {
-            const username = await utils.UserManager.getUsernameByID(vote);
+            const username = await utils.UserManager.getUsernameByID(vote.userId);
             usernames.push(username);
         }
 
-        return res.send({ loves: usernames });
+        return res.send({ votes: usernames });
     });
 }
