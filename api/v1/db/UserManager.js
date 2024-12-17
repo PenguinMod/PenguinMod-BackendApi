@@ -3378,7 +3378,12 @@ class UserManager {
                 }
             },
             {
-                $replaceRoot: { newRoot: { $arrayElemAt: ["$projectData", 0] } }
+                $addFields: {
+                    "projectData": { $arrayElemAt: ["$projectData", 0] }
+                }
+            },
+            {
+                $replaceRoot: { newRoot: "$projectData" }
             },
             {
                 $match: { 
@@ -3453,7 +3458,12 @@ class UserManager {
                 }
             },
             {
-                $replaceRoot: { newRoot: { $arrayElemAt: ["$projectData", 0] } }
+                $addFields: {
+                    "projectData": { $arrayElemAt: ["$projectData", 0] }
+                }
+            },
+            {
+                $replaceRoot: { newRoot: "$projectData" }
             },
             {
                 $match: { 
