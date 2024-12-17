@@ -48,97 +48,12 @@ module.exports = (app, utils) => {
 
         const featured = await utils.UserManager.getFeaturedProjects(0, Number(utils.env.PageSize));
         
-        const almostFeatured = await utils.UserManager.specializedSearch(
-            [
-                {
-                    $match: { 
-                        featured: false, 
-                        softRejected: false, 
-                        public: true, 
-                        hardReject: false 
-                    }
-                },
-                {
-                    $lookup: {
-                        from: "projectStats",
-                        localField: "id",
-                        foreignField: "projectId",
-                        as: "projectStatsData"
-                    }
-                },
-                {
-                    $addFields: {
-                        votes: {
-                            $size: {
-                                $filter: {
-                                    input: "$projectStatsData",
-                                    as: "stat",
-                                    cond: { $eq: ["$$stat.type", "vote"] }
-                                }
-                            }
-                        }
-                    }
-                },
-                {
-                    $match: {
-                        votes: { $gte: Math.ceil(utils.env.FeatureAmount / 3 * 2) },
-                    }
-                },
-            ],
-            0,
+        const almostFeatured = await utils.UserManager.almostFeatured(0,
             Number(utils.env.PageSize) || 20,
-            (Number(utils.env.MaxPageSize) || 100) * 2,
+            Number(utils.env.FeatureAmount) || 20,
         );
 
-        const liked_inter = await utils.UserManager.specializedSearch(
-            [
-                {
-                    $match: { 
-                        featured: false, 
-                        softRejected: false, 
-                        public: true, 
-                        hardReject: false 
-                    }
-                },
-                {
-                    $lookup: {
-                        from: "projectStats",
-                        localField: "id",
-                        foreignField: "projectId",
-                        as: "projectStatsData"
-                    }
-                },
-                {
-                    $addFields: {
-                        loves: {
-                            $size: {
-                                $filter: {
-                                    input: "$projectStatsData",
-                                    as: "stat",
-                                    cond: { $eq: ["$$stat.type", "love"] }
-                                }
-                            }
-                        }
-                    }
-                },
-                {
-                    $match: {
-                        loves: { $gte: 5 }
-                    }
-                }
-            ],
-            0,
-            Number(utils.env.PageSize) || 20,
-            (Number(utils.env.MaxPageSize) || 100) * 2,
-        )
-
-        const liked = []
-        for (const project of liked_inter) {
-            // remove projectstatsdata
-            delete project.projectStatsData;
-            liked.push(project);
-        }
-
+        const liked = await utils.UserManager.mostLiked(0, Number(utils.env.PageSize) || 20, 5);
         /*
         const highViews = await utils.UserManager.specializedSearch(
             [{ $match: { featured: false, views: { $gte: 30 }, softRejected: false, hardReject: false } }],

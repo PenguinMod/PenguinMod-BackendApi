@@ -3312,8 +3312,7 @@ class UserManager {
             {
                 $unset: [
                     "authorInfo",
-                    "_id",
-                    "projectStatsData"
+                    "_id"
                 ]
             }
         ];
@@ -3335,6 +3334,161 @@ class UserManager {
             */
 
         return aggResult;
+    }
+
+    async almostFeatured(page, pageSize, featureAmount) {
+        const result = this.projectStats.aggregate([
+            {
+                $match: { type: "vote" }
+            },
+            {
+                $group: {
+                    _id: "$projectId",
+                    count: { 
+                        $count: {}
+                    },
+                    earliest: { $min: "$_id" } // we dont track the date so just use the id (mongo id is a timestamp)
+                }
+            },
+            {
+                $match: {
+                    count: { $gte: Math.ceil(featureAmount / 3 * 2) }
+                }
+            },
+            {
+                $match: {
+                    count: { $lt: featureAmount }
+                }
+            },
+            {
+                $sort: { earliest: -1 }
+            },
+            {
+                $skip: page * pageSize
+            },
+            {
+                $limit: pageSize
+            },
+            {
+                $lookup: {
+                    from: "projects",
+                    localField: "_id",
+                    foreignField: "id",
+                    as: "projectData"
+                }
+            },
+            {
+                $replaceRoot: { newRoot: { $arrayElemAt: ["$projectData", 0] } }
+            },
+            {
+                $match: { 
+                    featured: false, 
+                    softRejected: false, 
+                    public: true, 
+                    hardReject: false 
+                }
+            },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "author",
+                    foreignField: "id",
+                    as: "authorInfo"
+                }
+            },
+            {
+                $addFields: {
+                    "author": {
+                        id: "$author",
+                        username: { $arrayElemAt: ["$authorInfo.username", 0] }
+                    }
+                }
+            },
+            {
+                $unset: [
+                    "authorInfo",
+                    "_id",
+                ]
+            }
+        ])
+        .toArray();
+
+        return result;
+    }
+
+    async mostLiked(page, pageSize, likedAmount) {
+        const result = this.projectStats.aggregate([
+            {
+                $match: { type: "love" }
+            },
+            {
+                $group: {
+                    _id: "$projectId",
+                    count: {
+                        $count: {}
+                    },
+                    earliest: { $min: "$_id" } // we dont track the date so just use the id (mongo id is a timestamp)
+                }
+            },
+            {
+                $match: {
+                    count: { $gte: likedAmount }
+                }
+            },
+            {
+                $sort: { earliest: -1 }
+            },
+            {
+                $skip: page * pageSize
+            },
+            {
+                $limit: pageSize
+            },
+            {
+                $lookup: {
+                    from: "projects",
+                    localField: "_id",
+                    foreignField: "id",
+                    as: "projectData"
+                }
+            },
+            {
+                $replaceRoot: { newRoot: { $arrayElemAt: ["$projectData", 0] } }
+            },
+            {
+                $match: { 
+                    featured: false, 
+                    softRejected: false, 
+                    public: true, 
+                    hardReject: false 
+                }
+            },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "author",
+                    foreignField: "id",
+                    as: "authorInfo"
+                }
+            },
+            {
+                $addFields: {
+                    "author": {
+                        id: "$author",
+                        username: { $arrayElemAt: ["$authorInfo.username", 0] }
+                    }
+                }
+            },
+            {
+                $unset: [
+                    "authorInfo",
+                    "_id",
+                ]
+            }
+        ])
+        .toArray();
+
+        return result;
     }
 
     /**
