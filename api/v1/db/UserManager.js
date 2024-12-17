@@ -3383,6 +3383,11 @@ class UserManager {
                 }
             },
             {
+                $match: {
+                    projectData: { $exists: true }
+                }
+            },
+            {
                 $replaceRoot: { newRoot: "$projectData" }
             },
             {
@@ -3460,6 +3465,11 @@ class UserManager {
             {
                 $addFields: {
                     "projectData": { $arrayElemAt: ["$projectData", 0] }
+                }
+            },
+            {
+                $match: {
+                    projectData: { $exists: true }
                 }
             },
             {
