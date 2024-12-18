@@ -390,7 +390,7 @@ class UserManager {
      * @param {boolean} allowBanned allow banned users to login
      * @returns {Promise<boolean>} true if successful, false if not
      * @async
-     */ 
+     */
     async loginWithToken(username, token, allowBanned) {
         const result = await this.users.findOne({ username: username });
 
