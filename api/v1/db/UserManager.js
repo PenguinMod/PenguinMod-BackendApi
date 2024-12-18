@@ -14,13 +14,6 @@ const Mailjet = require('node-mailjet');
 const basePFP = fs.readFileSync(path.join(__dirname, "./penguin.png"));
 
 class UserManager {
-    static loginInvalidationTime = 
-    1000 *  // second
-    60 * // minute
-    60 * // hour
-    24 * // day
-    3; // 3 days
-
     /**
      * Initialize the database
      * @param {number} maxviews maximum amount of views before the view counter resets
@@ -408,7 +401,7 @@ class UserManager {
         }
 
         // login invalid if more than the time
-        if (result.lastLogin + UserManager.loginInvalidationTime < Date.now()) {
+        if (result.lastLogin + process.env.LoginInvalidationTime < Date.now()) {
             return false;
         }
 
