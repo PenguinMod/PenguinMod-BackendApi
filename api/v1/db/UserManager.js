@@ -401,7 +401,7 @@ class UserManager {
         }
 
         // login invalid if more than the time
-        if (result.lastLogin + process.env.LoginInvalidationTime < Date.now()) {
+        if (result.lastLogin + (Number(process.env.LoginInvalidationTime) || 259200000) < Date.now()) {
             return false;
         }
 
