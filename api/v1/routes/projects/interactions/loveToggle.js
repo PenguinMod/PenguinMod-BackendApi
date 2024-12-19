@@ -26,9 +26,8 @@ module.exports = (app, utils) => {
             return utils.error(res, 400, "Already loved");
         }
 
-        const loves = await utils.UserManager.getProjectLoves(projectID);
-
         const projectMeta = await utils.UserManager.getProjectMetadata(projectID);
+        const loves = projectMeta.loves;
         const authorID = projectMeta.author.id;
         const authorUsername = projectMeta.author.username;
 
