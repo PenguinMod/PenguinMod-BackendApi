@@ -31,8 +31,12 @@ module.exports = (app, utils) => {
             }
 
             targetID = await utils.UserManager.getIDByUsername(target);
-        } else if (type == "project" && !await utils.UserManager.projectExists(target)) {
-            return utils.error(res, 404, "Project not found");
+        } else if (type == "project") {
+            if (!await utils.UserManager.projectExists(target)) {
+                return utils.error(res, 404, "Project not found");
+            }
+
+            target = (await utils.UserManager.getProjectMetadata(target)).title;
         }
 
         const reporterID = await utils.UserManager.getIDByUsername(username);
