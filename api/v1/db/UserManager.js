@@ -1959,16 +1959,18 @@ class UserManager {
                     as: "followerInfo"
                 }
             },
-            // make sure the follower is not banned
-            {
-                $match: { "followerInfo.banned": false },
-            },
             {
                 $addFields: {
                     "follower": {
                         id: "$follower",
-                        username: { $arrayElemAt: ["$followerInfo.username", 0] }
+                        username: { $arrayElemAt: ["$followerInfo.username", 0] },
+                        banned: { $arrayElemAt: ["$followerInfo.permBanned", 0] }
                     }
+                }
+            },
+            {
+                $match: {
+                    "follower.banned": false
                 }
             },
             {
