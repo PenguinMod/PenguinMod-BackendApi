@@ -899,9 +899,17 @@ class UserManager {
         await this.reports.deleteMany({ reportee: user_id });
 
         if (remove_follows) {
-            // remove all references to the user in the followers collection
+            // get all references to the user in the followers collection
+
+            const following = await this.followers.find({ follower: user_id }).toArray();
+
+            for (const follow of following) {
+                await this.followers.deleteOne({ _id: follow._id });
+                // decrement the following count of the follower
+                await this.users.updateOne({ id: follow.follower }, { $inc: { following: -1 } });
+            }
+
             await this.followers.deleteMany({ target: user_id });
-            await this.followers.deleteMany({ follower: user_id });
         }
     }
 
@@ -1950,6 +1958,10 @@ class UserManager {
                     foreignField: "id",
                     as: "followerInfo"
                 }
+            },
+            // make sure the follower is not banned
+            {
+                $match: { "followerInfo.banned": false },
             },
             {
                 $addFields: {
