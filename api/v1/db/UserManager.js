@@ -4118,37 +4118,20 @@ class UserManager {
         // what this means: go through the followers. if they are banned, remove them.
         const id = await this.getIDByUsername(username);
 
-        const followers = await this.followers.aggregate([
-            {
-                $match: { target: id }
-            },
-            {
-                $lookup: {
-                    from: "users",
-                    localField: "follower",
-                    foreignField: "id",
-                    as: "userInfo"
-                }
-            },
-            {
-                $addFields: {
-                    "userInfo": { $arrayElemAt: ["$userInfo", 0] }
-                },
-            },
-            // we want only users whose firstLogin is between 500-2000 lower than lastLogin
-            {
-                $match: { $expr: { $gte: [{ $subtract: ["$userInfo.lastLogin", "$userInfo.firstLogin"] }, 500] } }
-            },
-            {
-                $match: { $expr: { $lte: [{ $subtract: ["$userInfo.lastLogin", "$userInfo.firstLogin"] }, 10000] } }
-            }
-        ])
-        .toArray();
+        const followers = await this.followers.find({ target: id }).toArray();
 
-        // ban all the followers
         for (const follower of followers) {
-            await this.setPermBanned(await this.getUsernameByID(follower.follower), true, "Bot account", true);
+            const user = await this.users.findOne({ id: follower.follower });
+
+            if (user.permBanned) {
+                await this.followers.updateOne({ follower: follower.follower, target: id }, { $set: { active: false } });
+            }
         }
+
+        // count the amount of followers
+        const count = await this.followers.countDocuments({ target: id, active: true });
+
+        await this.users.updateOne({ id: id }, { $set: { followers: count } });
     }
 }
 
