@@ -10,7 +10,7 @@ module.exports = (app, utils) => {
         }
 
         const report = packet.report;
-        const target = String(packet.target).toLowerCase();
+        let target = String(packet.target).toLowerCase();
         const type = packet.type;
 
         if (!report || !type) {
