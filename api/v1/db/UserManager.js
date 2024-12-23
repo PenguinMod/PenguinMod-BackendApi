@@ -10,6 +10,7 @@ const fs = require('fs');
 const path = require('path');
 var prompt = require('prompt-sync')();
 const Mailjet = require('node-mailjet');
+const { count } = require('node:console');
 
 const basePFP = fs.readFileSync(path.join(__dirname, "./penguin.png"));
 
@@ -3377,6 +3378,9 @@ class UserManager {
                 $limit: pageSize
             },
             {
+                $sort: { count: -1 }
+            },
+            {
                 $lookup: {
                     from: "projects",
                     localField: "_id",
@@ -3460,6 +3464,9 @@ class UserManager {
             },
             {
                 $limit: pageSize
+            },
+            {
+                $sort: { count: -1 }
             },
             {
                 $lookup: {
