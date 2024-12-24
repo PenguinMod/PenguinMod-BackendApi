@@ -3038,19 +3038,9 @@ class UserManager {
         switch (type) {
             case "featured":
                 aggregateList.push({
-                    $match: { featured: true },
-                }, {
-                    $match: { $or: [
-                        { title: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } },
-                        { instructions: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } },
-                        { notes: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } }
-                    ] },
-                });
-                break;
-            case "featured":
-                aggregateList.push({
                     $match: { featured: true }
-                }, {
+                },
+                {
                     $match: { $or: [
                         { title: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } },
                         { instructions: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } },
@@ -3060,13 +3050,14 @@ class UserManager {
                 // dont break - we still sort by newest
             case "newest":
                 aggregateList.push({
-                    $sort: { lastUpdate: -1 }
-                }, {
                     $match: { $or: [
                         { title: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } },
                         { instructions: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } },
                         { notes: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } }
                     ] },
+                },
+                {
+                    $sort: { lastUpdate: -1 }
                 });
                 break;
             default:
