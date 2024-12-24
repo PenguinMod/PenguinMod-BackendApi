@@ -3046,8 +3046,11 @@ class UserManager {
                         { instructions: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } },
                         { notes: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } }
                     ] },
+                },
+                {
+                    $sort: { date: -1 }
                 });
-                // dont break - we still sort by newest
+                break;
             case "newest":
                 aggregateList.push({
                     $match: { $or: [
