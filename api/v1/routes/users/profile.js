@@ -9,25 +9,30 @@ module.exports = (app, utils) => {
 
         let loggedIn = await utils.UserManager.loginWithToken(username, token);
 
-        if (!await utils.UserManager.existsByUsername(target)) {
+        const user_data = await utils.UserManager.getUserData(username);
+
+        if (!user_data) {
             utils.error(res, 404, "NotFound")
             return;
         }
 
         let isMod = false;
         if (loggedIn)
-            isMod = await utils.UserManager.isAdmin(username) || await utils.UserManager.isModerator(username);
+            isMod = user_data.moderator || user_data.admin;
 
-        if (await utils.UserManager.isBanned(target) && username !== target && !isMod) {
+        if ((user_data.permBanned || user_data.unbanTime > Date.now()) && username !== target && !isMod) {
             utils.error(res, 404, "NotFound")
             return;
         }
 
-        const privateProfile = await utils.UserManager.isPrivateProfile(target);
-        const canFollowingSeeProfile = await utils.UserManager.canFollowingSeeProfile(target);
+        const privateProfile = user_data.privateProfile;
+        const canFollowingSeeProfile = user_data.allowFollowingView;
 
         let user = {
-            username: await utils.UserManager.getRealUsername(target),
+            success: false,
+            id: targetID,
+            username: target,
+            real_username: user_data.real_username,
             badges: [],
             donator: false,
             rank: 0,
@@ -36,11 +41,9 @@ module.exports = (app, utils) => {
             myFeaturedProjectTitle: "",
             followers: 0,
             canrankup: false,
-            projects: 0,
             privateProfile,
             canFollowingSeeProfile,
             isFollowing: false,
-            success: false
         };
 
         if (loggedIn)
@@ -91,8 +94,10 @@ module.exports = (app, utils) => {
         const bio = await utils.UserManager.getBio(target);
 
         user = {
+            success: true,
             id: targetID,
             username: target,
+            real_username: user_data.real_username,
             badges,
             donator: isDonator,
             rank,
@@ -101,11 +106,9 @@ module.exports = (app, utils) => {
             myFeaturedProjectTitle,
             followers: followers,
             canrankup: canRequestRankUp && rank !== 1,
-            projects: userProjects.length, // NOTE: dont use this shit its just gonna return 0-3
             privateProfile,
             canFollowingSeeProfile,
             isFollowing: user.isFollowing,
-            success: true
         };
 
         res.status(200);

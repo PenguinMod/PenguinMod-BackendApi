@@ -59,7 +59,7 @@ class UserManager {
         }
         this.projectStats = this.db.collection('projectStats');
         this.messages = this.db.collection('messages');
-        this.oauthStates = this.db.collection('oauthStates'); // needed bc load balancer will split requests so needs to be copied to all servers
+        this.oauthStates = this.db.collection('oauthStates');
         await this.oauthStates.createIndex({ 'expireAt': 1 }, { expireAfterSeconds: 60 * 5 }); // give 5 minutes
         this.userFeed = this.db.collection('userFeed');
         await this.userFeed.createIndex({ 'expireAt': 1 }, { expireAfterSeconds: Number(process.env.FeedExpirationTime) });
@@ -2419,7 +2419,7 @@ class UserManager {
      * @async
      */
     async verifyOAuth2State(state) {
-        const result = await this.oauthStates.findOne({ state: state });
+        const result = await this.oauthStates.findOne({ state: state, expireAt: { $gt: Date.now() } });
 
         // now get rid of the state cuz uh we dont need it anymore
 
@@ -2823,12 +2823,7 @@ class UserManager {
             }
 
             for (const customVar in target.customVars) {
-                newTarget.customVars.push({
-                    name: target.customVars[customVar].name,
-                    value: target.customVars[customVar].value,
-                    type: target.customVars[customVar].type,
-                    id: target.customVars[customVar].id
-                });
+                newTarget.customVars.push(target.customVars[customVar]);
             }
 
             for (const block in target.blocks) {
@@ -2900,8 +2895,8 @@ class UserManager {
                 id: json.monitors[monitor].id,
                 mode: json.monitors[monitor].mode,
                 opcode: json.monitors[monitor].opcode,
-                params: json.monitors[monitor].params,
-                spriteName: json.monitors[monitor].spriteName || null,
+                params: {},
+                spriteName: json.monitors[monitor].spriteName || "",
                 value: json.monitors[monitor].value,
                 width: json.monitors[monitor].width,
                 height: json.monitors[monitor].height,
@@ -2911,6 +2906,10 @@ class UserManager {
                 sliderMin: json.monitors[monitor].sliderMin,
                 sliderMax: json.monitors[monitor].sliderMax,
                 isDiscrete: json.monitors[monitor].isDiscrete
+            }
+
+            for (const param in json.monitors[monitor].params) {
+                newMonitor.params[param] = JSON.parse(json.monitors[monitor].params[param]);
             }
 
             newJson.monitors.push(newMonitor);
