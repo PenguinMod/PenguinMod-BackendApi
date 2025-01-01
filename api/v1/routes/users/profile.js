@@ -73,12 +73,12 @@ module.exports = (app, utils) => {
             }
         }
 
-        const badges = await utils.UserManager.getBadges(target);
+        const badges = user_data.badges;
         const isDonator = badges.includes('donator');
 
-        const rank = await utils.UserManager.getRank(target);
+        const rank = user_data.rank;
 
-        const signInDate = await utils.UserManager.getFirstLogin(target);
+        const signInDate = user_data.firstLogin;
 
         const userProjects = await utils.UserManager.getProjectsByAuthor(targetID, 0, 3, true, true);
 
