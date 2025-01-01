@@ -30,7 +30,7 @@ module.exports = (app, utils) => {
 
         let user = {
             success: false,
-            id: targetID,
+            id: user_data.id,
             username: target,
             real_username: user_data.real_username,
             badges: [],
@@ -49,7 +49,7 @@ module.exports = (app, utils) => {
         if (loggedIn)
             user.isFollowing = await utils.UserManager.isFollowing(username, target);
 
-        const targetID = await utils.UserManager.getIDByUsername(target);
+        const targetID = user_data.id;
 
         if (privateProfile) {
             if (!loggedIn) {
