@@ -2895,7 +2895,7 @@ class UserManager {
                 id: json.monitors[monitor].id,
                 mode: json.monitors[monitor].mode,
                 opcode: json.monitors[monitor].opcode,
-                params: {},
+                params: json.monitors[monitor].params,
                 spriteName: json.monitors[monitor].spriteName || "",
                 value: json.monitors[monitor].value,
                 width: json.monitors[monitor].width,
@@ -2909,7 +2909,7 @@ class UserManager {
             }
 
             for (const param in json.monitors[monitor].params) {
-                newMonitor.params[param] = JSON.parse(json.monitors[monitor].params[param]);
+                newMonitor.params[param] = json.monitors[monitor].params[param];
             }
 
             newJson.monitors.push(newMonitor);
