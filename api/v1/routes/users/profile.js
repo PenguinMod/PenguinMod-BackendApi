@@ -9,9 +9,10 @@ module.exports = (app, utils) => {
 
         let loggedIn = await utils.UserManager.loginWithToken(username, token);
 
+        const target_data = await utils.UserManager.getUserData(target);
         const user_data = await utils.UserManager.getUserData(username);
 
-        if (!user_data) {
+        if (!target_data) {
             utils.error(res, 404, "NotFound")
             return;
         }
@@ -20,19 +21,19 @@ module.exports = (app, utils) => {
         if (loggedIn)
             isMod = user_data.moderator || user_data.admin;
 
-        if ((user_data.permBanned || user_data.unbanTime > Date.now()) && username !== target && !isMod) {
+        if ((target_data.permBanned || target_data.unbanTime > Date.now()) && username !== target && !isMod) {
             utils.error(res, 404, "NotFound")
             return;
         }
 
-        const privateProfile = user_data.privateProfile;
-        const canFollowingSeeProfile = user_data.allowFollowingView;
+        const privateProfile = target_data.privateProfile;
+        const canFollowingSeeProfile = target_data.allowFollowingView;
 
         let user = {
             success: false,
-            id: user_data.id,
+            id: target_data.id,
             username: target,
-            real_username: user_data.real_username,
+            real_username: target_data.real_username,
             badges: [],
             donator: false,
             rank: 0,
@@ -46,10 +47,10 @@ module.exports = (app, utils) => {
             isFollowing: false,
         };
 
+        const usernameID = await utils.UserManager.getIDByUsername(username);
+        const targetID = target_data.id;
         if (loggedIn)
-            user.isFollowing = await utils.UserManager.isFollowing(username, target);
-
-        const targetID = user_data.id;
+            user.isFollowing = await utils.UserManager.isFollowing(usernameID, targetID);
 
         if (privateProfile) {
             if (!loggedIn) {
@@ -60,7 +61,6 @@ module.exports = (app, utils) => {
             }
 
             if (username !== target) {
-                const usernameID = await utils.UserManager.getIDByUsername(username);
             
                 const isFollowing = await utils.UserManager.isFollowing(usernameID, targetID);
 
@@ -73,12 +73,12 @@ module.exports = (app, utils) => {
             }
         }
 
-        const badges = user_data.badges;
+        const badges = target_data.badges;
         const isDonator = badges.includes('donator');
 
-        const rank = user_data.rank;
+        const rank = target_data.rank;
 
-        const signInDate = user_data.firstLogin;
+        const signInDate = target_data.firstLogin;
 
         const userProjects = await utils.UserManager.getProjectsByAuthor(targetID, 0, 3, true, true);
 
@@ -97,7 +97,7 @@ module.exports = (app, utils) => {
             success: true,
             id: targetID,
             username: target,
-            real_username: user_data.real_username,
+            real_username: target_data.real_username,
             badges,
             donator: isDonator,
             rank,
