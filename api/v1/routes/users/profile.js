@@ -47,10 +47,11 @@ module.exports = (app, utils) => {
             isFollowing: false,
         };
 
-        const usernameID = await utils.UserManager.getIDByUsername(username);
         const targetID = target_data.id;
-        if (loggedIn)
+        if (loggedIn) {
+            const usernameID = await utils.UserManager.getIDByUsername(username);
             user.isFollowing = await utils.UserManager.isFollowing(usernameID, targetID);
+        }
 
         if (privateProfile) {
             if (!loggedIn) {
@@ -61,7 +62,7 @@ module.exports = (app, utils) => {
             }
 
             if (username !== target) {
-            
+                const usernameID = await utils.UserManager.getIDByUsername(username);
                 const isFollowing = await utils.UserManager.isFollowing(usernameID, targetID);
 
                 if (!isFollowing && !canFollowingSeeProfile && !isMod) {
