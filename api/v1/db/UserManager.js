@@ -2991,6 +2991,49 @@ class UserManager {
 
         return isIncluded;
     };
+    async validateAreProjectExtensionsAllowed(extensions, extensionURLs, username) {
+        const isAdmin = await this.isAdmin(username);
+        const isModerator = await this.isModerator(username);
+
+        // Note, this does make the above function useless. Not sure if there's any need to keep it yet.
+        const extensionsConfig = await this.illegalList.findOne({id: "legalExtensions"});
+
+        // check the extensions
+        const userRank = await this.getRank(username);
+        if (userRank < 1 && !isAdmin && !isModerator) {
+            const isUrlExtension = (extId) => {
+                if (!extensionURLs) return false;
+                return (extId in extensionURLs);
+            };
+
+            if (extensions && !isAdmin && !isModerator) {
+                for (let extension of extensions) {
+                    if (isUrlExtension(extension)) { // url extension names can be faked (if not trusted source)
+                        let found = false;
+                        for (let source of extensionsConfig.items) {
+                            // http and localhost urls shouldnt be allowed anyway, and :// means no extension ID should ever collide with this
+                            if (!source.startsWith("https://")) continue;
+                            // Still using startsWith since it allows for an entire URL to be whitelisted if neccessary.
+                            if (extensionURLs[extension].startsWith(source)) {
+                                found = true;
+                            }
+                        }
+                        if (!found) {
+                            return [false, extension];
+                        } else {
+                            continue;
+                        }
+                    }
+                    
+                    if (!extensionsConfig.items.includes(extension)) {
+                        return [false, extension];
+                    }
+                }
+            }
+        }
+
+        return [true];
+    }
 
     /**
      * Make a token for a user

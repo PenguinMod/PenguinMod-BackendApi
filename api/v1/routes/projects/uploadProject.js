@@ -141,34 +141,10 @@ module.exports = (app, utils) => {
         }
 
         // check the extensions
-        const userRank = await utils.UserManager.getRank(username);
-        if (userRank < 1 && !isAdmin && !isModerator) {
-            const isUrlExtension = (extId) => {
-                if (!jsonFile.extensionURLs) return false;
-                return (extId in jsonFile.extensionURLs);
-            };
-
-            if (jsonFile.extensions) {
-                for (let extension of jsonFile.extensions) {
-                    if (isUrlExtension(extension)) { // url extension names can be faked (if not trusted source)
-                        let found = false;
-                        for (let source of utils.allowedSources) {
-                            if (jsonFile.extensionURLs[extension].startsWith(source)) {
-                                found = true;
-                            }
-                        }
-                        if (!found) {
-                            await unlink();
-                            return utils.error(res, 400, `Extension not allowed: ${extension}`);
-                        }
-                    }
-                    
-                    if (!await utils.UserManager.checkExtensionIsAllowed(extension)) {
-                        await unlink();
-                        return utils.error(res, 400, `Extension not allowed: ${extension}`);
-                    }
-                }
-            }
+        const [areExtensionsAllowed, blockedExtension] = await utils.UserManager.validateAreProjectExtensionsAllowed(jsonFile.extensions, jsonFile.extensionURLs, username);
+        if (!areExtensionsAllowed) {
+            await unlink();
+            return utils.error(res, 400, `Extension not allowed: ${blockedExtension}`);
         }
 
         if (!remix || typeof remix !== "string") {

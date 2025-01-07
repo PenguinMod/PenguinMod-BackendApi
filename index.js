@@ -170,7 +170,6 @@ const UserManager = new um();
         error: error,
         env: process.env,
         upload: upload,
-        allowedSources: ["https://extensions.penguinmod.com", "https://extensions.turbowarp.org"],
         uploadCooldown: Number(process.env.UploadCooldown) || 1000 * 60 * 8,
         unlinkAsync: promisify(fs.unlink),
         path: path,
