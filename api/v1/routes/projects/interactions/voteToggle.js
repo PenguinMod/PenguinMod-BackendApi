@@ -54,7 +54,7 @@ module.exports = (app, utils) => {
         const author_username = metadata.author.username;
 
         if (votes >= utils.env.LoveAmount && !await utils.UserManager.hasBadge(author_username, "votes")) {
-            await utils.UserManager.addBadge(authorUsername, "votes");
+            await utils.UserManager.addBadge(author_username, "votes");
             await utils.UserManager.sendMessage(authorID, {type: "newBadge", badge: "votes"}, false, projectID);
         }
         
