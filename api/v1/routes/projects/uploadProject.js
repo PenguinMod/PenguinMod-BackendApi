@@ -178,7 +178,9 @@ module.exports = (app, utils) => {
             packet.rating = "";
         }
 
-        const thumbnail = fs.readFileSync(req.files.thumbnail[0].path);
+        const unsized_thumbnail = fs.readFileSync(req.files.thumbnail[0].path);
+
+        const thumbnail = await sharp(unsized_thumbnail).resize(240, 160).toBuffer();
 
         // ATODO: use mmmagic to verify this is a valid image
 
