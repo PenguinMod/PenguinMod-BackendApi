@@ -55,7 +55,7 @@ module.exports = (app, utils) => {
 
         if (votes >= utils.env.LoveAmount && !await utils.UserManager.hasBadge(author_username, "votes")) {
             await utils.UserManager.addBadge(author_username, "votes");
-            await utils.UserManager.sendMessage(authorID, {type: "newBadge", badge: "votes"}, false, projectID);
+            await utils.UserManager.sendMessage(metadata.author.id, {type: "newBadge", badge: "votes"}, false, projectID);
         }
         
         return res.send({ success: true });
