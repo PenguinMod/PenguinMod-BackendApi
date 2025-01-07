@@ -49,6 +49,11 @@ module.exports = (app, utils) => {
                 await utils.UserManager.sendMessage(author.id, {type: "newBadge", badge: "featured"}, false, projectID);
             }
         }
+
+        if (votes >= utils.env.LoveAmount && !await utils.UserManager.hasBadge(authorUsername, "votes")) {
+            await utils.UserManager.addBadge(authorUsername, "votes");
+            await utils.UserManager.sendMessage(authorID, {type: "newBadge", badge: "votes"}, false, projectID);
+        }
         
         return res.send({ success: true });
     });
