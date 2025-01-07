@@ -1,4 +1,5 @@
 const fs = require('fs');
+const sharp = require('sharp');
 
 module.exports = (app, utils) => {
     app.post('/api/v1/projects/updateProject', utils.cors(), utils.upload.fields([
