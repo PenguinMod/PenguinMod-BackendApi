@@ -197,7 +197,7 @@ module.exports = (app, utils) => {
         const unsized_thumbnail = !!req.files.thumbnail ? fs.readFileSync(req.files.thumbnail[0].path) : null;
 
         // resize
-        const thumbnail = !!unsized_thumbnail ? await sharp(unsized_thumbnail).resize(240, 160).toBuffer() : null;
+        const thumbnail = !!unsized_thumbnail ? await sharp(unsized_thumbnail).resize(240, 180).toBuffer() : null;
 
         // ATODO: use mmmagic to verify this is a valid image
 
