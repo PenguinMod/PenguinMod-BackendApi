@@ -45,7 +45,7 @@ module.exports = (app, utils) => {
             return;
         }
 
-        const state = await utils.UserManager.generatePasswordResetState();
+        const state = await utils.UserManager.generatePasswordResetState(email);
 
         const verifyEmailUrl = `https://projects.penguinmod.com/api/v1/resetpassword/verifyemail?email=${email}&state=${state}`;
 

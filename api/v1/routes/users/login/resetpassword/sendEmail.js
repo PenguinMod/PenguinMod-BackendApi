@@ -71,7 +71,7 @@ module.exports = (app, utils) => {
             return;
         }
 
-        const state = await utils.UserManager.generatePasswordResetState();
+        const state = await utils.UserManager.generatePasswordResetState(email);
 
         const forgotPasswordUrl = `${utils.env.HomeURL}/resetpassword?state=${state}&email=${email}`;
 

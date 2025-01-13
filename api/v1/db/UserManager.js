@@ -4113,19 +4113,20 @@ class UserManager {
         return result.sentAt;
     }
 
-    async generatePasswordResetState(prefix="") {
-        const state = randomBytes(32).toString("hex") + prefix;
+    async generatePasswordResetState(email) {
+        const state = randomBytes(32).toString("hex");
 
         await this.passwordResetStates.insertOne({
             state: state,
+            email: email,
             expireAt: Date.now() + 1000 * 60 * 60 * 2
         });
 
         return state;
     }
 
-    async verifyPasswordResetState(state) {
-        const result = await this.passwordResetStates.findOne({ state: state });
+    async verifyPasswordResetState(state, email) {
+        const result = await this.passwordResetStates.findOne({ state: state, email: email });
 
         // now get rid of the state cuz uh we dont need it anymore
 

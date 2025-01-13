@@ -5,7 +5,7 @@ module.exports = (app, utils) => {
         const email = packet.email;
         const state = packet.state;
 
-        if (!await utils.UserManager.verifyPasswordResetState(state)) {
+        if (!await utils.UserManager.verifyPasswordResetState(state, email)) {
             utils.error(res, 401, "InvalidState. Your link has most likely expired, please try again.");
             return;
         }

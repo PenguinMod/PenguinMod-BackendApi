@@ -6,7 +6,7 @@ module.exports = (app, utils) => {
         const state = packet.state;
         const password = packet.password;
 
-        if (!await utils.UserManager.verifyPasswordResetState(state)) {
+        if (!await utils.UserManager.verifyPasswordResetState(state, email)) {
             utils.error(res, 401, "InvalidState");
             return;
         }
