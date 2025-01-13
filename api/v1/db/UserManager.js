@@ -4130,10 +4130,10 @@ class UserManager {
 
         // now get rid of the state cuz uh we dont need it anymore
 
-        if (result)
+        if (!!result)
             await this.passwordResetStates.deleteOne({ state: state })
 
-        return result ? true : false;
+        return !!result ? true : false;
     }
 
     async getUserCustomization(username) {
