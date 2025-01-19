@@ -33,7 +33,7 @@ module.exports = (app, utils) => {
         })
         .catch(e => {
             utils.error(res, 500, "OAuthServerDidNotRespond");
-            return new Promise();
+            return new Promise((resolve, reject) => resolve());
         })
 
         if (!user) {

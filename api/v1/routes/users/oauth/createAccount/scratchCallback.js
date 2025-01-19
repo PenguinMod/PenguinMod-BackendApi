@@ -32,7 +32,7 @@ module.exports = (app, utils) => {
             return {"user": await res.json(), "status": res.status};
         }).catch(e => {
             utils.error(res, 500, "OAuthServerDidNotRespond");
-            return new Promise();
+            return new Promise((resolve, reject) => resolve());
         });
 
         if (!username) {
