@@ -142,11 +142,10 @@ class UserManager {
                         if (err) {
                             console.log("Error making bucket:", err);
                             reject("error making bucket: " + err);
-                        } else {
-                            resolve();
                         }
                     });
                 }
+                resolve();
             });
         });
     }
