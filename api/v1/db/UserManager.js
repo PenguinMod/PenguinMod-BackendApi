@@ -96,13 +96,13 @@ class UserManager {
             secretKey: process.env.MinioClientSecret
         });
         // project bucket
-        this._makeBucket("projects");
+        await this._makeBucket("projects");
         // project thumbnail bucket
-        this._makeBucket("project-thumbnails");
+        await this._makeBucket("project-thumbnails");
         // project asset bucket
-        this._makeBucket("project-assets");
+        await this._makeBucket("project-assets");
         // pfp bucket
-        this._makeBucket("profile-pictures");
+        await this._makeBucket("profile-pictures");
 
         // set life cycle policy
 
@@ -129,20 +129,25 @@ class UserManager {
         await this.setLifecyclePolicy("project-assets", policy);
     }
 
-    async _makeBucket(bucketName) {
-        this.minioClient.bucketExists(bucketName, (err, exists) => {
-            if (err) {
-                console.log("Error checking if bucket exists:", err);
-                return;
-            }
-            if (!exists) {
-                this.minioClient.makeBucket(bucketName, (err) => {
-                    if (err) {
-                        console.log("Error making bucket:", err);
-                        return;
-                    }
-                });
-            }
+    _makeBucket(bucketName) {
+        return new Promise((resolve, reject) => {
+            this.minioClient.bucketExists(bucketName, (err, exists) => {
+                if (err) {
+                    console.log("Error checking if bucket exists:", err);
+                    reject("error making bucket: " + err);
+                    return;
+                }
+                if (!exists) {
+                    this.minioClient.makeBucket(bucketName, (err) => {
+                        if (err) {
+                            console.log("Error making bucket:", err);
+                            reject("error making bucket: " + err);
+                        } else {
+                            resolve();
+                        }
+                    });
+                }
+            });
         });
     }
 
