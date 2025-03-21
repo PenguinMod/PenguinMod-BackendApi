@@ -1,0 +1,41 @@
+services:
+    app:
+        build:
+            context: ${DOCKER_CURRENT_DIR_LOCATION}
+        ports:
+            - ${PORT}:${PORT}
+        volumes:
+            - ${DOCKER_CURRENT_DIR_LOCATION}
+        networks:
+            - sigma_network
+        restart: always
+
+    mongo:
+        restart: always
+        image: mongo:4.2.0
+        volumes:
+            - mongo_data:/data/db
+        networks:
+            - sigma_network
+        expose:
+            - 27017
+    minio:
+        image: quay.io/minio/minio
+        command: server /data --console-address ":9001"
+        environment:
+            - MINIO_ROOT_USER=${MinioClientID}
+            - MINIO_ROOT_PASSWORD=${MinioClientSecret}
+        volumes:
+            - minio_data:/data
+        networks:
+            - sigma_network
+        ports:
+            - 9000:9000
+            - 9001:9001
+
+networks:
+    sigma_network:
+
+volumes:
+    mongo_data:
+    minio_data:
