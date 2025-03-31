@@ -3320,7 +3320,6 @@ class UserManager {
 
     /**
      * Specialized search for a query, like { author: abc } or another metadata item, (you can also use cool mongodb stuff!!)
-     * @param {boolean} show_nonranked Show nonranked users
      * @param {Array<Object>} query Query to search for, will be expanded with ...
      * @param {number} page Page of projects to get
      * @param {number} pageSize Amount of projects to get

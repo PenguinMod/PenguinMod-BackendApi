@@ -8,8 +8,8 @@ module.exports = (app, utils) => {
         const page = utils.handle_page(packet.page);
         const reverse = packet.reverse || false;
 
-        // TODO: temporary fix. PLEASE fix soon.
-        const projects = await utils.UserManager.getProjects(false, page, Number(utils.env.PageSize), Number(utils.env.MaxPageSize), reverse);
+        // TODO: check if the user is a mod & therefore can see unranked projects.
+        const projects = await utils.UserManager.getProjects(true, page, Number(utils.env.PageSize), Number(utils.env.MaxPageSize), reverse);
 
         res.status(200);
         res.setHeader('Content-Type', 'application/json');
