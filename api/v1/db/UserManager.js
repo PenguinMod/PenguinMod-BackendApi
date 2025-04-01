@@ -1319,6 +1319,7 @@ class UserManager {
 
         if (!show_nonranked) {
             // get author data
+            console.log("thats not nice");
             pipeline.push(
                 {
                     $lookup: {
