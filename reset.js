@@ -1,3 +1,5 @@
+console.log("----------\n-DISABLED-\n----------")
+/*
 const um = require('./api/v1/db/UserManager');
 
 const UserManager = new um();
@@ -11,3 +13,4 @@ const UserManager = new um();
     console.log("Database reset complete.")
     process.exit(0);
 })();
+*/
