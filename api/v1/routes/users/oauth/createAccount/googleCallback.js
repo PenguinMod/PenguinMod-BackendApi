@@ -55,10 +55,17 @@ module.exports = (app, utils) => {
             "Sharp",
             "Tricky",
             "Red",
+            "Orange",
             "Yellow",
             "Green",
             "Blue",
-        ]
+            "Purple",
+            "Violet",
+            "Toon",
+            "Soft",
+            "Smart",
+            "Round",
+        ];
 
         const nameGroup2 = [
             "Bed",
@@ -71,8 +78,12 @@ module.exports = (app, utils) => {
             "Pheasant",
             "Owl",
             "Bear",
-            "Horse"
-        ]
+            "Horse",
+            "Pig",
+            "Eagle",
+            "Cat",
+            "Mouse"
+        ];
 
         const name1 = nameGroup1[Math.floor(Math.random() * nameGroup1.length)];
         const name2 = nameGroup2[Math.floor(Math.random() * nameGroup2.length)];
