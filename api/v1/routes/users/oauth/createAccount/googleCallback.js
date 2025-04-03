@@ -38,7 +38,7 @@ module.exports = (app, utils) => {
         
         const id = user.data.resourceName.split('/')[1];
 
-        if (await utils.UserManager.getUserIDByOAuthID("github", username.user.id)) {
+        if (await utils.UserManager.getUserIDByOAuthID("google", id)) {
             utils.error(res, 400, "AccountExists");
             return;
         }
