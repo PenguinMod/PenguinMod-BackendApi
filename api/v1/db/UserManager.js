@@ -216,7 +216,8 @@ class UserManager {
         }
 
         const illegalWordingError = async (text, type) => {
-            if (await this.checkForIllegalWording(text)) {
+            const trigger = await this.checkForIllegalWording(text);
+            if (trigger) {
                 utils.error(res, 400, "IllegalWordsUsed")
     
                 const illegalWordIndex = await this.getIndexOfIllegalWording(text);
@@ -227,6 +228,7 @@ class UserManager {
     
                 utils.logs.sendHeatLog(
                     before + "\x1b[31;1m" + illegalWord + "\x1b[0m" + after,
+                    trigger,
                     type,
                     username
                 )
@@ -237,7 +239,8 @@ class UserManager {
         }
 
         const slightlyIllegalWordingError = async (text, type) => {
-            if (await this.checkForSlightlyIllegalWording(text)) {
+            let trigger = await this.checkForSlightlyIllegalWording(text);
+            if (trigger) {
                 const illegalWordIndex = await this.getIndexOfSlightlyIllegalWording(text);
     
                 const before = text.substring(0, illegalWordIndex[0]);
@@ -246,6 +249,7 @@ class UserManager {
     
                 utils.logs.sendHeatLog(
                     before + "\x1b[33;1m" + illegalWord + "\x1b[0m" + after,
+                    trigger,
                     type,
                     username,
                     0xffbb00,
@@ -2239,7 +2243,7 @@ class UserManager {
     /**
      * Check for illegal wording on text
      * @param {string} text The text to check for illegal wording 
-     * @returns {Promise<boolean>} True if the text contains illegal wording, false if not
+     * @returns {Promise<String>} Empty if there is nothing illegal, not empty if it was triggered (returns the trigger)
      * @async
      */
     async checkForIllegalWording(text) {
@@ -2260,7 +2264,7 @@ class UserManager {
 
         for (const item of joined) {
             if (no_spaces.includes(item)) {
-                return true;
+                return item;
             }
         }
 
@@ -2268,11 +2272,11 @@ class UserManager {
             const with_spaces = " " + item + " ";
 
             if (text.includes(with_spaces)) {
-                return true;
+                return item;
             }
         }
 
-        return false;
+        return "";
     }
 
     /**
@@ -2310,7 +2314,7 @@ class UserManager {
     /**
      * Check for slightly illegal wording on text
      * @param {string} text The text to check for slightly illegal wording
-     * @returns {Promise<boolean>} True if the text contains slightly illegal wording, false if not
+     * @returns {Promise<String>} same as normal illegal
      * @async
      */
     async checkForSlightlyIllegalWording(text) {
@@ -2324,18 +2328,18 @@ class UserManager {
         
         for (const item of potentiallyUnsafeWords) {
             if (text.includes(item)) {
-                return true;
+                return item;
             }
         }
 
         for (const item of potentiallyUnsafeWordsSpacedOut) {
             const with_spaces = " " + item + " ";
             if (text.includes(with_spaces)) {
-                return true;
+                return item;
             }
         }
 
-        return false;
+        return "";
     }
 
     /**

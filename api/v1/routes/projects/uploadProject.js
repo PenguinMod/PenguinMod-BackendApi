@@ -42,7 +42,8 @@ module.exports = (app, utils) => {
         }
 
         const illegalWordingError = async (text, type) => {
-            if (await utils.UserManager.checkForIllegalWording(text)) {
+            const trigger = await utils.UserManager.checkForIllegalWording(text);
+            if (trigger) {
                 utils.error(res, 400, "IllegalWordsUsed")
     
                 const illegalWordIndex = await utils.UserManager.getIndexOfIllegalWording(text);
@@ -53,6 +54,7 @@ module.exports = (app, utils) => {
     
                 utils.logs.sendHeatLog(
                     before + "\x1b[31;1m" + illegalWord + "\x1b[0m" + after,
+                    trigger,
                     type,
                     username
                 )
@@ -63,7 +65,8 @@ module.exports = (app, utils) => {
         }
 
         const slightlyIllegalWordingError = async (text, type) => {
-            if (await utils.UserManager.checkForSlightlyIllegalWording(text)) {
+            const trigger = await this.checkForSlightlyIllegalWording(text);
+            if (trigger) {
                 const illegalWordIndex = await utils.UserManager.getIndexOfSlightlyIllegalWording(text);
     
                 const before = text.substring(0, illegalWordIndex[0]);
@@ -72,6 +75,7 @@ module.exports = (app, utils) => {
     
                 utils.logs.sendHeatLog(
                     before + "\x1b[33;1m" + illegalWord + "\x1b[0m" + after,
+                    trigger,
                     type,
                     username,
                     0xffbb00,

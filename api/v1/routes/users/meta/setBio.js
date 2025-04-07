@@ -22,7 +22,8 @@ module.exports = (app, utils) => {
             return;
         }
 
-        if (await utils.UserManager.checkForIllegalWording(bio)) {
+        let trigger = await utils.UserManager.checkForIllegalWording(bio);
+        if (trigger) {
             utils.error(res, 400, "IllegalWordsUsed")
 
             const illegalWordIndex = await utils.UserManager.getIndexOfIllegalWording(bio);
@@ -35,6 +36,7 @@ module.exports = (app, utils) => {
 
             utils.logs.sendHeatLog(
                 before + "\x1b[31;1m" + illegalWord + "\x1b[0m" + after,
+                trigger,
                 "profileBio",
                 [username, userID]
             )
@@ -42,7 +44,8 @@ module.exports = (app, utils) => {
             return;
         }
 
-        if (await utils.UserManager.checkForSlightlyIllegalWording(bio)) {
+        trigger = await this.checkForSlightlyIllegalWording(bio);
+        if (trigger) {
             const illegalWordIndex = await utils.UserManager.getIndexOfSlightlyIllegalWording(bio);
 
             const before = bio.substring(0, illegalWordIndex[0]);
@@ -53,6 +56,7 @@ module.exports = (app, utils) => {
 
             utils.logs.sendHeatLog(
                 before + "\x1b[33;1m" + illegalWord + "\x1b[0m" + after,
+                trigger,
                 "profileBio",
                 [username, userID],
                 0xffbb00,

@@ -8,7 +8,7 @@ const apiUpdatesWebhook = process.env.ApiUpdatesWebhook;
 const creationWebhook = process.env.CreationWebhook;
 const featuredWebhook = process.env.FeaturedWebhook;
 
-function sendHeatLog(text, type, location, color=0xff0000) {
+function sendHeatLog(text, trigger, type, location, color=0xff0000) {
     const body = JSON.stringify({
         embeds: [{
             title: `Filter Triggered`,
@@ -18,6 +18,10 @@ function sendHeatLog(text, type, location, color=0xff0000) {
                 {
                     name: "Type",
                     value: `\`${type}\``
+                },
+                {
+                    name: "Trigger",
+                    value: `\`${trigger}\``
                 },
                 {
                     name: "Location",
