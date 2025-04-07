@@ -138,7 +138,7 @@ const UserManager = new um();
             let combinedSize = 0;
 
             if (req.files.jsonFile) combinedSize += req.files.jsonFile[0].size;
-            if (req.files.thumbnail) combinedSize += req.files.thumbnail[0].size;
+            //if (req.files.thumbnail) combinedSize += req.files.thumbnail[0].size;
 
             if (req.files.assets)
                 for (let asset of req.files.assets)
