@@ -43,7 +43,7 @@ const MAXVIEWS = Number(process.env.MaxViews) || 10000; // it will take up to 10
 const VIEWRESETRATE = Number(process.env.ViewResetRate) || 1000 * 60 * 60; // reset every hour
 const upload = multer({
     dest: 'tmp/uploads/',
-    limits: { fileSize: ((Number(process.env.UploadSize)) || 5)  * 1024 * 1024 } // 5mb - max size per asset
+    limits: { fileSize: ((Number(process.env.UploadSize*1.75)) || 5)  * 1024 * 1024 } // 5mb - max size per asset
 });
 
 app.use(cors({
@@ -111,7 +111,7 @@ const UserManager = new um();
         res.sendFile(path.join(__dirname, 'robots.txt'));
     });
 
-    function cumulative_file_size_limit(utils) {
+    function file_size_limit(utils) {
         return async function (req, res, next) {
             const unlink = async () => {
                 if (req.files.jsonFile)
@@ -123,7 +123,17 @@ const UserManager = new um();
                 }
             }
 
-            const maxCombinedSize = (Number(process.env.CumulativeUploadSize) || 32) * 1024 * 1024;
+            const is_donator = (await utils.UserManager.getUserData(target)).badges.includes('donator');
+            const maxSingleSize = (Number(process.env.UploadSize)*(is_donator?1.75:1) || 5) * 1024 * 1024;
+
+            for (let file of req.files) {
+                if (file.size > maxSingleSize) {
+                    await unlink();
+                    return utils.error(res, 400, "Asset too big");
+                }
+            }
+
+            const maxCombinedSize = (Number(process.env.CumulativeUploadSize*(is_donator?1.75:1)) || 32) * 1024 * 1024;
             let combinedSize = 0;
 
             if (req.files.jsonFile) combinedSize += req.files.jsonFile[0].size;
@@ -185,7 +195,7 @@ const UserManager = new um();
             key: get_key
         },
         rateLimiter: rateLimit,
-        cumulative_file_size_limit: cumulative_file_size_limit,
+        file_size_limit: file_size_limit,
         cors: () => cors({
             origin: function (origin, callback) {
                 const whitelist = [process.env.HomeURL, "http://localhost:5173", "http://test.mydomain.com:5173"];
