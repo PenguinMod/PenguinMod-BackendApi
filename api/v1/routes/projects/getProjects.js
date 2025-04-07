@@ -8,8 +8,12 @@ module.exports = (app, utils) => {
         const page = utils.handle_page(packet.page);
         const reverse = packet.reverse || false;
 
-        // TODO: check if the user is a mod & therefore can see unranked projects.
-        const projects = await utils.UserManager.getProjects(true, page, Number(utils.env.PageSize), Number(utils.env.MaxPageSize), reverse);
+        const username = packet.username;
+        const token = packet.token;
+
+        const is_mod = username && token && await utils.UserManager.loginWithToken(username, token, false) && await utils.UserManager.isModerator(username)
+
+        const projects = await utils.UserManager.getProjects(is_mod, page, Number(utils.env.PageSize), Number(utils.env.MaxPageSize), reverse);
 
         res.status(200);
         res.setHeader('Content-Type', 'application/json');
