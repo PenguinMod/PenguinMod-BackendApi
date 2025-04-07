@@ -11,7 +11,7 @@ module.exports = (app, utils) => {
 
         const is_mod = username && token && await utils.UserManager.loginWithToken(username, token) && await utils.UserManager.isModeratorOrAdmin(username);
 
-        const projects = await utils.UserManager.searchProjects(true/*is_mod*/, query, type, page, Number(utils.env.PageSize));
+        const projects = await utils.UserManager.searchProjects(is_mod, query, type, page, Number(utils.env.PageSize));
 
         res.status(200);
         res.header({"Content-Type": "application/json"})
