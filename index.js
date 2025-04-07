@@ -111,7 +111,7 @@ const UserManager = new um();
         res.sendFile(path.join(__dirname, 'robots.txt'));
     });
 
-    function file_size_limit(utils) {
+    function file_size_limit(utils, username) {
         return async function (req, res, next) {
             const unlink = async () => {
                 if (req.files.jsonFile)
@@ -123,7 +123,7 @@ const UserManager = new um();
                 }
             }
 
-            const is_donator = (await utils.UserManager.getUserData(target)).badges.includes('donator');
+            const is_donator = (await utils.UserManager.getUserData(String(username)||"")).badges.includes('donator');
             const maxSingleSize = (Number(process.env.UploadSize)*(is_donator?1.75:1) || 5) * 1024 * 1024;
 
             for (let file of req.files) {
