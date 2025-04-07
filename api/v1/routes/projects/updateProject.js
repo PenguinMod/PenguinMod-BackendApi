@@ -7,7 +7,7 @@ module.exports = (app, utils) => {
         { name: 'thumbnail', maxCount: 1 },
         // assets
         { name: 'assets' }
-    ]), utils.file_size_limit(utils, req.body.username), async (req, res) => {
+    ]), utils.file_size_limit(utils, req => req.body.username), async (req, res) => {
         const unlink = async () => {
             if (req.files.jsonFile)
             await utils.unlinkAsync(req.files.jsonFile[0].path);
