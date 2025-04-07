@@ -123,7 +123,13 @@ const UserManager = new um();
                 }
             }
 
-            const is_donator = (await utils.UserManager.getUserData(target)).badges.includes('donator');
+            let is_donator = false
+            const username = (String(req.body.username)).toLowerCase();
+            const token = req.body.token;
+            if (await utils.UserManager.loginWithToken(username, token)) {
+                is_donator = (await utils.UserManager.getUserData(username)).badges.includes('donator');
+            }
+
             const maxSingleSize = (Number(process.env.UploadSize)*(is_donator?1.75:1) || 5) * 1024 * 1024;
 
             for (let file of req.files) {
