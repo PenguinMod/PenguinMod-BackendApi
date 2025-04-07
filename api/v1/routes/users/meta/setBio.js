@@ -44,7 +44,7 @@ module.exports = (app, utils) => {
             return;
         }
 
-        trigger = await this.checkForSlightlyIllegalWording(bio);
+        trigger = await utils.UserManager.checkForSlightlyIllegalWording(bio);
         if (trigger) {
             const illegalWordIndex = await utils.UserManager.getIndexOfSlightlyIllegalWording(bio);
 

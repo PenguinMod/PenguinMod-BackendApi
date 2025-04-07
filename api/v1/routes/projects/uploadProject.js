@@ -65,7 +65,7 @@ module.exports = (app, utils) => {
         }
 
         const slightlyIllegalWordingError = async (text, type) => {
-            const trigger = await this.checkForSlightlyIllegalWording(text);
+            const trigger = await utils.UserManager.checkForSlightlyIllegalWording(text);
             if (trigger) {
                 const illegalWordIndex = await utils.UserManager.getIndexOfSlightlyIllegalWording(text);
     
