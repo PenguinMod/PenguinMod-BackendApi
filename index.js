@@ -126,7 +126,8 @@ const UserManager = new um();
             const is_donator = (await utils.UserManager.getUserData(String(username(req))||"")).badges.includes('donator');
             const maxSingleSize = (Number(process.env.UploadSize)*(is_donator?1.75:1) || 5) * 1024 * 1024;
 
-            for (let file of req.files) {
+            for (let file_key in req.files) {
+                let file = req.files[file_key];
                 if (file.size > maxSingleSize) {
                     await unlink();
                     return utils.error(res, 400, "Asset too big");
