@@ -123,7 +123,8 @@ const UserManager = new um();
                 }
             }
 
-            const is_donator = (await utils.UserManager.getUserData(String(username(req))||"")).badges.includes('donator');
+            const ud = await utils.UserManager.getUserData(String(username(req))||"");
+            const is_donator = username(req) && ud && ud.badges.includes('donator');
             const maxSingleSize = (Number(process.env.UploadSize)*(is_donator?1.75:1) || 5) * 1024 * 1024;
 
             for (let file_key in req.files) {
