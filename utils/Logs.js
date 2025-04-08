@@ -42,6 +42,49 @@ function sendHeatLog(text, trigger, type, location, color=0xff0000) {
     }
 }
 
+function sendRenameLog(old_username, new_username, id) {
+    const body = JSON.stringify({
+        embeds: [{
+            title: "User has new name",
+            color: 0xa185af, // purple ish
+            description: `${old_username}'s (${id}) username is now ${new_username}`,
+            fields: [
+                {
+                    name: "Old Username",
+                    value: `\`${old_username}\``
+                },
+                {
+                    name: "New Username",
+                    value: `\`${new_username}\``
+                },
+                {
+                    name: "ID",
+                    value: `\`${id}\``
+                },
+                {
+                    name: "URL",
+                    value: `https://penguinmod.com/profile?user=${new_username}`
+                }
+            ],
+            author: {
+                name: new_username,
+                icon_url: String(`${process.env.ApiURL}/api/v1/users/getpfp?username=${new_username}`),
+                url: String("https://penguinmod.com/profile?user=" + new_username)
+            },
+            timestamp: new Date().toISOString()
+        }]
+    });
+    try {
+        fetch(adminWebhook, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body
+        });
+    } catch (e) {
+        console.error(e);
+    }
+}
+
 function sendBioUpdateLog(username, target, oldBio, newBio) {
     const body = JSON.stringify({
         content: `${target}'s bio was edited by ${username}`,
@@ -473,4 +516,5 @@ module.exports = {
     sendServerLog,
     sendCreationLog,
     sendFeatureLog,
+    sendRenameLog,
 };

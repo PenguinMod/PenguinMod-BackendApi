@@ -33,6 +33,10 @@ module.exports = (app, utils) => {
             return;
         }
 
+        const id = await utils.UserManager.getIDByUsername(username);
+
+        utils.logs.sendRenameLog(username, newUsername, id);
+
         await utils.UserManager.changeUsername(username, newUsername, String(packet.newUsername));
 
         res.status(200);
