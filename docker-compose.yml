@@ -12,7 +12,7 @@ services:
 
     mongo:
         restart: always
-        image: mongo:4.2.0
+        image: mongo:7.0.16
         volumes:
             - mongo_data:/data/db
         networks:
