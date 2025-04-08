@@ -4159,10 +4159,13 @@ class UserManager {
 
     async massBanByUsername(regex, toggle, reason="Banned by staff") {
         const users = await this.users.find({ username: { $regex: regex } }).toArray();
+        const count = users.length;
 
         for (const user of users) {
             await this.setPermBanned(user.username, toggle, reason, true);
         }
+
+        return count;
     }
 
     async verifyFollowers(username) {

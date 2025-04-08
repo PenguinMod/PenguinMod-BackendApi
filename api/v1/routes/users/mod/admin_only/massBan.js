@@ -26,7 +26,7 @@ module.exports = (app, utils) => {
 
         // dont send a message since they cant access the site anyways :bleh:
 
-        await utils.UserManager.massBanByUsername(targetRegex, toggle);
+        const count = await utils.UserManager.massBanByUsername(targetRegex, toggle);
 
         utils.logs.sendAdminLog(
             {
@@ -41,6 +41,10 @@ module.exports = (app, utils) => {
                         name: "Target Regex",
                         value: `\`${targetRegex}\``
                     },
+                    {
+                        name: "Count banned",
+                        value: `${count}`
+                    }
                 ]
             },
             {
