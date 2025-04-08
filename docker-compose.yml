@@ -19,6 +19,8 @@ services:
             - sigma_network
         expose:
             - 27017
+        logging:
+            driver: none
     minio:
         image: quay.io/minio/minio
         command: server /data --console-address ":9001"
@@ -32,6 +34,8 @@ services:
         ports:
             - 9000:9000
             - 9001:9001
+        logging:
+            driver: none
 
 networks:
     sigma_network:
