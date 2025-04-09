@@ -1183,7 +1183,7 @@ class UserManager {
             hardRejectTime: 0
         });
 
-        // minio bucket shit
+        // minio bucket stuff
         await this.minioClient.putObject("projects", id, projectBuffer);
         await this.minioClient.putObject("project-thumbnails", id, imageBuffer);
         for (const asset of assetBuffers) {
@@ -1277,7 +1277,7 @@ class UserManager {
             }}
         );
 
-        // minio bucket shit
+        // minio bucket stuff
         if (imageBuffer !== null) {
             await this.minioClient.putObject("project-thumbnails", id, imageBuffer);
         }
@@ -2924,7 +2924,7 @@ class UserManager {
         }
 
         for (const extensionData in json.antiSigmaExtensionData) {
-            // "legacy" shit
+            // "legacy" stuff
             newJson.extensionData[extensionData] = json.extensionData[extensionData].data;
         }
 

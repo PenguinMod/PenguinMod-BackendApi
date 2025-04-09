@@ -15,6 +15,10 @@
 - [ ] ratelimit renames, changing pfp, updating projects (if not already), reports, and bio updates
 - [ ] delete reports of a project when the project is deleted
 - [ ] delete reports of a user when the account is deleted
+- [ ] Rework IP ban system to because the normal ban system
+  - [ ] Account ban: allow viewing of site and but cant use account for anything or make new accounts
+  - [ ] Normal IP ban: don't allow usage of the server (current ip ban system)
+- [ ] Ban appeal system
 
 ## Studios
 

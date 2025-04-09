@@ -15,7 +15,7 @@ module.exports = (app, utils) => {
             return;
         }
 
-        const userid = state.split("_")[1]; // get the userid from the state (kinda hacky but erm shit the flip up)
+        const userid = state.split("_")[1]; // get the userid from the state (a little hacky)
 
         // now make the request
         const response = await utils.UserManager.makeOAuth2Request(code, "scratch");
