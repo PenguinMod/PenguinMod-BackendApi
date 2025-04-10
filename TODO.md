@@ -2,15 +2,14 @@
 
 ## Bugs
 
-- [ ] bug fix: [invalid json while uploading](https://discord.com/channels/1033551490331197462/1326306569368899696)
 - [ ] fix mods cant edit projects
-- [ ] fix clicking update edits brings you to a broken edit page
+- [x] fix clicking update edits brings you to a broken edit page
 
 ## Features
 
 - [ ] block people: [suggestion](https://discord.com/channels/1033551490331197462/1325445592305893470/1325533771281465405)
 - [ ] bulk read, delete, and mark unread messages (provide an array of message ids or something to the api, and the action will be done)
-- [ ] mods review project, say its good, all reports are cast aside until project is updated next\
+- [ ] mods review project, say its good, all reports are cast aside until project is updated next
 - [ ] possibly ratelimit adding votes & likes, or just changing votes & likes if adding specifically cant be ratelimited
 - [ ] ratelimit renames, changing pfp, updating projects (if not already), reports, and bio updates
 - [ ] delete reports of a project when the project is deleted
