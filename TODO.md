@@ -2,7 +2,7 @@
 
 ## Bugs
 
-- [ ] fix mods cant edit projects
+- [x] fix mods cant edit projects
 - [x] fix clicking update edits brings you to a broken edit page
 
 ## Features

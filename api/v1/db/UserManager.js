@@ -209,7 +209,7 @@ class UserManager {
      * @returns {Promise<[string, string]|boolean>} token & id if successful, false if not
      * @async
      */
-    async createAccount(username, real_username, password, email, birthday, country, utils, res) {
+    async createAccount(username, real_username, password, email, birthday, country, is_studio, utils, res) {
         const result = await this.users.findOne({ username: username });
         if (result) {
             return false;
@@ -302,6 +302,7 @@ class UserManager {
             lastGuidelinesRead: current_time,
             privateProfile: false,
             allowFollowingView: false,
+            isStudio,
         });
 
         await this.minioClient.putObject("profile-pictures", id, basePFP);
@@ -2528,7 +2529,7 @@ class UserManager {
             n++;
         }
 
-        const info = await this.createAccount(username, real_username, "", null, null, null, utils, res)
+        const info = await this.createAccount(username, real_username, "", null, null, null, false, utils, res)
         const token = info[0];
         const pm_id = info[1];
 

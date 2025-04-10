@@ -139,7 +139,7 @@ module.exports = (app, utils) => {
             }
         }
 
-        let info = await utils.UserManager.createAccount(username, real_username, packet.password, email, parsedBirthday, countryCode, utils, res);
+        let info = await utils.UserManager.createAccount(username, real_username, packet.password, email, parsedBirthday, countryCode, false, utils, res);
 
         if (!info) {
             return;
