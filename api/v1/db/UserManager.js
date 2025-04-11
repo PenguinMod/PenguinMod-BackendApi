@@ -80,6 +80,7 @@ class UserManager {
                 { id: "legalExtensions", items: []}
             ]);
         }
+        this.blocking = this.db.collection("blocking");
         this.prevReset = Date.now();
         this.views = [];
 
@@ -202,10 +203,11 @@ class UserManager {
     /**
      * Create an account
      * @param {string} username new username of the user
-     * @param {string} password new password of the user
+     * @param {string?} password new password of the user
      * @param {string?} email email of the user, if provided
      * @param {string?} birthday birth date of the user formatted as an ISO string "1990-01-01T00:00:00.000Z", if provided
      * @param {string?} country country code if the user as defined by ISO 3166-1 Alpha-2, if provided
+     * @param {boolean} is_studio whether or not the account being created is a studio or not
      * @returns {Promise<[string, string]|boolean>} token & id if successful, false if not
      * @async
      */
@@ -265,7 +267,7 @@ class UserManager {
 
         await slightlyIllegalWordingError(username, "username");
 
-        const hash = await bcrypt.hash(password, 10);
+        const hash = password ? await bcrypt.hash(password, 10) : "";
         const id = ULID.ulid();
         const token = randomBytes(32).toString('hex');
         const current_time = Date.now();
@@ -302,7 +304,7 @@ class UserManager {
             lastGuidelinesRead: current_time,
             privateProfile: false,
             allowFollowingView: false,
-            isStudio,
+            is_studio,
         });
 
         await this.minioClient.putObject("profile-pictures", id, basePFP);
@@ -2529,12 +2531,9 @@ class UserManager {
             n++;
         }
 
-        const info = await this.createAccount(username, real_username, "", null, null, null, false, utils, res)
+        const info = await this.createAccount(username, real_username, null, null, null, null, false, utils, res)
         const token = info[0];
         const pm_id = info[1];
-
-        // set their password HASH to nothing so cant login with a password
-        await this.users.updateOne({ username: username }, { $set: { password: "" } });
 
         await this.addOAuthMethod(username, method, id);
         return { token, username, id: pm_id };
