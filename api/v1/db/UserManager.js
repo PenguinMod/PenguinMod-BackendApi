@@ -1305,10 +1305,11 @@ class UserManager {
      * @param {number} page page of projects to get
      * @param {number} pageSize amount of projects to get
      * @param {boolean} reverse if you should get newest or oldest first
+     * @param {string?} user_id of the user searching
      * @returns {Promise<Array<Object>>} Projects in the specified amount
      * @async
      */
-    async getProjects(show_nonranked, page, pageSize, maxLookup, reverse=false) {
+    async getProjects(show_nonranked, page, pageSize, maxLookup, user_id, reverse=false) {
         let pipeline = [
             {
                 $match: { softRejected: false, hardReject: false, public: true }
@@ -1324,18 +1325,43 @@ class UserManager {
             }
         ];
 
+        pipeline.push(
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "author",
+                    foreignField: "id",
+                    as: "authorInfo"
+                },
+            },
+        );
+
         if (!show_nonranked) {
-            // get author data
+            pipeline.push({ $match: { "authorInfo.rank": { $gt: 0 } } });
+        }
+
+        if (user_id) {
             pipeline.push(
                 {
                     $lookup: {
-                        from: "users",
+                        from: "blocking",
                         localField: "author",
-                        foreignField: "id",
-                        as: "authorInfo"
+                        foreignField: "target",
+                        as: "block_info",
                     },
                 },
-                { $match: { "authorInfo.rank": { $gt: 0 } } }
+                {
+                    $match: {
+                        "block_info": {
+                            $not: {
+                                $elemMatch: { blocker: "01JR8P6N4WZQS5JWQA5K8234SE", active: true},
+                            }
+                        }
+                    }
+                },
+                {
+                    $unset: "block_info"
+                },
             );
         }
 

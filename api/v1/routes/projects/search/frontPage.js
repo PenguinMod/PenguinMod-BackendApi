@@ -63,9 +63,11 @@ module.exports = (app, utils) => {
         )
         */
 
+        const user_id = username ? await utils.UserManager.getIDByUsername(username) : null;
+
         const fitsTags = await utils.UserManager.searchProjects(is_mod, tag, "newest", 0, Number(utils.env.PageSize))
 
-        const latest = await utils.UserManager.getProjects(is_mod, 0, Number(utils.env.PageSize), Number(utils.env.MaxPageSize));
+        const latest = await utils.UserManager.getProjects(is_mod, 0, Number(utils.env.PageSize), Number(utils.env.MaxPageSize), user_id);
 
         const page = {
             featured: featured,
