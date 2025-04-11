@@ -7,6 +7,7 @@ const adminWebhook = process.env.AdminWebhook;
 const apiUpdatesWebhook = process.env.ApiUpdatesWebhook;
 const creationWebhook = process.env.CreationWebhook;
 const featuredWebhook = process.env.FeaturedWebhook;
+const websiteInfoWebhook = process.env.WebsiteInfoWebhook;
 
 function sendHeatLog(text, trigger, type, location, color=0xff0000) {
     const body = JSON.stringify({
@@ -75,7 +76,7 @@ function sendRenameLog(old_username, new_username, id) {
         }]
     });
     try {
-        fetch(adminWebhook, {
+        fetch(websiteInfoWebhook, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body
@@ -118,7 +119,7 @@ function sendBioUpdateLog(username, target, oldBio, newBio) {
         }]
     });
     try {
-        fetch(adminWebhook, {
+        fetch(modWebhook, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body
