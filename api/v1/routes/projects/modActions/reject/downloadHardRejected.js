@@ -15,6 +15,7 @@ module.exports = (app, utils) => {
             return utils.error(res, 401, "Invalid credentials");
         }
 
+        console.log(project);
         if (!await utils.UserManager.projectExists(project, true)) {
             return utils.error(res, 404, "ProjectNotFound");
         }
