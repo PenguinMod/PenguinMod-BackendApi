@@ -52,7 +52,7 @@ module.exports = (app, utils) => {
 
         const project = await utils.UserManager.getProjectMetadata(projectID);
 
-        if (project.author.username !== username && !isAdmin) {
+        if (project.author.username !== username && !isAdmin && !isModerator) {
             await unlink();
             return utils.error(res, 403, "Unauthorized");
         }
