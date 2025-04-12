@@ -1272,10 +1272,11 @@ class UserManager {
      * @param {number} page page of projects to get
      * @param {number} pageSize amount of projects to get
      * @param {boolean} reverse if you should get newest or oldest first
+     * @param {string?} user_id of the user searching
      * @returns {Promise<Array<Object>>} Projects in the specified amount
      * @async
      */
-    async getProjects(show_nonranked, page, pageSize, maxLookup, reverse=false) {
+    async getProjects(show_nonranked, page, pageSize, maxLookup, user_id, reverse=false) {
         let pipeline = [
             {
                 $match: { softRejected: false, hardReject: false, public: true }
@@ -1291,18 +1292,43 @@ class UserManager {
             }
         ];
 
+        pipeline.push(
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "author",
+                    foreignField: "id",
+                    as: "authorInfo"
+                },
+            },
+        );
+
         if (!show_nonranked) {
-            // get author data
+            pipeline.push({ $match: { "authorInfo.rank": { $gt: 0 } } });
+        }
+
+        if (user_id) {
             pipeline.push(
                 {
                     $lookup: {
-                        from: "users",
+                        from: "blocking",
                         localField: "author",
-                        foreignField: "id",
-                        as: "authorInfo"
+                        foreignField: "target",
+                        as: "block_info",
                     },
                 },
-                { $match: { "authorInfo.rank": { $gt: 0 } } }
+                {
+                    $match: {
+                        "block_info": {
+                            $not: {
+                                $elemMatch: { blocker: "01JR8P6N4WZQS5JWQA5K8234SE", active: true},
+                            }
+                        }
+                    }
+                },
+                {
+                    $unset: "block_info"
+                },
             );
         }
 
@@ -4143,6 +4169,34 @@ class UserManager {
         const count = await this.followers.countDocuments({ target: id, active: true });
 
         await this.users.updateOne({ id: id }, { $set: { followers: count } });
+    }
+
+    /**
+     * Block or unblock a user
+     * @param {string} user_id id of the person blocking
+     * @param {string} target_id id of the person being blocked
+     * @param {boolean} active true if blocking, false if unblocking
+     */
+    async blockUser(user_id, target_id, active) {
+        if (await this.blocking.findOne({blocker:user_id,target:target_id})) {
+            await this.blocking.updateOne({
+                blocker: user_id,
+                target: target_id,
+            }, {
+                $set: {
+                    active,
+                    time: Date.now(),
+                }
+            });
+            return;
+        }
+
+        await this.blocking.insertOne({
+            blocker: user_id,
+            target: target_id,
+            active,
+            time: Date.now(),
+        });
     }
 }
 
