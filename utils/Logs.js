@@ -8,6 +8,7 @@ const apiUpdatesWebhook = process.env.ApiUpdatesWebhook;
 const creationWebhook = process.env.CreationWebhook;
 const featuredWebhook = process.env.FeaturedWebhook;
 const websiteInfoWebhook = process.env.WebsiteInfoWebhook;
+const messagesWebhook = process.env.MessagesWebhook;
 
 function sendHeatLog(text, trigger, type, location, color=0xff0000) {
     const body = JSON.stringify({
@@ -119,7 +120,7 @@ function sendBioUpdateLog(username, target, oldBio, newBio) {
         }]
     });
     try {
-        fetch(modWebhook, {
+        fetch(messagesWebhook, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body
@@ -312,7 +313,7 @@ function disputeLog(username, originalID, originalReason, reply, projectID=0, co
         }]
     });
     try {
-        fetch(modWebhook, {
+        fetch(messagesWebhook, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body
@@ -352,7 +353,7 @@ function modResponse(approver, disputer, messageID, originalDispute, reply, colo
     });
 
     try {
-        fetch(modWebhook, {
+        fetch(messages, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body
@@ -388,7 +389,7 @@ function modMessage(approver, target, messageID, message, color=0x70066e) {
     });
 
     try {
-        fetch(modWebhook, {
+        fetch(messagesWebhook, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body
