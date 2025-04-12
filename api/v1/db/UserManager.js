@@ -4213,6 +4213,34 @@ class UserManager {
 
         await this.users.updateOne({ id: id }, { $set: { followers: count } });
     }
+
+    /**
+     * Block or unblock a user
+     * @param {string} user_id id of the person blocking
+     * @param {string} target_id id of the person being blocked
+     * @param {boolean} active true if blocking, false if unblocking
+     */
+    async blockUser(user_id, target_id, active) {
+        if (await this.blocking.findOne({blocker:user_id,target:target_id})) {
+            await this.blocking.updateOne({
+                blocker: user_id,
+                target: target_id,
+            }, {
+                $set: {
+                    active,
+                    time: Date.now(),
+                }
+            });
+            return;
+        }
+
+        await this.blocking.insertOne({
+            blocker: user_id,
+            target: target_id,
+            active,
+            time: Date.now(),
+        });
+    }
 }
 
 module.exports = UserManager;
