@@ -1421,9 +1421,7 @@ class UserManager {
      * @returns {Promise<Buffer>} The object
      */
     async readObjectFromBucket(bucketName, objectName) {
-        console.log("pre");
         const stream = await this.minioClient.getObject(bucketName, objectName);
-        console.log("post");
 
         const chunks = [];
 
