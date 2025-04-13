@@ -132,6 +132,8 @@ class UserManager {
      * @async
      */
     async reset(understands = false) {
+        throw new Error("Resseting is disabled");
+
         if (!understands) {
             let unde = prompt("This deletes ALL DATA. Are you sure? (Y/n) ")
             if (typeof unde !== "string") {
