@@ -120,7 +120,7 @@ function sendBioUpdateLog(username, target, oldBio, newBio) {
         }]
     });
     try {
-        fetch(messagesWebhook, {
+        fetch(adminWebhook, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body

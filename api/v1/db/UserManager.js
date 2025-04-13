@@ -4198,6 +4198,16 @@ class UserManager {
             time: Date.now(),
         });
     }
+
+    /**
+     * Check if a user has blocked another user
+     * @param {string} user_id id of the person blocking
+     * @param {string} target_id id of the person being blocked
+     * @returns {boolean} true if they're blocked, false if not
+     */
+    async hasBlocked(user_id, target_id) {
+        return !!(await this.blocking.findOne({blocker:user_id,target:target_id,active:true}));
+    }
 }
 
 module.exports = UserManager;
