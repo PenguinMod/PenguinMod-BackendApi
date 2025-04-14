@@ -353,7 +353,7 @@ function modResponse(approver, disputer, messageID, originalDispute, reply, colo
     });
 
     try {
-        fetch(messages, {
+        fetch(messagesWebhook, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body
