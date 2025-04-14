@@ -42,7 +42,8 @@ module.exports = (app, utils) => {
         const username = packet.username;
         const token = packet.token;
 
-        const is_mod = username && token && await utils.UserManager.loginWithToken(username, token) && await utils.UserManager.isModeratorOrAdmin(username)
+        const user_and_logged_in = username && token && await utils.UserManager.loginWithToken(username, token);
+        const is_mod = user_and_logged_in && await utils.UserManager.isModeratorOrAdmin(username)
 
         const tag = "#" + tags[Math.floor(Math.random() * tags.length)];
 
@@ -63,7 +64,7 @@ module.exports = (app, utils) => {
         )
         */
 
-        const user_id = username ? await utils.UserManager.getIDByUsername(username) : null;
+        const user_id = user_and_logged_in ? await utils.UserManager.getIDByUsername(username) : null;
 
         const fitsTags = await utils.UserManager.searchProjects(is_mod, tag, "newest", 0, Number(utils.env.PageSize))
 
