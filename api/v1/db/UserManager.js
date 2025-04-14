@@ -1467,9 +1467,7 @@ class UserManager {
      * @async
      */
     async getProjectFile(id) {
-        console.log(`pre ${id} ${typeof(id)}`);
         const file = await this.readObjectFromBucket("projects", id);
-        console.log("post");
 
         return file;
     }
