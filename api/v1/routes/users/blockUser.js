@@ -13,10 +13,14 @@ module.exports = (app, utils) => {
         const target = packet.target;
 
         if (!target || !await utils.UserManager.existsByUsername(target))
-            utils.error(res, 404, "Target not found");
+            return utils.error(res, 404, "Target not found");
 
         const user_id = await utils.UserManager.getIDByUsername(username);
         const target_id = await utils.UserManager.getIDByUsername(target);
+
+        if (user_id === target_id) {
+            return utils.error(res, 401, "Cannot block yourself")
+        }
 
         const active = Boolean(packet.active) || true;
 
