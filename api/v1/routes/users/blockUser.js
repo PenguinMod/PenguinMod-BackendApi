@@ -22,7 +22,7 @@ module.exports = (app, utils) => {
             return utils.error(res, 401, "Cannot block yourself")
         }
 
-        const active = Boolean(packet.active) || true;
+        const active = Boolean(packet.active);
 
         await utils.UserManager.blockUser(user_id, target_id, active);
 
