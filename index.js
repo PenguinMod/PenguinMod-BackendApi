@@ -125,7 +125,7 @@ const UserManager = new um();
 
             const ud = await utils.UserManager.getUserData(String(username(req))||"");
             const is_donator = username(req) && ud && ud.badges.includes('donator');
-            const maxSingleSize = (Number(process.env.UploadSize)*(is_donator?1.75:1) || 5) * 1024 * 1024;
+            const maxSingleSize = (Number(process.env.UploadSize)*(is_donator?1.75:1) || 5) * 1000000;
 
             for (let file_key in req.files) {
                 let file = req.files[file_key];
@@ -135,7 +135,7 @@ const UserManager = new um();
                 }
             }
 
-            const maxCombinedSize = (Number(process.env.CumulativeUploadSize*(is_donator?1.75:1)) || 32) * 1024 * 1024;
+            const maxCombinedSize = (Number(process.env.CumulativeUploadSize*(is_donator?1.75:1)) || 32) * 1000000;
             let combinedSize = 0;
 
             if (req.files.jsonFile) combinedSize += req.files.jsonFile[0].size;
