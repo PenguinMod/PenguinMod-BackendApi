@@ -1787,7 +1787,14 @@ class UserManager {
                 $match: { featured: true, public: true, softRejected: false, hardReject: false }
             },
             {
-                $sort: { date: -1 }
+                $addFields: {
+                    featureSortDate: { $ifNull: ["$featureDate","$date"] }
+                }
+            },
+            {
+                $sort: {
+                    featureSortDate: -1
+                }
             },
             {
                 $skip: page * pageSize
@@ -1831,7 +1838,7 @@ class UserManager {
      * @async
      */
     async featureProject(id, feature) {
-        await this.projects.updateOne({id: id}, {$set: {featured: feature}});
+        await this.projects.updateOne({id: id}, {$set: {featured: feature, featureDate: Date.now()}});
     }
 
     /**
