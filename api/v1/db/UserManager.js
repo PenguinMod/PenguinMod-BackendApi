@@ -1862,6 +1862,18 @@ class UserManager {
     }
 
     /**
+     * Get the amount of projects
+     * @param {string} user_id id of the user
+     * @returns {Promise<number>} Amount of projects the user has published
+     * @async
+     */
+    async getProjectCountOfUser(user_id) {
+        const result = await this.projects.countDocuments({author:user_id});
+
+        return result;
+    }
+
+    /**
      * delete a project
      * @param {number} id ID of the project
      * @async
