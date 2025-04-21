@@ -3062,14 +3062,17 @@ class UserManager {
      * @param {string} query Query to search for
      * @param {number} page Page of projects to get 
      * @param {number} pageSize Amount of projects to get 
+     * @param {boolean} reverse Reverse the results
      * @returns {Promise<Array<object>>} Array of projects
      */
-    async searchProjects(show_unranked, query, type, page, pageSize) {
+    async searchProjects(show_unranked, query, type, page, pageSize, reverse=false) {
         let aggregateList = [
             {
                 $match: { softRejected: false, hardReject: false, public: true }
             },  
         ];
+
+        const rev = reverse ? -1 : 1;
 
         function escapeRegex(input) {
             return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -3098,7 +3101,7 @@ class UserManager {
                     ] },
                 },
                 {
-                    $sort: { date: -1 }
+                    $sort: { date: -1 * rev  }
                 });
                 break;
             case "newest":
@@ -3110,13 +3113,13 @@ class UserManager {
                     ] },
                 },
                 {
-                    $sort: { lastUpdate: -1 }
+                    $sort: { lastUpdate: -1 * rev }
                 });
                 break;
             default:
             case "views":
                 aggregateList.push({
-                    $sort: { views: -1 }
+                    $sort: { views: -1 * rev }
                 }, {
                     $match: { $or: [
                         { title: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } },
@@ -3157,7 +3160,7 @@ class UserManager {
                         }
                     },
                     {
-                        $sort: { loves: -1 }
+                        $sort: { loves: -1 * rev }
                     }
                 );
                 break;
@@ -3192,7 +3195,7 @@ class UserManager {
                         }
                     },
                     {
-                        $sort: { loves: -1 }
+                        $sort: { loves: -1 * rev }
                     }
                 );
                 break;
