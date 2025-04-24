@@ -5,7 +5,14 @@ module.exports = (app, utils) => {
         const query = packet.query || "";
         const page = utils.handle_page(packet.page);
         const type = packet.type || "";
-        const reverse = packet.reverse || false;
+        let reverse = packet.reverse || false;
+
+        if (reverse === "false") {
+            reverse = false;
+        }
+        if (reverse === "true") {
+            reverse = true;
+        }
 
         const username = packet.username;
         const token = packet.token;

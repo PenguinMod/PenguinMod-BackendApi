@@ -4230,6 +4230,63 @@ class UserManager {
     async hasBlocked(user_id, target_id) {
         return !!(await this.blocking.findOne({blocker:user_id,target:target_id,active:true}));
     }
+
+    async renameObjectMinio(bucket, old_key, new_key) {
+        try {
+            await this.minioClient.copyObject(bucket, new_key, `/${bucket}/${old_key}`);
+            await minioClient.removeObject(bucket, old_key);
+        } catch (err) {
+            console.error('Error renaming object:', err);
+        }
+    }
+
+    /**
+     * List objects in a bucket with a certain prefix
+     * @param {string} bucket Bucket name
+     * @param {string} prefix Prefix to search for
+     * @returns {Promise<string[]>}
+     */
+    listWithPrefix(bucket, prefix) {
+        return new Promise((resolve, reject) => {
+            const objectNames = [];
+        
+            const stream = minioClient.listObjects(bucket, prefix, true); // recursive = true
+        
+            stream.on('data', obj => {
+                objectNames.push(obj.name);
+            });
+        
+            stream.on('error', err => {
+                reject(err);
+            });
+        
+            stream.on('end', () => {
+                resolve(objectNames);
+            });
+        });
+    }
+
+    /**
+     * Change a project's id
+     * @param {string} original_id The id of the project
+     * @param {string} new_id The new id to set
+     * @returns {Promise<null>}
+     */
+    async changeProjectID(original_id, new_id) {
+        // first lets change the entry
+        this.projects.updateOne({id: original_id}, {$set:{id:new_id}});
+        // now we need to change the entries in minio
+        // minio bucket stuff
+        this.renameObjectMinio("project-thumbnails", original_id, new_id);
+        this.renameObjectMinio("projects", original_id, new_id);
+        const assets = this.listWithPrefix("project-assets", `${original_id}_`);
+        for (const asset of assets) {
+            const actual_id = asset.split("_")[1];
+            this.renameObjectMinio("project-assets", asset, `${new_id}_${actual_id}`);
+        }
+        this.users.updateMany({favoriteProjectID: original_id},{$set:{favoriteProjectID:new_id}});
+        this.projectStats.updateMany({projectId:original_id},{$set:{projectId:new_id}});
+    }
 }
 
 module.exports = UserManager;
