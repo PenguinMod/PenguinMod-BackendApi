@@ -1,5 +1,5 @@
 module.exports = (app, utils) => {
-    app.post('/api/v1/users/setBadges', utils.cors(), async function (req, res) {
+    app.post('/api/v1/users/setbadgesmultiple', utils.cors(), async function (req, res) {
         const packet = req.body;
 
         const username = (String(packet.username)).toLowerCase();
@@ -35,7 +35,7 @@ module.exports = (app, utils) => {
                 return;
             }
             const current_badges = await utils.UserManager.getBadges(target);
-            const merged = badges.concat(current_badges);
+            const merged = removing ? current_badges.filter(x => !badges.includes(x)) : badges.concat(current_badges);
 
             await utils.UserManager.setBadges(target, merged);
         }
