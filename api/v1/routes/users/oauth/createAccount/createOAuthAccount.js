@@ -3,6 +3,10 @@ module.exports = (app, utils) => {
         // get the method
         const packet = req.query;
 
+        if (!await utils.UserManager.canCreateAccount()) {
+            return utils.error(res, 403, "Account creation is not enabled");
+        }
+
         const method = packet.method;
 
         if (!method) {

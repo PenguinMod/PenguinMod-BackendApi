@@ -13,6 +13,10 @@ module.exports = (app, utils) => {
     }), async function (req, res) {
         const packet = req.body;
 
+        if (!await utils.UserManager.canCreateAccount()) {
+            return utils.error(res, 403, "Account creation is not enabled");
+        }
+
         const username = (String(packet.username)).toLowerCase();
         const real_username = packet.username;
         const password = packet.password;

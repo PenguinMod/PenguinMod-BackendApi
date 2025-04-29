@@ -38,10 +38,13 @@ class UserManager {
         this.oauthIDs = this.db.collection('oauthIDs');
         this.reports = this.db.collection('reports');
         this.runtimeConfig = this.db.collection('runtimeConfig');
-        if (!await this.runtimeConfig.findOne({ id: "viewingEnabled" })) {
+        if (!await this.runtimeConfig.findOne({ id: "viewingEnabled" }))
             this.runtimeConfig.insertOne({ id: "viewingEnabled", value: Boolean(process.env.ViewingEnabled) });
+        if (!await this.runtimeConfig.findOne({ id: "uploadingEnabled" }))
             this.runtimeConfig.insertOne({ id: "uploadingEnabled", value: Boolean(process.env.UploadingEnabled) });
-        }
+        if (!await this.runtimeConfig.findOne({ id: "accountCreationEnabled" }))
+            this.runtimeConfig.insertOne({ id: "accountCreationEnabled", value: Boolean(process.env.AccountCreationEnabled) });
+        
         this.projects = this.db.collection('projects');
         //this.projects.dropIndexes();
         await this.projects.createIndex({ title: "text", instructions: "text", notes: "text"});
@@ -278,6 +281,10 @@ class UserManager {
         await this.minioClient.putObject("profile-pictures", id, basePFP);
 
         return [token, id];
+    }
+
+    async canCreateAccount() {
+        return Boolean(await this.runtimeConfig.findOne("accountCreationEnabled"));
     }
 
     /**
