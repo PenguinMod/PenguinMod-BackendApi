@@ -38,12 +38,13 @@ class UserManager {
         this.oauthIDs = this.db.collection('oauthIDs');
         this.reports = this.db.collection('reports');
         this.runtimeConfig = this.db.collection('runtimeConfig');
-        if (!await this.runtimeConfig.findOne({ id: "viewingEnabled" }))
-            this.runtimeConfig.insertOne({ id: "viewingEnabled", value: Boolean(process.env.ViewingEnabled) });
-        if (!await this.runtimeConfig.findOne({ id: "uploadingEnabled" }))
-            this.runtimeConfig.insertOne({ id: "uploadingEnabled", value: Boolean(process.env.UploadingEnabled) });
-        if (!await this.runtimeConfig.findOne({ id: "accountCreationEnabled" }))
-            this.runtimeConfig.insertOne({ id: "accountCreationEnabled", value: Boolean(process.env.AccountCreationEnabled) });
+        this.runtimeConfig.deleteMany({});
+        //if (!await this.runtimeConfig.findOne({ id: "viewingEnabled" }))
+            this.runtimeConfig.insertOne({ id: "viewingEnabled", value: process.env.ViewingEnabled=="true" });
+        //if (!await this.runtimeConfig.findOne({ id: "uploadingEnabled" }))
+            this.runtimeConfig.insertOne({ id: "uploadingEnabled", value: process.env.UploadingEnabled=="true" });
+        //if (!await this.runtimeConfig.findOne({ id: "accountCreationEnabled" }))
+        this.runtimeConfig.insertOne({ id: "accountCreationEnabled", value: process.env.AccountCreationEnabled=="true" });
         
         this.projects = this.db.collection('projects');
         //this.projects.dropIndexes();
