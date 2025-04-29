@@ -284,7 +284,7 @@ class UserManager {
     }
 
     async canCreateAccount() {
-        return Boolean(await this.runtimeConfig.findOne("accountCreationEnabled"));
+        return (await this.runtimeConfig.findOne({id: "accountCreationEnabled"})).value;
     }
 
     /**
