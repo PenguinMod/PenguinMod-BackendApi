@@ -4234,7 +4234,7 @@ class UserManager {
     async renameObjectMinio(bucket, old_key, new_key) {
         try {
             await this.minioClient.copyObject(bucket, new_key, `/${bucket}/${old_key}`);
-            await minioClient.removeObject(bucket, old_key);
+            await this.minioClient.removeObject(bucket, old_key);
         } catch (err) {
             console.error('Error renaming object:', err);
         }
@@ -4250,7 +4250,7 @@ class UserManager {
         return new Promise((resolve, reject) => {
             const objectNames = [];
         
-            const stream = minioClient.listObjects(bucket, prefix, true); // recursive = true
+            const stream = this.minioClient.listObjects(bucket, prefix, true); // recursive = true
         
             stream.on('data', obj => {
                 objectNames.push(obj.name);
@@ -4277,15 +4277,16 @@ class UserManager {
         this.projects.updateOne({id: original_id}, {$set:{id:new_id}});
         // now we need to change the entries in minio
         // minio bucket stuff
-        this.renameObjectMinio("project-thumbnails", original_id, new_id);
-        this.renameObjectMinio("projects", original_id, new_id);
-        const assets = this.listWithPrefix("project-assets", `${original_id}_`);
+        await this.renameObjectMinio("project-thumbnails", original_id, new_id);
+        await this.renameObjectMinio("projects", original_id, new_id);
+        const assets = await this.listWithPrefix("project-assets", `${original_id}_`);
         for (const asset of assets) {
             const actual_id = asset.split("_")[1];
-            this.renameObjectMinio("project-assets", asset, `${new_id}_${actual_id}`);
+            await this.renameObjectMinio("project-assets", asset, `${new_id}_${actual_id}`);
         }
         this.users.updateMany({favoriteProjectID: original_id},{$set:{favoriteProjectID:new_id}});
         this.projectStats.updateMany({projectId:original_id},{$set:{projectId:new_id}});
+        this.messages.updateMany({type:"upload","data.id":original_id}, {$set: {"data.id":new_id }});
     }
 }
 
