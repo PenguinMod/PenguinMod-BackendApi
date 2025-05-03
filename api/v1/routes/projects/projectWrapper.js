@@ -11,7 +11,7 @@ module.exports = (app, utils) => {
         const packet = req.query;
 
         const projectId = String(packet.projectId);
-        const safe = packet.safe;
+        const safe = String(packet.safe) === "true";
 
         const safeReturn = () => {
             const project = fs.readFileSync(path.join(utils.homeDir, "NoProjectFound.pmp"));
