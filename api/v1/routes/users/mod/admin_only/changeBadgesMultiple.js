@@ -7,7 +7,7 @@ module.exports = (app, utils) => {
 
         const targets = packet.targets;
         const badges = packet.badges;
-        const removing = packet.removing == "true";
+        const removing = String(packet.removing) === "true";
 
         if (!await utils.UserManager.loginWithToken(username, token)) {
             utils.error(res, 401, "InvalidToken");
@@ -36,18 +36,19 @@ module.exports = (app, utils) => {
             }
             const current_badges = await utils.UserManager.getBadges(target);
             const merged = removing ? current_badges.filter(x => !badges.includes(x)) : badges.concat(current_badges);
+            const uniqueOnly = [...new Set(merged)];
 
-            await utils.UserManager.setBadges(target, merged);
+            await utils.UserManager.setBadges(target, uniqueOnly);
         }
 
-        utils.logs.sendAdminUserLog(username, target, "Admin has updated many user's badges.", 0x3d4ddc, [
+        utils.logs.sendAdminUserLog(username, targets[0], `Admin has updated ${targets.length} user's badges.`, 0x3d4ddc, [
             {
                 name: "Badges",
                 value: badges.join(", ")
             },
             {
                 name: "Targets",
-                value: targets.join(", ")
+                value: targets.join(", ").substring(0, 1024)
             }
         ]);
 
