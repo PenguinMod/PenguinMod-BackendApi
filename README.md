@@ -1,6 +1,6 @@
 # PenguinMod-BackendApi
 
-Do not use PenguinMod-IntermediateBackendApi anymore once this is completed.
+This is the replacement for PenguinMod-IntermediateBackendApi.
 
 This is intended to be a major rewrite of the entire API to be organized much better, and use MongoDB & other systems for better scalability.
 
@@ -12,15 +12,17 @@ You can create endpoints by adding folders & files. Please make sure your code i
 
 Please report any security vulnerabilities using GitHub's security tab on the repository, or join the PenguinMod discord on the website and DM a developer.
 
-## Get Started
+## Development
+
+Either setup as you would with prod, or:
 
 1. Install MongoDB
     - [Windows](https://docs.mongodb.com/manual/tutorial/install-mongodb-on-windows/)
     - [Mac](https://docs.mongodb.com/manual/tutorial/install-mongodb-on-os-x/)
     - [Linux](https://docs.mongodb.com/manual/administration/install-on-linux/)
 2. Run `mongod` to start mongodb
-3. Run `npm i`. if this doesn't work run it with --force
-4. Install minio
+3. Run `npm i`. if this doesn't work run it with --force (if you have to use force, make an issue. We want to avoid having to do that)
+4. Install minio and start it
    - [Linux](https://min.io/docs/minio/linux/index.html)
    - [Mac](https://min.io/docs/minio/macos/index.html)
    - [Windows](https://min.io/docs/minio/windows/index.html)
@@ -29,4 +31,6 @@ Please report any security vulnerabilities using GitHub's security tab on the re
 
 ## Deployment
 
-1. Make sure your env is setup, then use docker-compose to get the containers running.
+Make sure your env is setup, then use docker-compose to get the containers running.
+
+Note: Keep your env PRIVATE!! Do NOT put it in a public repo!! Don't even put it in a private one!!
