@@ -1,3 +1,7 @@
+![PenguinMod Logo](icon.png "PenguinMod Logo")
+
+![Stargazers](https://img.shields.io/github/stars/PenguinMod/PenguinMod-BackendApi?style=flat-square "Stars")
+
 # PenguinMod-BackendApi
 
 This is the replacement for PenguinMod-IntermediateBackendApi.
