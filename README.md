@@ -29,4 +29,4 @@ Please report any security vulnerabilities using GitHub's security tab on the re
 
 ## Deployment
 
-1. idk man just make sure people cant access your mongodb or minio stuff. There is a docker-compose and a dockerfile, but we have not yet put it in the repo.
+1. Make sure your env is setup, then use docker-compose to get the containers running.
