@@ -29,7 +29,8 @@ module.exports = (app, utils) => {
             return;
         }
 
-        for (const target of targets) {
+        for (const t of targets) {
+            const target = t.toLowerCase();
             if (!await utils.UserManager.existsByUsername(target)) {
                 utils.error(res, 404, `UserNotFound ${target}`);
                 return;

@@ -9,7 +9,7 @@ module.exports = (app, utils) => {
         const toggle = packet.toggle;
         const time = packet.time || 0;
         const reason = packet.reason;
-        const remove_follows = packet.remove_follows || false;
+        const remove_follows = String(packet.remove_follows) === "true";
 
         if (!username || !token || !target || typeof toggle !== "boolean" || typeof reason !== "string" || reason.length > 512 || typeof time !== "number" || time < 0) {
             utils.error(res, 400, "Missing username, token, target, toggle, reason, or time");

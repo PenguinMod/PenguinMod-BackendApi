@@ -3828,6 +3828,8 @@ class UserManager {
     async getRuntimeConfigItem(id) {
         const result = await this.runtimeConfig.findOne({ id: id });
 
+        if (!result) console.log(`Couldn't find config item ${id}`);
+
         return result.value;
     }
 
@@ -3926,6 +3928,10 @@ class UserManager {
     async getIPs(username) {
         const id = await this.getIDByUsername(username);
 
+        return await this.getIpsByID(id);
+    }
+
+    async getIpsByID(id) {
         const ips = (await this.loggedIPs.find({ id: id }).toArray())
         .map(x => {
             return {
@@ -4295,6 +4301,43 @@ class UserManager {
         this.users.updateMany({favoriteProjectID: original_id},{$set:{favoriteProjectID:new_id}});
         this.projectStats.updateMany({projectId:original_id},{$set:{projectId:new_id}});
         this.messages.updateMany({type:"upload","data.id":original_id}, {$set: {"data.id":new_id }});
+    }
+
+    /**
+     * Get alts of a user, by ip. NOTE: THIS IS RECURSIVE!!!
+     * @param {string} user_id id of the user
+     * @returns {Promise<String[]>} ids of the alts
+     */
+    async getAlts(user_id) {
+        const current_ids = new Set();
+        await this._getAltsRec(user_id, current_ids);
+        return [...current_ids];
+    }
+
+    async idListToUsernames(ids) {
+        const usernames = [];
+        for (const id of ids) {
+            usernames.push(await this.getUsernameByID(id));
+        }
+        return usernames;
+    }
+
+    /**
+     * DO NOT USE!!! INTERNAL USE ONLY!!!!
+     * @param {string} user_id id of the user
+     * @param {Set<string>} current_ids set of the ids already collected
+     * @returns {Promise<>}
+     */
+    async _getAltsRec(user_id, current_ids) {
+        if (current_ids.has(user_id)) return;
+        current_ids.add(user_id);
+        const current_data = await this.getIpsByID(user_id);
+        for (const item of current_data) {
+            const to_recurse = await this.getAllAccountsWithIP(item.ip);
+            for (const user of to_recurse) {
+                await this._getAltsRec(user.id, current_ids);
+            }
+        }
     }
 }
 
