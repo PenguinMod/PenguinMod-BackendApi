@@ -3768,6 +3768,7 @@ class UserManager {
               serverStatus: 1
             }
         );
+        const current_mem_usage = process.memoryUsage();
 
         return {
             userCount,
@@ -3776,6 +3777,7 @@ class UserManager {
             remixCount,
             featuredCount,
             totalViews,
+            current_mem_usage,
             mongodb_stats,
         }
     }
