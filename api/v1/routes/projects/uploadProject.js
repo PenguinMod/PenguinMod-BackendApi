@@ -64,7 +64,7 @@ module.exports = (app, utils) => {
             return false;
         }
 
-        const slightlyIllegalWordingError = async (text, type) => {
+        const slightlyIllegalWordingError = async (text, type, id) => {
             const trigger = await utils.UserManager.checkForSlightlyIllegalWording(text);
             if (trigger) {
                 const illegalWordIndex = await utils.UserManager.getIndexOfSlightlyIllegalWording(text);
@@ -77,7 +77,7 @@ module.exports = (app, utils) => {
                     before + "\x1b[33;1m" + illegalWord + "\x1b[0m" + after,
                     trigger,
                     type,
-                    username,
+                    [id, username],
                     0xffbb00,
                 )
                 return true;
@@ -115,10 +115,6 @@ module.exports = (app, utils) => {
             await unlink();
             return;
         }
-
-        await slightlyIllegalWordingError(title, "projectTitle");
-        await slightlyIllegalWordingError(instructions, "projectInstructions");
-        await slightlyIllegalWordingError(notes, "projectNotes");
 
         if (!req.files.jsonFile || !req.files.thumbnail || !req.files.assets) {
             await unlink();
@@ -188,6 +184,10 @@ module.exports = (app, utils) => {
             remix,
             packet.rating
         );
+
+        await slightlyIllegalWordingError(title, "projectTitle", projectID);
+        await slightlyIllegalWordingError(instructions, "projectInstructions", projectID);
+        await slightlyIllegalWordingError(notes, "projectNotes", projectID);
 
         utils.logs.sendCreationLog(username, projectID, title, "upload", 0x4A7FB5);
         await utils.UserManager.setLastUpload(username, Date.now());

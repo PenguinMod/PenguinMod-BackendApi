@@ -94,7 +94,7 @@ module.exports = (app, utils) => {
                     before + "\x1b[33;1m" + illegalWord + "\x1b[0m" + after,
                     trigger,
                     type,
-                    username,
+                    [projectID, username],
                     0xffbb00,
                 )
                 return true;

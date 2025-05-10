@@ -6,7 +6,7 @@ module.exports = (app, utils) => {
         const token = packet.token;
         const customization = packet.customization;
 
-        if (!username || !token || !customization) {
+        if (!username || !token || typeof(customization) !== "string") {
             utils.error(res, 400, "Missing username, token, or customization");
             return;
         }
