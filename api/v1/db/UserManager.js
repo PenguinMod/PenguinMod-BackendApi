@@ -5,12 +5,11 @@ const { MongoClient } = require('mongodb');
 const ULID = require('ulid');
 const Minio = require('minio');
 const protobuf = require('protobufjs');
-const sharp = require('sharp');
 const fs = require('fs');
 const path = require('path');
 var prompt = require('prompt-sync')();
 const Mailjet = require('node-mailjet');
-const { count } = require('node:console');
+const os = require('os');
 
 const basePFP = fs.readFileSync(path.join(__dirname, "./penguin.png"));
 
@@ -3754,6 +3753,19 @@ class UserManager {
         await this.users.updateOne({ username: username }, { $set: updateObj });
     }
 
+    compMemUsage() {
+        const total = os.totalmem();
+        const free = os.freemem();
+        const used = total - free;
+        const precentage_used = used / total;
+        return {
+            total,
+            free,
+            used,
+            precentage_used
+        };
+    }
+
     async getStats() {
         const userCount = await this.users.countDocuments({ permBanned: false }); // dont count perm banned users :tongue:
         const bannedCount = await this.users.countDocuments({ $or: [{ permBanned: true }, { unbanTime: { $gt: Date.now() } }] });
@@ -3769,6 +3781,7 @@ class UserManager {
             }
         );
         const current_mem_usage = process.memoryUsage();
+        const comp_mem_usage = this.compMemUsage();
 
         return {
             userCount,
@@ -3779,6 +3792,7 @@ class UserManager {
             totalViews,
             current_mem_usage,
             mongodb_stats,
+            comp_mem_usage,
         }
     }
 
