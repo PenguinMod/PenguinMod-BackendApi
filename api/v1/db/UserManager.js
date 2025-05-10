@@ -3791,8 +3791,8 @@ class UserManager {
             featuredCount,
             totalViews,
             current_mem_usage,
-            mongodb_stats,
             comp_mem_usage,
+            mongodb_stats,
         }
     }
 
