@@ -37,12 +37,12 @@ class UserManager {
         this.oauthIDs = this.db.collection('oauthIDs');
         this.reports = this.db.collection('reports');
         this.runtimeConfig = this.db.collection('runtimeConfig');
-        this.runtimeConfig.deleteMany({});
-        //if (!await this.runtimeConfig.findOne({ id: "viewingEnabled" }))
+        //this.runtimeConfig.deleteMany({});
+        if (!await this.runtimeConfig.findOne({ id: "viewingEnabled" }))
             this.runtimeConfig.insertOne({ id: "viewingEnabled", value: process.env.ViewingEnabled=="true" });
-        //if (!await this.runtimeConfig.findOne({ id: "uploadingEnabled" }))
+        if (!await this.runtimeConfig.findOne({ id: "uploadingEnabled" }))
             this.runtimeConfig.insertOne({ id: "uploadingEnabled", value: process.env.UploadingEnabled=="true" });
-        //if (!await this.runtimeConfig.findOne({ id: "accountCreationEnabled" }))
+        if (!await this.runtimeConfig.findOne({ id: "accountCreationEnabled" }))
         this.runtimeConfig.insertOne({ id: "accountCreationEnabled", value: process.env.AccountCreationEnabled=="true" });
         
         this.projects = this.db.collection('projects');
