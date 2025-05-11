@@ -3511,7 +3511,7 @@ class UserManager {
                 }
             },
             {
-                $sort: { loves: -1 * rev }
+                $sort: { loves: -1 }
             },
             { // get user input
                 $lookup: {
