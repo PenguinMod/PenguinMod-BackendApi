@@ -54,7 +54,7 @@ module.exports = (app, utils) => {
             Number(utils.env.FeatureAmount) || 20,
         );
 
-        const liked = await utils.UserManager.mostLiked(0, Number(utils.env.PageSize) || 20);
+        const liked = await utils.UserManager.mostLiked(0, Number(utils.env.PageSize) || 20, Number(utils.env.MaxPageSize) || 100);
         /*
         const highViews = await utils.UserManager.specializedSearch(
             [{ $match: { featured: false, views: { $gte: 30 }, softRejected: false, hardReject: false } }],
