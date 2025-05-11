@@ -3476,10 +3476,10 @@ class UserManager {
     }
 
     async mostLiked(page, pageSize, maxPageSize) {
-        console.log(maxPageSize);
+        const time_after = Date.now() - (1000 * 60 * 60 * 24 * 14);
         const result = await this.projects.aggregate([
             {
-                $match: { softRejected: false, hardReject: false, public: true, featured: false }
+                $match: { softRejected: false, hardReject: false, public: true, featured: false, date: { $gt: time_after } }
             }, 
             {
                 $sort: { views: -1 }
