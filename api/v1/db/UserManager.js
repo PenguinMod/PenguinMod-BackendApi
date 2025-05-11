@@ -3478,24 +3478,51 @@ class UserManager {
     async mostLiked(page, pageSize, likedAmount) {
         const result = this.projectStats.aggregate([
             {
-                $match: { type: "love" }
+                $match: { softRejected: false, hardReject: false, public: true }
+            }, 
+            {
+                $sort: { views: -1 * rev }
             },
             {
-                $group: {
-                    _id: "$projectId",
-                    count: {
-                        $count: {}
-                    },
-                    earliest: { $min: "$_id" } // we dont track the date so just use the id (mongo id is a timestamp)
+                $skip: page * pageSize
+            },
+            {
+                $limit: maxPageSize
+            },
+            {
+                $lookup: {
+                    from: "projectStats",
+                    localField: "id",
+                    foreignField: "projectId",
+                    as: "projectStatsData"
                 }
             },
             {
-                $match: {
-                    count: { $gte: likedAmount }
+                $addFields: {
+                    loves: {
+                        $size: {
+                            $filter: {
+                                input: "$projectStatsData",
+                                as: "stat",
+                                cond: { $eq: ["$$stat.type", "love"] }
+                            }
+                        }
+                    }
                 }
             },
             {
-                $sort: { earliest: -1 }
+                $sort: { loves: -1 * rev }
+            },
+            { // get user input
+                $lookup: {
+                    from: "users",
+                    localField: "author",
+                    foreignField: "id",
+                    as: "authorInfo"
+                }
+            },
+            { // only allow ranked users to show up
+                $match: { "authorInfo.rank": { $gt: 0 } }
             },
             {
                 $skip: page * pageSize
@@ -3504,46 +3531,7 @@ class UserManager {
                 $limit: pageSize
             },
             {
-                $sort: { count: -1 }
-            },
-            {
-                $lookup: {
-                    from: "projects",
-                    localField: "_id",
-                    foreignField: "id",
-                    as: "projectData"
-                }
-            },
-            {
-                $addFields: {
-                    "projectData": { $arrayElemAt: ["$projectData", 0] }
-                }
-            },
-            {
-                $match: {
-                    projectData: { $exists: true }
-                }
-            },
-            {
-                $replaceRoot: { newRoot: "$projectData" }
-            },
-            {
-                $match: { 
-                    featured: false, 
-                    softRejected: false, 
-                    public: true, 
-                    hardReject: false 
-                }
-            },
-            {
-                $lookup: {
-                    from: "users",
-                    localField: "author",
-                    foreignField: "id",
-                    as: "authorInfo"
-                }
-            },
-            {
+                // set author to { id: old_.author, username: authorInfo.username }
                 $addFields: {
                     "author": {
                         id: "$author",
@@ -3553,8 +3541,9 @@ class UserManager {
             },
             {
                 $unset: [
-                    "authorInfo",
+                    "projectStatsData",
                     "_id",
+                    "authorInfo",              
                 ]
             }
         ])
