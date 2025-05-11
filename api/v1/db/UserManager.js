@@ -3829,7 +3829,10 @@ class UserManager {
     async getRuntimeConfigItem(id) {
         const result = await this.runtimeConfig.findOne({ id: id });
 
-        if (!result) console.log(`Couldn't find config item ${id}`);
+        if (!result) {
+            console.log(`Couldn't find config item ${id}`);
+            return true; // minimize disruptions
+        };
 
         return result.value;
     }
