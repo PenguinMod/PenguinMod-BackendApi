@@ -3072,7 +3072,7 @@ class UserManager {
      * @param {boolean} reverse Reverse the results
      * @returns {Promise<Array<object>>} Array of projects
      */
-    async searchProjects(show_unranked, query, type, page, pageSize, reverse=false) {
+    async searchProjects(show_unranked, query, type, page, pageSize, maxPageSize, reverse=false) {
         let aggregateList = [
             {
                 $match: { softRejected: false, hardReject: false, public: true }
@@ -3101,25 +3101,11 @@ class UserManager {
                     $match: { featured: true }
                 },
                 {
-                    $match: { $or: [
-                        { title: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } },
-                        { instructions: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } },
-                        { notes: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } }
-                    ] },
-                },
-                {
                     $sort: { date: -1 * rev  }
                 });
                 break;
             case "newest":
                 aggregateList.push({
-                    $match: { $or: [
-                        { title: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } },
-                        { instructions: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } },
-                        { notes: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } }
-                    ] },
-                },
-                {
                     $sort: { lastUpdate: -1 * rev }
                 });
                 break;
@@ -3127,23 +3113,20 @@ class UserManager {
             case "views":
                 aggregateList.push({
                     $sort: { views: -1 * rev }
-                }, {
-                    $match: { $or: [
-                        { title: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } },
-                        { instructions: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } },
-                        { notes: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } }
-                    ] },
                 });
                 break;
             case "loves":
                 // collect likes
                 aggregateList.push(
+                    // top ones are gonna have most views, so lets just get top of those first
                     {
-                        $match: { $or: [
-                            { title: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } },
-                            { instructions: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } },
-                            { notes: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } }
-                        ] },
+                        $sort: { views: -1 * rev }
+                    },
+                    {
+                        $skip: page * pageSize
+                    },
+                    {
+                        $limit: maxPageSize
                     },
                     {
                         $lookup: {
@@ -3174,11 +3157,13 @@ class UserManager {
             case "votes":
                 aggregateList.push(
                     {
-                        $match: { $or: [
-                            { title: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } },
-                            { instructions: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } },
-                            { notes: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } }
-                        ] },
+                        $sort: { views: -1 * rev }
+                    },
+                    {
+                        $skip: page * pageSize
+                    },
+                    {
+                        $limit: maxPageSize
                     },
                     {
                         $lookup: {
