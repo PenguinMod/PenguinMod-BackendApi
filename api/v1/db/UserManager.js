@@ -3476,7 +3476,8 @@ class UserManager {
     }
 
     async mostLiked(page, pageSize, maxPageSize) {
-        const result = this.projectStats.aggregate([
+        console.log(maxPageSize);
+        const result = await this.projects.aggregate([
             {
                 $match: { softRejected: false, hardReject: false, public: true, featured: false }
             }, 
@@ -3487,7 +3488,7 @@ class UserManager {
                 $skip: page * pageSize
             },
             {
-                $limit: maxPageSize
+                $limit: maxPageSize * 3
             },
             {
                 $lookup: {
