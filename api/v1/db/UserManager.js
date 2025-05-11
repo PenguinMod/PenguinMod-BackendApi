@@ -3382,32 +3382,55 @@ class UserManager {
         return aggResult;
     }
 
-    async almostFeatured(page, pageSize, featureAmount) {
-        const result = this.projectStats.aggregate([
+    async almostFeatured(page, pageSize, maxPageSize) {
+        const time_after = Date.now() - (1000 * 60 * 60 * 24 * 21);
+        const result = await this.projects.aggregate([
             {
-                $match: { type: "vote" }
+                $match: { softRejected: false, hardReject: false, public: true, featured: false, date: { $gt: time_after } }
+            }, 
+            {
+                $sort: { views: -1 }
             },
             {
-                $group: {
-                    _id: "$projectId",
-                    count: { 
-                        $count: {}
-                    },
-                    earliest: { $min: "$_id" } // we dont track the date so just use the id (mongo id is a timestamp)
+                $skip: page * pageSize
+            },
+            {
+                $limit: maxPageSize * 3
+            },
+            {
+                $lookup: {
+                    from: "projectStats",
+                    localField: "id",
+                    foreignField: "projectId",
+                    as: "projectStatsData"
                 }
             },
             {
-                $match: {
-                    count: { $gte: Math.ceil(featureAmount / 3 * 2) }
+                $addFields: {
+                    votes: {
+                        $size: {
+                            $filter: {
+                                input: "$projectStatsData",
+                                as: "stat",
+                                cond: { $eq: ["$$stat.type", "vote"] }
+                            }
+                        }
+                    }
                 }
             },
             {
-                $match: {
-                    count: { $lt: featureAmount }
+                $sort: { votes: -1 }
+            },
+            { // get user input
+                $lookup: {
+                    from: "users",
+                    localField: "author",
+                    foreignField: "id",
+                    as: "authorInfo"
                 }
             },
-            {
-                $sort: { earliest: -1 }
+            { // only allow ranked users to show up
+                $match: { "authorInfo.rank": { $gt: 0 } }
             },
             {
                 $skip: page * pageSize
@@ -3416,46 +3439,7 @@ class UserManager {
                 $limit: pageSize
             },
             {
-                $sort: { count: -1 }
-            },
-            {
-                $lookup: {
-                    from: "projects",
-                    localField: "_id",
-                    foreignField: "id",
-                    as: "projectData"
-                }
-            },
-            {
-                $addFields: {
-                    "projectData": { $arrayElemAt: ["$projectData", 0] }
-                }
-            },
-            {
-                $match: {
-                    projectData: { $exists: true }
-                }
-            },
-            {
-                $replaceRoot: { newRoot: "$projectData" }
-            },
-            {
-                $match: { 
-                    featured: false, 
-                    softRejected: false, 
-                    public: true, 
-                    hardReject: false 
-                }
-            },
-            {
-                $lookup: {
-                    from: "users",
-                    localField: "author",
-                    foreignField: "id",
-                    as: "authorInfo"
-                }
-            },
-            {
+                // set author to { id: old_.author, username: authorInfo.username }
                 $addFields: {
                     "author": {
                         id: "$author",
@@ -3465,8 +3449,9 @@ class UserManager {
             },
             {
                 $unset: [
-                    "authorInfo",
+                    "projectStatsData",
                     "_id",
+                    "authorInfo",              
                 ]
             }
         ])

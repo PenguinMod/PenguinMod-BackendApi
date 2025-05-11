@@ -51,7 +51,7 @@ module.exports = (app, utils) => {
         
         const almostFeatured = await utils.UserManager.almostFeatured(0,
             Number(utils.env.PageSize) || 20,
-            Number(utils.env.FeatureAmount) || 20,
+            Number(utils.env.MaxPageSize) || 100,
         );
 
         const liked = await utils.UserManager.mostLiked(0, Number(utils.env.PageSize) || 20, Number(utils.env.MaxPageSize) || 100);
