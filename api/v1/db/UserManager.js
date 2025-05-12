@@ -1605,6 +1605,8 @@ class UserManager {
         if (this.views.length >= this.maxviews ||
             Date.now() - this.prevReset >= this.viewresetrate
         ) {
+            const either = this.views.length >= this.maxviews ? "we went above max views" : "the time limit has elapsed";
+            console.log(`Reset because ${either}`);
             this.views = [];
             this.prevReset = Date.now();
         }
