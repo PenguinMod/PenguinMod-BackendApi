@@ -2013,9 +2013,10 @@ class UserManager {
      * @async
      */
     async getFollowing(username, page, pageSize) {
+        const id = await this.getIDByUsername(username);
         const result = await this.followers.aggregate([
             {
-                $match: { follower: username, active: true }
+                $match: { follower: id, active: true }
             },
             {
                 $skip: page * pageSize
@@ -2033,6 +2034,8 @@ class UserManager {
             }
         ])
         .toArray();
+
+        console.log(result);
 
         return result;
     }
