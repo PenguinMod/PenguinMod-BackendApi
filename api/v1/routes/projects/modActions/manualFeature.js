@@ -37,6 +37,11 @@ module.exports = (app, utils) => {
             if (!await utils.UserManager.hasBadge(author.username, "featured")) {
                 await utils.UserManager.addBadge(author.username, "featured");
                 await utils.UserManager.sendMessage(author.id, {type: "newBadge", badge: "featured"}, false, projectID);
+            } else {
+                if (!await utils.UserManager.hasBadge(author.username, "multifeature")) {
+                    await utils.UserManager.addBadge(author.username, "multifeature");
+                    await utils.UserManager.sendMessage(author.id, { type: "newBadge", badge: "multifeature" }, false, projectID);
+                }
             }
         }
 
