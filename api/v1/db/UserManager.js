@@ -2030,7 +2030,7 @@ class UserManager {
                     from: "users",
                     localField: "target",
                     foreignField: "id",
-                    as: "followerInfo"
+                    as: "targetInfo"
                 }
             },
             {
@@ -2050,6 +2050,9 @@ class UserManager {
             {
                 // only leave the follower field
                 $replaceRoot: { newRoot: "$target" }
+            },
+            {
+                $unset: "banned"
             }
         ])
         .toArray();
