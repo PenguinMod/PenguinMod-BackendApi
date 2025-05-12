@@ -2025,11 +2025,6 @@ class UserManager {
                 $limit: pageSize
             },
             {
-                // change it to just the target
-                $project: { target: 1 }
-            },
-            {
-                // we have the target field only, now we need to have it just be the value of the field
                 $replaceRoot: { newRoot: "$target" }
             }
         ])
