@@ -1,5 +1,5 @@
 module.exports = (app, utils) => {
-    app.get("/api/v1/users/meta/getfollowers", async function (req, res) {
+    app.get("/api/v1/users/meta/getfollowing", async function (req, res) {
         const packet = req.query;
 
         // meant for getting the data
@@ -45,7 +45,7 @@ module.exports = (app, utils) => {
                     return;
                 }
             }
-            if (utils.UserManager.getProfileHideFollowers(target)) {
+            if (utils.UserManager.getProfileHideFollowing(target)) {
                 res.status(403);
                 res.header("Content-Type", "application/json");
                 res.json({ "error": "Hidden" });
@@ -53,10 +53,10 @@ module.exports = (app, utils) => {
             }
         }
 
-        const followers = await utils.UserManager.getFollowers(username, page, Number(utils.env.PageSize));
+        const following = await utils.UserManager.getFollowing(username, page, Number(utils.env.PageSize));
 
         res.status(200);
         res.header("Content-Type", 'application/json');
-        res.send(followers);
+        res.send(following);
     });
 }

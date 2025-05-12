@@ -3861,6 +3861,22 @@ class UserManager {
         await this.users.updateOne({ username: username }, { $set: { allowFollowingView: toggle } });
     }
 
+    async setProfileHideFollowing(username, toggle) {
+        await this.users.updateOne({ username: username }, { $set: { profileHideFollowing: toggle } });
+    }
+    async setProfileHideFollowers(username, toggle) {
+        await this.users.updateOne({ username: username }, { $set: { profileHideFollowers: toggle } });
+    }
+
+    async getProfileHideFollowing(username) {
+        const result = await this.users.findOne({ username: username });
+        return result.profileHideFollowing;
+    }
+    async getProfileHideFollowers(username) {
+        const result = await this.users.findOne({ username: username });
+        return result.profileHideFollowers;
+    }
+
     /**
      * Temporarily ban a user
      * @param {string} username Username of the user
