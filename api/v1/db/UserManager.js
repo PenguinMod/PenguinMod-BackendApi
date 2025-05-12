@@ -2025,12 +2025,34 @@ class UserManager {
                 $limit: pageSize
             },
             {
+                // collect author data
+                $lookup: {
+                    from: "users",
+                    localField: "target",
+                    foreignField: "id",
+                    as: "followerInfo"
+                }
+            },
+            {
+                $addFields: {
+                    "target": {
+                        id: "$target",
+                        username: { $arrayElemAt: ["$targetInfo.username", 0] },
+                        banned: { $arrayElemAt: ["$targetInfo.permBanned", 0] }
+                    }
+                }
+            },
+            {
+                $match: {
+                    "target.banned": false
+                }
+            },
+            {
+                // only leave the follower field
                 $replaceRoot: { newRoot: "$target" }
             }
         ])
         .toArray();
-
-        console.log(result);
 
         return result;
     }
