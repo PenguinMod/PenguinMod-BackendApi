@@ -1993,7 +1993,8 @@ class UserManager {
             },
             {
                 $match: {
-                    "follower.banned": false
+                    "follower.banned": false,
+                    "follower.profileHideFollowing": { $ne: true }
                 }
             },
             {

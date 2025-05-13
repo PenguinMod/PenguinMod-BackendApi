@@ -11,7 +11,7 @@ module.exports = (app, utils) => {
         }
 
         const profileHideFollowing = packet.profileHideFollowing;
-        const profileHideFollowers = packet.profileHideFollowers;
+        const profileHideFollowers = false; // NOTE: Actually, hiding your follower list doesnt really make sense...
 
         if (typeof profileHideFollowing !== "boolean" || typeof profileHideFollowers !== "boolean") {
             utils.error(res, 400, "InvalidBody")
