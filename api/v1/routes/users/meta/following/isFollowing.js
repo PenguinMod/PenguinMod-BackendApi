@@ -20,6 +20,8 @@ module.exports = (app, utils) => {
             return;
         }
 
+        // TODO: Block following check the same way as getFollowing
+
         const usernameID = await utils.UserManager.getIDByUsername(username);
         const targetID = await utils.UserManager.getIDByUsername(target);
 

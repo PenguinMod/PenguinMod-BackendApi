@@ -63,9 +63,10 @@ module.exports = (app, utils) => {
 
             if (username !== target) {
                 const usernameID = await utils.UserManager.getIDByUsername(username);
-                const isFollowing = await utils.UserManager.isFollowing(usernameID, targetID);
+                const isTargetFollowingUser = await utils.UserManager.isFollowing(targetID, usernameID);
 
-                if (!isFollowing && !canFollowingSeeProfile && !isMod) {
+                // if we arent a mod, then error if followers cant see the profile or if they can but you arent a follower
+                if (!isMod && (!canFollowingSeeProfile || (canFollowingSeeProfile && !isTargetFollowingUser))) {
                     res.status(200);
                     res.header("Content-Type", "application/json");
                     res.send(user);

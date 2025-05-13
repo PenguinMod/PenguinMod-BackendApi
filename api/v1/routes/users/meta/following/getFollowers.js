@@ -37,7 +37,7 @@ module.exports = (app, utils) => {
                 }
 
                 const usernameID = await utils.UserManager.getIDByUsername(username);
-                const isFollowing = await utils.UserManager.isFollowing(usernameID, target_data.id);
+                const isFollowing = await utils.UserManager.isFollowing(target_data.id, usernameID);
                 if (!isFollowing) {
                     res.status(403);
                     res.header("Content-Type", "application/json");
