@@ -275,6 +275,8 @@ class UserManager {
             lastGuidelinesRead: current_time,
             privateProfile: false,
             allowFollowingView: false,
+            profileHideFollowing: false,
+            profileHideFollowers: false,
             is_studio,
         });
 
@@ -3870,11 +3872,11 @@ class UserManager {
 
     async getProfileHideFollowing(username) {
         const result = await this.users.findOne({ username: username });
-        return result.profileHideFollowing;
+        return result.profileHideFollowing || false;
     }
     async getProfileHideFollowers(username) {
         const result = await this.users.findOne({ username: username });
-        return result.profileHideFollowers;
+        return result.profileHideFollowers || false;
     }
 
     /**
