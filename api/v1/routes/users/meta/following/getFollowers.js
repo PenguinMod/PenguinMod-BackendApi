@@ -45,7 +45,7 @@ module.exports = (app, utils) => {
                     return;
                 }
             }
-            if (utils.UserManager.getProfileHideFollowers(target)) {
+            if (await utils.UserManager.getProfileHideFollowing(target)) {
                 res.status(403);
                 res.header("Content-Type", "application/json");
                 res.json({ "error": "Hidden" });
@@ -53,7 +53,7 @@ module.exports = (app, utils) => {
             }
         }
 
-        const followers = await utils.UserManager.getFollowers(username, page, Number(utils.env.PageSize));
+        const followers = await utils.UserManager.getFollowers(target, page, Number(utils.env.PageSize));
 
         res.status(200);
         res.header("Content-Type", 'application/json');
