@@ -36,7 +36,8 @@ services:
             - 9001:9001
         logging:
             driver: none
-        mem_limit: 1000m
+        mem_limit: 1250m
+        restart: always
 
 networks:
     sigma_network:
