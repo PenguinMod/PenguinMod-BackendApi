@@ -14,8 +14,7 @@ module.exports = (app, utils) => {
         /* needed:
             - featured
             - almost featured
-            - liked
-            - high views
+            // - high views
             - fits tags
             - latest
         */
@@ -54,7 +53,6 @@ module.exports = (app, utils) => {
             Number(utils.env.MaxPageSize) || 100,
         );
 
-        const liked = await utils.UserManager.mostLiked(0, Number(utils.env.PageSize) || 20, Number(utils.env.MaxPageSize) || 100);
         /*
         const highViews = await utils.UserManager.specializedSearch(
             [{ $match: { featured: false, views: { $gte: 30 }, softRejected: false, hardReject: false } }],
@@ -73,7 +71,6 @@ module.exports = (app, utils) => {
         const page = {
             featured: featured,
             voted: almostFeatured,
-            liked: liked,
             //viewed: highViews, // disabled since we dont use it (dont waste resources)
             tagged: fitsTags,
             latest: latest,
