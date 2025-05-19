@@ -80,6 +80,8 @@ class UserManager {
         this.maxviews = maxviews ? maxviews : 10000;
         this.viewresetrate = viewresetrate ? viewresetrate : 1000 * 60 * 60;
 
+        this.tagWeights = this.db.collection("tagWeights");
+
         // Setup minio
 
         this.minioClient = new Minio.Client({
@@ -4354,6 +4356,85 @@ class UserManager {
 
     async addImpression(project_id) {
         await this.projects.updateOne({id:project_id},{$inc:{impressions:1}});
+    }
+
+    /**
+     * Register an interaction. Doesn't need the project since all thats stored is the tags in the project
+     * @param {string} user_id ID of the user
+     * @param {string} interaction_type The type of the interaction. Currently only "love", "unlove", and "view" are supported
+     * @param {string[]} tags an array of the tags
+     * @returns {Promise<>}
+     */
+    async registerInteraction(user_id, interaction_type, tags) {
+        let weight;
+        switch (interaction_type) {
+            case "view":
+                weight = 1;
+                break;
+            case "love":
+                weight = 5;
+                break;
+            case "unlove":
+                weight = -5;
+                break;
+            default:
+                weight = 0;
+                break;
+        }
+
+        for (const tag of tags) {
+            await this.tagWeights.updateOne(
+                {
+                    user_id,
+                    tag
+                },
+                {
+                    $inc: { weight },
+                    $set: {
+                        most_recent: Date.now()
+                    }
+                },
+                {
+                    upsert: true,
+                }
+            )
+        }
+    }
+
+    /**
+     * Collect tags (#abc) from a string
+     * @param {string} text The text
+     * @returns {string[]}
+     */
+    collectTags(text) {
+        // i hate regex. but anyways. this gets occurences of a hash followed by non-whitespace characters. ty stackoverflow user
+        const res = text.match(/#\w+/g);
+        return res ? res.map(t => t.substring(1)) : [];
+    }
+
+    /**
+     * Register a love/unlove of a project.
+     * @param {string} user_id ID of the user
+     * @param {string} text the text of the project. Usually will be the instructions and notes.
+     * @param {boolean} love If its a love or removal of a love. True for love, false for remove.
+     * @returns {Promise<>}
+     */
+    async collectAndInteractLove(user_id, text, love) {
+        const tags = this.collectTags(text);
+
+        await this.registerInteraction(user_id, love ? "love" : "unlove", tags);
+    }
+
+    /**
+     * Register a view of a project.
+     * @param {string} user_id ID of the user
+     * @param {string} text the text of the project. Usually will be the instructions and notes.
+     * @returns {Promise<>}
+     */
+    async collectAndInteractView(user_id, text) {
+        const tags = this.collectTags(text);
+
+        await this.registerInteraction(user_id, "view", tags);
     }
 }
 

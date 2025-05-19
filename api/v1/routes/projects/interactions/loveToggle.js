@@ -36,7 +36,13 @@ module.exports = (app, utils) => {
             await utils.UserManager.sendMessage(authorID, {type: "newBadge", badge: "likes"}, false, projectID);
         }
 
+        const instructions = projectMeta.instructions;
+        const notes = projectMeta.notes;
+
+        const concatted = instructions + "\n\n" + notes;
+
         await utils.UserManager.loveProject(projectID, id, love);
+        await utils.UserManager.collectAndInteractLove(id, concatted, love);
         
         return res.send({ success: true });
     });
