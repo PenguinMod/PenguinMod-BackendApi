@@ -25,6 +25,10 @@ module.exports = (app, utils) => {
             return project;
         });
 
+        for (const project of projects) {
+            await utils.UserManager.addImpression(project.id);
+        }
+
         return res.send(projects);
     });
 }

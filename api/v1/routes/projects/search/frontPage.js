@@ -87,6 +87,8 @@ module.exports = (app, utils) => {
                 const isDonator = badges.includes("donator");
                 project.fromDonator = isDonator;
                 newPage.push(project);
+
+                await utils.UserManager.addImpression(project.id);
             }
             page[key] = newPage;
         }

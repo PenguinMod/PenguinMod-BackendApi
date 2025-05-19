@@ -1158,7 +1158,8 @@ class UserManager {
             public: true,
             softRejected: false,
             hardReject: false,
-            hardRejectTime: 0
+            hardRejectTime: 0,
+            impressions: 0,
         });
 
         // minio bucket stuff
@@ -1577,6 +1578,10 @@ class UserManager {
             ...tempresult,
             loves: await this.getProjectLoves(p_id),
             votes: await this.getProjectVotes(p_id),
+        };
+
+        if (!result.impressions) {
+            result.impressions = 0;
         }
 
         return result;
@@ -4340,6 +4345,15 @@ class UserManager {
                 await this._getAltsRec(user.id, current_ids);
             }
         }
+    }
+
+    async getImpressions(project_id) {
+        const project = await this.projects.findOne({id:project_id});
+        return project.impressions ? project.impressions : 0;
+    }
+
+    async addImpression(project_id) {
+        await this.projects.updateOne({id:project_id},{$inc:{impressions:1}});
     }
 }
 
