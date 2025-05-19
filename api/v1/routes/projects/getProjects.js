@@ -15,6 +15,10 @@ module.exports = (app, utils) => {
 
         const projects = await utils.UserManager.getProjects(is_mod, page, Number(utils.env.PageSize), Number(utils.env.MaxPageSize), reverse);
 
+        for (const project of projects) {
+            await utils.UserManager.addImpression(project.id);
+        }
+
         res.status(200);
         res.setHeader('Content-Type', 'application/json');
         return res.send(projects);
