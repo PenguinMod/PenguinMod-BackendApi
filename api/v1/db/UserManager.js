@@ -4451,6 +4451,119 @@ class UserManager {
 
         await this.registerInteraction(user_id, "less", tags);
     }
+
+    async getFYP(username, page, pageSize, maxPageSize) {
+        const user_id = await this.getIDByUsername(username);
+
+        const top_tags = (await this.tagWeights.aggregate([
+            {
+                $match: {user_id}
+            },
+            {
+                $sort: { weight: -1 }
+            },
+            {
+                $limit: 50
+            }
+        ]).toArray()).map(tag => tag.tag);
+
+        function escapeRegex(input) {
+            return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        console.log(top_tags);
+
+        const tag_string = top_tags.map(tag => escapeRegex("#" + tag)).join("|");
+
+        const projects = await this.projects.aggregate([
+            {
+                $match: {
+                    softRejected: false,
+                    hardReject: false,
+                    public: true,
+                    $or: [
+                        { title: { $regex: `.*${tag_string}.*`, $options: "i" } },
+                        { instructions: { $regex: `.*${tag_string}.*`, $options: "i" } },
+                        { notes: { $regex: `.*${tag_string}.*`, $options: "i" } }
+                    ] 
+                },
+            },
+            {
+                $sort: { date: -1 }
+            },
+            {
+                $skip: page * pageSize
+            },
+            {
+                $limit: maxPageSize
+            },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "author",
+                    foreignField: "id",
+                    as: "authorInfo"
+                }
+            },
+            /*{
+                $match: { "authorInfo.rank": { $gt: 0 } }
+            },*/
+            {
+                $sort: { views: -1 }
+            },
+            {
+                $skip: page * pageSize
+            },
+            {
+                $limit: Math.max(maxPageSize / 2, pageSize)
+            },
+            {
+                $addFields: {
+                    impressions: {
+                        $cond: {
+                            if: { $eq: ["$impressions", null] },
+                            then: "$views",
+                            else: "$impressions"
+                        }
+                    }
+                }
+            },
+            {
+                $addFields: {
+                    vw_imp_ratio: {
+                        $cond: {
+                            if: { $eq: ["$impressions", 0] },
+                            then: 0,
+                            else: { $divide: ["$views", "$impressions"] }
+                        }
+                    }
+                }
+            },
+            {
+                $sort: { vw_imp_ratio: -1 }
+            },
+            {
+                $skip: page * pageSize
+            },
+            {
+                $limit: pageSize
+            },
+            {
+                // set author to { id: old_.author, username: authorInfo.username }
+                $addFields: {
+                    "author": {
+                        id: "$author",
+                        username: { $arrayElemAt: ["$authorInfo.username", 0] }
+                    }
+                }
+            },
+            {
+                $unset: [ "authorInfo", "_id", "vw_imp_ratio" ]
+            }
+        ]).toArray();
+
+        return projects;
+    }
 }
 
 module.exports = UserManager;

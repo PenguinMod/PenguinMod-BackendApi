@@ -68,6 +68,8 @@ module.exports = (app, utils) => {
 
         const latest = await utils.UserManager.getProjects(is_mod, 0, Number(utils.env.PageSize), Number(utils.env.MaxPageSize), user_id);
 
+        
+
         const page = {
             featured: featured,
             voted: almostFeatured,
@@ -75,6 +77,11 @@ module.exports = (app, utils) => {
             tagged: fitsTags,
             latest: latest,
         };
+
+        if (user_and_logged_in) {
+            const fyp = await utils.UserManager.getFYP(username, 0, Number(utils.env.PageSize), Number(utils.env.MaxPageSize));
+            page.suggested = fyp;
+        }
 
         // TODO: swap to use lookup instead of multiple queries
         for (const key in page) {
