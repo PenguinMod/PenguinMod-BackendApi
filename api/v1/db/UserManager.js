@@ -4377,6 +4377,9 @@ class UserManager {
             case "unlove":
                 weight = -5;
                 break;
+            case "less":
+                weight = -25;
+                break;
             default:
                 weight = 0;
                 break;
@@ -4435,6 +4438,18 @@ class UserManager {
         const tags = this.collectTags(text);
 
         await this.registerInteraction(user_id, "view", tags);
+    }
+
+    /**
+     * Suggest less of these tags
+     * @param {string} user_id ID of the user
+     * @param {string} text the text of the project. Usually will be the instructions and notes.
+     * @returns {Promise<>}
+     */
+    async collectAndLess(user_id, text) {
+        const tags = this.collectTags(text);
+
+        await this.registerInteraction(user_id, "less", tags);
     }
 }
 
