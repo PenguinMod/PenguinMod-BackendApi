@@ -4471,8 +4471,6 @@ class UserManager {
             return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         }
 
-        console.log(top_tags);
-
         const tag_string = top_tags.map(tag => escapeRegex("#" + tag)).join("|");
 
         const projects = await this.projects.aggregate([
