@@ -1450,6 +1450,22 @@ class UserManager {
         return _result;
     }
 
+    objectExists(bucketName, objectName) {
+        return new Promise((resolve, reject) => {
+            this.minioClient.statObject(bucketName, objectName, function (err, stat) {
+                if (err) {
+                    if (err.code === "NotFound") {
+                        resolve(false);
+                    } else {
+                        console.error("Error checking if object exists: ", err);
+                    }
+                } else {
+                    resolve(true);
+                }
+            })
+        });
+    }
+
     /**
      * Read an object from a bucket
      * @param {string} bucketName Name of the bucket
@@ -1457,6 +1473,10 @@ class UserManager {
      * @returns {Promise<Buffer>} The object
      */
     async readObjectFromBucket(bucketName, objectName) {
+        if (!this.objectExists(bucketName, objectName)) {
+            console.error("Tried to get project that doesn't exist: " + objectName);
+            throw new Error("Tried to get project that doesn't exist: " + objectName);
+        }
         const stream = await this.minioClient.getObject(bucketName, objectName);
 
         const chunks = [];
