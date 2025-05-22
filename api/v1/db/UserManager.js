@@ -191,7 +191,7 @@ class UserManager {
         const illegalWordingError = async (text, type) => {
             const trigger = await this.checkForIllegalWording(text);
             if (trigger) {
-                utils.error(res, 400, "IllegalWordsUsed")
+                utils.error(res, 400, "IllegalWordsUsed");
     
                 const illegalWordIndex = await this.getIndexOfIllegalWording(text);
 
