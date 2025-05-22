@@ -3781,7 +3781,7 @@ class UserManager {
         // check if remix is not 0
         const remixCount = await this.projects.countDocuments({ remix: { $ne: "0" } });
         const featuredCount = await this.projects.countDocuments({ featured: true });
-        const totalViews = (await this.projects.aggregate([{$match: {sum:{$gte:0}}},{$group: {_id:null, total_views:{$sum:"$views"}}}]).toArray()).at(0).total_views;
+        const totalViews = (await this.projects.aggregate([{$match: {views:{$gte:0}}},{$group: {_id:null, total_views:{$sum:"$views"}}}]).toArray()).at(0).total_views;
 
         const mongodb_stats = await this.db.command(
             {
