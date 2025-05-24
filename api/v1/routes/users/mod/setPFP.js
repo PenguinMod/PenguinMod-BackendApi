@@ -41,11 +41,12 @@ module.exports = (app, utils) => {
 
         magic.detect(picture, async (err, result) => {
             if (err) {
+                console.log(err);
                 return utils.error(res, 400, "Invalid file type");
             }
 
             if (!allowedTypes.includes(result)) {
-                return utils.error(res, 400, "Invalid file type");
+                return utils.error(res, 400, `Invalid file type, ${result}`);
             }
 
             const resized_picture = await sharp(picture).resize(100, 100).toBuffer()
