@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const sharp = require('sharp');
 const Magic = require('mmmagic').Magic;
-const magic = new Magic();
+const magic = new Magic(Magic.MAGIC_MIME_TYPE);
 
 module.exports = (app, utils) => {
     app.post('/api/v1/users/setpfpadmin', utils.cors(), utils.upload.single("picture"), async (req, res) => {
