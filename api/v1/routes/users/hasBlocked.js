@@ -10,7 +10,7 @@ module.exports = (app, utils) => {
             return;
         }
 
-        const target = packet.target;
+        const target = String(packet.target).toLowerCase();
 
         if (!target || !await utils.UserManager.existsByUsername(target))
             return utils.error(res, 404, "Target not found");

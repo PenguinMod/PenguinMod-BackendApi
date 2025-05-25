@@ -1457,6 +1457,7 @@ class UserManager {
                     if (err.code === "NotFound") {
                         resolve(false);
                     } else {
+                        console.log("Error checking if object exists: ", err);
                         console.error("Error checking if object exists: ", err);
                     }
                 } else {
