@@ -275,6 +275,7 @@ class UserManager {
             lastGuidelinesRead: current_time,
             privateProfile: false,
             allowFollowingView: false,
+            hideLikedOnProfile: false,
             is_studio,
         });
 
@@ -1679,7 +1680,8 @@ class UserManager {
             await this.projectStats.insertOne({
                 projectId: id,
                 userId: userId,
-                type: "love"
+                type: "love",
+                time: Date.now()
             });
             return;
         }
@@ -1726,6 +1728,62 @@ class UserManager {
         .toArray();
 
         return result;
+    }
+
+    async getLovedBy(userID, page, pageSize) {
+        const _result = await this.projects.aggregate([
+            {
+                $match: {
+                    hardReject: false,
+                    public: true,
+                    softRejected: false
+                }
+            },
+            {
+                $lookup: {
+                    from: "projectStats",
+                    localField: "id",
+                    foreignField: "projectId",
+                    as: "projectStatsData"
+                }
+            },
+            {
+                $addFields: {
+                    isLoved: {
+                        $filter: {
+                            input: "$projectStatsData",
+                            as: "stat",
+                            cond: {
+                                $and: [
+                                    { $eq: ["$$stat.type", "love"] },
+                                    { $eq: ["$$stat.userId", userID] } // Match the userId
+                                ]
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                $match: {
+                    isLoved: { $ne: [] }
+                }
+            },
+            {
+                $sort: { lastUpdate: -1 }
+            },
+            {
+                $skip: page * pageSize
+            },
+            {
+                $limit: pageSize
+            },
+            {
+                $unset: "_id"
+            }
+        ])
+        .toArray();
+
+        return _result;
     }
 
     /**
@@ -1784,7 +1842,8 @@ class UserManager {
             await this.projectStats.insertOne({
                 projectId: id,
                 userId: userId,
-                type: "vote"
+                type: "vote",
+                time: Date.now()
             });
             return;
         }
