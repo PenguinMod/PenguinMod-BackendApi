@@ -28,11 +28,11 @@ module.exports = (app, utils) => {
         }
 
         const illegalWordingError = async (text, type) => {
-            const trigger = await this.checkForIllegalWording(text);
+            const trigger = await utils.UserManager.checkForIllegalWording(text);
             if (trigger) {
                 utils.error(res, 400, "IllegalWordsUsed");
     
-                const illegalWordIndex = await this.getIndexOfIllegalWording(text);
+                const illegalWordIndex = await utils.UserManager.getIndexOfIllegalWording(text);
 
                 const before = text.substring(0, illegalWordIndex[0]);
                 const after = text.substring(illegalWordIndex[1]);
@@ -51,9 +51,9 @@ module.exports = (app, utils) => {
         }
 
         const slightlyIllegalWordingError = async (text, type) => {
-            let trigger = await this.checkForSlightlyIllegalWording(text);
+            let trigger = await utils.UserManager.checkForSlightlyIllegalWording(text);
             if (trigger) {
-                const illegalWordIndex = await this.getIndexOfSlightlyIllegalWording(text);
+                const illegalWordIndex = await utils.UserManager.getIndexOfSlightlyIllegalWording(text);
     
                 const before = text.substring(0, illegalWordIndex[0]);
                 const after = text.substring(illegalWordIndex[1]);
