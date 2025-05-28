@@ -27,6 +27,56 @@ module.exports = (app, utils) => {
             return;
         }
 
+        const illegalWordingError = async (text, type) => {
+            const trigger = await this.checkForIllegalWording(text);
+            if (trigger) {
+                utils.error(res, 400, "IllegalWordsUsed");
+    
+                const illegalWordIndex = await this.getIndexOfIllegalWording(text);
+
+                const before = text.substring(0, illegalWordIndex[0]);
+                const after = text.substring(illegalWordIndex[1]);
+                const illegalWord = text.substring(illegalWordIndex[0], illegalWordIndex[1]);
+    
+                utils.logs.sendHeatLog(
+                    before + "\x1b[31;1m" + illegalWord + "\x1b[0m" + after,
+                    trigger,
+                    type,
+                    username
+                )
+                
+                return true;
+            }
+            return false;
+        }
+
+        const slightlyIllegalWordingError = async (text, type) => {
+            let trigger = await this.checkForSlightlyIllegalWording(text);
+            if (trigger) {
+                const illegalWordIndex = await this.getIndexOfSlightlyIllegalWording(text);
+    
+                const before = text.substring(0, illegalWordIndex[0]);
+                const after = text.substring(illegalWordIndex[1]);
+                const illegalWord = text.substring(illegalWordIndex[0], illegalWordIndex[1]);
+    
+                utils.logs.sendHeatLog(
+                    before + "\x1b[33;1m" + illegalWord + "\x1b[0m" + after,
+                    trigger,
+                    type,
+                    username,
+                    0xffbb00,
+                )
+                return true;
+            }
+            return false;
+        }
+
+        if (await illegalWordingError(username, "username")) {
+            return utils.error(res, 400, "InvalidUsername");
+        }
+
+        await slightlyIllegalWordingError(username, "username");
+
         const exists = await utils.UserManager.existsByUsername(newUsername, true);
         if (exists) {
             utils.error(res, 404, "UsernameTaken");
