@@ -71,11 +71,11 @@ module.exports = (app, utils) => {
             return false;
         }
 
-        if (await illegalWordingError(username, "username")) {
+        if (await illegalWordingError(newUsername, "username")) {
             return utils.error(res, 400, "InvalidUsername");
         }
 
-        await slightlyIllegalWordingError(username, "username");
+        await slightlyIllegalWordingError(newUsername, "username");
 
         const exists = await utils.UserManager.existsByUsername(newUsername, true);
         if (exists) {
