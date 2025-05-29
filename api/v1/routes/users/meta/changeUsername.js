@@ -72,7 +72,7 @@ module.exports = (app, utils) => {
         }
 
         if (await illegalWordingError(newUsername, "username")) {
-            return utils.error(res, 400, "InvalidUsername");
+            return;
         }
 
         await slightlyIllegalWordingError(newUsername, "username");
