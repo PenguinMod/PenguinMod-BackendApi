@@ -6,7 +6,7 @@ module.exports = (app, utils) => {
         const page = utils.handle_page(packet.page);
 
         if (!projectID) {
-            return utils.error(res, 400, "Missing authorId");
+            return utils.error(res, 400, "Missing projectId");
         }
 
         const projects = await utils.UserManager.getRemixes(projectID, page, Number(utils.env.PageSize));
