@@ -43,7 +43,7 @@ module.exports = (app, utils) => {
                     trigger,
                     type,
                     username
-                )
+                );
                 
                 return true;
             }
@@ -72,6 +72,7 @@ module.exports = (app, utils) => {
         }
 
         if (await illegalWordingError(newUsername, "username")) {
+            // function already errors
             return;
         }
 
