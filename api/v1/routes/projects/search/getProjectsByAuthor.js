@@ -26,7 +26,7 @@ module.exports = (app, utils) => {
 
         if (privateProfile) {
             if (!logged_in) {
-                await utils.error(res, 403, "PrivateProfile");
+                return await utils.error(res, 403, "PrivateProfile");
             }
 
             const user_id = await utils.UserManager.getIDByUsername(username);
@@ -35,7 +35,7 @@ module.exports = (app, utils) => {
             if (username !== target && (
                 !(is_following && canFollowingSeeProfile) && !isMod
             )) {
-                await utils.error(res, 403, "PrivateProfile");
+                return await utils.error(res, 403, "PrivateProfile");
             }
         }
 
