@@ -19,7 +19,7 @@ module.exports = (app, utils) => {
         const logged_in = username && token && await utils.UserManager.loginWithToken(username, token);
         const is_author = logged_in && username == authorUsername;
 
-        const target_data = await utils.UserManager.getUserData(target);
+        const target_data = await utils.UserManager.getUserData(authorUsername);
 
         const id = target_data.id;
         const privateProfile = target_data.privateProfile;
