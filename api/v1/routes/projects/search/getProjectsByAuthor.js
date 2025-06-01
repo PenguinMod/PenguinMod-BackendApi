@@ -19,6 +19,10 @@ module.exports = (app, utils) => {
         const logged_in = username && token && await utils.UserManager.loginWithToken(username, token);
 
         const target_data = await utils.UserManager.getUserData(authorUsername);
+        const user_data = await utils.UserManager.getUserData(username);
+        let isMod = false;
+        if (logged_in)
+            isMod = user_data.moderator || user_data.admin;
 
         const id = target_data.id;
         const privateProfile = target_data.privateProfile;
@@ -32,7 +36,7 @@ module.exports = (app, utils) => {
             const user_id = await utils.UserManager.getIDByUsername(username);
             const is_following = await utils.UserManager.isFollowing(id, user_id);
 
-            if (username !== target && (
+            if (username !== authorUsername && (
                 !(is_following && canFollowingSeeProfile) && !isMod
             )) {
                 return await utils.error(res, 403, "PrivateProfile");
