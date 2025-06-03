@@ -3441,10 +3441,9 @@ class UserManager {
     }
 
     async almostFeatured(page, pageSize, maxPageSize) {
-        const time_after = Date.now() - (1000 * 60 * 60 * 24 * 21); // 21 days ago
         const result = await this.projects.aggregate([
             {
-                $match: { softRejected: false, hardReject: false, public: true, featured: false, /*date: { $gt: time_after }*/ }
+                $match: { softRejected: false, hardReject: false, public: true, featured: false }
             },
             {
                 $sort: { views: -1 }
@@ -3479,6 +3478,9 @@ class UserManager {
             {
                 $sort: { votes: -1 }
             },
+            {
+                $limit: pageSize * 2
+            },
             { // get user input
                 $lookup: {
                     from: "users",
@@ -3489,9 +3491,6 @@ class UserManager {
             },
             { // only allow ranked users to show up
                 $match: { "authorInfo.rank": { $gt: 0 } }
-            },
-            {
-                $skip: page * pageSize
             },
             {
                 $limit: pageSize
