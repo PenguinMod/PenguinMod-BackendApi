@@ -2649,6 +2649,16 @@ class UserManager {
                 videoState: json.targets[target].videoState,
                 textToSpeechLanguage: json.targets[target].textToSpeechLanguage,
                 visible: json.targets[target].visible,
+                extensionData: {}
+            }
+
+            // loop over the extensionData
+            for (const extensionData in json.targets[target].extensionData) {
+                newtarget.extensionData[extensionData] = {
+                    data: castToString(json.extensionData[extensionData]),
+                    // true if the extension data is not a string
+                    parse: typeof json.extensionData[extensionData] !== "string"
+                }
             }
 
             // loop over the variables
@@ -2871,8 +2881,17 @@ class UserManager {
                 size: target.size,
                 direction: target.direction,
                 draggable: target.draggable,
-                rotationStyle: target.rotationStyle
+                rotationStyle: target.rotationStyle,
+                extensionData: target.extensionData,
             };
+
+            for (const extensionData in target.extensionData) {
+                if (target.extensionData[extensionData].parse) {
+                    newTarget.extensionData[extensionData] = JSON.parse(json.extensionData[extensionData].data);
+                } else {
+                    newTarget.extensionData[extensionData] = target.extensionData[extensionData];
+                }
+            }
 
             for (const variable in target.variables) {
                 newTarget.variables[variable] = [target.variables[variable].name, target.variables[variable].value];
