@@ -10,12 +10,12 @@ module.exports = (app, utils) => {
         legacyHeaders: false,
     }),
     async (req, res) => {
-        console.time("wholeThing");
         const measure_performance = Math.random() * 10 < 1;
         if (measure_performance) {
             console.log("----PERFORMANCE LOGS----")
         }
 
+        console.time("wholeThing");
         const packet = req.query
         /* needed:
             - featured
