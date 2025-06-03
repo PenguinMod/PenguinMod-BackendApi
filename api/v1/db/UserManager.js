@@ -1371,6 +1371,9 @@ class UserManager {
                     "author": {
                         id: "$author",
                         username: { $arrayElemAt: ["$authorInfo.username", 0] }
+                    },
+                    "fromDonator": {
+                        $in: ["donator", "$authorInfo.badges"]
                     }
                 }
             },
@@ -1849,6 +1852,9 @@ class UserManager {
                     "author": {
                         id: "$author",
                         username: { $arrayElemAt: ["$authorInfo.username", 0] }
+                    },
+                    "fromDonator": {
+                        $in: ["donator", "$authorInfo.badges"]
                     }
                 }
             },
@@ -3287,6 +3293,9 @@ class UserManager {
                     "author": {
                         id: "$author",
                         username: { $arrayElemAt: ["$authorInfo.username", 0] }
+                    },
+                    "fromDonator": {
+                        $in: ["donator", "$authorInfo.badges"]
                     }
                 }
             },
@@ -3493,6 +3502,9 @@ class UserManager {
                     "author": {
                         id: "$author",
                         username: { $arrayElemAt: ["$authorInfo.username", 0] }
+                    },
+                    "fromDonator": {
+                        $in: ["donator", "$authorInfo.badges"]
                     }
                 }
             },

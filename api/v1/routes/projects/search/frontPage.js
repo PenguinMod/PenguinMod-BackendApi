@@ -119,8 +119,8 @@ module.exports = (app, utils) => {
             console.time("is donator & impressions");
         }
         for (const key in page) {
-            const newPage = []
             for (const project of page[key]) {
+                /*
                 const badges = await utils.UserManager.getBadges(project.author.username);
 
                 if (!badges) continue;
@@ -128,10 +128,10 @@ module.exports = (app, utils) => {
                 const isDonator = badges.includes("donator");
                 project.fromDonator = isDonator;
                 newPage.push(project);
+                */
 
                 await utils.UserManager.addImpression(project.id);
             }
-            page[key] = newPage;
         }
         if (measure_performance) {
             console.timeEnd("is donator & impressions");
