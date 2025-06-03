@@ -21,11 +21,12 @@ module.exports = (app, utils) => {
             - fits tags
             - latest
         */
-        if (measure_performance) {
-            console.log("----PERFORMANCE LOGS----")
-        }
+        
         if (packet.username === "ianyourgod") {
             measure_performance = true;
+        }
+        if (measure_performance) {
+            console.log("----PERFORMANCE LOGS----")
         }
 
         const tags = [
