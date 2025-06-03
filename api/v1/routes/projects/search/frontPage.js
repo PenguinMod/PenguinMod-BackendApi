@@ -138,13 +138,14 @@ module.exports = (app, utils) => {
 
         page.selectedTag = tag;
 
-        console.time("sendData");
+        if (measure_performance)
+            console.time("sendData");
         res.header("Content-Type", "application/json");
         res.header("Cache-Control", "public, max-age=90");
         res.status(200);
         res.send(page);
-        console.timeEnd("sendData");
         if (measure_performance) {
+            console.timeEnd("sendData");
             console.log(`Whole thing: ${Date.now()-start}ms`)
         }
     });
