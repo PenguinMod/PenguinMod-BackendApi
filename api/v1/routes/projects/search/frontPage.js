@@ -56,7 +56,7 @@ module.exports = (app, utils) => {
 
         const tag = "#" + tags[Math.floor(Math.random() * tags.length)];
         if (measure_performance) {
-            console.time("Pre things");
+            console.timeEnd("Pre things");
         }
 
         if (measure_performance) {
@@ -64,7 +64,7 @@ module.exports = (app, utils) => {
         }
         const featured = await utils.UserManager.getFeaturedProjects(0, Number(utils.env.PageSize));
         if (measure_performance) {
-            console.time("featured");
+            console.timeEnd("featured");
         }
         
         if (measure_performance) {
@@ -75,7 +75,7 @@ module.exports = (app, utils) => {
             Number(utils.env.MaxPageSize) || 100,
         );
         if (measure_performance) {
-            console.time("almost featured");
+            console.timeEnd("almost featured");
         }
 
         /*
@@ -95,7 +95,7 @@ module.exports = (app, utils) => {
         }
         const fitsTags = await utils.UserManager.searchProjects(is_mod, tag, "newest", 0, Number(utils.env.PageSize), Number(utils.env.MaxPageSize))
         if (measure_performance) {
-            console.time("fits tags");
+            console.timeEnd("fits tags");
         }
 
         if (measure_performance) {
@@ -103,7 +103,7 @@ module.exports = (app, utils) => {
         }
         const latest = await utils.UserManager.getProjects(is_mod, 0, Number(utils.env.PageSize), Number(utils.env.MaxPageSize), user_id);
         if (measure_performance) {
-            console.time("latest");
+            console.timeEnd("latest");
         }
 
         const page = {
@@ -134,7 +134,7 @@ module.exports = (app, utils) => {
             page[key] = newPage;
         }
         if (measure_performance) {
-            console.time("is donator & impressions");
+            console.timeEnd("is donator & impressions");
         }
 
         page.selectedTag = tag;
