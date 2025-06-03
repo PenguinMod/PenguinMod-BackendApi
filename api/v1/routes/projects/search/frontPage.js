@@ -13,7 +13,9 @@ module.exports = (app, utils) => {
     }),
     async (req, res) => {
         const measure_performance = Math.random() * 10 < 1;
-        const perf_measuring = {};
+        if (measure_performance) {
+            console.log("----PERFORMANCE LOGS----")
+        }
 
         const packet = req.query
         /* needed:
