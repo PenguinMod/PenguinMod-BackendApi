@@ -119,25 +119,13 @@ module.exports = (app, utils) => {
 
         // TODO: swap to use lookup instead of multiple queries
         if (measure_performance) {
-            console.time("is donator & impressions");
+            console.time("impressions");
         }
-        for (const key in page) {
-            for (const project of page[key]) {
-                /*
-                const badges = await utils.UserManager.getBadges(project.author.username);
 
-                if (!badges) continue;
+        await utils.UserManager.addImpressionsMany(Object.values(page).flat());
 
-                const isDonator = badges.includes("donator");
-                project.fromDonator = isDonator;
-                newPage.push(project);
-                */
-
-                await utils.UserManager.addImpression(project.id);
-            }
-        }
         if (measure_performance) {
-            console.timeEnd("is donator & impressions");
+            console.timeEnd("impressions");
         }
 
         page.selectedTag = tag;

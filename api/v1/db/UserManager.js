@@ -4388,6 +4388,15 @@ class UserManager {
     async addImpression(project_id) {
         await this.projects.updateOne({id:project_id},{$inc:{impressions:1}});
     }
+
+    async addImpressionsMany(project_ids) {
+        await this.projects.updateMany(
+            {id: {
+                $in: project_ids
+            }},
+            {$inc:{impressions:1}}
+        );
+    }
 }
 
 module.exports = UserManager;
