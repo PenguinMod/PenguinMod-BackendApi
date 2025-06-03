@@ -3250,7 +3250,7 @@ class UserManager {
 
         if (!show_unranked) {
             aggregateList.push(
-                { // get user input
+                {
                     $lookup: {
                         from: "users",
                         localField: "author",
@@ -3275,7 +3275,7 @@ class UserManager {
 
         if (show_unranked) {
             aggregateList.push(
-                { // get user input
+                {
                     $lookup: {
                         from: "users",
                         localField: "author",
@@ -3479,21 +3479,15 @@ class UserManager {
                 $sort: { votes: -1 }
             },
             {
-                $limit: pageSize * 2
+                $limit: pageSize
             },
-            { // get user input
+            {
                 $lookup: {
                     from: "users",
                     localField: "author",
                     foreignField: "id",
                     as: "authorInfo"
                 }
-            },
-            { // only allow ranked users to show up
-                $match: { "authorInfo.rank": { $gt: 0 } }
-            },
-            {
-                $limit: pageSize
             },
             {
                 // set author to { id: old_.author, username: authorInfo.username }
@@ -3559,7 +3553,7 @@ class UserManager {
             {
                 $sort: { loves: -1 }
             },
-            { // get user input
+            {
                 $lookup: {
                     from: "users",
                     localField: "author",
