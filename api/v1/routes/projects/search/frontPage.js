@@ -10,9 +10,6 @@ module.exports = (app, utils) => {
         legacyHeaders: false,
     }),
     async (req, res) => {
-        let measure_performance = Math.random() * 10 < 1;
-
-        const start = Date.now();
         const packet = req.query
         /* needed:
             - featured
@@ -21,14 +18,6 @@ module.exports = (app, utils) => {
             - fits tags
             - latest
         */
-        
-        if (packet.username === "ianyourgod") {
-            measure_performance = true;
-        }
-        if (measure_performance) {
-            console.log("----PERFORMANCE LOGS----")
-        }
-
         const tags = [
             "games",
             "animation",
@@ -51,35 +40,17 @@ module.exports = (app, utils) => {
         const username = packet.username;
         const token = packet.token;
 
-        if (measure_performance) {
-            console.time("Pre things");
-        }
         const user_and_logged_in = username && token && await utils.UserManager.loginWithToken(username, token);
         const is_mod = user_and_logged_in && await utils.UserManager.isModeratorOrAdmin(username)
 
         const tag = "#" + tags[Math.floor(Math.random() * tags.length)];
-        if (measure_performance) {
-            console.timeEnd("Pre things");
-        }
 
-        if (measure_performance) {
-            console.time("featured");
-        }
         const featured = await utils.UserManager.getFeaturedProjects(0, Number(utils.env.PageSize));
-        if (measure_performance) {
-            console.timeEnd("featured");
-        }
-        
-        if (measure_performance) {
-            console.time("almost featured");
-        };
+
         const almostFeatured = await utils.UserManager.almostFeatured(0,
             Number(utils.env.PageSize) || 20,
             Number(utils.env.MaxPageSize) || 100,
         );
-        if (measure_performance) {
-            console.timeEnd("almost featured");
-        }
 
         /*
         const highViews = await utils.UserManager.specializedSearch(
@@ -93,21 +64,9 @@ module.exports = (app, utils) => {
 
         const user_id = user_and_logged_in ? await utils.UserManager.getIDByUsername(username) : null;
 
-        if (measure_performance) {
-            console.time("fits tags");
-        }
         const fitsTags = await utils.UserManager.searchProjects(is_mod, tag, "newest", 0, Number(utils.env.PageSize), Number(utils.env.MaxPageSize))
-        if (measure_performance) {
-            console.timeEnd("fits tags");
-        }
 
-        if (measure_performance) {
-            console.time("latest");
-        }
         const latest = await utils.UserManager.getProjects(is_mod, 0, Number(utils.env.PageSize), Number(utils.env.MaxPageSize), user_id);
-        if (measure_performance) {
-            console.timeEnd("latest");
-        }
 
         const page = {
             featured: featured,
@@ -117,28 +76,13 @@ module.exports = (app, utils) => {
             latest: latest,
         };
 
-        // TODO: swap to use lookup instead of multiple queries
-        if (measure_performance) {
-            console.time("impressions");
-        }
-
         await utils.UserManager.addImpressionsMany(Object.values(page).flat());
-
-        if (measure_performance) {
-            console.timeEnd("impressions");
-        }
 
         page.selectedTag = tag;
 
-        if (measure_performance)
-            console.time("sendData");
         res.header("Content-Type", "application/json");
         res.header("Cache-Control", "public, max-age=90");
         res.status(200);
         res.send(page);
-        if (measure_performance) {
-            console.timeEnd("sendData");
-            console.log(`Whole thing: ${Date.now()-start}ms`)
-        }
     });
 }
