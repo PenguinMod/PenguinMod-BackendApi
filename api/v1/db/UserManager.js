@@ -3441,10 +3441,10 @@ class UserManager {
     }
 
     async almostFeatured(page, pageSize, maxPageSize) {
-        const time_after = Date.now() - (1000 * 60 * 60 * 24 * 21);
+        const time_after = Date.now() - (1000 * 60 * 60 * 24 * 21); // 21 days ago
         const result = await this.projects.aggregate([
             {
-                $match: { softRejected: false, hardReject: false, public: true, featured: false, date: { $gt: time_after } }
+                $match: { softRejected: false, hardReject: false, public: true, featured: false, /*date: { $gt: time_after }*/ }
             },
             {
                 $sort: { views: -1 }
