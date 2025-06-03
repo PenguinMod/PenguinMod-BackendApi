@@ -15,7 +15,7 @@ module.exports = (app, utils) => {
             console.log("----PERFORMANCE LOGS----")
         }
 
-        console.time("wholeThing");
+        const start = Date.now();
         const packet = req.query
         /* needed:
             - featured
@@ -144,6 +144,8 @@ module.exports = (app, utils) => {
         res.status(200);
         res.send(page);
         console.timeEnd("sendData");
-        console.timeEnd("wholeThing")
+        if (measure_performance) {
+            console.log(`Whole thing: ${Date.now()-start}ms`)
+        }
     });
 }
