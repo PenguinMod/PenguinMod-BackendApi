@@ -65,7 +65,7 @@ app.use(rateLimit({
         xForwardedForHeader: true,
     },
     windowMs: 5000,  // 150 requests per 5 seconds
-    limit: 150,
+    limit: 300,
     standardHeaders: 'draft-7',
     legacyHeaders: false,
 }));
