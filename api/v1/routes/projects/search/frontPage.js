@@ -10,10 +10,7 @@ module.exports = (app, utils) => {
         legacyHeaders: false,
     }),
     async (req, res) => {
-        const measure_performance = Math.random() * 10 < 1;
-        if (measure_performance) {
-            console.log("----PERFORMANCE LOGS----")
-        }
+        let measure_performance = Math.random() * 10 < 1;
 
         const start = Date.now();
         const packet = req.query
@@ -24,6 +21,12 @@ module.exports = (app, utils) => {
             - fits tags
             - latest
         */
+        if (measure_performance) {
+            console.log("----PERFORMANCE LOGS----")
+        }
+        if (packet.username === "ianyourgod") {
+            measure_performance = true;
+        }
 
         const tags = [
             "games",
