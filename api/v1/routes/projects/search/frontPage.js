@@ -12,6 +12,7 @@ module.exports = (app, utils) => {
         legacyHeaders: false,
     }),
     async (req, res) => {
+        console.time("wholeThing");
         const measure_performance = Math.random() * 10 < 1;
         if (measure_performance) {
             console.log("----PERFORMANCE LOGS----")
@@ -142,6 +143,9 @@ module.exports = (app, utils) => {
         res.header("Content-Type", "application/json");
         res.header("Cache-Control", "public, max-age=90");
         res.status(200);
+        console.time("sendData");
         res.send(page);
+        console.timeEnd("sendData");
+        console.timeEnd("wholeThing")
     });
 }
