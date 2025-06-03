@@ -140,10 +140,10 @@ module.exports = (app, utils) => {
 
         page.selectedTag = tag;
 
+        console.time("sendData");
         res.header("Content-Type", "application/json");
         res.header("Cache-Control", "public, max-age=90");
         res.status(200);
-        console.time("sendData");
         res.send(page);
         console.timeEnd("sendData");
         console.timeEnd("wholeThing")
