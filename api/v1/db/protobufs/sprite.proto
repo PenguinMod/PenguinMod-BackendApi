@@ -111,4 +111,5 @@ message Sprite {
     optional string videoState = 23;
     optional string textToSpeechLanguage = 24;
     optional bool visible = 25;
+    optional map<string, Project.extensionData> = 26;
 }
