@@ -3445,7 +3445,7 @@ class UserManager {
         const result = await this.projects.aggregate([
             {
                 $match: { softRejected: false, hardReject: false, public: true, featured: false, date: { $gt: time_after } }
-            }, 
+            },
             {
                 $sort: { views: -1 }
             },
@@ -3453,7 +3453,7 @@ class UserManager {
                 $skip: page * pageSize
             },
             {
-                $limit: maxPageSize * 3
+                $limit: maxPageSize
             },
             {
                 $lookup: {
