@@ -1,5 +1,3 @@
-const { performance, PerformanceObserver } = require("node:perf_hooks");
-
 module.exports = (app, utils) => {
     app.get('/api/v1/projects/frontpage', utils.rateLimiter({
         validate: {
