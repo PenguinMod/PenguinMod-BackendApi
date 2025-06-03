@@ -1,3 +1,5 @@
+const { performance, PerformanceObserver } = require("node:perf_hooks");
+
 module.exports = (app, utils) => {
     app.get('/api/v1/projects/frontpage', utils.rateLimiter({
         validate: {
@@ -10,6 +12,9 @@ module.exports = (app, utils) => {
         legacyHeaders: false,
     }),
     async (req, res) => {
+        const measure_performance = Math.random() * 10 < 1;
+        const perf_measuring = {};
+
         const packet = req.query
         /* needed:
             - featured
@@ -41,17 +46,35 @@ module.exports = (app, utils) => {
         const username = packet.username;
         const token = packet.token;
 
+        if (measure_performance) {
+            console.time("Pre things");
+        }
         const user_and_logged_in = username && token && await utils.UserManager.loginWithToken(username, token);
         const is_mod = user_and_logged_in && await utils.UserManager.isModeratorOrAdmin(username)
 
         const tag = "#" + tags[Math.floor(Math.random() * tags.length)];
+        if (measure_performance) {
+            console.time("Pre things");
+        }
 
+        if (measure_performance) {
+            console.time("featured");
+        }
         const featured = await utils.UserManager.getFeaturedProjects(0, Number(utils.env.PageSize));
+        if (measure_performance) {
+            console.time("featured");
+        }
         
+        if (measure_performance) {
+            console.time("almost featured");
+        };
         const almostFeatured = await utils.UserManager.almostFeatured(0,
             Number(utils.env.PageSize) || 20,
             Number(utils.env.MaxPageSize) || 100,
         );
+        if (measure_performance) {
+            console.time("almost featured");
+        }
 
         /*
         const highViews = await utils.UserManager.specializedSearch(
@@ -62,11 +85,24 @@ module.exports = (app, utils) => {
         )
         */
 
+
         const user_id = user_and_logged_in ? await utils.UserManager.getIDByUsername(username) : null;
 
+        if (measure_performance) {
+            console.time("fits tags");
+        }
         const fitsTags = await utils.UserManager.searchProjects(is_mod, tag, "newest", 0, Number(utils.env.PageSize), Number(utils.env.MaxPageSize))
+        if (measure_performance) {
+            console.time("fits tags");
+        }
 
+        if (measure_performance) {
+            console.time("latest");
+        }
         const latest = await utils.UserManager.getProjects(is_mod, 0, Number(utils.env.PageSize), Number(utils.env.MaxPageSize), user_id);
+        if (measure_performance) {
+            console.time("latest");
+        }
 
         const page = {
             featured: featured,
@@ -77,6 +113,9 @@ module.exports = (app, utils) => {
         };
 
         // TODO: swap to use lookup instead of multiple queries
+        if (measure_performance) {
+            console.time("is donator & impressions");
+        }
         for (const key in page) {
             const newPage = []
             for (const project of page[key]) {
@@ -91,6 +130,9 @@ module.exports = (app, utils) => {
                 await utils.UserManager.addImpression(project.id);
             }
             page[key] = newPage;
+        }
+        if (measure_performance) {
+            console.time("is donator & impressions");
         }
 
         page.selectedTag = tag;
