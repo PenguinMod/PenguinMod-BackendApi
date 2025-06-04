@@ -64,7 +64,7 @@ app.use(rateLimit({
         trustProxy: true,
         xForwardedForHeader: true,
     },
-    windowMs: 5000,  // 150 requests per 5 seconds
+    windowMs: 2500,  // 300 requests per 2.5 seconds
     limit: 300,
     standardHeaders: 'draft-7',
     legacyHeaders: false,
