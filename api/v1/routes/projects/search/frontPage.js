@@ -77,16 +77,17 @@ module.exports = (app, utils) => {
             latest: latest,
         };
 
-        console.log("timing suggested");
-        console.time("suggested");
+        
         if (user_and_logged_in) {
             const is_donator = await utils.UserManager.isDonator(username);
             if (is_donator) {
+                console.log("timing suggested");
+                console.time("suggested");
                 const fyp = await utils.UserManager.getFYP(username, 0, Number(utils.env.PageSize), Number(utils.env.MaxPageSize));
                 page.suggested = fyp;
+                console.timeEnd("suggested");
             }
         }
-        console.timeEnd("suggested");
 
         await utils.UserManager.addImpressionsMany(Object.values(page).flat());
 
