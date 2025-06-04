@@ -80,6 +80,8 @@ class UserManager {
         this.maxviews = maxviews ? maxviews : 10000;
         this.viewresetrate = viewresetrate ? viewresetrate : 1000 * 60 * 60;
 
+        this.tagWeights = this.db.collection("tagWeights");
+
         // Setup minio
 
         this.minioClient = new Minio.Client({
@@ -1460,7 +1462,6 @@ class UserManager {
                     if (err.code === "NotFound") {
                         resolve(false);
                     } else {
-                        console.log("Error checking if object exists: ", err);
                         console.error("Error checking if object exists: ", err);
                     }
                 } else {
@@ -4380,6 +4381,211 @@ class UserManager {
 
     async addImpression(project_id) {
         await this.projects.updateOne({id:project_id},{$inc:{impressions:1}});
+    }
+
+    /**
+     * Register an interaction. Doesn't need the project since all thats stored is the tags in the project
+     * @param {string} user_id ID of the user
+     * @param {string} interaction_type The type of the interaction. Currently only "love", "unlove", and "view" are supported
+     * @param {string[]} tags an array of the tags
+     * @returns {Promise<>}
+     */
+    async registerInteraction(user_id, interaction_type, tags) {
+        let weight;
+        switch (interaction_type) {
+            case "view":
+                weight = 1;
+                break;
+            case "love":
+                weight = 5;
+                break;
+            case "unlove":
+                weight = -5;
+                break;
+            case "less":
+                weight = -25;
+                break;
+            default:
+                weight = 0;
+                break;
+        }
+
+        for (const tag of tags) {
+            await this.tagWeights.updateOne(
+                {
+                    user_id,
+                    tag
+                },
+                {
+                    $inc: { weight },
+                    $set: {
+                        most_recent: Date.now()
+                    }
+                },
+                {
+                    upsert: true,
+                }
+            )
+        }
+    }
+
+    /**
+     * Collect tags (#abc) from a string
+     * @param {string} text The text
+     * @returns {string[]}
+     */
+    collectTags(text) {
+        // i hate regex. but anyways. this gets occurences of a hash followed by non-whitespace characters. ty stackoverflow user
+        const res = text.match(/#\w+/g);
+        return res ? res.map(t => t.substring(1)) : [];
+    }
+
+    /**
+     * Register a love/unlove of a project.
+     * @param {string} user_id ID of the user
+     * @param {string} text the text of the project. Usually will be the instructions and notes.
+     * @param {boolean} love If its a love or removal of a love. True for love, false for remove.
+     * @returns {Promise<>}
+     */
+    async collectAndInteractLove(user_id, text, love) {
+        const tags = this.collectTags(text);
+
+        await this.registerInteraction(user_id, love ? "love" : "unlove", tags);
+    }
+
+    /**
+     * Register a view of a project.
+     * @param {string} user_id ID of the user
+     * @param {string} text the text of the project. Usually will be the instructions and notes.
+     * @returns {Promise<>}
+     */
+    async collectAndInteractView(user_id, text) {
+        const tags = this.collectTags(text);
+
+        await this.registerInteraction(user_id, "view", tags);
+    }
+
+    /**
+     * Suggest less of these tags
+     * @param {string} user_id ID of the user
+     * @param {string} text the text of the project. Usually will be the instructions and notes.
+     * @returns {Promise<>}
+     */
+    async collectAndLess(user_id, text) {
+        const tags = this.collectTags(text);
+
+        await this.registerInteraction(user_id, "less", tags);
+    }
+
+    async getFYP(username, page, pageSize, maxPageSize) {
+        const user_id = await this.getIDByUsername(username);
+
+        const top_tags = (await this.tagWeights.aggregate([
+            {
+                $match: {user_id}
+            },
+            {
+                $sort: { weight: -1 }
+            },
+            {
+                $limit: 50
+            }
+        ]).toArray()).map(tag => tag.tag);
+
+        function escapeRegex(input) {
+            return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        const tag_string = top_tags.map(tag => escapeRegex("#" + tag)).join("|");
+
+        const projects = await this.projects.aggregate([
+            {
+                $match: {
+                    softRejected: false,
+                    hardReject: false,
+                    public: true,
+                    $or: [
+                        { title: { $regex: `.*${tag_string}.*`, $options: "i" } },
+                        { instructions: { $regex: `.*${tag_string}.*`, $options: "i" } },
+                        { notes: { $regex: `.*${tag_string}.*`, $options: "i" } }
+                    ] 
+                },
+            },
+            {
+                $sort: { date: -1 }
+            },
+            {
+                $skip: page * pageSize
+            },
+            {
+                $limit: maxPageSize
+            },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "author",
+                    foreignField: "id",
+                    as: "authorInfo"
+                }
+            },
+            /*{
+                $match: { "authorInfo.rank": { $gt: 0 } }
+            },*/
+            {
+                $sort: { views: -1 }
+            },
+            {
+                $skip: page * pageSize
+            },
+            {
+                $limit: Math.max(maxPageSize / 2, pageSize)
+            },
+            {
+                $addFields: {
+                    impressions: {
+                        $cond: {
+                            if: { $eq: ["$impressions", null] },
+                            then: "$views",
+                            else: "$impressions"
+                        }
+                    }
+                }
+            },
+            {
+                $addFields: {
+                    vw_imp_ratio: {
+                        $cond: {
+                            if: { $eq: ["$impressions", 0] },
+                            then: 0,
+                            else: { $divide: ["$views", "$impressions"] }
+                        }
+                    }
+                }
+            },
+            {
+                $sort: { vw_imp_ratio: -1 }
+            },
+            {
+                $skip: page * pageSize
+            },
+            {
+                $limit: pageSize
+            },
+            {
+                // set author to { id: old_.author, username: authorInfo.username }
+                $addFields: {
+                    "author": {
+                        id: "$author",
+                        username: { $arrayElemAt: ["$authorInfo.username", 0] }
+                    }
+                }
+            },
+            {
+                $unset: [ "authorInfo", "_id", "vw_imp_ratio" ]
+            }
+        ]).toArray();
+
+        return projects;
     }
 
     async addImpressionsMany(project_ids) {
