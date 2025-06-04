@@ -1,11 +1,11 @@
 const fs = require('fs');
 const path = require('path');
 const sharp = require('sharp');
-const Magic = require('mmmagic').Magic;
-const magic = new Magic();
+const Magic = require('mmmagic');
+const magic = new Magic.Magic(Magic.MAGIC_MIME_TYPE);
 
 module.exports = (app, utils) => {
-    app.post('/api/v1/users/setpfpadmin', utils.cors(), utils.upload.single("picture"), utils.file_size_limit(utils, req => req.body.username), async (req, res) => {
+    app.post('/api/v1/users/setpfpadmin', utils.cors(), utils.upload.single("picture"), async (req, res) => {
         const packet = req.body;
 
         const username = (String(packet.username)).toLowerCase();
@@ -35,17 +35,18 @@ module.exports = (app, utils) => {
             return utils.error(res, 400, "File too large");
         }
 
-        const picture = fs.readFileSync(path.join(utils.HomeDir, pictureName.path));
+        const picture = fs.readFileSync(path.join(utils.homeDir, pictureName.path));
 
         const allowedTypes = ["image/png", "image/jpeg"];
 
         magic.detect(picture, async (err, result) => {
             if (err) {
+                console.log(err);
                 return utils.error(res, 400, "Invalid file type");
             }
 
             if (!allowedTypes.includes(result)) {
-                return utils.error(res, 400, "Invalid file type");
+                return utils.error(res, 400, `Invalid file type, ${result}`);
             }
 
             const resized_picture = await sharp(picture).resize(100, 100).toBuffer()

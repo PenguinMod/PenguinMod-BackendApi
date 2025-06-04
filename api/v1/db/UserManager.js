@@ -193,7 +193,7 @@ class UserManager {
         const illegalWordingError = async (text, type) => {
             const trigger = await this.checkForIllegalWording(text);
             if (trigger) {
-                utils.error(res, 400, "IllegalWordsUsed")
+                utils.error(res, 400, "IllegalWordsUsed");
     
                 const illegalWordIndex = await this.getIndexOfIllegalWording(text);
 
@@ -1373,6 +1373,9 @@ class UserManager {
                     "author": {
                         id: "$author",
                         username: { $arrayElemAt: ["$authorInfo.username", 0] }
+                    },
+                    "fromDonator": {
+                        $in: ["donator", "$authorInfo.badges"]
                     }
                 }
             },
@@ -1850,6 +1853,9 @@ class UserManager {
                     "author": {
                         id: "$author",
                         username: { $arrayElemAt: ["$authorInfo.username", 0] }
+                    },
+                    "fromDonator": {
+                        $in: ["donator", "$authorInfo.badges"]
                     }
                 }
             },
@@ -3245,7 +3251,7 @@ class UserManager {
 
         if (!show_unranked) {
             aggregateList.push(
-                { // get user input
+                {
                     $lookup: {
                         from: "users",
                         localField: "author",
@@ -3270,7 +3276,7 @@ class UserManager {
 
         if (show_unranked) {
             aggregateList.push(
-                { // get user input
+                {
                     $lookup: {
                         from: "users",
                         localField: "author",
@@ -3288,6 +3294,9 @@ class UserManager {
                     "author": {
                         id: "$author",
                         username: { $arrayElemAt: ["$authorInfo.username", 0] }
+                    },
+                    "fromDonator": {
+                        $in: ["donator", "$authorInfo.badges"]
                     }
                 }
             },
@@ -3433,11 +3442,10 @@ class UserManager {
     }
 
     async almostFeatured(page, pageSize, maxPageSize) {
-        const time_after = Date.now() - (1000 * 60 * 60 * 24 * 21);
         const result = await this.projects.aggregate([
             {
-                $match: { softRejected: false, hardReject: false, public: true, featured: false, date: { $gt: time_after } }
-            }, 
+                $match: { softRejected: false, hardReject: false, public: true, featured: false }
+            },
             {
                 $sort: { views: -1 }
             },
@@ -3445,7 +3453,7 @@ class UserManager {
                 $skip: page * pageSize
             },
             {
-                $limit: maxPageSize * 3
+                $limit: maxPageSize
             },
             {
                 $lookup: {
@@ -3471,7 +3479,10 @@ class UserManager {
             {
                 $sort: { votes: -1 }
             },
-            { // get user input
+            {
+                $limit: pageSize
+            },
+            {
                 $lookup: {
                     from: "users",
                     localField: "author",
@@ -3479,21 +3490,15 @@ class UserManager {
                     as: "authorInfo"
                 }
             },
-            { // only allow ranked users to show up
-                $match: { "authorInfo.rank": { $gt: 0 } }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: pageSize
-            },
             {
                 // set author to { id: old_.author, username: authorInfo.username }
                 $addFields: {
                     "author": {
                         id: "$author",
                         username: { $arrayElemAt: ["$authorInfo.username", 0] }
+                    },
+                    "fromDonator": {
+                        $in: ["donator", "$authorInfo.badges"]
                     }
                 }
             },
@@ -3549,7 +3554,7 @@ class UserManager {
             {
                 $sort: { loves: -1 }
             },
-            { // get user input
+            {
                 $lookup: {
                     from: "users",
                     localField: "author",
@@ -3783,7 +3788,7 @@ class UserManager {
         // check if remix is not 0
         const remixCount = await this.projects.countDocuments({ remix: { $ne: "0" } });
         const featuredCount = await this.projects.countDocuments({ featured: true });
-        const totalViews = (await this.projects.aggregate([{$group: {_id:null, total_views:{$sum:"$views"}}}]).toArray()).at(0).total_views;
+        const totalViews = (await this.projects.aggregate([{$match: {views:{$gte:0}}},{$group: {_id:null, total_views:{$sum:"$views"}}}]).toArray()).at(0).total_views;
 
         const mongodb_stats = await this.db.command(
             {
@@ -4581,6 +4586,15 @@ class UserManager {
         ]).toArray();
 
         return projects;
+    }
+
+    async addImpressionsMany(project_ids) {
+        await this.projects.updateMany(
+            {id: {
+                $in: project_ids
+            }},
+            {$inc:{impressions:1}}
+        );
     }
 }
 

@@ -18,7 +18,6 @@ module.exports = (app, utils) => {
             - fits tags
             - latest
         */
-
         const tags = [
             "games",
             "animation",
@@ -47,7 +46,7 @@ module.exports = (app, utils) => {
         const tag = "#" + tags[Math.floor(Math.random() * tags.length)];
 
         const featured = await utils.UserManager.getFeaturedProjects(0, Number(utils.env.PageSize));
-        
+
         const almostFeatured = await utils.UserManager.almostFeatured(0,
             Number(utils.env.PageSize) || 20,
             Number(utils.env.MaxPageSize) || 100,
@@ -61,6 +60,7 @@ module.exports = (app, utils) => {
             Number(utils.env.MaxPageSize) * 10,
         )
         */
+
 
         const user_id = user_and_logged_in ? await utils.UserManager.getIDByUsername(username) : null;
 
@@ -83,22 +83,7 @@ module.exports = (app, utils) => {
             page.suggested = fyp;
         }
 
-        // TODO: swap to use lookup instead of multiple queries
-        for (const key in page) {
-            const newPage = []
-            for (const project of page[key]) {
-                const badges = await utils.UserManager.getBadges(project.author.username);
-
-                if (!badges) continue;
-
-                const isDonator = badges.includes("donator");
-                project.fromDonator = isDonator;
-                newPage.push(project);
-
-                await utils.UserManager.addImpression(project.id);
-            }
-            page[key] = newPage;
-        }
+        await utils.UserManager.addImpressionsMany(Object.values(page).flat());
 
         page.selectedTag = tag;
 

@@ -143,10 +143,10 @@ module.exports = (app, utils) => {
             }
         }
 
-        let info = await utils.UserManager.createAccount(username, real_username, packet.password, email, parsedBirthday, countryCode, false, utils, res);
+        const info = await utils.UserManager.createAccount(username, real_username, packet.password, email, parsedBirthday, countryCode, false, utils, res);
 
         if (!info) {
-            return;
+            return utils.error(res, 400, "InvalidUsername");
         }
 
         const token = info[0];

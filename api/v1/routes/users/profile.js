@@ -50,7 +50,7 @@ module.exports = (app, utils) => {
         const targetID = target_data.id;
         if (loggedIn) {
             const usernameID = await utils.UserManager.getIDByUsername(username);
-            user.isFollowing = await utils.UserManager.isFollowing(usernameID, targetID);
+            user.isFollowing = await utils.UserManager.isFollowing(targetID, usernameID);
         }
 
         if (privateProfile) {
@@ -61,16 +61,13 @@ module.exports = (app, utils) => {
                 return;
             }
 
-            if (username !== target) {
-                const usernameID = await utils.UserManager.getIDByUsername(username);
-                const isFollowing = await utils.UserManager.isFollowing(usernameID, targetID);
-
-                if (!isFollowing && !canFollowingSeeProfile && !isMod) {
-                    res.status(200);
-                    res.header("Content-Type", "application/json");
-                    res.send(user);
-                    return;
-                }
+            if (username !== target && (
+                !(user.isFollowing && canFollowingSeeProfile) && !isMod
+            )) {
+                res.status(200);
+                res.header("Content-Type", "application/json");
+                res.send(user);
+                return;
             }
         }
 
