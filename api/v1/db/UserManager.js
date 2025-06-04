@@ -4517,11 +4517,6 @@ class UserManager {
                     softRejected: false,
                     hardReject: false,
                     public: true,
-                    $or: [
-                        { title: { $regex: `.*${tag_string}.*`, $options: "i" } },
-                        { instructions: { $regex: `.*${tag_string}.*`, $options: "i" } },
-                        { notes: { $regex: `.*${tag_string}.*`, $options: "i" } }
-                    ] 
                 },
             },
             {
@@ -4531,7 +4526,16 @@ class UserManager {
                 $skip: page * pageSize
             },
             {
-                $limit: maxPageSize
+                $limit: maxPageSize * 2
+            },
+            {
+                $match: {
+                    $or: [
+                        { title: { $regex: `.*${tag_string}.*`, $options: "i" } },
+                        { instructions: { $regex: `.*${tag_string}.*`, $options: "i" } },
+                        { notes: { $regex: `.*${tag_string}.*`, $options: "i" } }
+                    ]
+                }
             },
             {
                 $lookup: {
@@ -4551,7 +4555,7 @@ class UserManager {
                 $skip: page * pageSize
             },
             {
-                $limit: Math.max(maxPageSize / 2, pageSize)
+                $limit: Math.max(maxPageSize / 2, pageSize * 2)
             },
             {
                 $addFields: {
