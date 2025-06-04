@@ -11,11 +11,12 @@ module.exports = (app, utils) => {
     }),
     async (req, res) => {
         const packet = req.query
-        /* needed:
+        /* gets:
             - featured
             - almost featured
             // - high views
             - fits tags
+            - suggested
             - latest
         */
         const tags = [
@@ -68,8 +69,6 @@ module.exports = (app, utils) => {
 
         const latest = await utils.UserManager.getProjects(is_mod, 0, Number(utils.env.PageSize), Number(utils.env.MaxPageSize), user_id);
 
-        
-
         const page = {
             featured: featured,
             voted: almostFeatured,
@@ -79,8 +78,11 @@ module.exports = (app, utils) => {
         };
 
         if (user_and_logged_in) {
-            const fyp = await utils.UserManager.getFYP(username, 0, Number(utils.env.PageSize), Number(utils.env.MaxPageSize));
-            page.suggested = fyp;
+            const is_donator = await utils.UserManager.isDonator(username);
+            if (is_donator) {
+                const fyp = await utils.UserManager.getFYP(username, 0, Number(utils.env.PageSize), Number(utils.env.MaxPageSize));
+                page.suggested = fyp;
+            }
         }
 
         await utils.UserManager.addImpressionsMany(Object.values(page).flat());

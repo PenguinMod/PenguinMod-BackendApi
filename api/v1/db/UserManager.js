@@ -691,6 +691,19 @@ class UserManager {
     }
 
     /**
+     * Check if a user is a donator
+     * @param {string} username Username of the user
+     * @returns {Promise<boolean>} if the user is a donator or not
+     */
+    async isDonator(username) {
+        const result = await this.users.findOne({username: username, badges: {
+            $in: ["donator"]
+        }});
+
+        return !!result;
+    }
+
+    /**
      * Add a badge to a user
      * @param {string} username username of the user 
      * @param {string} badge the badge to add
