@@ -696,11 +696,9 @@ class UserManager {
      * @returns {Promise<boolean>} if the user is a donator or not
      */
     async isDonator(username) {
-        const result = await this.users.findOne({username: username, badges: {
-            $in: ["donator"]
-        }});
+        const result = await this.users.findOne({username: username});
 
-        return !!result;
+        return result.badges.indexOf("donator") > -1;
     }
 
     /**
@@ -4490,120 +4488,109 @@ class UserManager {
         await this.registerInteraction(user_id, "less", tags);
     }
 
+    /**
+     * Gets the projects suggested for a particular user
+     * @param {string} username Username of the user
+     * @param {number} page What page you're on
+     * @param {number} pageSize How many you want per page
+     * @param {number} maxPageSize The max number of projects you want to do heavy operations on
+     * @returns {Promise<object[]>} The projects
+     */
     async getFYP(username, page, pageSize, maxPageSize) {
-        const user_id = await this.getIDByUsername(username);
+        const userId = await this.getIDByUsername(username);
 
-        const top_tags = (await this.tagWeights.aggregate([
-            {
-                $match: {user_id}
-            },
-            {
-                $sort: { weight: -1 }
-            },
-            {
-                $limit: 5
-            }
-        ]).toArray()).map(tag => tag.tag);
+        const topTagsDocs = await this.tagWeights.aggregate([
+            { $match: { user_id: userId } },
+            { $sort: { weight: -1, most_recent: -1 } },
+            { $limit: 10 }
+        ]).toArray();
+        const topTags = topTagsDocs.map(doc => doc.tag);
 
-        function escapeRegex(input) {
-            return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        }
+        const followedAuthors = await this.followers.aggregate([
+            { $match: { follower: userId, active: true } },
+            { $project: { _id: 0, target: 1 } }
+        ]).toArray();
+        const followedIds = followedAuthors.map(f => f.target);
 
-        const tag_string = top_tags.map(tag => escapeRegex("#" + tag)).join("|");
-
-        const projects = await this.projects.aggregate([
-            {
-                $match: {
-                    softRejected: false,
-                    hardReject: false,
-                    public: true,
-                },
-            },
-            {
-                $sort: { date: -1 }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: maxPageSize * 2
-            },
-            {
-                $match: {
-                    $or: [
-                        { title: { $regex: `.*${tag_string}.*`, $options: "i" } },
-                        { instructions: { $regex: `.*${tag_string}.*`, $options: "i" } },
-                        { notes: { $regex: `.*${tag_string}.*`, $options: "i" } }
-                    ]
-                }
-            },
+        const scoredProjects = await this.projects.aggregate([
+            { $sort: { date: -1 } },
+            { $skip: page * pageSize },
+            { $limit: maxPageSize },
             {
                 $lookup: {
-                    from: "users",
-                    localField: "author",
-                    foreignField: "id",
-                    as: "authorInfo"
-                }
-            },
-            /*{
-                $match: { "authorInfo.rank": { $gt: 0 } }
-            },*/
-            {
-                $sort: { views: -1 }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: Math.max(maxPageSize / 2, pageSize * 2)
-            },
-            {
-                $addFields: {
-                    impressions: {
-                        $cond: {
-                            if: { $eq: ["$impressions", null] },
-                            then: "$views",
-                            else: "$impressions"
-                        }
-                    }
+                    from: 'projectStats',
+                    let: { pid: '$id' },
+                    pipeline: [
+                        { $match: { $expr: { $and: [
+                            { $eq: ['$projectId', '$$pid'] },
+                            { $eq: ['$type', 'love'] }
+                        ]}}},
+                        { $count: 'count' }
+                    ],
+                    as: 'loves'
                 }
             },
             {
                 $addFields: {
-                    vw_imp_ratio: {
-                        $cond: {
-                            if: { $eq: ["$impressions", 0] },
-                            then: 0,
-                            else: { $divide: ["$views", "$impressions"] }
-                        }
-                    }
+                    loveCount: { $ifNull: [{ $arrayElemAt: ['$loves.count', 0] }, 0] }
                 }
             },
+
+            // Score: +10 if followed, +2 per top tag match, +love count
             {
-                $sort: { vw_imp_ratio: -1 }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: pageSize
-            },
-            {
-                // set author to { id: old_.author, username: authorInfo.username }
                 $addFields: {
-                    "author": {
-                        id: "$author",
-                        username: { $arrayElemAt: ["$authorInfo.username", 0] }
+                    score: {
+                        $add: [
+                            {
+                                $cond: [
+                                    { $in: ['$author', followedIds] },
+                                    10,
+                                    0
+                                ]
+                            },
+                            {
+                                $multiply: [
+                                    {
+                                        $size: {
+                                            $filter: {
+                                                input: topTags,
+                                                as: 'tag',
+                                                cond: {
+                                                $regexMatch: {
+                                                    input: {
+                                                            $concat: [
+                                                                { $ifNull: ['$title', ''] },
+                                                                ' ',
+                                                                { $ifNull: ['$instructions', ''] },
+                                                                ' ',
+                                                                { $ifNull: ['$notes', ''] }
+                                                            ]
+                                                        },
+                                                        regex: {
+                                                            $concat: ['.*', '$$tag', '.*']
+                                                        },
+                                                        options: 'i'
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                    2
+                                ]
+                            },
+                            '$loveCount'
+                        ]
                     }
                 }
             },
-            {
-                $unset: [ "authorInfo", "_id", "vw_imp_ratio" ]
-            }
+
+            { $sort: { score: -1, date: -1 } },
+            { $limit: pageSize },
         ]).toArray();
 
-        return projects;
+        return scoredProjects;
     }
+
 
     async addImpressionsMany(project_ids) {
         await this.projects.updateMany(
