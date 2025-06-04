@@ -3143,7 +3143,7 @@ class UserManager {
         let aggregateList = [
             {
                 $match: { softRejected: false, hardReject: false, public: true }
-            },  
+            },
         ];
 
         const rev = reverse ? -1 : 1;
@@ -4513,9 +4513,19 @@ class UserManager {
         const followedIds = followedAuthors.map(f => f.target);
 
         const scoredProjects = await this.projects.aggregate([
-            { $sort: { date: -1 } },
-            { $skip: page * pageSize },
-            { $limit: maxPageSize },
+            {
+                $match: { softRejected: false, hardReject: false, public: true }
+            },
+            {
+                $sort: { date: -1 }
+            },
+            {
+                $skip: page * pageSize
+            },
+            {
+                $limit: maxPageSize
+            },
+
             {
                 $lookup: {
                     from: 'projectStats',
@@ -4584,8 +4594,12 @@ class UserManager {
                 }
             },
 
-            { $sort: { score: -1, date: -1 } },
-            { $limit: pageSize },
+            {
+                $sort: { score: -1, date: -1 }
+            },
+            {
+                $limit: pageSize
+            },
 
             {
                 // collect author data
