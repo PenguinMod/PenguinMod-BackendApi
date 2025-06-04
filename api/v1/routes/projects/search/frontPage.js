@@ -77,6 +77,8 @@ module.exports = (app, utils) => {
             latest: latest,
         };
 
+        console.log("timing suggested");
+        console.time("suggested");
         if (user_and_logged_in) {
             const is_donator = await utils.UserManager.isDonator(username);
             if (is_donator) {
@@ -84,6 +86,7 @@ module.exports = (app, utils) => {
                 page.suggested = fyp;
             }
         }
+        console.timeEnd("suggested");
 
         await utils.UserManager.addImpressionsMany(Object.values(page).flat());
 
