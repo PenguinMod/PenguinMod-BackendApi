@@ -4586,6 +4586,30 @@ class UserManager {
 
             { $sort: { score: -1, date: -1 } },
             { $limit: pageSize },
+
+            {
+                // collect author data
+                $lookup: {
+                    from: "users",
+                    localField: "author",
+                    foreignField: "id",
+                    as: "authorInfo"
+                }
+            },
+            {
+                $addFields: {
+                    "author": {
+                        id: "$author",
+                        username: { $arrayElemAt: ["$authorInfo.username", 0] }
+                    }
+                }
+            },
+            {
+                $unset: [
+                    "_id",
+                    "authorInfo"
+                ]
+            }
         ]).toArray();
 
         return scoredProjects;
