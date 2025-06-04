@@ -38,7 +38,7 @@ module.exports = (app, utils) => {
             "2d"
         ]
 
-        const username = packet.username;
+        const username = String(packet.username).toLowerCase();
         const token = packet.token;
 
         const user_and_logged_in = username && token && await utils.UserManager.loginWithToken(username, token);
