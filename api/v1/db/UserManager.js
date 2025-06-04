@@ -4501,7 +4501,7 @@ class UserManager {
                 $sort: { weight: -1 }
             },
             {
-                $limit: 50
+                $limit: 5
             }
         ]).toArray()).map(tag => tag.tag);
 
