@@ -2882,7 +2882,7 @@ class UserManager {
                 direction: target.direction,
                 draggable: target.draggable,
                 rotationStyle: target.rotationStyle,
-                extensionData: target.extensionData,
+                extensionData: {},
             };
 
             for (const extensionData in target.extensionData) {
