@@ -443,6 +443,11 @@ class UserManager {
      */
     async getIDByUsername(username) {
         const result = await this.users.findOne({ username: username });
+        if (!result) {
+            const error = `----------\nCould not get ${username}'s id\n----------`
+            console.log(error);
+            throw error;
+        }
         return result.id;
     }
 
