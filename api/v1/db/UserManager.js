@@ -4365,10 +4365,9 @@ class UserManager {
     }
 
     async idListToUsernames(ids) {
-        const usernames = [];
-        for (const id of ids) {
-            usernames.push(await this.getUsernameByID(id));
-        }
+        const usernames = (await this.users.find({
+            id: { $in: ids }
+        }).toArray()).map(x => x.username);
         return usernames;
     }
 
