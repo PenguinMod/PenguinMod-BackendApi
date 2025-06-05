@@ -4453,7 +4453,8 @@ class UserManager {
     collectTags(text) {
         // i hate regex. but anyways. this gets occurences of a hash followed by non-whitespace characters. ty stackoverflow user
         const res = text.match(/#\w+/g);
-        return res ? res.map(t => t.substring(1)) : [];
+        const tags = res ? res.map(t => t.substring(1)) : [];
+        return tags.slice(0,10); // first 10 tags only
     }
 
     /**
