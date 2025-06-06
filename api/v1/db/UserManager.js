@@ -4102,7 +4102,7 @@ class UserManager {
     async getFYP(username, page, pageSize, maxPageSize) {
         const userId = await this.getIDByUsername(username);
 
-        // Get top tags and followed authors in parallel
+        // get top tags and followed authors in parallel (so we are fast)
         const [topTagsDocs, followedAuthors] = await Promise.all([
             this.tagWeights.aggregate([
                 { $match: { user_id: userId } },
@@ -4120,7 +4120,7 @@ class UserManager {
         const topTags = topTagsDocs.map(doc => doc.tag);
         const followedIds = followedAuthors.map(f => f.target);
 
-        // Build tag regex patterns once
+        // regex
         const tagRegexPatterns = topTags.map(tag => new RegExp(tag, 'i'));
 
         const scoredProjects = await this.projects.aggregate([
@@ -4129,8 +4129,8 @@ class UserManager {
                     softRejected: false, 
                     hardReject: false, 
                     public: true,
-                    // Add date filter to limit search space
-                    date: { $gte: Date.now() - (1000 * 60 * 60 * 24 * 90) } // last 90 days
+                    // date filter
+                    date: { $gte: Date.now() - (1000 * 60 * 60 * 24 * 90) } // last 90 days (fyp like tiktok lmao heh...)
                 }
             },
             {
@@ -4143,7 +4143,7 @@ class UserManager {
                 $limit: maxPageSize
             },
 
-            // Check blocking in a single stage
+            // check blocking
             {
                 $lookup: {
                     from: "blocking",
@@ -4169,7 +4169,7 @@ class UserManager {
                 $match: { blocked: { $size: 0 } }
             },
 
-            // Get love count more efficiently
+            // get love count
             {
                 $lookup: {
                     from: 'projectStats',
@@ -4191,7 +4191,8 @@ class UserManager {
                 }
             },
 
-            // Calculate score more efficiently
+            // calculate score (fast frfr)
+            // Score: +10 if followed, +2 per top tag match, +love count
             {
                 $addFields: {
                     loveCount: { $ifNull: [{ $arrayElemAt: ['$loves.count', 0] }, 0] },
@@ -4254,7 +4255,7 @@ class UserManager {
                 $limit: pageSize
             },
 
-            // Get author info
+            // collect author data
             {
                 $lookup: {
                     from: "users",
@@ -4280,10 +4281,13 @@ class UserManager {
                     followedAuthor: 0,
                     combinedText: 0,
                     tagMatches: 0,
-                    score: 0 // Remove score from final output
+                    score: 0
                 }
             }
         ]).toArray();
+        console.timeEnd("whole scoring");
+
+        console.timeEnd("whole thing");
 
         return scoredProjects;
     }
