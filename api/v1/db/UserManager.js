@@ -1350,7 +1350,7 @@ class UserManager {
                     $match: {
                         "block_info": {
                             $not: {
-                                $elemMatch: { blocker: "01JR8P6N4WZQS5JWQA5K8234SE", active: true},
+                                $elemMatch: { blocker: user_id, active: true},
                             }
                         }
                     }
@@ -4114,7 +4114,26 @@ class UserManager {
             {
                 $limit: maxPageSize
             },
-
+            {
+                $lookup: {
+                    from: "blocking",
+                    localField: "author",
+                    foreignField: "target",
+                    as: "block_info",
+                },
+            },
+            {
+                $match: {
+                    "block_info": {
+                        $not: {
+                            $elemMatch: { blocker: userId, active: true},
+                        }
+                    }
+                }
+            },
+            {
+                $unset: "block_info"
+            },
             {
                 $lookup: {
                     from: 'projectStats',
