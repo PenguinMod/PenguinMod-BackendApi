@@ -3380,15 +3380,15 @@ class UserManager {
             precentage_used
         };
     }
-
     async getStats() {
-        const userCount = await this.users.countDocuments({ permBanned: false }); // dont count perm banned users :tongue:
-        const bannedCount = await this.users.countDocuments({ $or: [{ permBanned: true }, { unbanTime: { $gt: Date.now() } }] });
-        const projectCount = await this.projects.countDocuments();
+        const userCount = await this.users.countDocuments({ permBanned: false }) || 0; // dont count perm banned users :tongue:
+        const bannedCount = await this.users.countDocuments({ $or: [{ permBanned: true }, { unbanTime: { $gt: Date.now() } }] }) || 0;
+        const projectCount = await this.projects.countDocuments() || 0;
         // check if remix is not 0
-        const remixCount = await this.projects.countDocuments({ remix: { $ne: "0" } });
-        const featuredCount = await this.projects.countDocuments({ featured: true });
-        const totalViews = (await this.projects.aggregate([{$match: {views:{$gte:0}}},{$group: {_id:null, total_views:{$sum:"$views"}}}]).toArray()).at(0).total_views;
+        const remixCount = await this.projects.countDocuments({ remix: { $ne: "0" } }) || 0;
+        const featuredCount = await this.projects.countDocuments({ featured: true }) || 0;
+        const totalViewsResult = await this.projects.aggregate([{$match: {views:{$gte:0}}},{$group: {_id:null, total_views:{$sum:"$views"}}}]).toArray();
+        const totalViews = totalViewsResult.length > 0 ? totalViewsResult[0].total_views || 0 : 0;
 
         const mongodb_stats = await this.db.command(
             {
@@ -4100,30 +4100,38 @@ class UserManager {
      * @returns {Promise<object[]>} The projects
      */
     async getFYP(username, page, pageSize, maxPageSize) {
-        console.time("whole thing");
         const userId = await this.getIDByUsername(username);
 
-        console.time("top tags");
-        const topTagsDocs = await this.tagWeights.aggregate([
-            { $match: { user_id: userId } },
-            { $sort: { weight: -1, most_recent: -1 } },
-            { $limit: 10 }
-        ]).toArray();
+        // get top tags and followed authors in parallel (so we are fast)
+        const [topTagsDocs, followedAuthors] = await Promise.all([
+            this.tagWeights.aggregate([
+                { $match: { user_id: userId } },
+                { $sort: { weight: -1, most_recent: -1 } },
+                { $limit: 10 },
+                { $project: { tag: 1, _id: 0 } }
+            ]).toArray(),
+            
+            this.followers.aggregate([
+                { $match: { follower: userId, active: true } },
+                { $project: { _id: 0, target: 1 } }
+            ]).toArray()
+        ]);
+
         const topTags = topTagsDocs.map(doc => doc.tag);
-        console.timeEnd("top tags");
-
-        console.time("followed authors");
-        const followedAuthors = await this.followers.aggregate([
-            { $match: { follower: userId, active: true } },
-            { $project: { _id: 0, target: 1 } }
-        ]).toArray();
         const followedIds = followedAuthors.map(f => f.target);
-        console.timeEnd("followed authors");
 
-        console.time("whole scoring");
+        // regex
+        const tagRegexPatterns = topTags.map(tag => new RegExp(tag, 'i'));
+
         const scoredProjects = await this.projects.aggregate([
             {
-                $match: { softRejected: false, hardReject: false, public: true }
+                $match: { 
+                    softRejected: false, 
+                    hardReject: false, 
+                    public: true,
+                    // date filter
+                    date: { $gte: Date.now() - (1000 * 60 * 60 * 24 * 90) } // last 90 days (fyp like tiktok lmao heh...)
+                }
             },
             {
                 $sort: { date: -1 }
@@ -4134,88 +4142,106 @@ class UserManager {
             {
                 $limit: maxPageSize
             },
+
+            // check blocking
             {
                 $lookup: {
                     from: "blocking",
-                    localField: "author",
-                    foreignField: "target",
-                    as: "block_info",
-                },
-            },
-            {
-                $match: {
-                    "block_info": {
-                        $not: {
-                            $elemMatch: { blocker: userId, active: true},
-                        }
-                    }
+                    let: { authorId: "$author" },
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: {
+                                    $and: [
+                                        { $eq: ["$blocker", userId] },
+                                        { $eq: ["$target", "$$authorId"] },
+                                        { $eq: ["$active", true] }
+                                    ]
+                                }
+                            }
+                        },
+                        { $limit: 1 }
+                    ],
+                    as: "blocked"
                 }
             },
             {
-                $unset: "block_info"
+                $match: { blocked: { $size: 0 } }
             },
+
+            // get love count
             {
                 $lookup: {
                     from: 'projectStats',
                     let: { pid: '$id' },
                     pipeline: [
-                        { $match: { $expr: { $and: [
-                            { $eq: ['$projectId', '$$pid'] },
-                            { $eq: ['$type', 'love'] }
-                        ]}}},
+                        { 
+                            $match: { 
+                                $expr: { 
+                                    $and: [
+                                        { $eq: ['$projectId', '$$pid'] },
+                                        { $eq: ['$type', 'love'] }
+                                    ]
+                                }
+                            }
+                        },
                         { $count: 'count' }
                     ],
                     as: 'loves'
                 }
             },
+
+            // calculate score (fast frfr)
+            // Score: +10 if followed, +2 per top tag match, +love count
             {
                 $addFields: {
-                    loveCount: { $ifNull: [{ $arrayElemAt: ['$loves.count', 0] }, 0] }
+                    loveCount: { $ifNull: [{ $arrayElemAt: ['$loves.count', 0] }, 0] },
+                    followedAuthor: { $in: ['$author', followedIds] },
+                    combinedText: {
+                        $concat: [
+                            { $ifNull: ['$title', ''] },
+                            ' ',
+                            { $ifNull: ['$instructions', ''] },
+                            ' ',
+                            { $ifNull: ['$notes', ''] }
+                        ]
+                    }
                 }
             },
-
-            // Score: +10 if followed, +2 per top tag match, +love count
+            {
+                $addFields: {
+                    tagMatches: {
+                        $reduce: {
+                            input: topTags,
+                            initialValue: 0,
+                            in: {
+                                $add: [
+                                    "$$value",
+                                    {
+                                        $cond: [
+                                            {
+                                                $regexMatch: {
+                                                    input: "$combinedText",
+                                                    regex: { $concat: ['.*#', '$$this', '.*'] },
+                                                    options: 'i'
+                                                }
+                                            },
+                                            1,
+                                            0
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            },
             {
                 $addFields: {
                     score: {
                         $add: [
-                            {
-                                $cond: [
-                                    { $in: ['$author', followedIds] },
-                                    10,
-                                    0
-                                ]
-                            },
-                            {
-                                $multiply: [
-                                    {
-                                        $size: {
-                                            $filter: {
-                                                input: topTags,
-                                                as: 'tag',
-                                                cond: {
-                                                $regexMatch: {
-                                                    input: {
-                                                            $concat: [
-                                                                { $ifNull: ['$title', ''] },
-                                                                ' ',
-                                                                { $ifNull: ['$instructions', ''] },
-                                                                ' ',
-                                                                { $ifNull: ['$notes', ''] }
-                                                            ]
-                                                        },
-                                                        regex: {
-                                                            $concat: ['.*', '$$tag', '.*']
-                                                        },
-                                                        options: 'i'
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    },
-                                    2
-                                ]
-                            },
+                            { $cond: ['$followedAuthor', 10, 0] },
+                            { $multiply: ['$tagMatches', 2] },
                             '$loveCount'
                         ]
                     }
@@ -4229,8 +4255,8 @@ class UserManager {
                 $limit: pageSize
             },
 
+            // collect author data
             {
-                // collect author data
                 $lookup: {
                     from: "users",
                     localField: "author",
@@ -4247,15 +4273,22 @@ class UserManager {
                 }
             },
             {
-                $unset: [
-                    "_id",
-                    "authorInfo"
-                ]
+                $project: {
+                    _id: 0,
+                    authorInfo: 0,
+                    blocked: 0,
+                    loves: 0,
+                    followedAuthor: 0,
+                    combinedText: 0,
+                    tagMatches: 0,
+                    score: 0
+                }
             }
         ]).toArray();
         console.timeEnd("whole scoring");
 
         console.timeEnd("whole thing");
+
         return scoredProjects;
     }
 
