@@ -4004,6 +4004,8 @@ class UserManager {
             case "less":
                 weight = -25;
                 break;
+            case "more":
+                weight = 25;
             default:
                 weight = 0;
                 break;
@@ -4075,6 +4077,18 @@ class UserManager {
         const tags = this.collectTags(text);
 
         await this.registerInteraction(user_id, "less", tags);
+    }
+
+    /**
+     * Suggest more of these tags
+     * @param {string} user_id ID of the user
+     * @param {string} text the text of the project. Usually will be the instructions and notes.
+     * @returns {Promise<>}
+     */
+    async collectAndMore(user_id, text) {
+        const tags = this.collectTags(text);
+
+        await this.registerInteraction(user_id, "more", tags);
     }
 
     /**
