@@ -81,7 +81,7 @@ module.exports = (app, utils) => {
         if (user_and_logged_in) {
             const is_donator = await utils.UserManager.isDonator(username);
             if (is_donator) {
-                console.log("timing suggested");
+                console.log("-------TIMING SUGGESTED-------");
                 console.time("suggested");
                 const fyp = await utils.UserManager.getFYP(username, 0, Number(utils.env.PageSize), Number(utils.env.MaxPageSize));
                 page.suggested = fyp;

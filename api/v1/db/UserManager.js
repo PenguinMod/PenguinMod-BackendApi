@@ -4086,21 +4086,27 @@ class UserManager {
      * @returns {Promise<object[]>} The projects
      */
     async getFYP(username, page, pageSize, maxPageSize) {
+        console.time("whole thing");
         const userId = await this.getIDByUsername(username);
 
+        console.time("top tags");
         const topTagsDocs = await this.tagWeights.aggregate([
             { $match: { user_id: userId } },
             { $sort: { weight: -1, most_recent: -1 } },
             { $limit: 10 }
         ]).toArray();
         const topTags = topTagsDocs.map(doc => doc.tag);
+        console.timeEnd("top tags");
 
+        console.time("followed authors");
         const followedAuthors = await this.followers.aggregate([
             { $match: { follower: userId, active: true } },
             { $project: { _id: 0, target: 1 } }
         ]).toArray();
         const followedIds = followedAuthors.map(f => f.target);
+        console.timeEnd("followed authors");
 
+        console.time("whole scoring");
         const scoredProjects = await this.projects.aggregate([
             {
                 $match: { softRejected: false, hardReject: false, public: true }
@@ -4233,7 +4239,9 @@ class UserManager {
                 ]
             }
         ]).toArray();
+        console.timeEnd("whole scoring");
 
+        console.timeEnd("whole thing");
         return scoredProjects;
     }
 
