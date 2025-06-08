@@ -4100,8 +4100,10 @@ class UserManager {
      * @returns {Promise<object[]>} The projects
      */
     async getFYP(username, page, pageSize, maxPageSize) {
+        console.time("suggested");
         const userId = await this.getIDByUsername(username);
 
+        console.time("top tags & followed authors");
         // get top tags and followed authors in parallel (so we are fast)
         const [topTagsDocs, followedAuthors] = await Promise.all([
             this.tagWeights.aggregate([
@@ -4120,9 +4122,7 @@ class UserManager {
         const topTags = topTagsDocs.map(doc => doc.tag);
         const followedIds = followedAuthors.map(f => f.target);
 
-        // regex
-        const tagRegexPatterns = topTags.map(tag => new RegExp(tag, 'i'));
-
+        console.time("whole scoring");
         const scoredProjects = await this.projects.aggregate([
             {
                 $match: { 
@@ -4287,7 +4287,7 @@ class UserManager {
         ]).toArray();
         console.timeEnd("whole scoring");
 
-        console.timeEnd("whole thing");
+        console.timeEnd("suggested");
 
         return scoredProjects;
     }
