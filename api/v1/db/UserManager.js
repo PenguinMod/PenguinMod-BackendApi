@@ -4100,7 +4100,6 @@ class UserManager {
      * @returns {Promise<object[]>} The projects
      */
     async getFYP(username, page, pageSize, maxPageSize) {
-        console.time("suggested");
         const userId = await this.getIDByUsername(username);
 
         console.time("top tags & followed authors");
@@ -4286,8 +4285,6 @@ class UserManager {
             }
         ]).toArray();
         console.timeEnd("whole scoring");
-
-        console.timeEnd("suggested");
 
         return scoredProjects;
     }
