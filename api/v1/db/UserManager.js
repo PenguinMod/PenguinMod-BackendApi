@@ -30,6 +30,8 @@ class UserManager {
         await this.users.createIndex({ id: 1 }, { unique: true });
         this.accountCustomization = this.db.collection('accountCustomization');
         this.loggedIPs = this.db.collection('loggedIPs');
+        await this.loggedIPs.createIndex({ id: 1 });
+        await this.loggedIPs.createIndex({ ip: 1 });
         this.passwordResetStates = this.db.collection('passwordResetStates');
         await this.passwordResetStates.createIndex({ 'expireAt': 1 }, { expireAfterSeconds: 60 * 60 * 2 }); // give 2 hours
         this.sentEmails = this.db.collection('sentEmails');
