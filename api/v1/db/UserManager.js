@@ -82,6 +82,7 @@ class UserManager {
         this.viewresetrate = viewresetrate ? viewresetrate : 1000 * 60 * 60;
 
         this.tagWeights = this.db.collection("tagWeights");
+        this.performance_logging = this.db.collection("system.profile");
 
         // Setup minio
 
@@ -4332,6 +4333,20 @@ class UserManager {
      */
     projectJsonToProtobuf(json) {
         return pmp_protobuf.jsonToProtobuf(json);
+    }
+
+    async getWorstOffenders(page, pageSize) {
+        return await this.performance_logging.aggregate([
+            {
+                $sort: { millis: -1 }
+            },
+            {
+                $skip: page * pageSize
+            },
+            {
+                $limit: pageSize
+            },
+        ]).toArray();
     }
 }
 
