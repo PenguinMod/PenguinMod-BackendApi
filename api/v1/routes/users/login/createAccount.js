@@ -152,7 +152,7 @@ module.exports = (app, utils) => {
         const token = info[0];
         const id = info[1];
 
-        await utils.UserManager.addIPIP(ip, req.realIP);
+        await utils.UserManager.addIPID(ip, req.realIP);
         await utils.logs.sendCreationLog(username, id, "", "account");
 
         res.status(200);
