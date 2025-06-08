@@ -3536,27 +3536,43 @@ class UserManager {
     }
 
     /**
-     * 
+     * Connect an ip to an account
      * @param {string} username Username of the user
      * @param {string} ip Ip they logged in with
-     * @returns {Promise<boolean>} Whether or not its new
+     * @returns {Promise<>}
      */
     async addIP(username, ip) {
         const id = await this.getIDByUsername(username);
 
-        if (await this.loggedIPs.findOne({ id: id, ip: ip })) {
-            await this.loggedIPs.updateOne({ id: id, ip: ip }, { $set: { lastLogin: Date.now() } });
-            return true;
-        }
+        await this.loggedIPs.updateOne(
+            { id: id, ip: ip }, // match condition
+            {
+                $set: { lastLogin: Date.now() },
+                $setOnInsert: {
+                    banned: false
+                }
+            },
+            { upsert: true }
+        );
+    }
 
-        await this.loggedIPs.insertOne({
-            id: id,
-            ip: ip,
-            lastLogin: Date.now(),
-            banned: false,
-        });
-
-        return false;
+    /**
+     * Connect an ip to an account
+     * @param {string} id ID of the user
+     * @param {string} ip Ip they logged in with
+     * @returns {Promise<>}
+     */
+    async addIPID(id, ip) {
+        await this.loggedIPs.updateOne(
+            { id: id, ip: ip }, // match condition
+            {
+                $set: { lastLogin: Date.now() },
+                $setOnInsert: {
+                    banned: false
+                }
+            },
+            { upsert: true }
+        );
     }
 
     async getIPs(username) {

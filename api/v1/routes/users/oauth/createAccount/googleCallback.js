@@ -96,7 +96,7 @@ module.exports = (app, utils) => {
         const accountUsername = userdata.username;
         const token = userdata.token;
 
-        await utils.UserManager.addIP(accountUsername, req.realIP);
+        await utils.UserManager.addIPID(userdata.id, req.realIP);
         await utils.logs.sendCreationLog(accountUsername, userdata.id, "", "account");
 
         res.status(200);
