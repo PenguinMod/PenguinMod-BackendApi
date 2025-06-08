@@ -4117,9 +4117,10 @@ class UserManager {
                 { $project: { _id: 0, target: 1 } }
             ]).toArray()
         ]);
-
+        
         const topTags = topTagsDocs.map(doc => doc.tag);
         const followedIds = followedAuthors.map(f => f.target);
+        console.timeEnd("top tags & followed authors");
 
         console.time("whole scoring");
         const scoredProjects = await this.projects.aggregate([
