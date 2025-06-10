@@ -1264,7 +1264,11 @@ class UserManager {
      * @async
      */
     async updateProject(id, projectBuffer, assetBuffers, title, imageBuffer, instructions, notes, rating) {
-        if (projectBuffer === null && assetBuffers !== null || projectBuffer !== null && assetBuffers === null) {
+        if (
+            (projectBuffer === null && assetBuffers !== null)
+            ||
+            (projectBuffer !== null && assetBuffers === null)
+        ) {
             return false;
         }
 
