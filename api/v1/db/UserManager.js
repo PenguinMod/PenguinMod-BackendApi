@@ -4,7 +4,6 @@ const bcrypt = require('bcrypt');
 const { MongoClient } = require('mongodb');
 const ULID = require('ulid');
 const Minio = require('minio');
-const protobuf = require('protobufjs');
 const fs = require('fs');
 const path = require('path');
 var prompt = require('prompt-sync')();
