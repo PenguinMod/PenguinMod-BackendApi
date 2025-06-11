@@ -3945,7 +3945,7 @@ class UserManager {
      */
     async changeProjectID(original_id, new_id) {
         // first lets change the entry
-        this.projects.updateOne({id: original_id}, {$set:{id:new_id}});
+        await this.projects.updateOne({id: original_id}, {$set:{id:new_id}});
         // now we need to change the entries in minio
         // minio bucket stuff
         await this.renameObjectMinio("project-thumbnails", original_id, new_id);
@@ -3955,9 +3955,10 @@ class UserManager {
             const actual_id = asset.split("_")[1];
             await this.renameObjectMinio("project-assets", asset, `${new_id}_${actual_id}`);
         }
-        this.users.updateMany({favoriteProjectID: original_id},{$set:{favoriteProjectID:new_id}});
-        this.projectStats.updateMany({projectId:original_id},{$set:{projectId:new_id}});
-        this.messages.updateMany({type:"upload","data.id":original_id}, {$set: {"data.id":new_id }});
+        await this.users.updateMany({favoriteProjectID: original_id},{$set:{favoriteProjectID:new_id}});
+        await this.projectStats.updateMany({projectId:original_id},{$set:{projectId:new_id}});
+        await this.messages.updateMany({type:"upload","data.id":original_id}, {$set: {"data.id":new_id }});
+        await this.projects.updateMany({remix:original_id},{$set:{remix:new_id}});
     }
 
     /**
