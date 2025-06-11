@@ -8,7 +8,11 @@ module.exports = (app, utils) => {
             return utils.error(res, 400, "Missing username");
         }
 
-        const id = await utils.UserManager.getIDByUsername(username);
+        const id = await utils.UserManager.getIDByUsername(username, false);
+
+        if (!id) {
+            return utils.error(res, 404, "UserNotFound");
+        }
 
         res.status(200);
         res.header('Content-type', "application/json");

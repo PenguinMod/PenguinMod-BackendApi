@@ -445,12 +445,16 @@ class UserManager {
      * @returns {Promise<string>} id of the user
      * @async
      */
-    async getIDByUsername(username) {
+    async getIDByUsername(username, throw_err=true) {
         const result = await this.users.findOne({ username: username });
         if (!result) {
             const error = `----------\nCould not get ${username}'s id\n----------`
             console.log(error);
-            throw error;
+            if (throw_err) {
+                throw error;
+            } else {
+                return false;
+            }
         }
         return result.id;
     }
