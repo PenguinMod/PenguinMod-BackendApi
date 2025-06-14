@@ -6,14 +6,14 @@ module.exports = (app, utils) => {
 
         const packet = req.query;
         const page = utils.handle_page(packet.page);
-        const reverse = packet.reverse || false;
+        const reverse = String(packet.reverse || false) === "true";
 
         const username = packet.username;
         const token = packet.token;
 
         const is_mod = username && token && await utils.UserManager.loginWithToken(username, token, false) && await utils.UserManager.isModerator(username)
 
-        const projects = await utils.UserManager.getProjects(is_mod, page, Number(utils.env.PageSize), Number(utils.env.MaxPageSize), reverse);
+        const projects = await utils.UserManager.getProjects(is_mod, page, Number(utils.env.PageSize), Number(utils.env.MaxPageSize), null, reverse);
 
         for (const project of projects) {
             await utils.UserManager.addImpression(project.id);
