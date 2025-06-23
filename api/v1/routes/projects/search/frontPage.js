@@ -78,6 +78,7 @@ module.exports = (app, utils) => {
         };
 
         
+        /*
         if (user_and_logged_in) {
             const is_donator = await utils.UserManager.isDonator(username);
             if (is_donator) {
@@ -88,6 +89,7 @@ module.exports = (app, utils) => {
                 console.timeEnd("suggested");
             }
         }
+        */
 
         await utils.UserManager.addImpressionsMany(Object.values(page).flat());
 

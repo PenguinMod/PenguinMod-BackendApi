@@ -2614,7 +2614,7 @@ class UserManager {
                 break;
         }
 
-        let n = 1;
+        let n = 0;
         let orig_username = username;
         while (await this.existsByUsername(username)) {
             username = `${orig_username}${n}`;
