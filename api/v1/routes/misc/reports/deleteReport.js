@@ -1,4 +1,4 @@
-const UserManager = require("../../db/UserManager");
+const UserManager = require("../../../db/UserManager");
 
 /**
  * @typedef {Object} Utils
@@ -14,10 +14,10 @@ module.exports = (app, utils) => {
     app.post("/api/v1/reports/deleteReport", utils.cors(), async (req, res) => {
         const packet = req.body;
 
-        const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
-        if (!await utils.UserManager.loginWithToken(username, token)) {
+        const login = await utils.UserManager.loginWithToken(username, token);
+        if (!login.success) {
             return utils.error(res, 401, "Reauthenticate");
         }
 

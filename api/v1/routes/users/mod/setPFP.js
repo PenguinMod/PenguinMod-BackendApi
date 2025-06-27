@@ -3,8 +3,7 @@ const path = require('path');
 const sharp = require('sharp');
 const Magic = require('mmmagic');
 const magic = new Magic.Magic(Magic.MAGIC_MIME_TYPE);
-
-const UserManager = require("../../db/UserManager");
+const UserManager = require("../../../db/UserManager");
 
 /**
  * @typedef {Object} Utils
