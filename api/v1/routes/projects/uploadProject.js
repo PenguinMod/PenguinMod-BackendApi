@@ -1,6 +1,18 @@
 const fs = require('fs');
 const sharp = require('sharp');
 
+const UserManager = require("../../db/UserManager");
+
+/**
+ * @typedef {Object} Utils
+ * @property {UserManager} UserManager
+ */
+
+/**
+ * 
+ * @param {any} app Express app
+ * @param {Utils} utils Utils
+ */
 module.exports = (app, utils) => {
     app.post('/api/v1/projects/uploadProject', utils.cors(), utils.upload.fields([
         { name: 'jsonFile', maxCount: 1 },

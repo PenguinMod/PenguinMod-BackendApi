@@ -376,34 +376,37 @@ class UserManager {
     }
 
     /**
+     * @typedef {Object} loginResult
+     * @property {string} username The user's username. Blank if unsuccessful
+     * @property {string} id The user's id. Blank if unsuccessful
+     * @property {boolean} success If the login was successful
+     * @property {boolean} exists If the account even exists
+     */
+
+    /**
      * Login with a token
-     * @param {string} username username of the user
+     * @param {string?} username username of the user. Optional
      * @param {string} token token of the user
      * @param {boolean} allowBanned allow banned users to login
-     * @returns {Promise<boolean>} true if successful, false if not
+     * @returns {Promise<loginResult>} Result of the login attempt
      * @async
      */
     async loginWithToken(username, token, allowBanned) {
-        const result = await this.users.findOne({ username: username });
+        const result = await this.users.findOne({ token });
 
-        if (!result) return false;
+        if (!result) return { success: false, username: "", id: "", exists: false };
 
         if ((result.permBanned || result.unbanTime > Date.now()) && !allowBanned) {
-            return false;
+            return { success: false, username: result.username, id: result.id, exists: true };
         }
 
         // login invalid if more than the time
         if (result.lastLogin + (Number(process.env.LoginInvalidationTime) || 259200000) < Date.now()) {
-            return false;
+            return { success: false, username: result.username, id: result.id, exists: true };
         }
 
-        // check that the tokens are equal
-        if (result.token === token) {
-            this.users.updateOne({ username: username }, { $set: { lastLogin: Date.now() } });
-            return true;
-        } else {
-            return false;
-        }
+        this.users.updateOne({ token }, { $set: { lastLogin: Date.now() } });
+        return { success: true, username: result.username, id: result.id, exists: true };
     }
 
     async getRealUsername(username) {

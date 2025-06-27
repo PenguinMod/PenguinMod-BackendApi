@@ -45,6 +45,18 @@ function hexToBytes(hex) {
     return bytes;
 } 
 
+const UserManager = require("../../db/UserManager");
+
+/**
+ * @typedef {Object} Utils
+ * @property {UserManager} UserManager
+ */
+
+/**
+ * 
+ * @param {any} app Express app
+ * @param {Utils} utils Utils
+ */
 module.exports = (app, utils) => {
     if (utils.env.IncludeReload !== "true") {
         return; 

@@ -4,6 +4,18 @@ const sharp = require('sharp');
 const Magic = require('mmmagic');
 const magic = new Magic.Magic(Magic.MAGIC_MIME_TYPE);
 
+const UserManager = require("../../db/UserManager");
+
+/**
+ * @typedef {Object} Utils
+ * @property {UserManager} UserManager
+ */
+
+/**
+ * 
+ * @param {any} app Express app
+ * @param {Utils} utils Utils
+ */
 module.exports = (app, utils) => {
     app.post('/api/v1/users/setpfp', utils.cors(), utils.upload.single("picture"), async (req, res) => {
         const packet = req.query;

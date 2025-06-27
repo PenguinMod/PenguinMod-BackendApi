@@ -1,6 +1,18 @@
 const fs = require('fs');
 const path = require('path');
 
+const UserManager = require("../../db/UserManager");
+
+/**
+ * @typedef {Object} Utils
+ * @property {UserManager} UserManager
+ */
+
+/**
+ * 
+ * @param {any} app Express app
+ * @param {Utils} utils Utils
+ */
 module.exports = (app, utils) => {
     const projectTemplate = fs.readFileSync(path.join(utils.homeDir, 'project.html')).toString();
     app.get('/:id', async function (req, res) {

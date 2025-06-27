@@ -15,6 +15,7 @@ const {OAuth2Client} = require('google-auth-library');
 const ipaddr = require('ipaddr.js');
 const { promisify } = require('util');
 const mcache = require('memory-cache');
+const UserManager = require('./api/v1/db/UserManager');
 require('colors');
 
 function escapeXML(unsafe) {
