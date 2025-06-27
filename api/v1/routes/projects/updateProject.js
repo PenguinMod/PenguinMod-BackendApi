@@ -39,12 +39,12 @@ module.exports = (app, utils) => {
 
         const packet = req.body;
 
-        const username = (String(packet.username)).toLowerCase();
-
-        if (!await utils.UserManager.loginWithToken(username, packet.token)) {
+        const login = await utils.UserManager.loginWithToken(username, packet.token);
+        if (!login.success) {
             await unlink();
             return utils.error(res, 401, "Invalid credentials");
         }
+        const username = login.username;
 
         const isAdmin = await utils.UserManager.isAdmin(username);
         const isModerator = await utils.UserManager.isModerator(username);

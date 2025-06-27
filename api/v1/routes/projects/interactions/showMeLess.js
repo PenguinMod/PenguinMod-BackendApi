@@ -14,18 +14,20 @@ module.exports = (app, utils) => {
     app.post('/api/v1/projects/interactions/showMeLess', utils.cors(), async (req, res) => {
         const packet = req.body;
 
-        const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
         const projectID = String(packet.projectID);
 
-        if (!username || !token || !projectID) {
-            return utils.error(res, 400, "Missing username, token, love, or projectID");
+        if (!token || !projectID) {
+            return utils.error(res, 400, "Missing token, love, or projectID");
         }
 
-        if (!await utils.UserManager.loginWithToken(username, token)) {
-            return utils.error(res, 401, "Invalid credentials");
+        const login = await utils.UserManager.loginWithToken(null, token);
+        if (!login.success) {
+            utils.error(res, 401, "Reauthenticate")
+            return;
         }
+        const username = login.username;
 
         if (!await utils.UserManager.projectExists(projectID)) {
             return utils.error(res, 404, "Project not found");

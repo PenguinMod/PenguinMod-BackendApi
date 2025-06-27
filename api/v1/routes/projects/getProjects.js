@@ -20,10 +20,10 @@ module.exports = (app, utils) => {
         const page = utils.handle_page(packet.page);
         const reverse = String(packet.reverse || false) === "true";
 
-        const username = packet.username;
         const token = packet.token;
 
-        const is_mod = username && token && await utils.UserManager.loginWithToken(username, token, false) && await utils.UserManager.isModerator(username)
+        const login = await utils.UserManager.loginWithToken(null, token, false);
+        const is_mod = login.success && await utils.UserManager.isModerator(login.username);
 
         const projects = await utils.UserManager.getProjects(is_mod, page, Number(utils.env.PageSize), Number(utils.env.MaxPageSize), null, reverse);
 

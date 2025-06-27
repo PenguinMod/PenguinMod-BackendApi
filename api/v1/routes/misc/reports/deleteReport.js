@@ -16,10 +16,12 @@ module.exports = (app, utils) => {
 
         const token = packet.token;
 
-        const login = await utils.UserManager.loginWithToken(username, token);
+        const login = await utils.UserManager.loginWithToken(null, token);
         if (!login.success) {
-            return utils.error(res, 401, "Reauthenticate");
+            utils.error(res, 401, "Reauthenticate")
+            return;
         }
+        const username = login.username;
 
         if (!await utils.UserManager.isAdmin(username) && !await utils.UserManager.isModerator(username)) {
             return utils.error(res, 403, "Unauthorized");

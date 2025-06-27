@@ -14,20 +14,22 @@ module.exports = (app, utils) => {
     app.get('/api/v1/projects/getWhoVoted', utils.cors(), async (req, res) => {
         const packet = req.query;
         
-        const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
         const page = utils.handle_page(packet.page);
 
         const projectID = packet.projectID;
 
-        if (!username || !token || !projectID || typeof page !== "number") {
-            return utils.error(res, 400, "Missing username, token, projectID, or page");
+        if (!token || !projectID || typeof page !== "number") {
+            return utils.error(res, 400, "Missing token, projectID, or page");
         }
 
-        if (!await utils.UserManager.loginWithToken(username, token)) {
-            return utils.error(res, 401, "Invalid credentials");
+        const login = await utils.UserManager.loginWithToken(null, token);
+        if (!login.success) {
+            utils.error(res, 401, "Reauthenticate")
+            return;
         }
+        const username = login.username;
 
         if (!await utils.UserManager.isAdmin(username)) {
             return utils.error(res, 401, "Invalid credentials");

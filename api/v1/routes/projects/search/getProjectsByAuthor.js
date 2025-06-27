@@ -14,7 +14,6 @@ module.exports = (app, utils) => {
     app.get('/api/v1/projects/getprojectsbyauthor', async (req, res) => {
         const packet = req.query;
 
-        const username = String(packet.username).toLowerCase();
         const token = packet.token;
 
         const authorUsername = String(packet.authorUsername).toLowerCase();
@@ -24,9 +23,12 @@ module.exports = (app, utils) => {
             return utils.error(res, 400, "Missing author username");
         }
 
-        if (!await utils.UserManager.existsByUsername(authorUsername)) {
-            return utils.error(res, 404, "UserNotFound")
+        const login = await utils.UserManager.loginWithToken(null, token);
+        if (!login.success) {
+            utils.error(res, 401, "Reauthenticate")
+            return;
         }
+        const username = login.username;
 
         const logged_in = username && token && await utils.UserManager.loginWithToken(username, token);
 

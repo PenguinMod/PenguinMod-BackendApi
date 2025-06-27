@@ -50,10 +50,12 @@ module.exports = (app, utils) => {
             "2d"
         ]
 
-        const username = String(packet.username).toLowerCase();
         const token = packet.token;
 
-        const user_and_logged_in = username && token && await utils.UserManager.loginWithToken(username, token);
+        const login = await utils.UserManager.loginWithToken(null, token);
+        const user_and_logged_in = login.success;
+        const username = login.username;
+
         const is_mod = user_and_logged_in && await utils.UserManager.isModeratorOrAdmin(username)
 
         const tag = "#" + tags[Math.floor(Math.random() * tags.length)];

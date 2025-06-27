@@ -14,12 +14,14 @@ module.exports = (app, utils) => {
     app.get("/api/v1/reports/getReports", utils.cors(), async (req, res) => {
         const packet = req.query;
 
-        const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
-        if (!await utils.UserManager.loginWithToken(username, token)) {
-            return utils.error(res, 401, "Reauthenticate");
+        const login = await utils.UserManager.loginWithToken(null, token);
+        if (!login.success) {
+            utils.error(res, 401, "Reauthenticate")
+            return;
         }
+        const username = login.username;
 
         if (!await utils.UserManager.isAdmin(username) && !await utils.UserManager.isModerator(username)) {
             return utils.error(res, 403, "Unauthorized");

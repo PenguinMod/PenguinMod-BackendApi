@@ -24,10 +24,9 @@ module.exports = (app, utils) => {
         const packet = req.query;
         
         const requestType = packet.requestType;
-
         const safe = packet.safe;
-
         const projectID = String(packet.projectID);
+        const token = packet.token;
 
         if (!requestType) {
             return utils.error(res, 400, "Missing requestType");
@@ -88,7 +87,11 @@ module.exports = (app, utils) => {
 
         const metadata = await utils.UserManager.getProjectMetadata(projectID);
 
-        if (metadata.author !== String(packet.username).toLowerCase() && !metadata.public) {
+        const login = await utils.UserManager.loginWithToken(null, token);
+
+        const is_author = login && metadata.author === login.username;
+
+        if (!is_author && !metadata.public) {
             if (safe) {
                 return safeReturn();
             }

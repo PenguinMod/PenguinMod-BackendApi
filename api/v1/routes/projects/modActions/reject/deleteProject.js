@@ -16,17 +16,19 @@ module.exports = (app, utils) => {
 
         const projectID = String(packet.projectID);
 
-        const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
         const reason = packet.reason;
 
-        if (!username || !token) {
-            return utils.error(res, 400, "Missing username or token");
+        if (!token) {
+            return utils.error(res, 400, "Missing token");
         }
 
-        if (!await utils.UserManager.loginWithToken(username, token)) {
-            return utils.error(res, 401, "Invalid username or token");
+        const login = await utils.UserManager.loginWithToken(null, token);
+        if (!login.success) {
+            utils.error(res, 401, "Reauthenticate")
+            return;
         }
+        const username = login.username;
 
         if (!projectID) {
             return utils.error(res, 404, "Project not found");

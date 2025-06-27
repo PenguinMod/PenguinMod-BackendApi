@@ -21,7 +21,6 @@ module.exports = (app, utils) => {
             utils.error(res, 401, "Reauthenticate")
             return;
         }
-
         const username = login.username;
         
         const lastPolicyRead = await utils.UserManager.getLastPolicyRead(username);

@@ -26,10 +26,11 @@ module.exports = (app, utils) => {
             reverse = true;
         }
 
-        const username = packet.username;
         const token = packet.token;
 
-        const is_mod = username && token && await utils.UserManager.loginWithToken(username, token) && await utils.UserManager.isModeratorOrAdmin(username);
+        const login = await utils.UserManager.loginWithToken(null, token);
+
+        const is_mod = login.success && await utils.UserManager.isModeratorOrAdmin(login.username);
 
         const projects = await utils.UserManager.searchProjects(is_mod, query, type, page, Number(utils.env.PageSize), Number(utils.env.MaxPageSize), reverse);
 
