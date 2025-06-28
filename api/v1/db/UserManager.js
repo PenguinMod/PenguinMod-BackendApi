@@ -10,8 +10,11 @@ var prompt = require('prompt-sync')();
 const Mailjet = require('node-mailjet');
 const os = require('os');
 const pmp_protobuf = require('pmp-protobuf');
+const sharp = require('sharp');
 
 const basePFP = fs.readFileSync(path.join(__dirname, "./penguin.png"));
+const deleted_thumb = fs.readFileSync(path.join(__dirname, "../../../deletedThumbnail.png"));
+const deleted_thumb_buffer = sharp(deleted_thumb).resize(240, 180).toBuffer();
 
 class UserManager {
     /**
@@ -4360,6 +4363,16 @@ class UserManager {
                 $limit: pageSize
             },
         ]).toArray();
+    }
+
+    /**
+     * Delete a projects thumbnail
+     * @param {string} project_id ID of the project
+     * @returns {Promise<>}
+     */
+    async deleteThumb(project_id) {
+        const image_buffer = await deleted_thumb_buffer;
+        await this.minioClient.putObject("project-thumbnails", project_id, image_buffer);
     }
 }
 
