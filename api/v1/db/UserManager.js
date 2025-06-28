@@ -4381,7 +4381,13 @@ class UserManager {
      * @returns {Promise<boolean>} If they have mod perms
      */
     async hasModPerms(username) {
-        return !!(await this.users.findOne({ username, moderator: true, admin: true }));
+        return !!(await this.users.findOne({
+            username,
+            $or: [
+                { moderator: true },
+                { admin: true }
+            ]
+        }));
     }
 }
 
