@@ -4374,6 +4374,15 @@ class UserManager {
         const image_buffer = await deleted_thumb_buffer;
         await this.minioClient.putObject("project-thumbnails", project_id, image_buffer);
     }
+
+    /**
+     * Check if a user has mod perms
+     * @param {string} username Username
+     * @returns {Promise<boolean>} If they have mod perms
+     */
+    async hasModPerms(username) {
+        return !!(await this.users.findOne({ username, moderator: true, admin: true }));
+    }
 }
 
 module.exports = UserManager;

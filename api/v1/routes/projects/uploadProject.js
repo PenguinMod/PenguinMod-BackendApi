@@ -46,10 +46,9 @@ module.exports = (app, utils) => {
         }
         const username = login.username;
 
-        const isAdmin = await utils.UserManager.isAdmin(username);
-        const isModerator = await utils.UserManager.isModerator(username);
+        const hasModPerms = await utils.UserManager.hasModPerms(username);
 
-        if (await utils.UserManager.getLastUpload(username) > Date.now() - utils.uploadCooldown && (!isAdmin && !isModerator)) {
+        if (await utils.UserManager.getLastUpload(username) > Date.now() - utils.uploadCooldown && !hasModPerms) {
             await unlink();
             return utils.error(res, 400, "Uploaded in the last 8 minutes");
         }

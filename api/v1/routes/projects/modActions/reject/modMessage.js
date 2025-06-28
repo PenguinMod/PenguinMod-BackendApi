@@ -32,7 +32,7 @@ module.exports = (app, utils) => {
         }
         const username = login.username;
 
-        if (!await utils.UserManager.isAdmin(username) && !await utils.UserManager.isModerator(username)) {
+        if (!await utils.UserManager.hasModPerms(username)) {
             return utils.error(res, 401, "Invalid credentials");
         }
 

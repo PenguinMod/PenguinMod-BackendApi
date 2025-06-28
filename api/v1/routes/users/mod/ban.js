@@ -34,7 +34,7 @@ module.exports = (app, utils) => {
         }
         const username = login.username;
 
-        if (!await utils.UserManager.isAdmin(username) && !await utils.UserManager.isModerator(username)) {
+        if (!await utils.UserManager.hasModPerms(username)) {
             utils.error(res, 403, "Unauthorized");
             return;
         }
