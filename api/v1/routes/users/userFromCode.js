@@ -15,13 +15,8 @@ module.exports = (app, utils) => {
         const packet = req.query;
 
         const token = packet.token;
-    
-        if (!await utils.UserManager.existsByUsername(username)) {
-            utils.error(res, 404, "NotFound")
-            return;
-        }
 
-        const login = await utils.UserManager.loginwithtoken(token, true);
+        const login = await utils.UserManager.loginWithToken(token, true);
         if (!login.success) {
             utils.error(res, 400, "Reauthenticate");
             return;
