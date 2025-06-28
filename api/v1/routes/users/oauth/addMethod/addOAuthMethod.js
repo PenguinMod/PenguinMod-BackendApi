@@ -1,4 +1,4 @@
-const UserManager = require("../../db/UserManager");
+const UserManager = require("../../../../db/UserManager");
 
 /**
  * @typedef {Object} Utils
@@ -16,7 +16,6 @@ module.exports = (app, utils) => {
         const packet = req.query;
 
         const method = packet.method;
-        const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
         if (!method || !username || !token) {
@@ -24,10 +23,12 @@ module.exports = (app, utils) => {
             return;
         }
 
-        if (!await utils.UserManager.loginWithToken(username, token)) {
-            utils.error(res, 401, "InvalidToken");
+        const login = await utils.UserManager.loginwithtoken(token);
+        if (!login.success) {
+            utils.error(res, 400, "Reauthenticate");
             return;
         }
+        const username = login.username;
 
         const methods = await utils.UserManager.getOAuthMethods(username);
 

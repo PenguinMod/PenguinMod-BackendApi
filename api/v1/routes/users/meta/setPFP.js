@@ -19,14 +19,16 @@ module.exports = (app, utils) => {
     app.post('/api/v1/users/setpfp', utils.cors(), utils.upload.single("picture"), async (req, res) => {
         const packet = req.query;
 
-        const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
         const pictureName = req.file;
 
-        if (!await utils.UserManager.loginWithToken(username, token)) {
-            return utils.error(res, 401, "Invalid credentials");
+        const login = await utils.UserManager.loginwithtoken(token);
+        if (!login.success) {
+            utils.error(res, 400, "Reauthenticate");
+            return;
         }
+        const username = login.username;
 
         if (!pictureName) {
             return utils.error(res, 400, "No picture was provided");

@@ -14,14 +14,16 @@ module.exports = (app, utils) => {
     app.get("/api/v1/users/getAllAccountsWithIP", utils.cors(), async function (req, res) {
         const packet = req.query;
 
-        const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
         const target = packet.target;
 
-        if (!await utils.UserManager.loginWithToken(username, token)) {
-            return utils.error(res, 401, "Reauthenticate");
+        const login = await utils.UserManager.loginwithtoken(token);
+        if (!login.success) {
+            utils.error(res, 400, "Reauthenticate");
+            return;
         }
+        const username = login.username;
 
         if (!await utils.UserManager.isAdmin(username)) {
             return utils.error(res, 403, "Unauthorized");

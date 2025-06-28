@@ -39,7 +39,7 @@ module.exports = (app, utils) => {
 
         const packet = req.body;
 
-        const login = await utils.UserManager.loginWithToken(username, packet.token);
+        const login = await utils.UserManager.loginwithtoken(packet.token);
         if (!login.success) {
             await unlink();
             return utils.error(res, 401, "Invalid credentials");

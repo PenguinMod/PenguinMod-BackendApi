@@ -391,7 +391,7 @@ class UserManager {
      * @returns {Promise<loginResult>} Result of the login attempt
      * @async
      */
-    async loginWithToken(username, token, allowBanned) {
+    async loginWithToken(token, allowBanned) {
         const result = await this.users.findOne({ token });
 
         if (!result) return { success: false, username: "", id: "", exists: false };

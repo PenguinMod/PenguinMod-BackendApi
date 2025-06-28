@@ -14,19 +14,20 @@ module.exports = (app, utils) => {
     app.post("/api/v1/users/customization/setCustomization", utils.cors(), async (req, res) => {
         const packet = req.body;
 
-        const username = packet.username;
         const token = packet.token;
         const customization = packet.customization;
 
-        if (!username || !token || typeof(customization) !== "string") {
-            utils.error(res, 400, "Missing username, token, or customization");
+        if (!token || typeof(customization) !== "string") {
+            utils.error(res, 400, "Missing token or customization");
             return;
         }
 
-        if (!await utils.UserManager.loginWithToken(username, token)) {
-            utils.error(res, 401, "InvalidToken");
+        const login = await utils.UserManager.loginwithtoken(token);
+        if (!login.success) {
+            utils.error(res, 400, "Reauthenticate");
             return;
         }
+        const username = login.username;
 
         const badges = await utils.UserManager.getBadges(username);
 

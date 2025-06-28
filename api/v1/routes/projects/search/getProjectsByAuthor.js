@@ -23,20 +23,21 @@ module.exports = (app, utils) => {
             return utils.error(res, 400, "Missing author username");
         }
 
-        const login = await utils.UserManager.loginWithToken(null, token);
-        if (!login.success) {
-            utils.error(res, 401, "Reauthenticate")
-            return;
+        if (!await utils.UserManager.existsByUsername(authorUsername)) {
+            return utils.error(res, 404, "User not found");
         }
+
+        const login = await utils.UserManager.loginwithtoken(token);
         const username = login.username;
 
-        const logged_in = username && token && await utils.UserManager.loginWithToken(username, token);
+        const logged_in = login.success;
 
         const target_data = await utils.UserManager.getUserData(authorUsername);
-        const user_data = await utils.UserManager.getUserData(username);
         let isMod = false;
-        if (logged_in)
+        if (logged_in) {
+            const user_data = await utils.UserManager.getUserData(username);
             isMod = user_data.moderator || user_data.admin;
+        }
 
         const id = target_data.id;
         const privateProfile = target_data.privateProfile;

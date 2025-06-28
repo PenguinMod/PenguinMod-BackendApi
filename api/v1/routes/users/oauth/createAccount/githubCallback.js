@@ -1,6 +1,4 @@
-const fs = require('fs');
-
-const UserManager = require("../../db/UserManager");
+const UserManager = require("../../../../db/UserManager");
 
 /**
  * @typedef {Object} Utils

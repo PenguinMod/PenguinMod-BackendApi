@@ -16,10 +16,11 @@ module.exports = (app, utils) => {
 
         const target = String(packet.target).toLowerCase();
 
-        const username = String(packet.username).toLowerCase();
         const token = packet.token || "";
 
-        let loggedIn = await utils.UserManager.loginWithToken(username, token);
+        const login = await utils.UserManager.loginwithtoken(token);
+        let loggedIn = login.success;
+        const username = login.username;
 
         const target_data = await utils.UserManager.getUserData(target);
         const user_data = await utils.UserManager.getUserData(username);
@@ -61,7 +62,7 @@ module.exports = (app, utils) => {
 
         const targetID = target_data.id;
         if (loggedIn) {
-            const usernameID = await utils.UserManager.getIDByUsername(username);
+            const usernameID = login.id;
             user.isFollowing = await utils.UserManager.isFollowing(targetID, usernameID);
         }
 

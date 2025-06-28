@@ -14,20 +14,21 @@ module.exports = (app, utils) => {
     app.post('/api/v1/users/verifyfollowers', utils.cors(), async function (req, res) {
         const packet = req.body;
 
-        const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
         const target = packet.target;
 
-        if (!username || !token || !target) {
-            utils.error(res, 400, "Missing username, token, or toggle");
+        if (!token || !target) {
+            utils.error(res, 400, "Missing token or target");
             return;
         }
 
-        if (!await utils.UserManager.loginWithToken(username, token)) {
-            utils.error(res, 401, "InvalidToken");
+        const login = await utils.UserManager.loginwithtoken(token);
+        if (!login.success) {
+            utils.error(res, 400, "Reauthenticate");
             return;
         }
+        const username = login.username;
 
         if (!await utils.UserManager.isAdmin(username)) {
             utils.error(res, 403, "Unauthorized");

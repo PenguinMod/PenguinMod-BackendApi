@@ -14,7 +14,6 @@ module.exports = (app, utils) => {
     app.post("/api/v1/users/setEmail", utils.cors(), async (req, res) => {
         const packet = req.body;
 
-        const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
         const email = packet.email;
@@ -25,15 +24,17 @@ module.exports = (app, utils) => {
             );
         };
 
-        if (!username || !token || typeof email !== "string") {
-            utils.error(res, 400, "Missing username, token, or email");
+        if (!token || typeof email !== "string") {
+            utils.error(res, 400, "Missing token or email");
             return;
         }
 
-        if (!utils.UserManager.loginWithToken(username, token)) {
+        const login = await utils.UserManager.loginWithToken(token);
+        if (!login.success) {
             utils.error(res, 400, "Reauthenticate");
             return;
         }
+        const username = login.username;
 
         if (!validateEmail(email)) {
             utils.error(res, 400, "InvalidEmail");

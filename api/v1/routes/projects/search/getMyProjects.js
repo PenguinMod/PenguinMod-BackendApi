@@ -20,7 +20,7 @@ module.exports = (app, utils) => {
             return utils.error(res, 400, "Missing token");
         }
 
-        const login = await utils.UserManager.loginWithToken(null, token);
+        const login = await utils.UserManager.loginwithtoken(token);
         if (!login.success) {
             utils.error(res, 401, "Reauthenticate")
             return;

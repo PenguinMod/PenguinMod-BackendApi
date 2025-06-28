@@ -19,16 +19,18 @@ module.exports = (app, utils) => {
     app.post('/api/v1/users/setpfpadmin', utils.cors(), utils.upload.single("picture"), async (req, res) => {
         const packet = req.body;
 
-        const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
         const target = (String(packet.target)).toLowerCase();
 
         const pictureName = req.file;
 
-        if (!await utils.UserManager.loginWithToken(username, token)) {
-            return utils.error(res, 401, "Invalid credentials");
+        const login = await utils.UserManager.loginwithtoken(token);
+        if (!login.success) {
+            utils.error(res, 400, "Reauthenticate");
+            return;
         }
+        const username = login.username;
 
         if (!await utils.UserManager.isAdmin(username) && !await utils.UserManager.isModerator(username)) {
             return utils.error(res, 403, "FeatureDisabledForThisAccount");

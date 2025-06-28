@@ -14,13 +14,14 @@ module.exports = (app, utils) => {
     app.post('/api/v1/users/requestrankup', utils.cors(), async function (req, res) {
         const packet = req.body;
 
-        const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
-        if (!await utils.UserManager.loginWithToken(username, token)) {
+        const login = await utils.UserManager.loginwithtoken(token);
+        if (!login.success) {
             utils.error(res, 400, "Reauthenticate");
             return;
         }
+        const username = login.username;
 
         const badges = await utils.UserManager.getBadges(username);
 

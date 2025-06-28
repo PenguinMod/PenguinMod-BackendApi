@@ -15,7 +15,6 @@ module.exports = (app, utils) => {
         const packet = req.query;
 
 
-        const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
         if (!username || !token) {
@@ -23,10 +22,12 @@ module.exports = (app, utils) => {
             return;
         }
 
-        if (!await utils.UserManager.loginWithToken(username, token, true)) {
-            utils.error(res, 401, "InvalidToken");
+        const login = await utils.UserManager.loginwithtoken(token);
+        if (!login.success) {
+            utils.error(res, 400, "Reauthenticate");
             return;
         }
+        const username = login.username;
 
         const feed = await utils.UserManager.getUserFeed(username, Number(utils.env.FeedSize));
 

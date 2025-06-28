@@ -14,20 +14,21 @@ module.exports = (app, utils) => {
     app.get('/api/v1/users/getunreadmessages', utils.cors(), async (req, res) => {
         const packet = req.query;
 
-        const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
         const page = utils.handle_page(packet.page);
 
-        if (!username || !token) {
-            return utils.error(res, 400, "Missing username or token");
+        if (!token) {
+            return utils.error(res, 400, "Missing token");
         }
 
-        if (!await utils.UserManager.loginWithToken(username, token)) {
-            return utils.error(res, 401, "Invalid credentials");
+        const login = await utils.UserManager.loginwithtoken(token);
+        if (!login.success) {
+            utils.error(res, 400, "Reauthenticate");
+            return;
         }
-
-        const id = await utils.UserManager.getIDByUsername(username);
+        const username = login.username;
+        const id = login.id;
 
         const messages = await utils.UserManager.getUnreadMessages(id, page, Number(utils.env.PageSize));
 

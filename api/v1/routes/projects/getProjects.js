@@ -22,7 +22,7 @@ module.exports = (app, utils) => {
 
         const token = packet.token;
 
-        const login = await utils.UserManager.loginWithToken(null, token, false);
+        const login = await utils.UserManager.loginwithtoken(token, false);
         const is_mod = login.success && await utils.UserManager.isModerator(login.username);
 
         const projects = await utils.UserManager.getProjects(is_mod, page, Number(utils.env.PageSize), Number(utils.env.MaxPageSize), null, reverse);

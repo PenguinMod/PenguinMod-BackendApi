@@ -14,19 +14,20 @@ module.exports = (app, utils) => {
     app.post("/api/v1/users/changeUsername", utils.cors(), async (req, res) => {
         const packet = req.body;
 
-        const username = String(packet.username).toLowerCase();
         const token = packet.token;
         const newUsername = String(packet.newUsername).toLowerCase();
 
-        if (!username || !token || !newUsername) {
-            utils.error(res, 400, "Missing username, token, or newUsername");
+        if (!token || !newUsername) {
+            utils.error(res, 400, "Missing token or newUsername");
             return;
         }
 
-        if (!await utils.UserManager.loginWithToken(username, token)) {
-            utils.error(res, 401, "InvalidToken");
+        const login = await utils.UserManager.loginwithtoken(token);
+        if (!login.success) {
+            utils.error(res, 400, "Reauthenticate");
             return;
         }
+        const username = login.username;
 
         const usernameDoesNotMeetLength = newUsername.length < 3 || newUsername.length > 20;
         const usernameHasIllegalChars = newUsername.match(/[^a-z0-9\-_]/i);

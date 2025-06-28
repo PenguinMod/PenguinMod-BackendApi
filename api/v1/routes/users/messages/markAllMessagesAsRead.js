@@ -12,21 +12,22 @@ const UserManager = require("../../../db/UserManager");
  */
 module.exports = (app, utils) => {
     app.post('/api/v1/users/markallmessagesasread', utils.cors(), async (req, res) => {
-        // use this if you need to tell a certain user something but you're not responding to a dispute or smth
         const packet = req.body;
 
-        const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
-        if (!username || !token) {
-            return utils.error(res, 400, "Missing username or token");
+        if (!token) {
+            return utils.error(res, 400, "Missing token");
         }
 
-        if (!await utils.UserManager.loginWithToken(username, token, true)) {
-            return utils.error(res, 401, "Invalid credentials");
+        const login = await utils.UserManager.loginwithtoken(token);
+        if (!login.success) {
+            utils.error(res, 400, "Reauthenticate");
+            return;
         }
+        const username = login.username;
+        const id = login.id;
 
-        const id = await utils.UserManager.getIDByUsername(username);
         await utils.UserManager.markAllMessagesAsRead(id);
 
         res.header('Content-type', "application/json");
