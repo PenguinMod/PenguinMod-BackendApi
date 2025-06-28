@@ -19,7 +19,7 @@ module.exports = (app, utils) => {
         const target = (String(packet.target)).toLowerCase();
         const newUsername = (String(packet.newUsername)).toLowerCase();
 
-        const login = await utils.UserManager.loginwithtoken(token);
+        const login = await utils.UserManager.loginWithToken(token);
         if (!login.success) {
             utils.error(res, 400, "Reauthenticate");
             return;

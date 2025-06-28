@@ -28,7 +28,7 @@ module.exports = (app, utils) => {
 
         const token = packet.token;
 
-        const login = await utils.UserManager.loginwithtoken(token);
+        const login = await utils.UserManager.loginWithToken(token);
 
         const is_mod = login.success && await utils.UserManager.isModeratorOrAdmin(login.username);
 

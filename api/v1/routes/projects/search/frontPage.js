@@ -52,7 +52,7 @@ module.exports = (app, utils) => {
 
         const token = packet.token;
 
-        const login = await utils.UserManager.loginwithtoken(token);
+        const login = await utils.UserManager.loginWithToken(token);
         const user_and_logged_in = login.success;
         const username = login.username;
 

@@ -87,7 +87,7 @@ module.exports = (app, utils) => {
 
         const metadata = await utils.UserManager.getProjectMetadata(projectID);
 
-        const login = await utils.UserManager.loginwithtoken(token);
+        const login = await utils.UserManager.loginWithToken(token);
 
         const is_author = login && metadata.author === login.username;
 

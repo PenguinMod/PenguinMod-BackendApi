@@ -27,7 +27,7 @@ module.exports = (app, utils) => {
             return utils.error(res, 404, "User not found");
         }
 
-        const login = await utils.UserManager.loginwithtoken(token);
+        const login = await utils.UserManager.loginWithToken(token);
         const username = login.username;
 
         const logged_in = login.success;
