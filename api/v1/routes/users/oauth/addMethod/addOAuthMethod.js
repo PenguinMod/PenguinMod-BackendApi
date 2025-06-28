@@ -18,7 +18,7 @@ module.exports = (app, utils) => {
         const method = packet.method;
         const token = packet.token;
 
-        if (!method || !username || !token) {
+        if (!method || !token) {
             utils.error(res, 400, "Missing method, username, or token");
             return;
         }
