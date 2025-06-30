@@ -1743,7 +1743,7 @@ class UserManager {
      * @param {string} projectID ID of the project
      * @param {number} page Page to get
      * @param {number} pageSize Page size
-     * @returns {Array<string>} Array of user ids
+     * @returns {Promise<Array<string>>} Array of user ids
      */
     async getWhoLoved(projectID, page, pageSize) {
         const result = await this.projectStats.aggregate([
@@ -1770,7 +1770,7 @@ class UserManager {
      * @param {string} projectID ID of the project
      * @param {number} page Page to get
      * @param {number} pageSize Page size
-     * @returns {Array<string>} Array of user ids
+     * @returns {Promise<Array<string>>} Array of user ids
      */
     async getWhoVoted(projectID, page, pageSize) {
         const result = await this.projectStats.aggregate([
@@ -2997,7 +2997,7 @@ class UserManager {
      * @param {Array<Object>} query Query to search for, will be expanded with ...
      * @param {number} page Page of projects to get
      * @param {number} pageSize Amount of projects to get
-     * @returns {Array<Object>} Array of projects
+     * @returns {Promise<Array<Object>>} Array of projects
      */
     async specializedSearch(query, page, pageSize, maxPageSize) {
         let pipeline = [
@@ -3905,7 +3905,7 @@ class UserManager {
      * Check if a user has blocked another user
      * @param {string} user_id id of the person blocking
      * @param {string} target_id id of the person being blocked
-     * @returns {boolean} true if they're blocked, false if not
+     * @returns {Promise<boolean>} true if they're blocked, false if not
      */
     async hasBlocked(user_id, target_id) {
         return !!(await this.blocking.findOne({blocker:user_id,target:target_id,active:true}));
