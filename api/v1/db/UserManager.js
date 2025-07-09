@@ -3069,7 +3069,7 @@ class UserManager {
                 $skip: page * pageSize
             },
             {
-                $limit: Math.max(maxPageSize / 2, pageSize)
+                $limit: Math.min(maxPageSize, pageSize*2)
             },
             {
                 $lookup: {
