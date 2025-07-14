@@ -56,6 +56,7 @@ class UserManager {
         await this.projects.createIndex({ title: "text", instructions: "text", notes: "text"});
         // index for front page, sort by newest
         await this.projects.createIndex({ lastUpdate: -1 });
+        await this.projects.createIndex({ id: 1 }, { unique: true });
         this.projectStats = this.db.collection('projectStats');
         this.messages = this.db.collection('messages');
         this.oauthStates = this.db.collection('oauthStates');
