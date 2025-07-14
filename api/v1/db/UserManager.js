@@ -30,6 +30,7 @@ class UserManager {
         this.users = this.db.collection('users');
         await this.users.createIndex({ username: 1 }, { unique: true });
         await this.users.createIndex({ id: 1 }, { unique: true });
+        await this.users.createIndex({ token: 1 }, { unique: true });
         this.accountCustomization = this.db.collection('accountCustomization');
         this.loggedIPs = this.db.collection('loggedIPs');
         await this.loggedIPs.createIndex({ id: 1 });
