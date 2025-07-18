@@ -31,7 +31,8 @@ module.exports = (app, utils) => {
         const username = String(packet.username).toLowerCase();
         const token = packet.token || "";
 
-        let loggedIn = await utils.UserManager.loginWithToken(username, token);
+        const login = await utils.UserManager.loginWithToken(username, token);
+        let loggedIn = login.success;
 
         const target_data = await utils.UserManager.getUserData(target);
         const user_data = await utils.UserManager.getUserData(username);

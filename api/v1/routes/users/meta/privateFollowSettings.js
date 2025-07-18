@@ -5,7 +5,8 @@ module.exports = (app, utils) => {
         const username = String(packet.username).toLowerCase();
         const token = packet.token;
 
-        if (!await utils.UserManager.loginWithToken(username, token)) {
+        const login = await utils.UserManager.loginWithToken(token);
+        if (!login.success) {
             utils.error(res, 401, "Reauthenticate");
             return;
         }
