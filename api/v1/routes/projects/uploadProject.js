@@ -1,6 +1,18 @@
 const fs = require('fs');
 const sharp = require('sharp');
 
+const UserManager = require("../../db/UserManager");
+
+/**
+ * @typedef {Object} Utils
+ * @property {UserManager} UserManager
+ */
+
+/**
+ * 
+ * @param {any} app Express app
+ * @param {Utils} utils Utils
+ */
 module.exports = (app, utils) => {
     app.post('/api/v1/projects/uploadProject', utils.cors(), utils.upload.fields([
         { name: 'jsonFile', maxCount: 1 },
@@ -25,18 +37,18 @@ module.exports = (app, utils) => {
 
         const packet = req.body;
 
-        const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
-        if (!await utils.UserManager.loginWithToken(username, token)) {
+        const login = await utils.UserManager.loginWithToken(token);
+        if (!login.success) {
             await unlink();
             return utils.error(res, 401, "Invalid credentials");
         }
+        const username = login.username;
 
-        const isAdmin = await utils.UserManager.isAdmin(username);
-        const isModerator = await utils.UserManager.isModerator(username);
+        const hasModPerms = await utils.UserManager.hasModPerms(username);
 
-        if (await utils.UserManager.getLastUpload(username) > Date.now() - utils.uploadCooldown && (!isAdmin && !isModerator)) {
+        if (await utils.UserManager.getLastUpload(username) > Date.now() - utils.uploadCooldown && !hasModPerms) {
             await unlink();
             return utils.error(res, 400, "Uploaded in the last 8 minutes");
         }

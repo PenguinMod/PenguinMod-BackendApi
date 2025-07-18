@@ -1,25 +1,38 @@
 const fs = require('fs');
 const path = require('path');
 const sharp = require('sharp');
-const Magic = require('mmmagic').Magic;
-const magic = new Magic();
+const Magic = require('mmmagic');
+const magic = new Magic.Magic(Magic.MAGIC_MIME_TYPE);
+const UserManager = require("../../../db/UserManager");
 
+/**
+ * @typedef {Object} Utils
+ * @property {UserManager} UserManager
+ */
+
+/**
+ * 
+ * @param {any} app Express app
+ * @param {Utils} utils Utils
+ */
 module.exports = (app, utils) => {
-    app.post('/api/v1/users/setpfpadmin', utils.cors(), utils.upload.single("picture"), utils.file_size_limit(utils, req => req.body.username), async (req, res) => {
+    app.post('/api/v1/users/setpfpadmin', utils.cors(), utils.upload.single("picture"), async (req, res) => {
         const packet = req.body;
 
-        const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
         const target = (String(packet.target)).toLowerCase();
 
         const pictureName = req.file;
 
-        if (!await utils.UserManager.loginWithToken(username, token)) {
-            return utils.error(res, 401, "Invalid credentials");
+        const login = await utils.UserManager.loginWithToken(token);
+        if (!login.success) {
+            utils.error(res, 400, "Reauthenticate");
+            return;
         }
+        const username = login.username;
 
-        if (!await utils.UserManager.isAdmin(username) && !await utils.UserManager.isModerator(username)) {
+        if (!await utils.UserManager.hasModPerms(username)) {
             return utils.error(res, 403, "FeatureDisabledForThisAccount");
         }
 
@@ -35,17 +48,18 @@ module.exports = (app, utils) => {
             return utils.error(res, 400, "File too large");
         }
 
-        const picture = fs.readFileSync(path.join(utils.HomeDir, pictureName.path));
+        const picture = fs.readFileSync(path.join(utils.homeDir, pictureName.path));
 
         const allowedTypes = ["image/png", "image/jpeg"];
 
         magic.detect(picture, async (err, result) => {
             if (err) {
+                console.log(err);
                 return utils.error(res, 400, "Invalid file type");
             }
 
             if (!allowedTypes.includes(result)) {
-                return utils.error(res, 400, "Invalid file type");
+                return utils.error(res, 400, `Invalid file type, ${result}`);
             }
 
             const resized_picture = await sharp(picture).resize(100, 100).toBuffer()

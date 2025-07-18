@@ -1,6 +1,18 @@
 const fs = require('fs');
 const sharp = require('sharp');
 
+const UserManager = require("../../db/UserManager");
+
+/**
+ * @typedef {Object} Utils
+ * @property {UserManager} UserManager
+ */
+
+/**
+ * 
+ * @param {any} app Express app
+ * @param {Utils} utils Utils
+ */
 module.exports = (app, utils) => {
     app.post('/api/v1/projects/updateProject', utils.cors(), utils.upload.fields([
         { name: 'jsonFile', maxCount: 1 },
@@ -27,12 +39,12 @@ module.exports = (app, utils) => {
 
         const packet = req.body;
 
-        const username = (String(packet.username)).toLowerCase();
-
-        if (!await utils.UserManager.loginWithToken(username, packet.token)) {
+        const login = await utils.UserManager.loginWithToken(packet.token);
+        if (!login.success) {
             await unlink();
             return utils.error(res, 401, "Invalid credentials");
         }
+        const username = login.username;
 
         const isAdmin = await utils.UserManager.isAdmin(username);
         const isModerator = await utils.UserManager.isModerator(username);

@@ -2,6 +2,18 @@ const path = require('path');
 const fs = require('fs');
 const jszip = require('jszip');
 
+const UserManager = require("../../db/UserManager");
+
+/**
+ * @typedef {Object} Utils
+ * @property {UserManager} UserManager
+ */
+
+/**
+ * 
+ * @param {any} app Express app
+ * @param {Utils} utils Utils
+ */
 module.exports = (app, utils) => {
     app.get("/api/v1/projects/getprojectwrapper", async (req, res) => {
         if (!await utils.UserManager.getRuntimeConfigItem("viewingEnabled")) {
@@ -52,7 +64,10 @@ module.exports = (app, utils) => {
 
         const metadata = await utils.UserManager.getProjectMetadata(projectId);
 
-        if (metadata.author.username !== String(packet.username).toLowerCase()) {
+        const login = await utils.UserManager.loginWithToken(packet.token);
+        const is_author = login.success && login.username === metadata.author.username;
+
+        if (!is_author) {
             if (!metadata.public || /*metadata.softRejected ||*/ metadata.hardReject) {
                 if (safe) {
                     return safeReturn();

@@ -64,8 +64,8 @@ app.use(rateLimit({
         trustProxy: true,
         xForwardedForHeader: true,
     },
-    windowMs: 5000,  // 150 requests per 5 seconds
-    limit: 150,
+    windowMs: 2500,  // 300 requests per 2.5 seconds
+    limit: 300,
     standardHeaders: 'draft-7',
     legacyHeaders: false,
 }));
@@ -200,7 +200,7 @@ const UserManager = new um();
         file_size_limit: file_size_limit,
         cors: () => cors({
             origin: function (origin, callback) {
-                const whitelist = [process.env.HomeURL, "http://localhost:5173", "http://test.mydomain.com:5173"];
+                const whitelist = [process.env.HomeURL, "http://localhost:5173"];
                 const idxWebPreview = ".cloudworkstations.dev"; //project idx sigma development
                 if (!origin || whitelist.indexOf(origin) !== -1 || origin.endsWith(idxWebPreview)) {
                   callback(null, true)

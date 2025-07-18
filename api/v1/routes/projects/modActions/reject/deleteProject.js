@@ -1,20 +1,34 @@
+const UserManager = require("../../../../db/UserManager");
+
+/**
+ * @typedef {Object} Utils
+ * @property {UserManager} UserManager
+ */
+
+/**
+ * 
+ * @param {any} app Express app
+ * @param {Utils} utils Utils
+ */
 module.exports = (app, utils) => {
     app.post('/api/v1/projects/hardDeleteProject', utils.cors(), async (req, res) => {
         const packet = req.body;
 
         const projectID = String(packet.projectID);
 
-        const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
         const reason = packet.reason;
 
-        if (!username || !token) {
-            return utils.error(res, 400, "Missing username or token");
+        if (!token) {
+            return utils.error(res, 400, "Missing token");
         }
 
-        if (!await utils.UserManager.loginWithToken(username, token)) {
-            return utils.error(res, 401, "Invalid username or token");
+        const login = await utils.UserManager.loginWithToken(token);
+        if (!login.success) {
+            utils.error(res, 401, "Reauthenticate")
+            return;
         }
+        const username = login.username;
 
         if (!projectID) {
             return utils.error(res, 404, "Project not found");

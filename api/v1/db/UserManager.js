@@ -4,14 +4,17 @@ const bcrypt = require('bcrypt');
 const { MongoClient } = require('mongodb');
 const ULID = require('ulid');
 const Minio = require('minio');
-const protobuf = require('protobufjs');
 const fs = require('fs');
 const path = require('path');
 var prompt = require('prompt-sync')();
 const Mailjet = require('node-mailjet');
 const os = require('os');
+const pmp_protobuf = require('pmp-protobuf');
+const sharp = require('sharp');
 
 const basePFP = fs.readFileSync(path.join(__dirname, "./penguin.png"));
+const deleted_thumb = fs.readFileSync(path.join(__dirname, "../../../deletedThumbnail.png"));
+const deleted_thumb_buffer = sharp(deleted_thumb).resize(240, 180).toBuffer();
 
 class UserManager {
     /**
@@ -27,8 +30,11 @@ class UserManager {
         this.users = this.db.collection('users');
         await this.users.createIndex({ username: 1 }, { unique: true });
         await this.users.createIndex({ id: 1 }, { unique: true });
+        await this.users.createIndex({ token: 1 }, { unique: true });
         this.accountCustomization = this.db.collection('accountCustomization');
         this.loggedIPs = this.db.collection('loggedIPs');
+        await this.loggedIPs.createIndex({ id: 1 });
+        await this.loggedIPs.createIndex({ ip: 1 });
         this.passwordResetStates = this.db.collection('passwordResetStates');
         await this.passwordResetStates.createIndex({ 'expireAt': 1 }, { expireAfterSeconds: 60 * 60 * 2 }); // give 2 hours
         this.sentEmails = this.db.collection('sentEmails');
@@ -50,6 +56,7 @@ class UserManager {
         await this.projects.createIndex({ title: "text", instructions: "text", notes: "text"});
         // index for front page, sort by newest
         await this.projects.createIndex({ lastUpdate: -1 });
+        await this.projects.createIndex({ id: 1 }, { unique: true });
         this.projectStats = this.db.collection('projectStats');
         this.messages = this.db.collection('messages');
         this.oauthStates = this.db.collection('oauthStates');
@@ -79,6 +86,9 @@ class UserManager {
 
         this.maxviews = maxviews ? maxviews : 10000;
         this.viewresetrate = viewresetrate ? viewresetrate : 1000 * 60 * 60;
+
+        this.tagWeights = this.db.collection("tagWeights");
+        this.performance_logging = this.db.collection("system.profile");
 
         // Setup minio
 
@@ -191,7 +201,7 @@ class UserManager {
         const illegalWordingError = async (text, type) => {
             const trigger = await this.checkForIllegalWording(text);
             if (trigger) {
-                utils.error(res, 400, "IllegalWordsUsed")
+                utils.error(res, 400, "IllegalWordsUsed");
     
                 const illegalWordIndex = await this.getIndexOfIllegalWording(text);
 
@@ -373,34 +383,37 @@ class UserManager {
     }
 
     /**
+     * @typedef {Object} loginResult
+     * @property {string} username The user's username. Blank if unsuccessful
+     * @property {string} id The user's id. Blank if unsuccessful
+     * @property {boolean} success If the login was successful
+     * @property {boolean} exists If the account even exists
+     */
+
+    /**
      * Login with a token
-     * @param {string} username username of the user
+     * @param {string?} username username of the user. Optional
      * @param {string} token token of the user
      * @param {boolean} allowBanned allow banned users to login
-     * @returns {Promise<boolean>} true if successful, false if not
+     * @returns {Promise<loginResult>} Result of the login attempt
      * @async
      */
-    async loginWithToken(username, token, allowBanned) {
-        const result = await this.users.findOne({ username: username });
+    async loginWithToken(token, allowBanned) {
+        const result = await this.users.findOne({ token });
 
-        if (!result) return false;
+        if (!result) return { success: false, username: "", id: "", exists: false };
 
         if ((result.permBanned || result.unbanTime > Date.now()) && !allowBanned) {
-            return false;
+            return { success: false, username: result.username, id: result.id, exists: true };
         }
 
         // login invalid if more than the time
         if (result.lastLogin + (Number(process.env.LoginInvalidationTime) || 259200000) < Date.now()) {
-            return false;
+            return { success: false, username: result.username, id: result.id, exists: true };
         }
 
-        // check that the tokens are equal
-        if (result.token === token) {
-            this.users.updateOne({ username: username }, { $set: { lastLogin: Date.now() } });
-            return true;
-        } else {
-            return false;
-        }
+        this.users.updateOne({ token }, { $set: { lastLogin: Date.now() } });
+        return { success: true, username: result.username, id: result.id, exists: true };
     }
 
     async getRealUsername(username) {
@@ -441,8 +454,17 @@ class UserManager {
      * @returns {Promise<string>} id of the user
      * @async
      */
-    async getIDByUsername(username) {
+    async getIDByUsername(username, throw_err=true) {
         const result = await this.users.findOne({ username: username });
+        if (!result) {
+            if (throw_err) {
+                const error = `----------\nCould not get ${username}'s id\n----------`
+                console.log(error);
+                throw error;
+            } else {
+                return false;
+            }
+        }
         return result.id;
     }
 
@@ -688,6 +710,17 @@ class UserManager {
         if (!result) return false;
 
         return result.badges;
+    }
+
+    /**
+     * Check if a user is a donator
+     * @param {string} username Username of the user
+     * @returns {Promise<boolean>} if the user is a donator or not
+     */
+    async isDonator(username) {
+        const result = await this.users.findOne({username: username});
+
+        return result.badges.indexOf("donator") > -1;
     }
 
     /**
@@ -1160,7 +1193,8 @@ class UserManager {
             public: true,
             softRejected: false,
             hardReject: false,
-            hardRejectTime: 0
+            hardRejectTime: 0,
+            impressions: 0,
         });
 
         // minio bucket stuff
@@ -1243,7 +1277,11 @@ class UserManager {
      * @async
      */
     async updateProject(id, projectBuffer, assetBuffers, title, imageBuffer, instructions, notes, rating) {
-        if (projectBuffer === null && assetBuffers !== null || projectBuffer !== null && assetBuffers === null) {
+        if (
+            (projectBuffer === null && assetBuffers !== null)
+            ||
+            (projectBuffer !== null && assetBuffers === null)
+        ) {
             return false;
         }
 
@@ -1287,13 +1325,13 @@ class UserManager {
      * @returns {Promise<Array<Object>>} Projects in the specified amount
      * @async
      */
-    async getProjects(show_nonranked, page, pageSize, maxLookup, user_id, reverse=false) {
+    async getProjects(show_nonranked, page, pageSize, maxLookup, user_id, reverse = false) {
         let pipeline = [
             {
                 $match: { softRejected: false, hardReject: false, public: true }
             },
             {
-                $sort: { lastUpdate: -1*(!reverse) }
+                $sort: { lastUpdate: reverse ? 1 : -1 }
             },
             {
                 $skip: page * pageSize
@@ -1332,7 +1370,7 @@ class UserManager {
                     $match: {
                         "block_info": {
                             $not: {
-                                $elemMatch: { blocker: "01JR8P6N4WZQS5JWQA5K8234SE", active: true},
+                                $elemMatch: { blocker: user_id, active: true},
                             }
                         }
                     }
@@ -1372,6 +1410,9 @@ class UserManager {
                     "author": {
                         id: "$author",
                         username: { $arrayElemAt: ["$authorInfo.username", 0] }
+                    },
+                    "fromDonator": {
+                        $in: ["donator", "$authorInfo.badges"]
                     }
                 }
             },
@@ -1451,6 +1492,22 @@ class UserManager {
         return _result;
     }
 
+    objectExists(bucketName, objectName) {
+        return new Promise((resolve, reject) => {
+            this.minioClient.statObject(bucketName, objectName, function (err, stat) {
+                if (err) {
+                    if (err.code === "NotFound") {
+                        resolve(false);
+                    } else {
+                        console.error("Error checking if object exists: ", err);
+                    }
+                } else {
+                    resolve(true);
+                }
+            })
+        });
+    }
+
     /**
      * Read an object from a bucket
      * @param {string} bucketName Name of the bucket
@@ -1458,6 +1515,10 @@ class UserManager {
      * @returns {Promise<Buffer>} The object
      */
     async readObjectFromBucket(bucketName, objectName) {
+        if (!this.objectExists(bucketName, objectName)) {
+            console.error("Tried to get project that doesn't exist: " + objectName);
+            throw new Error("Tried to get project that doesn't exist: " + objectName);
+        }
         const stream = await this.minioClient.getObject(bucketName, objectName);
 
         const chunks = [];
@@ -1579,6 +1640,10 @@ class UserManager {
             ...tempresult,
             loves: await this.getProjectLoves(p_id),
             votes: await this.getProjectVotes(p_id),
+        };
+
+        if (!result.impressions) {
+            result.impressions = 0;
         }
 
         return result;
@@ -1607,8 +1672,6 @@ class UserManager {
         if (this.views.length >= this.maxviews ||
             Date.now() - this.prevReset >= this.viewresetrate
         ) {
-            const either = this.views.length >= this.maxviews ? "we went above max views" : "the time limit has elapsed";
-            console.log(`Reset because ${either}`);
             this.views = [];
             this.prevReset = Date.now();
         }
@@ -1684,7 +1747,7 @@ class UserManager {
      * @param {string} projectID ID of the project
      * @param {number} page Page to get
      * @param {number} pageSize Page size
-     * @returns {Array<string>} Array of user ids
+     * @returns {Promise<Array<string>>} Array of user ids
      */
     async getWhoLoved(projectID, page, pageSize) {
         const result = await this.projectStats.aggregate([
@@ -1711,7 +1774,7 @@ class UserManager {
      * @param {string} projectID ID of the project
      * @param {number} page Page to get
      * @param {number} pageSize Page size
-     * @returns {Array<string>} Array of user ids
+     * @returns {Promise<Array<string>>} Array of user ids
      */
     async getWhoVoted(projectID, page, pageSize) {
         const result = await this.projectStats.aggregate([
@@ -1827,6 +1890,9 @@ class UserManager {
                     "author": {
                         id: "$author",
                         username: { $arrayElemAt: ["$authorInfo.username", 0] }
+                    },
+                    "fromDonator": {
+                        $in: ["donator", "$authorInfo.badges"]
                     }
                 }
             },
@@ -2559,7 +2625,7 @@ class UserManager {
                 break;
         }
 
-        let n = 1;
+        let n = 0;
         let orig_username = username;
         while (await this.existsByUsername(username)) {
             username = `${orig_username}${n}`;
@@ -2572,423 +2638,6 @@ class UserManager {
 
         await this.addOAuthMethod(username, method, id);
         return { token, username, id: pm_id };
-    }
-
-    /**
-     * Convert a project json to protobuf format
-     * @param {Object} json The project json 
-     * @returns {Buffer} The project protobuf
-     */
-    projectJsonToProtobuf(json) {
-        // get the protobuf schema
-        let file = protobuf.loadSync("./api/v1/db/protobufs/project.proto");
-        const schema = file.lookupType("Project");
-
-        let newjson = {
-            targets: [],
-            monitors: [],
-            extensionData: {},
-            extensions: json.extensions,
-            extensionURLs: {},
-            metaSemver: "",
-            metaVm: "",
-            metaAgent: "",
-            fonts: json.fonts,
-        }
-
-        newjson.metaSemver = json.meta.semver;
-        newjson.metaVm = json.meta.vm;
-        newjson.metaAgent = json.meta.agent;
-
-        for (const target in json.targets) {
-
-            let newtarget = {
-                id: json.targets[target].id,
-                isStage: json.targets[target].isStage,
-                name: json.targets[target].name,
-                variables: {},
-                lists: {},
-                broadcasts: {},
-                customVars: [],
-                blocks: {},
-                comments: {},
-                currentCostume: json.targets[target].currentCostume,
-                costumes: [],
-                sounds: [],
-                volume: json.targets[target].volume,
-                layerOrder: json.targets[target].layerOrder,
-                x: json.targets[target].x,
-                y: json.targets[target].y,
-                size: json.targets[target].size,
-                direction: json.targets[target].direction,
-                draggable: json.targets[target].draggable,
-                rotationStyle: json.targets[target].rotationStyle,
-                tempo: json.targets[target].tempo,
-                videoTransparency: json.targets[target].videoTransparency,
-                videoState: json.targets[target].videoState,
-                textToSpeechLanguage: json.targets[target].textToSpeechLanguage,
-                visible: json.targets[target].visible,
-            }
-
-            // loop over the variables
-            for (const variable in json.targets[target].variables) {
-                newtarget.variables[variable] = {
-                    name: json.targets[target].variables[variable][0],
-                    value: this.castToString(json.targets[target].variables[variable][1])
-                }
-            }
-
-            // loop over the lists
-            for (const list in json.targets[target].lists) {
-                newtarget.lists[list] = {
-                    name: list,
-                    value: json.targets[target].lists[list].map(x => this.castToString(x))
-                }
-            }
-
-            // loop over the broadcasts
-            for (const broadcast in json.targets[target].broadcasts) {
-                newtarget.broadcasts[broadcast] = json.targets[target].broadcasts[broadcast];
-            }
-
-            for (const customVar in json.targets[target].customVars) {
-                newtarget.customVars.push({
-                    name: json.targets[target].customVars[customVar].name,
-                    value: this.castToString(json.targets[target].customVars[customVar].value),
-                    type: json.targets[target].customVars[customVar].type,
-                    id: json.targets[target].customVars[customVar].id
-                });
-            }
-
-            const blocks = json.targets[target].blocks;
-            // loop over the blocks
-            for (const block in blocks) {
-                if (Array.isArray(blocks[block])) {
-                    newtarget.blocks[block] = {
-                        is_variable_reporter: true,
-                        varReporterBlock: {
-                            first_num: target.blocks[block][0],
-                            name: target.blocks[block][1],
-                            id: target.blocks[block][2],
-                            second_num: target.blocks[block][3],
-                            third_num: target.blocks[block][4],
-                        }
-                    };
-                    continue;
-                }
-                
-                newtarget.blocks[block] = {
-                    opcode: blocks[block].opcode,
-                    next: blocks[block].next,
-                    parent: blocks[block].parent,
-                    inputs: {},
-                    fields: {},
-                    shadow: blocks[block].shadow,
-                    topLevel: blocks[block].topLevel,
-                    x: blocks[block].x,
-                    y: blocks[block].y,
-                    is_variable_reporter: false,
-                }
-
-                if (blocks[block].mutation) {
-                    newtarget.blocks[block].mutation = {
-                        tagName: blocks[block].mutation.tagName,
-                        proccode: blocks[block].mutation.proccode,
-                        argumentids: blocks[block].mutation.argumentids,
-                        argumentnames: blocks[block].mutation.argumentnames,
-                        argumentdefaults: blocks[block].mutation.argumentdefaults,
-                        warp: blocks[block].mutation.warp,
-                        _returns: blocks[block].mutation.returns,
-                        edited: blocks[block].mutation.edited,
-                        optype: blocks[block].mutation.optype,
-                        color: blocks[block].mutation.color
-                    }
-                }
-
-                // loop over the inputs
-                for (const input in blocks[block].inputs) {
-                    newtarget.blocks[block].inputs[input] = JSON.stringify(blocks[block].inputs[input]);
-                }
-
-                // loop over the fields
-                for (const field in blocks[block].fields) {
-                    newtarget.blocks[block].fields[field] = JSON.stringify(blocks[block].fields[field]);
-                }
-            }
-
-            // loop over the comments
-            for (const comment in json.targets[target].comments) {
-                newtarget.comments[comment] = {
-                    blockId: json.targets[target].comments[comment].blockId,
-                    x: json.targets[target].comments[comment].x,
-                    y: json.targets[target].comments[comment].y,
-                    width: json.targets[target].comments[comment].width,
-                    height: json.targets[target].comments[comment].height,
-                    minimized: json.targets[target].comments[comment].minimized,
-                    text: json.targets[target].comments[comment].text
-                }
-            }
-
-            // loop over the costumes
-            for (const costume in json.targets[target].costumes) {
-                newtarget.costumes[costume] = {
-                    assetId: json.targets[target].costumes[costume].assetId,
-                    name: json.targets[target].costumes[costume].name,
-                    bitmapResolution: json.targets[target].costumes[costume].bitmapResolution,
-                    rotationCenterX: json.targets[target].costumes[costume].rotationCenterX,
-                    rotationCenterY: json.targets[target].costumes[costume].rotationCenterY,
-                    md5ext: json.targets[target].costumes[costume].md5ext,
-                    dataFormat: json.targets[target].costumes[costume].dataFormat,
-                }
-            }
-
-            // loop over the sounds
-            for (const sound in json.targets[target].sounds) {
-                newtarget.sounds[sound] = {
-                    assetId: json.targets[target].sounds[sound].assetId,
-                    name: json.targets[target].sounds[sound].name,
-                    dataFormat: json.targets[target].sounds[sound].dataFormat,
-                    rate: json.targets[target].sounds[sound].rate,
-                    sampleCount: json.targets[target].sounds[sound].sampleCount,
-                    md5ext: json.targets[target].sounds[sound].md5ext
-                }
-            }
-
-            newjson.targets.push(newtarget);
-        }
-
-        // loop over the monitors
-        for (const monitor in json.monitors) {
-            newjson.monitors.push({
-                id: json.monitors[monitor].id,
-                mode: json.monitors[monitor].mode,
-                opcode: json.monitors[monitor].opcode,
-                params: json.monitors[monitor].params,
-                spriteName: json.monitors[monitor].spriteName,
-                value: String(json.monitors[monitor].value),
-                width: json.monitors[monitor].width,
-                height: json.monitors[monitor].height,
-                x: json.monitors[monitor].x,
-                y: json.monitors[monitor].y,
-                visible: json.monitors[monitor].visible,
-                sliderMin: json.monitors[monitor].sliderMin,
-                sliderMax: json.monitors[monitor].sliderMax,
-                isDiscrete: json.monitors[monitor].isDiscrete,
-            });
-        }
-
-        // loop over the extensionData
-        for (const extensionData in json.extensionData) {
-            newjson.extensionData[extensionData] = {
-                data: castToString(json.extensionData[extensionData]),
-                // true if the extension data is not a string
-                parse: typeof json.extensionData[extensionData] !== "string"
-            }
-        }
-
-        // loop over the extensionURLs
-        for (const extensionURL in json.extensionURLs) {
-            newjson.extensionURLs[extensionURL] = json.extensionURLs[extensionURL];
-        }
-
-        // encode the json
-        let buffer = schema.encode(newjson).finish();
-
-        return buffer;
-    }
-
-    /**
-     * Convert a project protobuf to json format
-     * @param {Buffer} buffer The project protobuf
-     * @returns {Object} The project json
-     */
-    protobufToProjectJson(buffer) {
-        // get the protobuf schema
-        let file = protobuf.loadSync("api/v1/db/protobufs/project.proto");
-        const schema = file.lookupType("Project");
-
-        // decode the buffer
-        const json = schema.toObject(schema.decode(buffer));
-
-        const newJson = {
-            targets: [],
-            monitors: [],
-            extensionData: {},
-            extensions: json.extensions,
-            extensionURLs: {},
-            meta: {
-                semver: json.metaSemver,
-                vm: json.metaVm,
-                agent: json.metaAgent || ""
-            },
-            customFonts: json.fonts
-        };
-
-        for (const target of json.targets) {
-            let newTarget = {
-                isStage: target.isStage,
-                name: target.name,
-                variables: {},
-                lists: {},
-                broadcasts: {},
-                customVars: [],
-                blocks: {},
-                comments: {},
-                currentCostume: target.currentCostume,
-                costumes: [],
-                sounds: [],
-                id: target.id,
-                volume: target.volume,
-                layerOrder: target.layerOrder,
-                tempo: target.tempo,
-                videoTransparency: target.videoTransparency,
-                videoState: target.videoState,
-                textToSpeechLanguage: target.textToSpeechLanguage || null,
-                visible: target.visible,
-                x: target.x,
-                y: target.y,
-                size: target.size,
-                direction: target.direction,
-                draggable: target.draggable,
-                rotationStyle: target.rotationStyle
-            };
-
-            for (const variable in target.variables) {
-                newTarget.variables[variable] = [target.variables[variable].name, target.variables[variable].value];
-            }
-
-            for (const list in target.lists) {
-                newTarget.lists[list] = [target.lists[list].name, target.lists[list].value];
-            }
-
-            for (const broadcast in target.broadcasts) {
-                newTarget.broadcasts[broadcast] = target.broadcasts[broadcast];
-            }
-
-            for (const customVar in target.customVars) {
-                newTarget.customVars.push(target.customVars[customVar]);
-            }
-
-            for (const block in target.blocks) {
-                if (target.blocks[block].is_variable_reporter) {
-                    newTarget.blocks[block] = [
-                        target.blocks[block].varReporterBlock.first_num,
-                        target.blocks[block].varReporterBlock.name,
-                        target.blocks[block].varReporterBlock.id,
-                        target.blocks[block].varReporterBlock.second_num,
-                        target.blocks[block].varReporterBlock.third_num,
-                    ]
-                    continue;
-                }
-
-                newTarget.blocks[block] = {
-                    opcode: target.blocks[block].opcode,
-                    next: target.blocks[block].next || null,
-                    parent: target.blocks[block].parent || null,
-                    inputs: {},
-                    fields: {},
-                    shadow: target.blocks[block].shadow,
-                    topLevel: target.blocks[block].topLevel,
-                    x: target.blocks[block].x,
-                    y: target.blocks[block].y,
-                }
-
-                if (target.blocks[block].mutation) {
-                    newTarget.blocks[block].mutation = {
-                        tagName: target.blocks[block].mutation.tagName,
-                        proccode: target.blocks[block].mutation.proccode,
-                        argumentids: target.blocks[block].mutation.argumentids,
-                        argumentnames: target.blocks[block].mutation.argumentnames,
-                        argumentdefaults: target.blocks[block].mutation.argumentdefaults,
-                        warp: target.blocks[block].mutation.warp,
-                        returns: target.blocks[block].mutation._returns,
-                        edited: target.blocks[block].mutation.edited,
-                        optype: target.blocks[block].mutation.optype,
-                        color: target.blocks[block].mutation.color,
-                        children: []
-                    }
-                }
-
-                for (const input in target.blocks[block].inputs) {
-                    newTarget.blocks[block].inputs[input] = JSON.parse(target.blocks[block].inputs[input]);
-                }
-
-                for (const field in target.blocks[block].fields) {
-                    newTarget.blocks[block].fields[field] = JSON.parse(target.blocks[block].fields[field]);
-                }
-            }
-
-            for (const comment in target.comments) {
-                newTarget.comments[comment] = target.comments[comment];
-            }
-
-            for (const costume in target.costumes) {
-                newTarget.costumes[costume] = target.costumes[costume];
-            }
-
-            for (const sound in target.sounds) {
-                newTarget.sounds[sound] = target.sounds[sound];
-            }
-
-            newJson.targets.push(newTarget);
-        }
-
-        for (const monitor in json.monitors) {
-            let newMonitor = {
-                id: json.monitors[monitor].id,
-                mode: json.monitors[monitor].mode,
-                opcode: json.monitors[monitor].opcode,
-                params: json.monitors[monitor].params,
-                spriteName: json.monitors[monitor].spriteName || "",
-                value: json.monitors[monitor].value,
-                width: json.monitors[monitor].width,
-                height: json.monitors[monitor].height,
-                x: json.monitors[monitor].x,
-                y: json.monitors[monitor].y,
-                visible: json.monitors[monitor].visible,
-                sliderMin: json.monitors[monitor].sliderMin,
-                sliderMax: json.monitors[monitor].sliderMax,
-                isDiscrete: json.monitors[monitor].isDiscrete
-            }
-
-            for (const param in json.monitors[monitor].params) {
-                newMonitor.params[param] = json.monitors[monitor].params[param];
-            }
-
-            newJson.monitors.push(newMonitor);
-        }
-
-        for (const extensionData in json.antiSigmaExtensionData) {
-            // "legacy" stuff
-            newJson.extensionData[extensionData] = json.extensionData[extensionData].data;
-        }
-
-        for (const extensionData in json.extensionData) {
-            if (json.extensionData[extensionData].parse) {
-                newJson.extensionData[extensionData] = JSON.parse(json.extensionData[extensionData].data);
-            } else {
-                newJson.extensionData[extensionData] = json.extensionData[extensionData].data;
-            }
-        }
-
-        for (const extensionURL in json.extensionURLs) {
-            newJson.extensionURLs[extensionURL] = json.extensionURLs[extensionURL];
-        }
-
-        return newJson;
-    }
-    
-    /**
-     * Cast a value to a string
-     * @param {any} value The value to cast 
-     * @returns {string} The value as a string
-     */
-    castToString(value) {
-        if (typeof value !== "object") {
-            return String(value);
-        }
-
-        return JSON.stringify(value);
     }
 
     /**
@@ -3104,7 +2753,7 @@ class UserManager {
         let aggregateList = [
             {
                 $match: { softRejected: false, hardReject: false, public: true }
-            },  
+            },
         ];
 
         const rev = reverse ? -1 : 1;
@@ -3223,7 +2872,7 @@ class UserManager {
 
         if (!show_unranked) {
             aggregateList.push(
-                { // get user input
+                {
                     $lookup: {
                         from: "users",
                         localField: "author",
@@ -3248,7 +2897,7 @@ class UserManager {
 
         if (show_unranked) {
             aggregateList.push(
-                { // get user input
+                {
                     $lookup: {
                         from: "users",
                         localField: "author",
@@ -3266,6 +2915,9 @@ class UserManager {
                     "author": {
                         id: "$author",
                         username: { $arrayElemAt: ["$authorInfo.username", 0] }
+                    },
+                    "fromDonator": {
+                        $in: ["donator", "$authorInfo.badges"]
                     }
                 }
             },
@@ -3350,7 +3002,7 @@ class UserManager {
      * @param {Array<Object>} query Query to search for, will be expanded with ...
      * @param {number} page Page of projects to get
      * @param {number} pageSize Amount of projects to get
-     * @returns {Array<Object>} Array of projects
+     * @returns {Promise<Array<Object>>} Array of projects
      */
     async specializedSearch(query, page, pageSize, maxPageSize) {
         let pipeline = [
@@ -3411,11 +3063,10 @@ class UserManager {
     }
 
     async almostFeatured(page, pageSize, maxPageSize) {
-        const time_after = Date.now() - (1000 * 60 * 60 * 24 * 21);
         const result = await this.projects.aggregate([
             {
-                $match: { softRejected: false, hardReject: false, public: true, featured: false, date: { $gt: time_after } }
-            }, 
+                $match: { softRejected: false, hardReject: false, public: true, featured: false }
+            },
             {
                 $sort: { views: -1 }
             },
@@ -3423,7 +3074,7 @@ class UserManager {
                 $skip: page * pageSize
             },
             {
-                $limit: maxPageSize * 3
+                $limit: Math.min(maxPageSize, pageSize*2)
             },
             {
                 $lookup: {
@@ -3449,7 +3100,10 @@ class UserManager {
             {
                 $sort: { votes: -1 }
             },
-            { // get user input
+            {
+                $limit: pageSize
+            },
+            {
                 $lookup: {
                     from: "users",
                     localField: "author",
@@ -3457,21 +3111,15 @@ class UserManager {
                     as: "authorInfo"
                 }
             },
-            { // only allow ranked users to show up
-                $match: { "authorInfo.rank": { $gt: 0 } }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: pageSize
-            },
             {
                 // set author to { id: old_.author, username: authorInfo.username }
                 $addFields: {
                     "author": {
                         id: "$author",
                         username: { $arrayElemAt: ["$authorInfo.username", 0] }
+                    },
+                    "fromDonator": {
+                        $in: ["donator", "$authorInfo.badges"]
                     }
                 }
             },
@@ -3527,7 +3175,7 @@ class UserManager {
             {
                 $sort: { loves: -1 }
             },
-            { // get user input
+            {
                 $lookup: {
                     from: "users",
                     localField: "author",
@@ -3753,15 +3401,15 @@ class UserManager {
             precentage_used
         };
     }
-
     async getStats() {
-        const userCount = await this.users.countDocuments({ permBanned: false }); // dont count perm banned users :tongue:
-        const bannedCount = await this.users.countDocuments({ $or: [{ permBanned: true }, { unbanTime: { $gt: Date.now() } }] });
-        const projectCount = await this.projects.countDocuments();
+        const userCount = await this.users.countDocuments({ permBanned: false }) || 0; // dont count perm banned users :tongue:
+        const bannedCount = await this.users.countDocuments({ $or: [{ permBanned: true }, { unbanTime: { $gt: Date.now() } }] }) || 0;
+        const projectCount = await this.projects.countDocuments() || 0;
         // check if remix is not 0
-        const remixCount = await this.projects.countDocuments({ remix: { $ne: "0" } });
-        const featuredCount = await this.projects.countDocuments({ featured: true });
-        const totalViews = (await this.projects.aggregate([{$group: {_id:null, total_views:{$sum:"$views"}}}]).toArray()).at(0).total_views;
+        const remixCount = await this.projects.countDocuments({ remix: { $ne: "0" } }) || 0;
+        const featuredCount = await this.projects.countDocuments({ featured: true }) || 0;
+        const totalViewsResult = await this.projects.aggregate([{$match: {views:{$gte:0}}},{$group: {_id:null, total_views:{$sum:"$views"}}}]).toArray();
+        const totalViews = totalViewsResult.length > 0 ? totalViewsResult[0].total_views || 0 : 0;
 
         const mongodb_stats = await this.db.command(
             {
@@ -3925,27 +3573,43 @@ class UserManager {
     }
 
     /**
-     * 
+     * Connect an ip to an account
      * @param {string} username Username of the user
      * @param {string} ip Ip they logged in with
-     * @returns {Promise<boolean>} Whether or not its new
+     * @returns {Promise<>}
      */
     async addIP(username, ip) {
         const id = await this.getIDByUsername(username);
 
-        if (await this.loggedIPs.findOne({ id: id, ip: ip })) {
-            await this.loggedIPs.updateOne({ id: id, ip: ip }, { $set: { lastLogin: Date.now() } });
-            return true;
-        }
+        await this.loggedIPs.updateOne(
+            { id: id, ip: ip }, // match condition
+            {
+                $set: { lastLogin: Date.now() },
+                $setOnInsert: {
+                    banned: false
+                }
+            },
+            { upsert: true }
+        );
+    }
 
-        await this.loggedIPs.insertOne({
-            id: id,
-            ip: ip,
-            lastLogin: Date.now(),
-            banned: false,
-        });
-
-        return false;
+    /**
+     * Connect an ip to an account
+     * @param {string} id ID of the user
+     * @param {string} ip Ip they logged in with
+     * @returns {Promise<>}
+     */
+    async addIPID(id, ip) {
+        await this.loggedIPs.updateOne(
+            { id: id, ip: ip }, // match condition
+            {
+                $set: { lastLogin: Date.now() },
+                $setOnInsert: {
+                    banned: false
+                }
+            },
+            { upsert: true }
+        );
     }
 
     async getIPs(username) {
@@ -4262,7 +3926,7 @@ class UserManager {
      * Check if a user has blocked another user
      * @param {string} user_id id of the person blocking
      * @param {string} target_id id of the person being blocked
-     * @returns {boolean} true if they're blocked, false if not
+     * @returns {Promise<boolean>} true if they're blocked, false if not
      */
     async hasBlocked(user_id, target_id) {
         return !!(await this.blocking.findOne({blocker:user_id,target:target_id,active:true}));
@@ -4311,7 +3975,7 @@ class UserManager {
      */
     async changeProjectID(original_id, new_id) {
         // first lets change the entry
-        this.projects.updateOne({id: original_id}, {$set:{id:new_id}});
+        await this.projects.updateOne({id: original_id}, {$set:{id:new_id}});
         // now we need to change the entries in minio
         // minio bucket stuff
         await this.renameObjectMinio("project-thumbnails", original_id, new_id);
@@ -4321,9 +3985,10 @@ class UserManager {
             const actual_id = asset.split("_")[1];
             await this.renameObjectMinio("project-assets", asset, `${new_id}_${actual_id}`);
         }
-        this.users.updateMany({favoriteProjectID: original_id},{$set:{favoriteProjectID:new_id}});
-        this.projectStats.updateMany({projectId:original_id},{$set:{projectId:new_id}});
-        this.messages.updateMany({type:"upload","data.id":original_id}, {$set: {"data.id":new_id }});
+        await this.users.updateMany({favoriteProjectID: original_id},{$set:{favoriteProjectID:new_id}});
+        await this.projectStats.updateMany({projectId:original_id},{$set:{projectId:new_id}});
+        await this.messages.updateMany({type:"upload","data.id":original_id}, {$set: {"data.id":new_id }});
+        await this.projects.updateMany({remix:original_id},{$set:{remix:new_id}});
     }
 
     /**
@@ -4338,10 +4003,9 @@ class UserManager {
     }
 
     async idListToUsernames(ids) {
-        const usernames = [];
-        for (const id of ids) {
-            usernames.push(await this.getUsernameByID(id));
-        }
+        const usernames = (await this.users.find({
+            id: { $in: ids }
+        }).toArray()).map(x => x.username);
         return usernames;
     }
 
@@ -4361,6 +4025,390 @@ class UserManager {
                 await this._getAltsRec(user.id, current_ids);
             }
         }
+    }
+
+    async getImpressions(project_id) {
+        const project = await this.projects.findOne({id:project_id});
+        return project.impressions ? project.impressions : 0;
+    }
+
+    async addImpression(project_id) {
+        await this.projects.updateOne({id:project_id},{$inc:{impressions:1}});
+    }
+
+    /**
+     * Register an interaction. Doesn't need the project since all thats stored is the tags in the project
+     * @param {string} user_id ID of the user
+     * @param {string} interaction_type The type of the interaction. Currently only "love", "unlove", and "view" are supported
+     * @param {string[]} tags an array of the tags
+     * @returns {Promise<>}
+     */
+    async registerInteraction(user_id, interaction_type, tags) {
+        let weight;
+        switch (interaction_type) {
+            case "view":
+                weight = 1;
+                break;
+            case "love":
+                weight = 5;
+                break;
+            case "unlove":
+                weight = -5;
+                break;
+            case "less":
+                weight = -25;
+                break;
+            case "more":
+                weight = 25;
+            default:
+                weight = 0;
+                break;
+        }
+
+        for (const tag of tags) {
+            await this.tagWeights.updateOne(
+                {
+                    user_id,
+                    tag
+                },
+                {
+                    $inc: { weight },
+                    $set: {
+                        most_recent: Date.now()
+                    }
+                },
+                {
+                    upsert: true,
+                }
+            )
+        }
+    }
+
+    /**
+     * Collect tags (#abc) from a string
+     * @param {string} text The text
+     * @returns {string[]}
+     */
+    collectTags(text) {
+        // i hate regex. but anyways. this gets occurences of a hash followed by non-whitespace characters. ty stackoverflow user
+        const res = text.match(/#\w+/g);
+        const tags = res ? res.map(t => t.substring(1)) : [];
+        return tags.slice(0,10); // first 10 tags only
+    }
+
+    /**
+     * Register a love/unlove of a project.
+     * @param {string} user_id ID of the user
+     * @param {string} text the text of the project. Usually will be the instructions and notes.
+     * @param {boolean} love If its a love or removal of a love. True for love, false for remove.
+     * @returns {Promise<>}
+     */
+    async collectAndInteractLove(user_id, text, love) {
+        const tags = this.collectTags(text);
+
+        await this.registerInteraction(user_id, love ? "love" : "unlove", tags);
+    }
+
+    /**
+     * Register a view of a project.
+     * @param {string} user_id ID of the user
+     * @param {string} text the text of the project. Usually will be the instructions and notes.
+     * @returns {Promise<>}
+     */
+    async collectAndInteractView(user_id, text) {
+        const tags = this.collectTags(text);
+
+        await this.registerInteraction(user_id, "view", tags);
+    }
+
+    /**
+     * Suggest less of these tags
+     * @param {string} user_id ID of the user
+     * @param {string} text the text of the project. Usually will be the instructions and notes.
+     * @returns {Promise<>}
+     */
+    async collectAndLess(user_id, text) {
+        const tags = this.collectTags(text);
+
+        await this.registerInteraction(user_id, "less", tags);
+    }
+
+    /**
+     * Suggest more of these tags
+     * @param {string} user_id ID of the user
+     * @param {string} text the text of the project. Usually will be the instructions and notes.
+     * @returns {Promise<>}
+     */
+    async collectAndMore(user_id, text) {
+        const tags = this.collectTags(text);
+
+        await this.registerInteraction(user_id, "more", tags);
+    }
+
+    /**
+     * Gets the projects suggested for a particular user
+     * @param {string} username Username of the user
+     * @param {number} page What page you're on
+     * @param {number} pageSize How many you want per page
+     * @param {number} maxPageSize The max number of projects you want to do heavy operations on
+     * @returns {Promise<object[]>} The projects
+     */
+    async getFYP(username, page, pageSize, maxPageSize) {
+        const userId = await this.getIDByUsername(username);
+
+        console.time("top tags & followed authors");
+        // get top tags and followed authors in parallel (so we are fast)
+        const [topTagsDocs, followedAuthors] = await Promise.all([
+            this.tagWeights.aggregate([
+                { $match: { user_id: userId } },
+                { $sort: { weight: -1, most_recent: -1 } },
+                { $limit: 10 },
+                { $project: { tag: 1, _id: 0 } }
+            ]).toArray(),
+            
+            this.followers.aggregate([
+                { $match: { follower: userId, active: true } },
+                { $project: { _id: 0, target: 1 } }
+            ]).toArray()
+        ]);
+        
+        const topTags = topTagsDocs.map(doc => doc.tag);
+        const followedIds = followedAuthors.map(f => f.target);
+        console.timeEnd("top tags & followed authors");
+
+        console.time("whole scoring");
+        const scoredProjects = await this.projects.aggregate([
+            {
+                $match: { 
+                    softRejected: false, 
+                    hardReject: false, 
+                    public: true,
+                    // date filter
+                    date: { $gte: Date.now() - (1000 * 60 * 60 * 24 * 90) } // last 90 days (fyp like tiktok lmao heh...)
+                }
+            },
+            {
+                $sort: { date: -1 }
+            },
+            {
+                $skip: page * pageSize
+            },
+            {
+                $limit: maxPageSize
+            },
+
+            // check blocking
+            {
+                $lookup: {
+                    from: "blocking",
+                    let: { authorId: "$author" },
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: {
+                                    $and: [
+                                        { $eq: ["$blocker", userId] },
+                                        { $eq: ["$target", "$$authorId"] },
+                                        { $eq: ["$active", true] }
+                                    ]
+                                }
+                            }
+                        },
+                        { $limit: 1 }
+                    ],
+                    as: "blocked"
+                }
+            },
+            {
+                $match: { blocked: { $size: 0 } }
+            },
+
+            // get love count
+            {
+                $lookup: {
+                    from: 'projectStats',
+                    let: { pid: '$id' },
+                    pipeline: [
+                        { 
+                            $match: { 
+                                $expr: { 
+                                    $and: [
+                                        { $eq: ['$projectId', '$$pid'] },
+                                        { $eq: ['$type', 'love'] }
+                                    ]
+                                }
+                            }
+                        },
+                        { $count: 'count' }
+                    ],
+                    as: 'loves'
+                }
+            },
+
+            // calculate score (fast frfr)
+            // Score: +10 if followed, +2 per top tag match, +love count
+            {
+                $addFields: {
+                    loveCount: { $ifNull: [{ $arrayElemAt: ['$loves.count', 0] }, 0] },
+                    followedAuthor: { $in: ['$author', followedIds] },
+                    combinedText: {
+                        $concat: [
+                            { $ifNull: ['$title', ''] },
+                            ' ',
+                            { $ifNull: ['$instructions', ''] },
+                            ' ',
+                            { $ifNull: ['$notes', ''] }
+                        ]
+                    }
+                }
+            },
+            {
+                $addFields: {
+                    tagMatches: {
+                        $reduce: {
+                            input: topTags,
+                            initialValue: 0,
+                            in: {
+                                $add: [
+                                    "$$value",
+                                    {
+                                        $cond: [
+                                            {
+                                                $regexMatch: {
+                                                    input: "$combinedText",
+                                                    regex: { $concat: ['.*#', '$$this', '.*'] },
+                                                    options: 'i'
+                                                }
+                                            },
+                                            1,
+                                            0
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                $addFields: {
+                    score: {
+                        $add: [
+                            { $cond: ['$followedAuthor', 10, 0] },
+                            { $multiply: ['$tagMatches', 2] },
+                            '$loveCount'
+                        ]
+                    }
+                }
+            },
+
+            {
+                $sort: { score: -1, date: -1 }
+            },
+            {
+                $limit: pageSize
+            },
+
+            // collect author data
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "author",
+                    foreignField: "id",
+                    as: "authorInfo"
+                }
+            },
+            {
+                $addFields: {
+                    "author": {
+                        id: "$author",
+                        username: { $arrayElemAt: ["$authorInfo.username", 0] }
+                    }
+                }
+            },
+            {
+                $project: {
+                    _id: 0,
+                    authorInfo: 0,
+                    blocked: 0,
+                    loves: 0,
+                    followedAuthor: 0,
+                    combinedText: 0,
+                    tagMatches: 0,
+                    score: 0
+                }
+            }
+        ]).toArray();
+        console.timeEnd("whole scoring");
+
+        return scoredProjects;
+    }
+
+
+    async addImpressionsMany(project_ids) {
+        await this.projects.updateMany(
+            {id: {
+                $in: project_ids
+            }},
+            {$inc:{impressions:1}}
+        );
+    }
+    
+    /**
+     * Convert a protobuf file to a json object
+     * @param {Uint8Array} protobuf The protobuf file
+     * @returns {Object} The project.json
+     */
+    protobufToProjectJson(protobuf) {
+        return pmp_protobuf.protobufToJson(protobuf);
+    }
+
+    /**
+     * Converts a project.json object to a protobuf file
+     * @param {Object} json The project.json
+     * @returns {Uint8Array} The protobuf file
+     */
+    projectJsonToProtobuf(json) {
+        return pmp_protobuf.jsonToProtobuf(json);
+    }
+
+    async getWorstOffenders(page, pageSize) {
+        return await this.performance_logging.aggregate([
+            {
+                $sort: { millis: -1 }
+            },
+            {
+                $skip: page * pageSize
+            },
+            {
+                $limit: pageSize
+            },
+        ]).toArray();
+    }
+
+    /**
+     * Delete a projects thumbnail
+     * @param {string} project_id ID of the project
+     * @returns {Promise<>}
+     */
+    async deleteThumb(project_id) {
+        const image_buffer = await deleted_thumb_buffer;
+        await this.minioClient.putObject("project-thumbnails", project_id, image_buffer);
+    }
+
+    /**
+     * Check if a user has mod perms
+     * @param {string} username Username
+     * @returns {Promise<boolean>} If they have mod perms
+     */
+    async hasModPerms(username) {
+        return !!(await this.users.findOne({
+            username,
+            $or: [
+                { moderator: true },
+                { admin: true }
+            ]
+        }));
     }
 }
 

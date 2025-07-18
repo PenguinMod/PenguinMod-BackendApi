@@ -2,6 +2,18 @@ const path = require('path');
 const fs = require('fs');
 const jszip = require('jszip');
 
+const UserManager = require("../../db/UserManager");
+
+/**
+ * @typedef {Object} Utils
+ * @property {UserManager} UserManager
+ */
+
+/**
+ * 
+ * @param {any} app Express app
+ * @param {Utils} utils Utils
+ */
 module.exports = (app, utils) => {
     app.get("/api/v1/projects/getproject", async (req, res) => {
 
@@ -12,10 +24,9 @@ module.exports = (app, utils) => {
         const packet = req.query;
         
         const requestType = packet.requestType;
-
         const safe = packet.safe;
-
         const projectID = String(packet.projectID);
+        const token = packet.token;
 
         if (!requestType) {
             return utils.error(res, 400, "Missing requestType");
@@ -76,7 +87,11 @@ module.exports = (app, utils) => {
 
         const metadata = await utils.UserManager.getProjectMetadata(projectID);
 
-        if (metadata.author !== String(packet.username).toLowerCase() && !metadata.public) {
+        const login = await utils.UserManager.loginWithToken(token);
+
+        const is_author = login && metadata.author === login.username;
+
+        if (!is_author && !metadata.public) {
             if (safe) {
                 return safeReturn();
             }

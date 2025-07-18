@@ -3,19 +3,32 @@ const path = require('path');
 const sharp = require('sharp');
 const Magic = require('mmmagic');
 const magic = new Magic.Magic(Magic.MAGIC_MIME_TYPE);
+const UserManager = require("../../../db/UserManager");
 
+/**
+ * @typedef {Object} Utils
+ * @property {UserManager} UserManager
+ */
+
+/**
+ * 
+ * @param {any} app Express app
+ * @param {Utils} utils Utils
+ */
 module.exports = (app, utils) => {
     app.post('/api/v1/users/setpfp', utils.cors(), utils.upload.single("picture"), async (req, res) => {
         const packet = req.query;
 
-        const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
         const pictureName = req.file;
 
-        if (!await utils.UserManager.loginWithToken(username, token)) {
-            return utils.error(res, 401, "Invalid credentials");
+        const login = await utils.UserManager.loginWithToken(token);
+        if (!login.success) {
+            utils.error(res, 400, "Reauthenticate");
+            return;
         }
+        const username = login.username;
 
         if (!pictureName) {
             return utils.error(res, 400, "No picture was provided");

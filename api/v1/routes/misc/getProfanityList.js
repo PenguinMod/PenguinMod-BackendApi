@@ -1,14 +1,27 @@
+const UserManager = require("../../db/UserManager");
+
+/**
+ * @typedef {Object} Utils
+ * @property {UserManager} UserManager
+ */
+
+/**
+ * 
+ * @param {any} app Express app
+ * @param {Utils} utils Utils
+ */
 module.exports = (app, utils) => {
     app.get('/api/v1/misc/getProfanityList', utils.cors(), async function (req, res) {
         const packet = req.query;
 
-        const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
-        if (!await utils.UserManager.loginWithToken(username, token)) {
-            utils.error(res, 400, "Reauthenticate")
+        const login = await utils.UserManager.loginWithToken(token);
+        if (!login.success) {
+            utils.error(res, 401, "Reauthenticate")
             return;
         }
+        const username = login.username;
         if (!await utils.UserManager.isAdmin(username)) {
             utils.error(res, 403, "FeatureDisabledForThisAccount")
             return;

@@ -11,15 +11,15 @@ const UserManager = require("../../../db/UserManager");
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.post('/api/v1/projects/toggleuploading', utils.cors(), async (req, res) => {
+    app.post('/api/v1/projects/deletethumb', utils.cors(), async (req, res) => {
         const packet = req.body;
 
         const token = packet.token;
 
-        const toggle = packet.toggle;
+        const projectID = packet.projectID;
 
-        if (!token || typeof toggle !== "boolean") {
-            return utils.error(res, 400, "Missing token, or toggle");
+        if (!token || typeof projectID !== "string") {
+            return utils.error(res, 400, "Missing token or projectID");
         }
 
         const login = await utils.UserManager.loginWithToken(token);
@@ -29,24 +29,32 @@ module.exports = (app, utils) => {
         }
         const username = login.username;
 
-        if (!await utils.UserManager.isAdmin(username)) {
+        if (!await utils.UserManager.hasModPerms(username)) {
             return utils.error(res, 401, "Invalid credentials");
         }
 
-        await utils.UserManager.setRuntimeConfigItem("uploadingEnabled", toggle);
+        if (!await utils.UserManager.projectExists(projectID)) {
+            return utils.error(res, 404, "Project not found");
+        }
+
+        await utils.UserManager.deleteThumb(projectID);
 
         utils.logs.sendAdminLog(
             {
-                action: "Project uploading has been toggled",
-                content: `${username} toggled project uploading to ${toggle}`,
+                action: `Project's thumbnail has been deleted`,
+                content: `${username} deleted ${projectID}'s thumbnail`,
                 fields: [
                     {
-                        name: "Admin",
+                        name: "Mod",
                         value: username
                     },
                     {
-                        name: "Status",
-                        value: toggle
+                        name: "Project ID",
+                        value: projectID
+                    },
+                    {
+                        name: "URL",
+                        value: `${utils.env.StudioURL}/#${projectID}`
                     }
                 ]
             },
@@ -55,9 +63,9 @@ module.exports = (app, utils) => {
                 icon_url: String(`${utils.env.ApiURL}/api/v1/users/getpfp?username=${username}`),
                 url: String("https://penguinmod.com/profile?user=" + username)
             },
-            0xaf1157
+            0xc96800
         );
-
+        
         return res.send({ success: true });
     });
 }

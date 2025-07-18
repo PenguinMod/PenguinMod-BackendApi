@@ -1,3 +1,15 @@
+const UserManager = require("../../../../db/UserManager");
+
+/**
+ * @typedef {Object} Utils
+ * @property {UserManager} UserManager
+ */
+
+/**
+ * 
+ * @param {any} app Express app
+ * @param {Utils} utils Utils
+ */
 module.exports = (app, utils) => {
     app.get("/api/v1/users/githubcallback/login", async function (req, res) {
         const packet = req.query;
@@ -57,7 +69,7 @@ module.exports = (app, utils) => {
 
         const token = await utils.UserManager.newTokenGen(username);
 
-        await utils.UserManager.addIP(username, req.realIP);
+        await utils.UserManager.addIPID(userid, req.realIP);
 
         res.status(200);
         res.redirect(`/api/v1/users/sendloginsuccess?token=${token}&username=${username}`);

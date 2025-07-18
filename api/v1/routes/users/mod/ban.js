@@ -1,8 +1,19 @@
+const UserManager = require("../../../db/UserManager");
+
+/**
+ * @typedef {Object} Utils
+ * @property {UserManager} UserManager
+ */
+
+/**
+ * 
+ * @param {any} app Express app
+ * @param {Utils} utils Utils
+ */
 module.exports = (app, utils) => {
     app.post('/api/v1/users/ban', utils.cors(), async function (req, res) {
         const packet = req.body;
 
-        const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
         const target = (String(packet.target)).toLowerCase();
@@ -11,17 +22,19 @@ module.exports = (app, utils) => {
         const reason = packet.reason;
         const remove_follows = String(packet.remove_follows) === "true";
 
-        if (!username || !token || !target || typeof toggle !== "boolean" || typeof reason !== "string" || reason.length > 512 || typeof time !== "number" || time < 0) {
-            utils.error(res, 400, "Missing username, token, target, toggle, reason, or time");
+        if (!token || !target || typeof toggle !== "boolean" || typeof reason !== "string" || reason.length > 512 || typeof time !== "number" || time < 0) {
+            utils.error(res, 400, "Missing token, target, toggle, reason, or time");
             return;
         }
 
-        if (!await utils.UserManager.loginWithToken(username, token)) {
-            utils.error(res, 401, "InvalidToken");
+        const login = await utils.UserManager.loginWithToken(token);
+        if (!login.success) {
+            utils.error(res, 400, "Reauthenticate");
             return;
         }
+        const username = login.username;
 
-        if (!await utils.UserManager.isAdmin(username) && !await utils.UserManager.isModerator(username)) {
+        if (!await utils.UserManager.hasModPerms(username)) {
             utils.error(res, 403, "Unauthorized");
             return;
         }

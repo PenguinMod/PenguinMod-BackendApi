@@ -1,5 +1,15 @@
-const fs = require('fs');
+const UserManager = require("../../../../db/UserManager");
 
+/**
+ * @typedef {Object} Utils
+ * @property {UserManager} UserManager
+ */
+
+/**
+ * 
+ * @param {any} app Express app
+ * @param {Utils} utils Utils
+ */
 module.exports = (app, utils) => {
     app.get("/api/v1/users/githubcallback/createaccount", async function (req, res) {
         const packet = req.query;
@@ -65,7 +75,7 @@ module.exports = (app, utils) => {
         const accountUsername = userdata.username;
         const token = userdata.token;
 
-        await utils.UserManager.addIP(accountUsername, req.realIP);
+        await utils.UserManager.addIPID(userdata.id, req.realIP);
         await utils.logs.sendCreationLog(accountUsername, userdata.id, "", "account");
 
         res.status(200);

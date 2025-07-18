@@ -1,5 +1,16 @@
 const countryLookup = require("../../../db/country-lookup.json");
+const UserManager = require("../../../db/UserManager");
 
+/**
+ * @typedef {Object} Utils
+ * @property {UserManager} UserManager
+ */
+
+/**
+ * 
+ * @param {any} app Express app
+ * @param {Utils} utils Utils
+ */
 module.exports = (app, utils) => {
     app.post("/api/v1/users/createAccount", utils.cors(), utils.rateLimiter({
         validate: {
@@ -143,7 +154,7 @@ module.exports = (app, utils) => {
             }
         }
 
-        let info = await utils.UserManager.createAccount(username, real_username, packet.password, email, parsedBirthday, countryCode, false, utils, res);
+        const info = await utils.UserManager.createAccount(username, real_username, packet.password, email, parsedBirthday, countryCode, false, utils, res);
 
         if (!info) {
             return;
@@ -152,7 +163,7 @@ module.exports = (app, utils) => {
         const token = info[0];
         const id = info[1];
 
-        await utils.UserManager.addIP(username, req.realIP);
+        await utils.UserManager.addIPID(id, req.realIP);
         await utils.logs.sendCreationLog(username, id, "", "account");
 
         res.status(200);

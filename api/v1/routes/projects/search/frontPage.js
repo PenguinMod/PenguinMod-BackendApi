@@ -1,3 +1,15 @@
+const UserManager = require("../../../db/UserManager");
+
+/**
+ * @typedef {Object} Utils
+ * @property {UserManager} UserManager
+ */
+
+/**
+ * 
+ * @param {any} app Express app
+ * @param {Utils} utils Utils
+ */
 module.exports = (app, utils) => {
     app.get('/api/v1/projects/frontpage', utils.rateLimiter({
         validate: {
@@ -11,15 +23,14 @@ module.exports = (app, utils) => {
     }),
     async (req, res) => {
         const packet = req.query
-        /* needed:
+        /* gets:
             - featured
             - almost featured
-            - liked
-            - high views
+            // - high views
             - fits tags
+            - suggested
             - latest
         */
-
         const tags = [
             "games",
             "animation",
@@ -39,22 +50,23 @@ module.exports = (app, utils) => {
             "2d"
         ]
 
-        const username = packet.username;
         const token = packet.token;
 
-        const user_and_logged_in = username && token && await utils.UserManager.loginWithToken(username, token);
+        const login = await utils.UserManager.loginWithToken(token);
+        const user_and_logged_in = login.success;
+        const username = login.username;
+
         const is_mod = user_and_logged_in && await utils.UserManager.isModeratorOrAdmin(username)
 
         const tag = "#" + tags[Math.floor(Math.random() * tags.length)];
 
         const featured = await utils.UserManager.getFeaturedProjects(0, Number(utils.env.PageSize));
-        
+
         const almostFeatured = await utils.UserManager.almostFeatured(0,
             Number(utils.env.PageSize) || 20,
             Number(utils.env.MaxPageSize) || 100,
         );
 
-        const liked = await utils.UserManager.mostLiked(0, Number(utils.env.PageSize) || 20, Number(utils.env.MaxPageSize) || 100);
         /*
         const highViews = await utils.UserManager.specializedSearch(
             [{ $match: { featured: false, views: { $gte: 30 }, softRejected: false, hardReject: false } }],
@@ -63,6 +75,7 @@ module.exports = (app, utils) => {
             Number(utils.env.MaxPageSize) * 10,
         )
         */
+
 
         const user_id = user_and_logged_in ? await utils.UserManager.getIDByUsername(username) : null;
 
@@ -73,26 +86,26 @@ module.exports = (app, utils) => {
         const page = {
             featured: featured,
             voted: almostFeatured,
-            liked: liked,
             //viewed: highViews, // disabled since we dont use it (dont waste resources)
             tagged: fitsTags,
             latest: latest,
         };
 
-        // TODO: swap to use lookup instead of multiple queries
-        for (const key in page) {
-            const newPage = []
-            for (const project of page[key]) {
-                const badges = await utils.UserManager.getBadges(project.author.username);
-
-                if (!badges) continue;
-
-                const isDonator = badges.includes("donator");
-                project.fromDonator = isDonator;
-                newPage.push(project);
+        
+        /*
+        if (user_and_logged_in) {
+            const is_donator = await utils.UserManager.isDonator(username);
+            if (is_donator) {
+                console.log("-------TIMING SUGGESTED-------");
+                console.time("suggested");
+                const fyp = await utils.UserManager.getFYP(username, 0, Number(utils.env.PageSize), Number(utils.env.MaxPageSize));
+                page.suggested = fyp;
+                console.timeEnd("suggested");
             }
-            page[key] = newPage;
         }
+        */
+
+        await utils.UserManager.addImpressionsMany(Object.values(page).flat());
 
         page.selectedTag = tag;
 

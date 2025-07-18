@@ -1,13 +1,27 @@
+const UserManager = require("../../../db/UserManager");
+
+/**
+ * @typedef {Object} Utils
+ * @property {UserManager} UserManager
+ */
+
+/**
+ * 
+ * @param {any} app Express app
+ * @param {Utils} utils Utils
+ */
 module.exports = (app, utils) => {
     app.post('/api/v1/reports/sendReport', utils.cors(), async (req, res) => {
         const packet = req.body;
 
-        const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
-        if (!await utils.UserManager.loginWithToken(username, token)) {
-            return utils.error(res, 401, "Reauthenticate");
+        const login = await utils.UserManager.loginWithToken(token);
+        if (!login.success) {
+            utils.error(res, 401, "Reauthenticate")
+            return;
         }
+        const username = login.username;
 
         const report = packet.report;
         let target = String(packet.target).toLowerCase();
@@ -31,7 +45,7 @@ module.exports = (app, utils) => {
             }
 
             targetID = await utils.UserManager.getIDByUsername(target);
-        } else if (type == "project") {
+        } else if (type === "project") {
             if (!await utils.UserManager.projectExists(target)) {
                 return utils.error(res, 404, "Project not found");
             }

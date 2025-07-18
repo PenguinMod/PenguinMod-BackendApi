@@ -1,13 +1,26 @@
+const UserManager = require("../../db/UserManager");
+
+/**
+ * @typedef {Object} Utils
+ * @property {UserManager} UserManager
+ */
+
+/**
+ * 
+ * @param {any} app Express app
+ * @param {Utils} utils Utils
+ */
 module.exports = (app, utils) => {
     app.get('/api/v1/users/profile', utils.cors(), async function (req, res) {
         const packet = req.query;
 
         const target = String(packet.target).toLowerCase();
 
-        const username = String(packet.username).toLowerCase();
         const token = packet.token || "";
 
-        let loggedIn = await utils.UserManager.loginWithToken(username, token);
+        const login = await utils.UserManager.loginWithToken(token);
+        let loggedIn = login.success;
+        const username = login.username;
 
         const target_data = await utils.UserManager.getUserData(target);
         const user_data = await utils.UserManager.getUserData(username);
@@ -49,8 +62,8 @@ module.exports = (app, utils) => {
 
         const targetID = target_data.id;
         if (loggedIn) {
-            const usernameID = await utils.UserManager.getIDByUsername(username);
-            user.isFollowing = await utils.UserManager.isFollowing(usernameID, targetID);
+            const usernameID = login.id;
+            user.isFollowing = await utils.UserManager.isFollowing(targetID, usernameID);
         }
 
         if (privateProfile) {

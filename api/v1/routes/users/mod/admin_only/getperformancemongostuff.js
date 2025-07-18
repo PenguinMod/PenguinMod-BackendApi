@@ -11,15 +11,14 @@ const UserManager = require("../../../../db/UserManager");
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.get('/api/v1/users/isadmin', utils.cors(), async function (req, res) {
+    app.get('/api/v1/users/getworstoffenders', utils.cors(), async function (req, res) {
         const packet = req.query;
 
         const token = packet.token;
+        const page = Number(packet.page) || 0;
 
-        const target = (String(packet.target)).toLowerCase();
-
-        if (!token || !target) {
-            return utils.error(res, 400, "Missing token or target");
+        if (!token) {
+            return utils.error(res, 400, "Missing token");
         }
 
         const login = await utils.UserManager.loginWithToken(token);
@@ -33,10 +32,10 @@ module.exports = (app, utils) => {
             return utils.error(res, 401, "Unauthorized");
         }
 
-        const isAdmin = await utils.UserManager.isAdmin(target);
+        const items = await utils.UserManager.getWorstOffenders(page, Number(utils.env.PageSize) || 20);
 
         res.status(200);
         res.header('Content-type', "application/json");
-        res.send({ isAdmin:isAdmin });
+        res.send({ items });
     });
 }

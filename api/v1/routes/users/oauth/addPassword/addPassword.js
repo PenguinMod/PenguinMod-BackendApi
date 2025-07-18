@@ -1,20 +1,33 @@
+const UserManager = require("../../../../db/UserManager");
+
+/**
+ * @typedef {Object} Utils
+ * @property {UserManager} UserManager
+ */
+
+/**
+ * 
+ * @param {any} app Express app
+ * @param {Utils} utils Utils
+ */
 module.exports = (app, utils) => {
     app.get("/api/v1/users/addpasswordtooauth", utils.cors(), async function (req, res) {
         const packet = req.query;
 
         const method = packet.method;
-        const username = (String(packet.username)).toLowerCase();
         const token = packet.token;
 
-        if (!method || !username || !token) {
+        if (!method || !token) {
             utils.error(res, 400, "Missing method, username, or token");
             return;
         }
 
-        if (!await utils.UserManager.loginWithToken(username, token)) {
-            utils.error(res, 401, "InvalidToken");
+        const login = await utils.UserManager.loginWithToken(token);
+        if (!login.success) {
+            utils.error(res, 400, "Reauthenticate");
             return;
         }
+        const username = login.username;
 
         const methods = await utils.UserManager.getOAuthMethods(username);
 

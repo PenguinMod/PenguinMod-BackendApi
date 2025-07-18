@@ -11,15 +11,15 @@ const UserManager = require("../../../db/UserManager");
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.get('/api/v1/projects/hasVoted', utils.cors(), async (req, res) => {
-        const packet = req.query;
-        
+    app.post('/api/v1/projects/interactions/showMeLess', utils.cors(), async (req, res) => {
+        const packet = req.body;
+
         const token = packet.token;
 
-        const projectID = packet.projectID;
+        const projectID = String(packet.projectID);
 
         if (!token || !projectID) {
-            return utils.error(res, 400, "Missing token or projectID");
+            return utils.error(res, 400, "Missing token, love, or projectID");
         }
 
         const login = await utils.UserManager.loginWithToken(token);
@@ -35,8 +35,15 @@ module.exports = (app, utils) => {
 
         const id = await utils.UserManager.getIDByUsername(username);
 
-        const has = await utils.UserManager.hasVotedProject(projectID, id);
+        const projectMeta = await utils.UserManager.getProjectMetadata(projectID);
 
-        return res.send({ hasVoted: has });
+        const instructions = projectMeta.instructions;
+        const notes = projectMeta.notes;
+
+        const concatted = instructions + "\n\n" + notes;
+
+        await utils.UserManager.collectAndLess(id, concatted);
+        
+        return res.send({ success: true });
     });
 }
