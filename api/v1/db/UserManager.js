@@ -1511,10 +1511,12 @@ class UserManager {
      * @returns {Promise<Buffer>} The object
      */
     async readObjectFromBucket(bucketName, objectName) {
+        /*
         if (!this.objectExists(bucketName, objectName)) {
             console.error("Tried to get project that doesn't exist: " + objectName);
             throw new Error("Tried to get project that doesn't exist: " + objectName);
         }
+        */
         const stream = await this.minioClient.getObject(bucketName, objectName);
 
         const chunks = [];
