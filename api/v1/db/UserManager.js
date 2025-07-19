@@ -30,6 +30,7 @@ class UserManager {
         this.users = this.db.collection('users');
         await this.users.createIndex({ username: 1 }, { unique: true });
         await this.users.createIndex({ id: 1 }, { unique: true });
+        await this.users.createIndex({ token: 1 }, { unique: true });
         this.accountCustomization = this.db.collection('accountCustomization');
         this.loggedIPs = this.db.collection('loggedIPs');
         await this.loggedIPs.createIndex({ id: 1 });
@@ -55,6 +56,7 @@ class UserManager {
         await this.projects.createIndex({ title: "text", instructions: "text", notes: "text"});
         // index for front page, sort by newest
         await this.projects.createIndex({ lastUpdate: -1 });
+        await this.projects.createIndex({ id: 1 }, { unique: true });
         this.projectStats = this.db.collection('projectStats');
         this.messages = this.db.collection('messages');
         this.oauthStates = this.db.collection('oauthStates');
@@ -1745,7 +1747,7 @@ class UserManager {
      * @param {string} projectID ID of the project
      * @param {number} page Page to get
      * @param {number} pageSize Page size
-     * @returns {Array<string>} Array of user ids
+     * @returns {Promise<Array<string>>} Array of user ids
      */
     async getWhoLoved(projectID, page, pageSize) {
         const result = await this.projectStats.aggregate([
@@ -1772,7 +1774,7 @@ class UserManager {
      * @param {string} projectID ID of the project
      * @param {number} page Page to get
      * @param {number} pageSize Page size
-     * @returns {Array<string>} Array of user ids
+     * @returns {Promise<Array<string>>} Array of user ids
      */
     async getWhoVoted(projectID, page, pageSize) {
         const result = await this.projectStats.aggregate([
@@ -2999,7 +3001,7 @@ class UserManager {
      * @param {Array<Object>} query Query to search for, will be expanded with ...
      * @param {number} page Page of projects to get
      * @param {number} pageSize Amount of projects to get
-     * @returns {Array<Object>} Array of projects
+     * @returns {Promise<Array<Object>>} Array of projects
      */
     async specializedSearch(query, page, pageSize, maxPageSize) {
         let pipeline = [
@@ -3071,7 +3073,7 @@ class UserManager {
                 $skip: page * pageSize
             },
             {
-                $limit: Math.max(maxPageSize / 2, pageSize)
+                $limit: Math.min(maxPageSize, pageSize*2)
             },
             {
                 $lookup: {
@@ -3907,7 +3909,7 @@ class UserManager {
      * Check if a user has blocked another user
      * @param {string} user_id id of the person blocking
      * @param {string} target_id id of the person being blocked
-     * @returns {boolean} true if they're blocked, false if not
+     * @returns {Promise<boolean>} true if they're blocked, false if not
      */
     async hasBlocked(user_id, target_id) {
         return !!(await this.blocking.findOne({blocker:user_id,target:target_id,active:true}));

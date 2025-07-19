@@ -157,7 +157,7 @@ module.exports = (app, utils) => {
         const info = await utils.UserManager.createAccount(username, real_username, packet.password, email, parsedBirthday, countryCode, false, utils, res);
 
         if (!info) {
-            return utils.error(res, 400, "InvalidUsername");
+            return;
         }
 
         const token = info[0];
