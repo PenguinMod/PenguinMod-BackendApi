@@ -28,10 +28,10 @@ module.exports = (app, utils) => {
         }
 
         // incase the user hides followers, check if we are the user/a mod
-        const username = String(packet.username).toLowerCase();
         const token = packet.token || "";
 
-        const login = await utils.UserManager.loginWithToken(username, token);
+        const login = await utils.UserManager.loginWithToken(token);
+        let username = login.username;
         let loggedIn = login.success;
 
         const target_data = await utils.UserManager.getUserData(target);
@@ -57,12 +57,6 @@ module.exports = (app, utils) => {
                     res.json({ "error": "PrivateProfile" });
                     return;
                 }
-            }
-            if (await utils.UserManager.getProfileHideFollowing(target)) {
-                res.status(403);
-                res.header("Content-Type", "application/json");
-                res.json({ "error": "Hidden" });
-                return;
             }
         }
 

@@ -1,3 +1,15 @@
+const UserManager = require("../../../../db/UserManager");
+
+/**
+ * @typedef {Object} Utils
+ * @property {UserManager} UserManager
+ */
+
+/**
+ * 
+ * @param {any} app Express app
+ * @param {Utils} utils Utils
+ */
 module.exports = (app, utils) => {
     app.get("/api/v1/users/meta/getfollowing", async function (req, res) {
         const packet = req.query;
@@ -16,10 +28,10 @@ module.exports = (app, utils) => {
         }
 
         // incase the user hides followers, check if we are the user/a mod
-        const username = String(packet.username).toLowerCase();
         const token = packet.token || "";
 
-        const login = await utils.UserManager.loginWithToken(username, token);
+        const login = await utils.UserManager.loginWithToken(token);
+        let username = login.username;
         let loggedIn = login.success;
 
         const target_data = await utils.UserManager.getUserData(target);
