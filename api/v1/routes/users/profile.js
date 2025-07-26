@@ -41,6 +41,7 @@ module.exports = (app, utils) => {
 
         const privateProfile = target_data.privateProfile;
         const canFollowingSeeProfile = target_data.allowFollowingView;
+        const canSeeFollowing = !target_data.profileHideFollowing;
 
         let user = {
             success: false,
@@ -54,9 +55,11 @@ module.exports = (app, utils) => {
             myFeaturedProject: "",
             myFeaturedProjectTitle: "",
             followers: 0,
+            following: 0,
             canrankup: false,
             privateProfile,
             canFollowingSeeProfile,
+            canSeeFollowing,
             isFollowing: false,
         };
 
@@ -102,6 +105,8 @@ module.exports = (app, utils) => {
             || (badges.length > 0); // or we have a badge
 
         const followers = await utils.UserManager.getFollowerCount(target);
+        const following = await utils.UserManager.getFollowingCount(target);
+        const canActuallySeeFollowing = canSeeFollowing || (!canSeeFollowing && ((loggedIn && username === target) || isMod))
 
         const myFeaturedProject = await utils.UserManager.getFeaturedProject(target);
         const myFeaturedProjectTitle = await utils.UserManager.getFeaturedProjectTitle(target);
@@ -120,9 +125,11 @@ module.exports = (app, utils) => {
             myFeaturedProject,
             myFeaturedProjectTitle,
             followers: followers,
+            following: canActuallySeeFollowing ? following : 0,
             canrankup: canRequestRankUp && rank !== 1,
             privateProfile,
             canFollowingSeeProfile,
+            canSeeFollowing,
             isFollowing: user.isFollowing,
         };
 

@@ -2150,8 +2150,19 @@ class UserManager {
      */
     async getFollowerCount(username) {
         const result = await this.users.findOne({username: username});
-
+        
         return result.followers;
+    }
+
+    /**
+     * Get the amount of people a user is following
+     * @param {string} username Username of the user
+     * @returns {Promise<number>} Amount of people the user is following
+     */
+    async getFollowingCount(username) {
+        const result = await this.users.findOne({ username: username });
+
+        return result.following;
     }
 
     /**
