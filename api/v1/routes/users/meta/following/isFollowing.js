@@ -46,7 +46,7 @@ module.exports = (app, utils) => {
 
         const usernameID = await utils.UserManager.getIDByUsername(username);
         const targetID = await utils.UserManager.getIDByUsername(target);
-        const fetcherID = await utils.UserManager.getIDByUsername(fetcherUsername);
+        const fetcherID = loggedIn ? await utils.UserManager.getIDByUsername(fetcherUsername) : null;
 
         // if not logged in, or we arent a mod
         if (!loggedIn || !fetcherIsMod) {
