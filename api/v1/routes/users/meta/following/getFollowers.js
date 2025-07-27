@@ -58,6 +58,12 @@ module.exports = (app, utils) => {
                     return;
                 }
             }
+            if (await utils.UserManager.getProfileHideFollowers(target)) {
+                res.status(403);
+                res.header("Content-Type", "application/json");
+                res.json({ "error": "Hidden" });
+                return;
+            }
         }
 
         const followers = await utils.UserManager.getFollowers(target, page, Number(utils.env.PageSize));

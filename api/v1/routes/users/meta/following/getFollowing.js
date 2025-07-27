@@ -27,7 +27,7 @@ module.exports = (app, utils) => {
             return;
         }
 
-        // incase the user hides followers, check if we are the user/a mod
+        // incase the user hides following, check if we are the user/a mod
         const token = packet.token || "";
 
         const login = await utils.UserManager.loginWithToken(token);
