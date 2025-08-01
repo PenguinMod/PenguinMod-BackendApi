@@ -1498,6 +1498,7 @@ class UserManager {
                         resolve(false);
                     } else {
                         console.error("Error checking if object exists: ", err);
+                        reject(err);
                     }
                 } else {
                     resolve(true);
@@ -1519,7 +1520,10 @@ class UserManager {
             throw new Error("Tried to get project that doesn't exist: " + objectName);
         }
         */
-        const stream = await this.minioClient.getObject(bucketName, objectName);
+        const stream = await this.minioClient.getObject(bucketName, objectName).catch(err => {
+            console.error("ERROR READING OBJECT: " + err);
+            
+        });
 
         const chunks = [];
 
