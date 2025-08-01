@@ -1521,7 +1521,7 @@ class UserManager {
         }
         */
         const stream = await this.minioClient.getObject(bucketName, objectName).catch(err => {
-            console.error("ERROR READING OBJECT: " + err);
+            console.error(`ERROR READING OBJECT "${objectName} from bucket ${bucketName}: ` + err);
             
         });
 
