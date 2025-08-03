@@ -50,7 +50,7 @@ module.exports = (app, utils) => {
 
         const metadata = await utils.UserManager.getProjectMetadata(projectID);
 
-        if (votes >= utils.env.FeatureAmount && !await utils.UserManager.isFeatured(projectID)) {
+        if (votes >= utils.env.FeatureAmount && !await utils.UserManager.isFeatured(projectID) && await utils.UserManager.canBeFeatured(projectID)) {
             const author = metadata.author;
             const title = metadata.title;
 

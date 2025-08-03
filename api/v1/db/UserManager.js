@@ -1193,6 +1193,7 @@ class UserManager {
             hardReject: false,
             hardRejectTime: 0,
             impressions: 0,
+            noFeature: false,
         });
 
         // minio bucket stuff
@@ -1211,6 +1212,27 @@ class UserManager {
         const result = await this.projects.findOne({id: projectId, featured: true});
 
         return !!result;
+    }
+
+    /**
+     * Check if a project can be featured
+     * @param {string} projectID ID of the project 
+     * @returns {Promise<boolean>}
+     */
+    async canBeFeatured(projectID) {
+        const result = await this.projects.findOne({id: projectID});
+
+        return !result.noFeature;
+    }
+
+    /**
+     * Disable/enable if a project can be featured
+     * @param {string} projectID ID of the project 
+     * @param {boolean} toggle true if can be, false if cannot be
+     * @returns {Promise<>}
+     */
+    async setCanBeFeatured(projectID, toggle) {
+        await this.projects.updateOne({id: projectID},{$set:{noFeature:!toggle}});
     }
 
     /**
