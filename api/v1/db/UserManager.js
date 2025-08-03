@@ -3091,7 +3091,7 @@ class UserManager {
     async almostFeatured(page, pageSize, maxPageSize) {
         const result = await this.projects.aggregate([
             {
-                $match: { softRejected: false, hardReject: false, public: true, featured: false }
+                $match: { softRejected: false, hardReject: false, public: true, featured: false, noFeature: { $ne: true } }
             },
             {
                 $sort: { views: -1 }
