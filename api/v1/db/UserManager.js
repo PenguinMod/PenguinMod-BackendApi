@@ -1938,10 +1938,11 @@ class UserManager {
      * Feature/unfeature a project
      * @param {number} id ID of the project.
      * @param {boolean} feature True if featuring, false if unfeaturing.
+     * @param {boolean} manuallyFeatured True if it was featured manually
      * @async
      */
-    async featureProject(id, feature) {
-        await this.projects.updateOne({id: id}, {$set: {featured: feature, featureDate: Date.now()}});
+    async featureProject(id, feature, manuallyFeatured) {
+        await this.projects.updateOne({id: id}, {$set: {featured: feature, featureDate: Date.now(),manuallyFeatured}});
     }
 
     /**
