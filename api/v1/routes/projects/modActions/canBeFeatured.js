@@ -18,7 +18,7 @@ module.exports = (app, utils) => {
 
         const projectID = packet.projectID;
 
-        const toggle = !!packet.toggle;
+        const canBeFeatured = !!packet.toggle;
 
         if (!token || typeof projectID !== "string") {
             return utils.error(res, 400, "Missing token or projectID");
@@ -39,12 +39,11 @@ module.exports = (app, utils) => {
             return utils.error(res, 404, "Project not found");
         }
 
-        await utils.UserManager.setCanBeFeatured(projectID, toggle);
+        await utils.UserManager.setCanBeFeatured(projectID, canBeFeatured);
 
-        const can_not = toggle ? "cannot" : "can";
         utils.logs.sendAdminLog(
             {
-                action: `Project ${can_not} be featured now`,
+                action: `Project ${canBeFeatured ? "can" : "cannot"} be featured now`,
                 content: `${username} changed featurability of ${projectID}`,
                 fields: [
                     {

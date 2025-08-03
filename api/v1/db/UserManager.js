@@ -1228,11 +1228,11 @@ class UserManager {
     /**
      * Disable/enable if a project can be featured
      * @param {string} projectID ID of the project 
-     * @param {boolean} toggle true if can be, false if cannot be
+     * @param {boolean} canBeFeatured true if can be, false if cannot be
      * @returns {Promise<>}
      */
-    async setCanBeFeatured(projectID, toggle) {
-        await this.projects.updateOne({id: projectID},{$set:{noFeature:!toggle}});
+    async setCanBeFeatured(projectID, canBeFeatured) {
+        await this.projects.updateOne({ id: projectID }, { $set: { noFeature: !canBeFeatured }});
     }
 
     /**
