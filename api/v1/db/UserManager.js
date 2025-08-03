@@ -1544,8 +1544,10 @@ class UserManager {
         */
         const stream = await this.minioClient.getObject(bucketName, objectName).catch(err => {
             console.error(`ERROR READING OBJECT "${objectName} from bucket ${bucketName}: ` + err);
-            
         });
+
+        if (!stream)
+            return;
 
         const chunks = [];
 
@@ -1583,6 +1585,9 @@ class UserManager {
 
         try {
             file = await this.readObjectFromBucket("project-thumbnails", id);
+            if (!file) {
+                return false;
+            }
         } catch (e) {
             return false;
         }
@@ -1637,6 +1642,10 @@ class UserManager {
 
         for (const item of items) {
             const file = await this.readObjectFromBucket("project-assets", item);
+
+            if (!file)
+                return false;
+            
             result.push({id: item.split("_")[1], buffer: file});
         }
 
@@ -3388,6 +3397,9 @@ class UserManager {
         const id = await this.getIDByUsername(username);
 
         const buffer = await this.readObjectFromBucket("profile-pictures", id);
+
+        if (!buffer)
+            return false;
 
         return buffer;
     }
