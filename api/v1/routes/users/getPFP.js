@@ -24,7 +24,7 @@ module.exports = (app, utils) => {
         const pfp = await utils.UserManager.getProfilePicture(username);
 
         res.status(200);
-        res.header("Content-Type", "application/octet-stream");
+        res.header("Content-Type", "image/png");
         res.header("Cache-Control", "public, max-age=90");
         res.send(pfp);
     });

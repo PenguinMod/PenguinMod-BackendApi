@@ -116,6 +116,7 @@ module.exports = (app, utils) => {
                 }
 
                 res.status(200);
+                res.header("Content-Type", "image/png");
                 res.header("Cache-Control", "public, max-age=90");
                 return res.send(thumbnail);
             case "metadata":
