@@ -11,8 +11,8 @@ const UserManager = require("../../../../db/UserManager");
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.post("/api/v1/users/customization/getCustomization", utils.cors(), async (req, res) => {
-        const packet = req.body;
+    app.get("/api/v1/users/customization/getCustomization", utils.cors(), async (req, res) => {
+        const packet = req.query;
 
         const target = String(packet.target).toLowerCase();
 
@@ -39,7 +39,7 @@ module.exports = (app, utils) => {
             res.header("Content-Type", 'application/json');
             return res.send({});
         }
-        
+
         const customization = utils.UserManager.getUserCustomization(target);
         res.status(200);
         res.header("Content-Type", 'application/json');
