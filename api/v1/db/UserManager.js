@@ -3879,7 +3879,7 @@ class UserManager {
     async getUserCustomization(username) {
         const result = await this.accountCustomization.findOne({ username: username });
 
-        return result.customData;
+        return result.customData || {};
     }
     async getUserCustomizationDisabled(username) {
         const result = await this.accountCustomization.findOne({ username: username });
