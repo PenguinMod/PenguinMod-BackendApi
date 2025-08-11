@@ -29,20 +29,27 @@ module.exports = (app, utils) => {
         }
         const username = login.username;
 
-        const badges = await utils.UserManager.getBadges(username);
-
-        if (!badges.includes("donator")) {
-            utils.error(res, 403, "MissingPermission");
-            return;
+        // you can change other people's customization if you are a mod
+        const target = String(packet.target).toLowerCase();
+        if (target && !utils.UserManager.isModeratorOrAdmin(username)) {
+            return utils.error(res, 401, "Invalid credentials");
         }
-        if (utils.UserManager.getUserCustomizationDisabled(username)) {
-            utils.error(res, 403, "FeatureDisabledForThisAccount");
-            return;
+        if (!target) {
+            const badges = await utils.UserManager.getBadges(username);
+
+            if (!badges.includes("donator")) {
+                utils.error(res, 403, "MissingPermission");
+                return;
+            }
+            if (utils.UserManager.getUserCustomizationDisabled(username)) {
+                utils.error(res, 403, "FeatureDisabledForThisAccount");
+                return;
+            }
         }
 
         const errorReason = utils.UserManager.seeBlockedUserCustomization(customization);
         if (errorReason) return utils.error(res, 400, errorReason);
-        await utils.UserManager.setUserCustomization(username, customization);
+        await utils.UserManager.setUserCustomization(target || username, customization);
 
         res.status(200);
         res.header("Content-Type", 'application/json');
