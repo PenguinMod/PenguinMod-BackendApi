@@ -128,6 +128,6 @@ module.exports = (app, utils) => {
 
         res.status(200);
         res.header("Content-Type", 'application/json');
-        res.send({ url: `https://penguinmod.com/resetpassword?state=${state}&email=${email}` });
+        res.send();
     });
 }
