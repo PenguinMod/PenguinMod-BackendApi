@@ -24,7 +24,7 @@ module.exports = (app, utils) => {
         const isBanned = await utils.UserManager.isBanned(username);
 
         res.status(200);
-        res.header("Content-Type", 'application/json');
+        res.header("Content-Type", "application/json");
         res.json({ isBanned: isBanned });
     });
 }

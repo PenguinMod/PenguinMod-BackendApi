@@ -104,7 +104,7 @@ module.exports = (app, utils) => {
         await utils.UserManager.changeUsername(username, newUsername, String(packet.newUsername));
 
         res.status(200);
-        res.header("Content-Type", 'application/json');
+        res.header("Content-Type", "application/json");
         res.send({ success: true });
     })
 }

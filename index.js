@@ -33,7 +33,7 @@ function escapeXML(unsafe) {
 
 function error(res, code, error) {
     res.status(code);
-    res.header("Content-Type", 'application/json');
+    res.header("Content-Type", "application/json");
     res.json({ "error": error });
 }
 

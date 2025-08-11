@@ -39,7 +39,7 @@ module.exports = (app, utils) => {
         await utils.UserManager.blockUser(user_id, target_id, active);
 
         res.status(200);
-        res.header("Content-Type", 'application/json');
+        res.header("Content-Type", "application/json");
         res.json({ "success": true });
     });
 }

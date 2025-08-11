@@ -73,7 +73,7 @@ module.exports = (app, utils) => {
         await utils.UserManager.addIP(username, req.realIP);
 
         res.status(200);
-        res.header("Content-Type", 'application/json');
+        res.header("Content-Type", "application/json");
         res.json({ "token": token });
     });
 }

@@ -30,7 +30,7 @@ module.exports = (app, utils) => {
         const followers = await utils.UserManager.getFollowers(username, page, Number(utils.env.PageSize));
 
         res.status(200);
-        res.header("Content-Type", 'application/json');
+        res.header("Content-Type", "application/json");
         res.send(followers);
     });
 }

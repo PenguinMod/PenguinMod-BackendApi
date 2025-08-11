@@ -48,7 +48,7 @@ module.exports = (app, utils) => {
         await utils.UserManager.setRank(username, 1); // 1 is normal penguin
 
         res.status(200);
-        res.header("Content-Type", 'application/json');
+        res.header("Content-Type", "application/json");
         res.json({ "success": true });
     });
 }
