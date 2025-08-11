@@ -17,7 +17,7 @@ module.exports = (app, utils) => {
         const token = packet.token;
         const customization = packet.customization;
 
-        if (!token || typeof(customization) !== "string") {
+        if (!token || !customization || typeof(customization) !== "object") {
             utils.error(res, 400, "Missing token or customization");
             return;
         }
@@ -35,7 +35,13 @@ module.exports = (app, utils) => {
             utils.error(res, 403, "MissingPermission");
             return;
         }
+        if (utils.UserManager.getUserCustomizationDisabled(username)) {
+            utils.error(res, 403, "FeatureDisabledForThisAccount");
+            return;
+        }
 
+        const errorReason = utils.UserManager.seeBlockedUserCustomization(customization);
+        if (errorReason) return utils.error(res, 400, errorReason);
         await utils.UserManager.setUserCustomization(username, customization);
 
         res.status(200);
