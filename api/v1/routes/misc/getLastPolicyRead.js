@@ -26,7 +26,7 @@ module.exports = (app, utils) => {
         const lastPolicyRead = await utils.UserManager.getLastPolicyRead(username);
 
         res.status(200);
-        res.header("Content-Type", 'application/json');
+        res.header("Content-Type", "application/json");
         res.json(lastPolicyRead); // its already an object
     });
 }

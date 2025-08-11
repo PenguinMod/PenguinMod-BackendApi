@@ -34,7 +34,7 @@ module.exports = (app, utils) => {
         const has_blocked = await utils.UserManager.hasBlocked(user_id, target_id);
 
         res.status(200);
-        res.header("Content-Type", 'application/json');
+        res.header("Content-Type", "application/json");
         res.json({ has_blocked });
     });
 }

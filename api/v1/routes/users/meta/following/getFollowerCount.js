@@ -24,7 +24,7 @@ module.exports = (app, utils) => {
         const count = await utils.UserManager.getFollowerCount(username);
 
         res.status(200);
-        res.header("Content-Type", 'application/json');
+        res.header("Content-Type", "application/json");
         res.send({ count: count });
     });
 }

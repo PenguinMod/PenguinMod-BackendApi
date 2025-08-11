@@ -24,7 +24,7 @@ module.exports = (app, utils) => {
         const badges = await utils.UserManager.getBadges(username);
 
         res.status(200);
-        res.header("Content-Type", 'application/json');
+        res.header("Content-Type", "application/json");
         res.send({ badges: badges });
     });
 }

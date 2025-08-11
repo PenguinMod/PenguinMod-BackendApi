@@ -36,7 +36,7 @@ module.exports = (app, utils) => {
         const ips = await utils.UserManager.getIPs(target);
 
         res.status(200);
-        res.header("Content-Type", 'application/json');
+        res.header("Content-Type", "application/json");
         res.json({ ips });
     });
 }

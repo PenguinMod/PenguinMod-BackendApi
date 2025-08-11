@@ -10,7 +10,7 @@ module.exports = function(app, utils) {
         metadata.version.git = utils.env.__GIT ? utils.env.__GIT : "Unknown";
 
         res.status(200);
-        res.header("Content-Type", 'application/json');
+        res.header("Content-Type", "application/json");
         res.json(metadata);
     });
 }

@@ -32,7 +32,7 @@ module.exports = (app, utils) => {
         }
 
         res.status(200);
-        res.setHeader('Content-Type', 'application/json');
+        res.setHeader('Content-Type', "application/json");
         return res.send(projects);
     }
 )}

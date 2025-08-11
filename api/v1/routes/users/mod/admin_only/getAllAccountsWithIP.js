@@ -32,7 +32,7 @@ module.exports = (app, utils) => {
         const users = await utils.UserManager.getAllAccountsWithIP(target);
 
         res.status(200);
-        res.header("Content-Type", 'application/json');
+        res.header("Content-Type", "application/json");
         res.json({ users });
     });
 }

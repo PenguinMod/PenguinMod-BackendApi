@@ -70,8 +70,12 @@ module.exports = (app, utils) => {
                 case "thumbnail":
                     const thumbnail = fs.readFileSync(path.join(utils.homeDir, "icon.png"));
                     
+                    res.status(200);
+                    res.header("Content-Type", "image/png");
                     return res.send(thumbnail);
                 case "metadata":
+                    res.status(200);
+                    res.header("Content-Type", "application/json");
                     return res.send({ author: "No Author", title: "No Title", public: false }); // TODO: eventually make this return all of the placeholder data, instead of just like 3 things
                 default:
                     return utils.error(res, 400, "Invalid requestType");
@@ -102,6 +106,8 @@ module.exports = (app, utils) => {
             case "protobuf":
                 const project = await utils.UserManager.getProjectFile(projectID);
 
+                res.status(200);
+                res.header("Content-Type", "application/json");
                 return res.send(project);
             case "assets":
                 const assets = await utils.UserManager.getProjectAssets(projectID);

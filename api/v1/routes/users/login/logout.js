@@ -31,7 +31,7 @@ module.exports = (app, utils) => {
         await utils.UserManager.logout(username);
 
         res.status(200);
-        res.header("Content-Type", 'application/json');
+        res.header("Content-Type", "application/json");
         res.send({ success: true });
     });
 }

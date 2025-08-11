@@ -15,7 +15,7 @@ module.exports = (app, utils) => {
         const lastPolicyUpdate = await utils.UserManager.getLastPolicyUpdate();
 
         res.status(200);
-        res.header("Content-Type", 'application/json');
+        res.header("Content-Type", "application/json");
         res.json(lastPolicyUpdate); // its already an object
     });
 }

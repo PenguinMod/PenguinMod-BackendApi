@@ -46,7 +46,7 @@ module.exports = (app, utils) => {
         const usernames = await utils.UserManager.idListToUsernames(alts);
 
         res.status(200);
-        res.header("Content-Type", 'application/json');
+        res.header("Content-Type", "application/json");
         res.send({ alts: usernames });
     });
 }

@@ -67,7 +67,7 @@ module.exports = (app, utils) => {
 
         /*
         res.status(500);
-        res.header("Content-Type", 'application/json');
+        res.header("Content-Type", "application/json");
         res.json({ "disabled": true });
         return;
         */
@@ -167,7 +167,7 @@ module.exports = (app, utils) => {
         await utils.logs.sendCreationLog(username, id, "", "account");
 
         res.status(200);
-        res.header("Content-Type", 'application/json');
+        res.header("Content-Type", "application/json");
         res.json({ "token": token });
     });
 }

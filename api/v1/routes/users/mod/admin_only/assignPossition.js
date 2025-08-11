@@ -60,7 +60,7 @@ module.exports = (app, utils) => {
         utils.logs.sendAdminUserLog(username, target, "Admin or mod has updated user's permissions.", 0x7f3ddc, fields);
 
         res.status(200);
-        res.header("Content-Type", 'application/json');
+        res.header("Content-Type", "application/json");
         res.json({ "success": true });
     });
 }

@@ -45,7 +45,7 @@ module.exports = (app, utils) => {
         utils.logs.disputeLog(username, messageID, message.message, dispute, message.projectID);
 
         res.status(200);
-        res.header("Content-Type", 'application/json');
+        res.header("Content-Type", "application/json");
         res.send({ success: true });
     });
 }
