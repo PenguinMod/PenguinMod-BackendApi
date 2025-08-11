@@ -3878,11 +3878,12 @@ class UserManager {
      */
     async getUserCustomization(username) {
         const result = await this.accountCustomization.findOne({ username: username });
-
+        if (!result) return {};
         return result.customData || {};
     }
     async getUserCustomizationDisabled(username) {
         const result = await this.accountCustomization.findOne({ username: username });
+        if (!result) return false;
         return result.disabled === true;
     }
 
@@ -3931,10 +3932,10 @@ class UserManager {
      * @param {Object} customData Arbitrary keys and values
      */
     async setUserCustomization(username, customData) {
-        await this.accountCustomization.updateOne({ username: username }, { $set: { customData: customData } });
+        await this.accountCustomization.updateOne({ username: username }, { $set: { customData: customData } }, { upsert: true });
     }
     async setUserCustomizationDisabled(username, disabled) {
-        await this.accountCustomization.updateOne({ username: username }, { $set: { disabled: disabled } });
+        await this.accountCustomization.updateOne({ username: username }, { $set: { disabled: disabled } }, { upsert: true });
     }
 
     async clearAllEmails() {

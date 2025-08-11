@@ -30,7 +30,7 @@ module.exports = (app, utils) => {
         const username = login.username;
 
         // you can change other people's customization if you are a mod
-        const target = String(packet.target).toLowerCase();
+        const target = packet.target ? String(packet.target).toLowerCase() : null;
         if (target && !utils.UserManager.isModeratorOrAdmin(username)) {
             return utils.error(res, 401, "Invalid credentials");
         }
@@ -41,7 +41,7 @@ module.exports = (app, utils) => {
                 utils.error(res, 403, "MissingPermission");
                 return;
             }
-            if (utils.UserManager.getUserCustomizationDisabled(username)) {
+            if (await utils.UserManager.getUserCustomizationDisabled(username)) {
                 utils.error(res, 403, "FeatureDisabledForThisAccount");
                 return;
             }
