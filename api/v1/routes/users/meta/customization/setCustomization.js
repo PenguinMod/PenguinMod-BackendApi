@@ -16,7 +16,7 @@ module.exports = (app, utils) => {
 
         const token = packet.token;
         const customization = packet.customization;
-
+        
         if (!token || !customization || typeof(customization) !== "object") {
             utils.error(res, 400, "Missing token or customization");
             return;

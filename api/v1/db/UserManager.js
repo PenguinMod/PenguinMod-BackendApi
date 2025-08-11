@@ -3893,7 +3893,7 @@ class UserManager {
      * @returns {null|string} `null` if the customData is valid, and a string containing the error reason if the customData is invalid.
      */
     seeBlockedUserCustomization(customData) {
-        if (typeof customData === "object" || Array.isArray(customData)) return "DataNotObject";
+        if (typeof customData !== "object" || Array.isArray(customData)) return "DataNotObject";
         const allowedTypes = ["string", "number", "boolean", "object"]; // object is specified but we actually only allow Arrays
         const allowedArrayValueTypes = ["string", "number", "boolean"]; // since we allow arrays, we only allow some types in those arrays
 
