@@ -43,6 +43,6 @@ module.exports = (app, utils) => {
         const customization = utils.UserManager.getUserCustomization(target);
         res.status(200);
         res.header("Content-Type", 'application/json');
-        res.send(customization);
+        res.send({ customization });
     })
 }
