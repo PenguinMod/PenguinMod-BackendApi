@@ -3889,11 +3889,11 @@ class UserManager {
 
     /**
      * User customization is arbitrary customization data, meant for donators to customize their profile.
-     * This function checks whether or not 
+     * This function checks whether or not the arbitrary data fits our requirements
      * @param {Object} customData Arbitrary keys and values
      * @returns {null|string} `null` if the customData is valid, and a string containing the error reason if the customData is invalid.
      */
-    seeBlockedUserCustomization(customData) {
+    verifyCustomData(customData) {
         if (typeof customData !== "object" || Array.isArray(customData)) return "DataNotObject";
         const allowedTypes = ["string", "number", "boolean", "object"]; // object is specified but we actually only allow Arrays
         const allowedArrayValueTypes = ["string", "number", "boolean"]; // since we allow arrays, we only allow some types in those arrays
@@ -3927,7 +3927,7 @@ class UserManager {
 
     /**
      * Sets arbitrary customization data, meant for donators to customize their profile.
-     * Any endpoint that exposes this functionality to regular users should also make sure `seeBlockedUserCustomization` does not give an error reason.
+     * Any endpoint that exposes this functionality to regular users should also make sure `verifyCustomData` does not give an error reason.
      * @param {string} username The user to set the customization data for
      * @param {Object} customData Arbitrary keys and values
      */

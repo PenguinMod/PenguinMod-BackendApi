@@ -47,7 +47,7 @@ module.exports = (app, utils) => {
             }
         }
 
-        const errorReason = utils.UserManager.seeBlockedUserCustomization(customization);
+        const errorReason = utils.UserManager.verifyCustomData(customization);
         if (errorReason) return utils.error(res, 400, errorReason);
         await utils.UserManager.setUserCustomization(target || username, customization);
 
