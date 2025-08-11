@@ -3794,7 +3794,7 @@ class UserManager {
                     {
                         "From": {
                         "Email": "no-reply@penguinmod.com",
-                        "Name": "Penguinmod"
+                        "Name": "PenguinMod"
                         },
                         "To": [
                         {
