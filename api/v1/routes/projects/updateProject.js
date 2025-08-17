@@ -132,17 +132,17 @@ module.exports = (app, utils) => {
 
         if (await illegalWordingError(title, "projectTitle")) {
             await unlink();
-            return utils.error(res, 400, "IllegalWordsUsed");
+            return;
         }
 
         if (await illegalWordingError(instructions, "projectInstructions")) {
             await unlink();
-            return utils.error(res, 400, "IllegalWordsUsed");
+            return;
         }
 
         if (await illegalWordingError(notes, "projectNotes")) {
             await unlink();
-            return utils.error(res, 400, "IllegalWordsUsed");
+            return;
         }
 
         await slightlyIllegalWordingError(title, "projectTitle");
