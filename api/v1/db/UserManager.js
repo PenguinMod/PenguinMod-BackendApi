@@ -4507,7 +4507,7 @@ class UserManager {
      * @returns {Promise<boolean>}
      */
     async isOnWatchlist(username) {
-        return !!(await this.users.findOne({username}));
+        return !!(await this.users.findOne({username})).onWatchlist;
     }
 }
 
