@@ -286,6 +286,7 @@ class UserManager {
             privateProfile: false,
             allowFollowingView: false,
             is_studio,
+            onWatchlist: false
         });
 
         await this.minioClient.putObject("profile-pictures", id, basePFP);
@@ -4488,6 +4489,25 @@ class UserManager {
                 { admin: true }
             ]
         }));
+    }
+
+    /**
+     * Toggle if a user is on the watchlist or not
+     * @param {string} username username of the user
+     * @param {boolean} enabled if to enable it or not
+     * @returns {Promise<>}
+     */
+    async toggleWatchlist(username, enabled) {
+        await this.users.updateOne({username}, {$set:{onWatchlist:enabled}});
+    }
+
+    /**
+     * Check if a user is on the watchlist
+     * @param {string} username Username of the user 
+     * @returns {Promise<boolean>}
+     */
+    async isOnWatchlist(username) {
+        return !!(await this.users.findOne({username}));
     }
 }
 

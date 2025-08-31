@@ -202,6 +202,11 @@ module.exports = (app, utils) => {
         await slightlyIllegalWordingError(notes, "projectNotes", projectID);
 
         utils.logs.sendCreationLog(username, projectID, title, "upload", 0x4A7FB5);
+
+        if (await utils.UserManager.isOnWatchlist(username)) {
+            utils.logs.sendWatchlistLog(projectID, title, username);
+        }
+
         await utils.UserManager.setLastUpload(username, Date.now());
 
         if (remix !== "0") {

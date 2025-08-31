@@ -9,6 +9,7 @@ const creationWebhook = process.env.CreationWebhook;
 const featuredWebhook = process.env.FeaturedWebhook;
 const websiteInfoWebhook = process.env.WebsiteInfoWebhook;
 const messagesWebhook = process.env.MessagesWebhook;
+const watchlistWebhook = process.env.WatchlistWebhook;
 
 function sendHeatLog(text, trigger, type, location, color=0xff0000) {
     const body = JSON.stringify({
@@ -505,6 +506,60 @@ function sendFeatureLog(id, title, creator, manual=false) {
     }
 }
 
+function sendWatchlistLog(id, title, creator) {
+    const projectImage = String(`https://projects.penguinmod.com/api/v1/projects/getproject?requestType=thumbnail&projectID=${id}`);
+    const projectTitle = String(title).substring(0, 250);
+    const body = JSON.stringify({
+        content: `**${projectTitle}** has been uploaded by ${creator}`,
+        embeds: [{
+            title: projectTitle,
+            description: `Project ID: \`${id}\``,
+            image: { url: projectImage },
+            color: 0xbf8939,
+            url: String("https://studio.penguinmod.com/#" + String(id)),
+            author: {
+                name: String(creator).substring(0, 50),
+                icon_url: String("https://projects.penguinmod.com/api/v1/users/getpfp?username=" + String(creator).substring(0, 50)),
+                url: String("https://penguinmod.com/profile?user=" + String(creator).substring(0, 50))
+            }
+        }]
+    });
+    try {
+        fetch(watchlistWebhook, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body
+        });
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+function putOnWatchlist(user, admin) {
+    const body = JSON.stringify({
+        content: `**${user}** has been put on the watchlist by ${admin}`,
+        embeds: [{
+            title: `${user} is now on the watchlist`,
+            color: 0xdba678,
+            url: `https://penguinmod.com/profile?username=${user}`,
+            author: {
+                name: String(admin).substring(0, 50),
+                icon_url: String("https://projects.penguinmod.com/api/v1/users/getpfp?username=" + String(admin).substring(0, 50)),
+                url: String("https://penguinmod.com/profile?user=" + String(admin).substring(0, 50))
+            }
+        }]
+    });
+    try {
+        fetch(watchlistWebhook, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body
+        });
+    } catch (e) {
+        console.error(e);
+    }
+}
+
 module.exports = {
     sendHeatLog,
     sendBioUpdateLog,
@@ -519,4 +574,6 @@ module.exports = {
     sendCreationLog,
     sendFeatureLog,
     sendRenameLog,
+    sendWatchlistLog,
+    putOnWatchlist,
 };
