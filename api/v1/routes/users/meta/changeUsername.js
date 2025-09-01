@@ -101,6 +101,10 @@ module.exports = (app, utils) => {
 
         utils.logs.sendRenameLog(username, newUsername, id);
 
+        if (await utils.UserManager.isOnWatchlist(username)) {
+            utils.logs.watchlist.sendUsernameUpdateLog(username, newUsername, id);
+        }
+
         await utils.UserManager.changeUsername(username, newUsername, String(packet.newUsername));
 
         res.status(200);

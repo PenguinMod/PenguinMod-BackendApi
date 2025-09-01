@@ -226,7 +226,7 @@ module.exports = (app, utils) => {
         utils.logs.sendCreationLog(username, projectID, title, "update", 0x3DC2AD);
 
         if (await utils.UserManager.isOnWatchlist(username)) {
-            utils.logs.sendWatchlistLog(projectID, title, username);
+            utils.logs.watchlist.sendProjectUpdateLog(projectID, title, username);
         }
 
         await utils.UserManager.setLastUpload(username, Date.now());
