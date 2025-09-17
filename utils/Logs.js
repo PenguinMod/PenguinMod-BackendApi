@@ -506,31 +506,6 @@ function sendFeatureLog(id, title, creator, manual=false) {
     }
 }
 
-function putOnWatchlist(user, admin) {
-    const body = JSON.stringify({
-        content: `**${user}** has been put on the watchlist by ${admin}`,
-        embeds: [{
-            title: `${user} is now on the watchlist`,
-            color: 0xdba678,
-            url: `https://penguinmod.com/profile?user=${user}`,
-            author: {
-                name: String(admin).substring(0, 50),
-                icon_url: String("https://projects.penguinmod.com/api/v1/users/getpfp?username=" + String(admin).substring(0, 50)),
-                url: String("https://penguinmod.com/profile?user=" + String(admin).substring(0, 50))
-            }
-        }]
-    });
-    try {
-        fetch(watchlistWebhook, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body
-        });
-    } catch (e) {
-        console.error(e);
-    }
-}
-
 const watchlist = {
     sendProjectUploadLog(id, title, creator) {
         const projectImage = String(`https://projects.penguinmod.com/api/v1/projects/getproject?requestType=thumbnail&projectID=${id}`);
@@ -615,6 +590,31 @@ const watchlist = {
             console.error(e);
         }
     },
+
+    putOnWatchlist(user, admin) {
+        const body = JSON.stringify({
+            content: `**${user}** has been put on the watchlist by ${admin}`,
+            embeds: [{
+                title: `${user} is now on the watchlist`,
+                color: 0xdba678,
+                url: `https://penguinmod.com/profile?user=${user}`,
+                author: {
+                    name: String(admin).substring(0, 50),
+                    icon_url: String("https://projects.penguinmod.com/api/v1/users/getpfp?username=" + String(admin).substring(0, 50)),
+                    url: String("https://penguinmod.com/profile?user=" + String(admin).substring(0, 50))
+                }
+            }]
+        });
+        try {
+            fetch(watchlistWebhook, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body
+            });
+        } catch (e) {
+            console.error(e);
+        }
+    }
 };
 
 module.exports = {

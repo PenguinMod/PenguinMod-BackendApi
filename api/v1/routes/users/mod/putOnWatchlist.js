@@ -33,7 +33,7 @@ module.exports = (app, utils) => {
 
         await utils.UserManager.toggleWatchlist(target, enabled);
 
-        utils.logs.putOnWatchlist(target, username);
+        utils.logs.watchlist.putOnWatchlist(target, username);
 
         res.status(200);
         res.header("Content-Type", "application/json");
