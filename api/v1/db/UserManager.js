@@ -16,6 +16,8 @@ const basePFP = fs.readFileSync(path.join(__dirname, "./penguin.png"));
 const deleted_thumb = fs.readFileSync(path.join(__dirname, "../../../deletedThumbnail.png"));
 const deleted_thumb_buffer = sharp(deleted_thumb).resize(240, 180).toBuffer();
 
+const REMOVE_SYMBOLS_REGEX = /[\s._*!-+/]+/g;
+
 class UserManager {
     /**
      * Initialize the database
@@ -70,16 +72,52 @@ class UserManager {
             this.lastPolicyUpdates.insertOne({ id: "TOS", lastUpdate: Date.now() });
             this.lastPolicyUpdates.insertOne({ id: "guidelines", lastUpdate: Date.now() });
         }
-        if (!await this.illegalList.findOne({ id: "illegalWords" })) {
-            this.illegalList.insertMany([
-                { id: "illegalWords", items: [] },
-                { id: "illegalWebsites", items: [] },
-                { id: "spacedOutWordsOnly", items: [] },
-                { id: "potentiallyUnsafeWords", items: [] },
-                { id: "potentiallyUnsafeWordsSpacedOut", items: [] },
-                { id: "legalExtensions", items: []}
-            ]);
+
+        {
+            if (!await this.illegalList.countDocuments({ id: "illegalWords" })) {
+                this.illegalList.insertOne(
+                    { id: "illegalWords", items: [] },
+                );
+            }
+            if (!await this.illegalList.countDocuments({ id: "illegalWebsites" })) {
+                this.illegalList.insertOne(
+                    { id: "illegalWebsites", items: [] },
+                );
+            }
+            if (!await this.illegalList.countDocuments({ id: "spacedOutWordsOnly" })) {
+                this.illegalList.insertOne(
+                    { id: "spacedOutWordsOnly", items: [] },
+                );
+            }
+            if (!await this.illegalList.countDocuments({ id: "potentiallyUnsafeWords" })) {
+                this.illegalList.insertOne(
+                    { id: "potentiallyUnsafeWords", items: [] },
+                );
+            }
+            if (!await this.illegalList.countDocuments({ id: "potentiallyUnsafeWordsSpacedOut" })) {
+                this.illegalList.insertOne(
+                    { id: "potentiallyUnsafeWordsSpacedOut", items: [] },
+                );
+            }
+
+            if (!await this.illegalList.countDocuments({ id: "legalExtensions" })) {
+                this.illegalList.insertOne(
+                    { id: "legalExtensions", items: [] },
+                );
+            }
+
+            if (!await this.illegalList.countDocuments({ id: "unsafeUsernames" })) {
+                this.illegalList.insertOne(
+                    { id: "unsafeUsernames", items: [] },
+                );
+            }
+            if (!await this.illegalList.countDocuments({ id: "potentiallyUnsafeUsernames" })) {
+                this.illegalList.insertOne(
+                    { id: "potentiallyUnsafeUsernames", items: [] },
+                );
+            }
         }
+
         this.blocking = this.db.collection("blocking");
         this.prevReset = Date.now();
         this.views = [];
@@ -199,11 +237,11 @@ class UserManager {
         }
 
         const illegalWordingError = async (text, type) => {
-            const trigger = await this.checkForIllegalWording(text);
+            const trigger = await this.checkForUnsafeUsername(text);
             if (trigger) {
                 utils.error(res, 400, "IllegalWordsUsed");
     
-                const illegalWordIndex = await this.getIndexOfIllegalWording(text);
+                const illegalWordIndex = await this.getIndexOfUnsafeUsername(text);
 
                 const before = text.substring(0, illegalWordIndex[0]);
                 const after = text.substring(illegalWordIndex[1]);
@@ -221,10 +259,10 @@ class UserManager {
             return false;
         }
 
-        const slightlyIllegalWordingError = async (text, type) => {
-            let trigger = await this.checkForSlightlyIllegalWording(text);
+        const potentiallyIllegalWordingError = async (text, type) => {
+            let trigger = await this.checkForPotentiallyUnsafeUsername(text);
             if (trigger) {
-                const illegalWordIndex = await this.getIndexOfSlightlyIllegalWording(text);
+                const illegalWordIndex = await this.getIndexOfPotentiallyUnsafeUsername(text);
     
                 const before = text.substring(0, illegalWordIndex[0]);
                 const after = text.substring(illegalWordIndex[1]);
@@ -246,7 +284,7 @@ class UserManager {
             return false;
         }
 
-        await slightlyIllegalWordingError(username, "username");
+        await potentiallyIllegalWordingError(username, "username");
 
         const hash = password ? await bcrypt.hash(password, 10) : "";
         const id = ULID.ulid();
@@ -2400,7 +2438,7 @@ class UserManager {
 
         const joined = illegalWords.concat(illegalWebsites);
         
-        const no_spaces = text.replace(/\s/g, "");
+        const no_spaces = text.replace(REMOVE_SYMBOLS_REGEX, "");
 
         for (const item of joined) {
             if (no_spaces.includes(item)) {
@@ -2420,11 +2458,151 @@ class UserManager {
     }
 
     /**
+     * Check for illegal wording on a username
+     * @param {string} username The username to check for illegal wording 
+     * @returns {Promise<String>} Empty if there is nothing illegal, not empty if it was triggered (returns the trigger)
+     * @async
+     */
+    async checkForUnsafeUsername(username) {
+        const basicTrigger = await this.checkForIllegalWording(username);
+        if (basicTrigger)
+            return basicTrigger;
+
+        let unsafeUsernames = (await this.illegalList.findOne
+            ({ id: "unsafeUsernames" })).items;
+
+        unsafeUsernames = (unsafeUsernames || []);
+
+        const no_spaces = username.replace(REMOVE_SYMBOLS_REGEX, "");
+
+        for (const item of unsafeUsernames) {
+            if (no_spaces.includes(item)) {
+                return item;
+            }
+        }
+
+        return "";
+    }
+
+    /**
+     * Get the index of illegal wording
+     * @param {string} username Username to get the index from
+     * @returns {Promise<number>} Index of the illegal wording
+     */
+    async getIndexOfUnsafeUsername(username) {
+        // TODO! make this work better
+        const normalWording = await this.getIndexOfIllegalWording(username);
+        if (normalWording[0] != -1)
+            return normalWording;
+
+        const unsafeUsernames = (await this.illegalList.findOne
+            ({ id: "unsafeUsernames" })).items;
+
+        const no_spaces = username.replace(REMOVE_SYMBOLS_REGEX, "");
+        
+        for (const item of unsafeUsernames) {
+            const index = no_spaces.indexOf(item)
+            if (index + 1) {
+                return [index, index+item.length];
+            }
+        }
+
+        return [-1, -1];
+    }
+
+    /**
+     * Check for potentially illegal wording on text
+     * @param {string} text The text to check for slightly illegal wording
+     * @returns {Promise<String>} same as normal illegal
+     * @async
+     */
+    async checkForPotentiallyUnsafeUsername(text) {
+        let potentiallyUnsafeWords = (await this.illegalList.findOne
+            ({ id: "potentiallyUnsafeWords" })).items;
+        let potentiallyUnsafeWordsSpacedOut = (await this.illegalList.findOne
+            ({ id: "potentiallyUnsafeWordsSpacedOut" })).items;
+
+        potentiallyUnsafeWords = potentiallyUnsafeWords ? potentiallyUnsafeWords : [];
+        potentiallyUnsafeWordsSpacedOut = potentiallyUnsafeWordsSpacedOut ? potentiallyUnsafeWordsSpacedOut : [];
+        
+        for (const item of potentiallyUnsafeWords) {
+            if (text.includes(item)) {
+                return item;
+            }
+        }
+
+        for (const item of potentiallyUnsafeWordsSpacedOut) {
+            const with_spaces = " " + item + " ";
+            if (text.includes(with_spaces)) {
+                return item;
+            }
+        }
+
+        return "";
+    }
+
+    /**
+     * Get the index of potentially unsafe username
+     * @param {string} username Username to get the index from
+     * @returns {Promise<number>} Index of the potentially unsafe wording
+     */
+    async getIndexOfPotentiallyUnsafeUsername(username) {
+        // TODO: make this work better/correctly
+
+        const potentiallyUnsafeWords = (await this.illegalList.findOne
+            ({ id: "potentiallyUnsafeWords" })).items;
+        const potentiallyUnsafeWordsSpacedOut = (await this.illegalList.findOne
+            ({ id: "potentiallyUnsafeWordsSpacedOut" })).items;
+        const joined = potentiallyUnsafeWords.concat(potentiallyUnsafeWordsSpacedOut);
+        
+        for (const item of joined) {
+            const index = username.indexOf(item)
+            if (index + 1) {
+                return [index, index+item.length];
+            }
+        }
+
+        return [-1, -1];
+    }
+
+    /**
+     * Check for potentially illegal wording on text
+     * @param {string} text The text to check for slightly illegal wording
+     * @returns {Promise<String>} same as normal illegal
+     * @async
+     */
+    async checkForPotentiallyIllegalWording(text) {
+        let potentiallyUnsafeWords = (await this.illegalList.findOne
+            ({ id: "potentiallyUnsafeWords" })).items;
+        let potentiallyUnsafeWordsSpacedOut = (await this.illegalList.findOne
+            ({ id: "potentiallyUnsafeWordsSpacedOut" })).items;
+
+        potentiallyUnsafeWords = potentiallyUnsafeWords ? potentiallyUnsafeWords : [];
+        potentiallyUnsafeWordsSpacedOut = potentiallyUnsafeWordsSpacedOut ? potentiallyUnsafeWordsSpacedOut : [];
+        
+        for (const item of potentiallyUnsafeWords) {
+            if (text.includes(item)) {
+                return item;
+            }
+        }
+
+        for (const item of potentiallyUnsafeWordsSpacedOut) {
+            const with_spaces = " " + item + " ";
+            if (text.includes(with_spaces)) {
+                return item;
+            }
+        }
+
+        return "";
+    }
+
+    /**
      * Get the index of illegal wording
      * @param {string} text Text to get the index from
      * @returns {Promise<number>} Index of the illegal wording
      */
     async getIndexOfIllegalWording(text) {
+        // TODO! make this work better
         const illegalWords = (await this.illegalList.findOne
             ({ id: "illegalWords" })).items;
         const illegalWebsites = (await this.illegalList.findOne
@@ -2433,7 +2611,7 @@ class UserManager {
             ({ id: "spacedOutWordsOnly" })).items;
         const joined = illegalWords.concat(illegalWebsites);
 
-        const no_spaces = text.replace(/\s/g, "");
+        const no_spaces = text.replace(REMOVE_SYMBOLS_REGEX, "");
         
         for (const item of joined) {
             const index = no_spaces.indexOf(item)
@@ -2449,15 +2627,17 @@ class UserManager {
                 return [index, index+item.length];
             }
         }
+
+        return [-1, -1];
     }
 
     /**
-     * Check for slightly illegal wording on text
+     * Check for potentially illegal wording on text
      * @param {string} text The text to check for slightly illegal wording
      * @returns {Promise<String>} same as normal illegal
      * @async
      */
-    async checkForSlightlyIllegalWording(text) {
+    async checkForPotentiallyIllegalWording(text) {
         let potentiallyUnsafeWords = (await this.illegalList.findOne
             ({ id: "potentiallyUnsafeWords" })).items;
         let potentiallyUnsafeWordsSpacedOut = (await this.illegalList.findOne
@@ -2487,7 +2667,9 @@ class UserManager {
      * @param {string} text Text to get the index from
      * @returns {Promise<number>} Index of the slightly illegal wording
      */
-    async getIndexOfSlightlyIllegalWording(text) {
+    async getIndexOfPotentiallyIllegalWording(text) {
+        // TODO: make this work better/correctly
+
         const potentiallyUnsafeWords = (await this.illegalList.findOne
             ({ id: "potentiallyUnsafeWords" })).items;
         const potentiallyUnsafeWordsSpacedOut = (await this.illegalList.findOne
@@ -2500,6 +2682,8 @@ class UserManager {
                 return [index, index+item.length];
             }
         }
+
+        return [-1, -1];
     }
 
     /**
@@ -2549,6 +2733,10 @@ class UserManager {
         const potentiallyUnsafeWordsSpacedOut = (await this.illegalList.findOne
             ({ id: "potentiallyUnsafeWordsSpacedOut" })).items;
         const legalExtensions = await this.getLegalExtensions();
+        const unsafeUsernames = (await this.illegalList.findOne
+            ({ id: "unsafeUsernames" })).items;
+        const potentiallyUnsafeUsernames = (await this.illegalList.findOne
+            ({ id: "potentiallyUnsafeUsernames" })).items;
 
         return {
             illegalWords,
@@ -2556,7 +2744,9 @@ class UserManager {
             spacedOutWordsOnly,
             potentiallyUnsafeWords,
             potentiallyUnsafeWordsSpacedOut,
-            legalExtensions
+            legalExtensions,
+            unsafeUsernames,
+            potentiallyUnsafeUsernames
         }
     }
 

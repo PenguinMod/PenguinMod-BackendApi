@@ -76,10 +76,10 @@ module.exports = (app, utils) => {
             return false;
         }
 
-        const slightlyIllegalWordingError = async (text, type, id) => {
-            const trigger = await utils.UserManager.checkForSlightlyIllegalWording(text);
+        const potentiallyIllegalWordingError = async (text, type, id) => {
+            const trigger = await utils.UserManager.checkForPotentiallyIllegalWording(text);
             if (trigger) {
-                const illegalWordIndex = await utils.UserManager.getIndexOfSlightlyIllegalWording(text);
+                const illegalWordIndex = await utils.UserManager.getIndexOfPotentiallyIllegalWording(text);
     
                 const before = text.substring(0, illegalWordIndex[0]);
                 const after = text.substring(illegalWordIndex[1]);
@@ -197,9 +197,9 @@ module.exports = (app, utils) => {
             packet.rating
         );
 
-        await slightlyIllegalWordingError(title, "projectTitle", projectID);
-        await slightlyIllegalWordingError(instructions, "projectInstructions", projectID);
-        await slightlyIllegalWordingError(notes, "projectNotes", projectID);
+        await potentiallyIllegalWordingError(title, "projectTitle", projectID);
+        await potentiallyIllegalWordingError(instructions, "projectInstructions", projectID);
+        await potentiallyIllegalWordingError(notes, "projectNotes", projectID);
 
         utils.logs.sendCreationLog(username, projectID, title, "upload", 0x4A7FB5);
 

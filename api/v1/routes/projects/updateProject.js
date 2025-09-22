@@ -93,10 +93,10 @@ module.exports = (app, utils) => {
             return false;
         }
 
-        const slightlyIllegalWordingError = async (text, type) => {
-            let trigger = await utils.UserManager.checkForSlightlyIllegalWording(text);
+        const potentiallyIllegalWordingError = async (text, type) => {
+            let trigger = await utils.UserManager.checkForPotentiallyIllegalWording(text);
             if (trigger) {
-                const illegalWordIndex = await utils.UserManager.getIndexOfSlightlyIllegalWording(text);
+                const illegalWordIndex = await utils.UserManager.getIndexOfPotentiallyIllegalWording(text);
     
                 const before = text.substring(0, illegalWordIndex[0]);
                 const after = text.substring(illegalWordIndex[1]);
@@ -145,9 +145,9 @@ module.exports = (app, utils) => {
             return;
         }
 
-        await slightlyIllegalWordingError(title, "projectTitle");
-        await slightlyIllegalWordingError(instructions, "projectInstructions");
-        await slightlyIllegalWordingError(notes, "projectNotes");
+        await potentiallyIllegalWordingError(title, "projectTitle");
+        await potentiallyIllegalWordingError(instructions, "projectInstructions");
+        await potentiallyIllegalWordingError(notes, "projectNotes");
 
         const uploadingProject = !!req.files.jsonFile;
 

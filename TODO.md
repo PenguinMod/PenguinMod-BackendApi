@@ -2,8 +2,7 @@
 
 ## Bugs
 
-- [x] fix mods cant edit projects
-- [x] fix clicking update edits brings you to a broken edit page
+Nothing right now.
 
 ## Features
 
@@ -33,3 +32,8 @@
   - [ ] Potentially mark studios as users without a login method?
     - [ ] This is useful for most of these todos
     - [ ] This avoids several struggles but also requires a bit of extra logic
+
+## Upkeep
+
+- [ ] Split up UserManager into multiple files
+  - Each will do some tasks, like for example one file might do all things related to checking for illegal/potentially illegal wording/extensions (since it's easiest to just deal with all of that in one file)

@@ -41,11 +41,11 @@ module.exports = (app, utils) => {
         }
 
         const illegalWordingError = async (text, type) => {
-            const trigger = await utils.UserManager.checkForIllegalWording(text);
+            const trigger = await utils.UserManager.checkForUnsafeUsername(text);
             if (trigger) {
                 utils.error(res, 400, "IllegalWordsUsed");
     
-                const illegalWordIndex = await utils.UserManager.getIndexOfIllegalWording(text);
+                const illegalWordIndex = await utils.UserManager.getIndexOfUnsafeUsername(text);
 
                 const before = text.substring(0, illegalWordIndex[0]);
                 const after = text.substring(illegalWordIndex[1]);
@@ -63,11 +63,11 @@ module.exports = (app, utils) => {
             return false;
         }
 
-        const slightlyIllegalWordingError = async (text, type) => {
-            let trigger = await utils.UserManager.checkForSlightlyIllegalWording(text);
+        const potentiallyIllegalWordingError = async (text, type) => {
+            let trigger = await utils.UserManager.checkForPotentiallyUnsafeUsername(text);
             if (trigger) {
-                const illegalWordIndex = await utils.UserManager.getIndexOfSlightlyIllegalWording(text);
-    
+                const illegalWordIndex = await utils.UserManager.getIndexOfPotentiallyUnsafeUsername(text);
+
                 const before = text.substring(0, illegalWordIndex[0]);
                 const after = text.substring(illegalWordIndex[1]);
                 const illegalWord = text.substring(illegalWordIndex[0], illegalWordIndex[1]);
@@ -89,7 +89,7 @@ module.exports = (app, utils) => {
             return;
         }
 
-        await slightlyIllegalWordingError(newUsername, "username");
+        await potentiallyIllegalWordingError(newUsername, "username");
 
         const exists = await utils.UserManager.existsByUsername(newUsername, true);
         if (exists) {

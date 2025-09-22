@@ -112,7 +112,7 @@ module.exports = (app, utils) => {
             case "assets":
                 const assets = await utils.UserManager.getProjectAssets(projectID);
 
-
+                res.header("Cache-Control", "public, max-age=90");
                 return res.send(assets);
             case "thumbnail":
                 const thumbnail = await utils.UserManager.getProjectImage(projectID);
