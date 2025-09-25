@@ -323,6 +323,8 @@ class UserManager {
             lastGuidelinesRead: current_time,
             privateProfile: false,
             allowFollowingView: false,
+            profileHideFollowing: false,
+            profileHideFollowers: false,
             is_studio,
             onWatchlist: false
         });
@@ -2134,7 +2136,8 @@ class UserManager {
             },
             {
                 $match: {
-                    "follower.banned": false
+                    "follower.banned": false,
+                    "follower.profileHideFollowing": { $ne: true }
                 }
             },
             {
@@ -2222,8 +2225,19 @@ class UserManager {
      */
     async getFollowerCount(username) {
         const result = await this.users.findOne({username: username});
-
+        
         return result.followers;
+    }
+
+    /**
+     * Get the amount of people a user is following
+     * @param {string} username Username of the user
+     * @returns {Promise<number>} Amount of people the user is following
+     */
+    async getFollowingCount(username) {
+        const result = await this.users.findOne({ username: username });
+
+        return result.following;
     }
 
     /**
@@ -3739,6 +3753,22 @@ class UserManager {
 
     async setFollowingSeeProfile(username, toggle) {
         await this.users.updateOne({ username: username }, { $set: { allowFollowingView: toggle } });
+    }
+
+    async setProfileHideFollowing(username, toggle) {
+        await this.users.updateOne({ username: username }, { $set: { profileHideFollowing: toggle } });
+    }
+    async setProfileHideFollowers(username, toggle) {
+        await this.users.updateOne({ username: username }, { $set: { profileHideFollowers: toggle } });
+    }
+
+    async getProfileHideFollowing(username) {
+        const result = await this.users.findOne({ username: username });
+        return result.profileHideFollowing || false;
+    }
+    async getProfileHideFollowers(username) {
+        const result = await this.users.findOne({ username: username });
+        return result.profileHideFollowers || false;
     }
 
     /**
