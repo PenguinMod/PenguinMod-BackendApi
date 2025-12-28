@@ -1,19 +1,21 @@
-require('dotenv').config();
-const { randomInt, randomBytes } = require('node:crypto');
-const bcrypt = require('bcrypt');
-const { MongoClient } = require('mongodb');
-const ULID = require('ulid');
-const Minio = require('minio');
-const fs = require('fs');
-const path = require('path');
-var prompt = require('prompt-sync')();
-const Mailjet = require('node-mailjet');
-const os = require('os');
-const pmp_protobuf = require('pmp-protobuf');
-const sharp = require('sharp');
+require("dotenv").config();
+const { randomInt, randomBytes } = require("node:crypto");
+const bcrypt = require("bcrypt");
+const { MongoClient } = require("mongodb");
+const ULID = require("ulid");
+const Minio = require("minio");
+const fs = require("fs");
+const path = require("path");
+var prompt = require("prompt-sync")();
+const Mailjet = require("node-mailjet");
+const os = require("os");
+const pmp_protobuf = require("pmp-protobuf");
+const sharp = require("sharp");
 
 const basePFP = fs.readFileSync(path.join(__dirname, "./penguin.png"));
-const deleted_thumb = fs.readFileSync(path.join(__dirname, "../../../deletedThumbnail.png"));
+const deleted_thumb = fs.readFileSync(
+    path.join(__dirname, "../../../deletedThumbnail.png"),
+);
 const deleted_thumb_buffer = sharp(deleted_thumb).resize(240, 180).toBuffer();
 
 const REMOVE_SYMBOLS_REGEX = /[\s._*!-+/]+/g;
@@ -26,95 +28,170 @@ class UserManager {
      * @async
      */
     async init(maxviews, viewresetrate) {
-        this.client = new MongoClient(process.env.MongoUri || 'mongodb://localhost:27017');
+        this.client = new MongoClient(
+            process.env.MongoUri || "mongodb://localhost:27017",
+        );
         await this.client.connect();
-        this.db = this.client.db('pm_apidata');
-        this.users = this.db.collection('users');
+        this.db = this.client.db("pm_apidata");
+        this.users = this.db.collection("users");
         await this.users.createIndex({ username: 1 }, { unique: true });
         await this.users.createIndex({ id: 1 }, { unique: true });
         await this.users.createIndex({ token: 1 }, { unique: true });
-        this.accountCustomization = this.db.collection('accountCustomization');
-        this.loggedIPs = this.db.collection('loggedIPs');
+        this.accountCustomization = this.db.collection("accountCustomization");
+        this.loggedIPs = this.db.collection("loggedIPs");
         await this.loggedIPs.createIndex({ id: 1 });
         await this.loggedIPs.createIndex({ ip: 1 });
-        this.passwordResetStates = this.db.collection('passwordResetStates');
-        await this.passwordResetStates.createIndex({ 'expireAt': 1 }, { expireAfterSeconds: 60 * 60 * 2 }); // give 2 hours
-        this.sentEmails = this.db.collection('sentEmails');
-        await this.sentEmails.createIndex({ 'expireAt': 1 }, { expireAfterSeconds: 60 * 60 * 24 });
+        this.passwordResetStates = this.db.collection("passwordResetStates");
+        await this.passwordResetStates.createIndex(
+            { expireAt: 1 },
+            { expireAfterSeconds: 60 * 60 * 2 },
+        ); // give 2 hours
+        this.sentEmails = this.db.collection("sentEmails");
+        await this.sentEmails.createIndex(
+            { expireAt: 1 },
+            { expireAfterSeconds: 60 * 60 * 24 },
+        );
         this.followers = this.db.collection("followers");
-        this.oauthIDs = this.db.collection('oauthIDs');
-        this.reports = this.db.collection('reports');
-        this.runtimeConfig = this.db.collection('runtimeConfig');
+        this.oauthIDs = this.db.collection("oauthIDs");
+        this.reports = this.db.collection("reports");
+        this.runtimeConfig = this.db.collection("runtimeConfig");
         //this.runtimeConfig.deleteMany({});
-        if (!await this.runtimeConfig.findOne({ id: "viewingEnabled" }))
-            this.runtimeConfig.insertOne({ id: "viewingEnabled", value: process.env.ViewingEnabled=="true" });
-        if (!await this.runtimeConfig.findOne({ id: "uploadingEnabled" }))
-            this.runtimeConfig.insertOne({ id: "uploadingEnabled", value: process.env.UploadingEnabled=="true" });
-        if (!await this.runtimeConfig.findOne({ id: "accountCreationEnabled" }))
-        this.runtimeConfig.insertOne({ id: "accountCreationEnabled", value: process.env.AccountCreationEnabled=="true" });
-        
-        this.projects = this.db.collection('projects');
+        if (!(await this.runtimeConfig.findOne({ id: "viewingEnabled" })))
+            this.runtimeConfig.insertOne({
+                id: "viewingEnabled",
+                value: process.env.ViewingEnabled == "true",
+            });
+        if (!(await this.runtimeConfig.findOne({ id: "uploadingEnabled" })))
+            this.runtimeConfig.insertOne({
+                id: "uploadingEnabled",
+                value: process.env.UploadingEnabled == "true",
+            });
+        if (
+            !(await this.runtimeConfig.findOne({
+                id: "accountCreationEnabled",
+            }))
+        )
+            this.runtimeConfig.insertOne({
+                id: "accountCreationEnabled",
+                value: process.env.AccountCreationEnabled == "true",
+            });
+
+        this.projects = this.db.collection("projects");
         //this.projects.dropIndexes();
-        await this.projects.createIndex({ title: "text", instructions: "text", notes: "text"});
+        await this.projects.createIndex({
+            title: "text",
+            instructions: "text",
+            notes: "text",
+        });
         // index for front page, sort by newest
         await this.projects.createIndex({ lastUpdate: -1 });
         await this.projects.createIndex({ id: 1 }, { unique: true });
-        this.projectStats = this.db.collection('projectStats');
-        this.messages = this.db.collection('messages');
-        this.oauthStates = this.db.collection('oauthStates');
-        await this.oauthStates.createIndex({ 'expireAt': 1 }, { expireAfterSeconds: 60 * 5 }); // give 5 minutes
-        this.userFeed = this.db.collection('userFeed');
-        await this.userFeed.createIndex({ 'expireAt': 1 }, { expireAfterSeconds: Number(process.env.FeedExpirationTime) });
-        this.illegalList = this.db.collection('illegalList');
-        this.lastPolicyUpdates = this.db.collection('lastPolicyUpdates');
-        if (!await this.lastPolicyUpdates.findOne({ id: "privacyPolicy" })) {
-            this.lastPolicyUpdates.insertOne({ id: "privacyPolicy", lastUpdate: Date.now() });
-            this.lastPolicyUpdates.insertOne({ id: "TOS", lastUpdate: Date.now() });
-            this.lastPolicyUpdates.insertOne({ id: "guidelines", lastUpdate: Date.now() });
+        this.projectStats = this.db.collection("projectStats");
+        this.messages = this.db.collection("messages");
+        this.oauthStates = this.db.collection("oauthStates");
+        await this.oauthStates.createIndex(
+            { expireAt: 1 },
+            { expireAfterSeconds: 60 * 5 },
+        ); // give 5 minutes
+        this.userFeed = this.db.collection("userFeed");
+        await this.userFeed.createIndex(
+            { expireAt: 1 },
+            { expireAfterSeconds: Number(process.env.FeedExpirationTime) },
+        );
+        this.illegalList = this.db.collection("illegalList");
+        this.lastPolicyUpdates = this.db.collection("lastPolicyUpdates");
+        if (!(await this.lastPolicyUpdates.findOne({ id: "privacyPolicy" }))) {
+            this.lastPolicyUpdates.insertOne({
+                id: "privacyPolicy",
+                lastUpdate: Date.now(),
+            });
+            this.lastPolicyUpdates.insertOne({
+                id: "TOS",
+                lastUpdate: Date.now(),
+            });
+            this.lastPolicyUpdates.insertOne({
+                id: "guidelines",
+                lastUpdate: Date.now(),
+            });
         }
 
         {
-            if (!await this.illegalList.countDocuments({ id: "illegalWords" })) {
-                this.illegalList.insertOne(
-                    { id: "illegalWords", items: [] },
-                );
+            if (
+                !(await this.illegalList.countDocuments({ id: "illegalWords" }))
+            ) {
+                this.illegalList.insertOne({ id: "illegalWords", items: [] });
             }
-            if (!await this.illegalList.countDocuments({ id: "illegalWebsites" })) {
-                this.illegalList.insertOne(
-                    { id: "illegalWebsites", items: [] },
-                );
+            if (
+                !(await this.illegalList.countDocuments({
+                    id: "illegalWebsites",
+                }))
+            ) {
+                this.illegalList.insertOne({
+                    id: "illegalWebsites",
+                    items: [],
+                });
             }
-            if (!await this.illegalList.countDocuments({ id: "spacedOutWordsOnly" })) {
-                this.illegalList.insertOne(
-                    { id: "spacedOutWordsOnly", items: [] },
-                );
+            if (
+                !(await this.illegalList.countDocuments({
+                    id: "spacedOutWordsOnly",
+                }))
+            ) {
+                this.illegalList.insertOne({
+                    id: "spacedOutWordsOnly",
+                    items: [],
+                });
             }
-            if (!await this.illegalList.countDocuments({ id: "potentiallyUnsafeWords" })) {
-                this.illegalList.insertOne(
-                    { id: "potentiallyUnsafeWords", items: [] },
-                );
+            if (
+                !(await this.illegalList.countDocuments({
+                    id: "potentiallyUnsafeWords",
+                }))
+            ) {
+                this.illegalList.insertOne({
+                    id: "potentiallyUnsafeWords",
+                    items: [],
+                });
             }
-            if (!await this.illegalList.countDocuments({ id: "potentiallyUnsafeWordsSpacedOut" })) {
-                this.illegalList.insertOne(
-                    { id: "potentiallyUnsafeWordsSpacedOut", items: [] },
-                );
+            if (
+                !(await this.illegalList.countDocuments({
+                    id: "potentiallyUnsafeWordsSpacedOut",
+                }))
+            ) {
+                this.illegalList.insertOne({
+                    id: "potentiallyUnsafeWordsSpacedOut",
+                    items: [],
+                });
             }
 
-            if (!await this.illegalList.countDocuments({ id: "legalExtensions" })) {
-                this.illegalList.insertOne(
-                    { id: "legalExtensions", items: [] },
-                );
+            if (
+                !(await this.illegalList.countDocuments({
+                    id: "legalExtensions",
+                }))
+            ) {
+                this.illegalList.insertOne({
+                    id: "legalExtensions",
+                    items: [],
+                });
             }
 
-            if (!await this.illegalList.countDocuments({ id: "unsafeUsernames" })) {
-                this.illegalList.insertOne(
-                    { id: "unsafeUsernames", items: [] },
-                );
+            if (
+                !(await this.illegalList.countDocuments({
+                    id: "unsafeUsernames",
+                }))
+            ) {
+                this.illegalList.insertOne({
+                    id: "unsafeUsernames",
+                    items: [],
+                });
             }
-            if (!await this.illegalList.countDocuments({ id: "potentiallyUnsafeUsernames" })) {
-                this.illegalList.insertOne(
-                    { id: "potentiallyUnsafeUsernames", items: [] },
-                );
+            if (
+                !(await this.illegalList.countDocuments({
+                    id: "potentiallyUnsafeUsernames",
+                }))
+            ) {
+                this.illegalList.insertOne({
+                    id: "potentiallyUnsafeUsernames",
+                    items: [],
+                });
             }
         }
 
@@ -135,7 +212,7 @@ class UserManager {
             port: Number(process.env.MinioPort),
             useSSL: false,
             accessKey: process.env.MinioClientID,
-            secretKey: process.env.MinioClientSecret
+            secretKey: process.env.MinioClientSecret,
         });
         // project bucket
         await this._makeBucket("projects");
@@ -186,7 +263,7 @@ class UserManager {
         throw new Error("Resseting is disabled");
 
         if (!understands) {
-            let unde = prompt("This deletes ALL DATA. Are you sure? (Y/n) ")
+            let unde = prompt("This deletes ALL DATA. Are you sure? (Y/n) ");
             if (typeof unde !== "string") {
                 return;
             }
@@ -230,7 +307,17 @@ class UserManager {
      * @returns {Promise<[string, string]|boolean>} token & id if successful, false if not
      * @async
      */
-    async createAccount(username, real_username, password, email, birthday, country, is_studio, utils, res) {
+    async createAccount(
+        username,
+        real_username,
+        password,
+        email,
+        birthday,
+        country,
+        is_studio,
+        utils,
+        res,
+    ) {
         const result = await this.users.findOne({ username: username });
         if (result) {
             return false;
@@ -240,45 +327,53 @@ class UserManager {
             const trigger = await this.checkForUnsafeUsername(text);
             if (trigger) {
                 utils.error(res, 400, "IllegalWordsUsed");
-    
-                const illegalWordIndex = await this.getIndexOfUnsafeUsername(text);
+
+                const illegalWordIndex =
+                    await this.getIndexOfUnsafeUsername(text);
 
                 const before = text.substring(0, illegalWordIndex[0]);
                 const after = text.substring(illegalWordIndex[1]);
-                const illegalWord = text.substring(illegalWordIndex[0], illegalWordIndex[1]);
-    
+                const illegalWord = text.substring(
+                    illegalWordIndex[0],
+                    illegalWordIndex[1],
+                );
+
                 utils.logs.sendHeatLog(
                     before + "\x1b[31;1m" + illegalWord + "\x1b[0m" + after,
                     trigger,
                     type,
-                    username
-                )
-                
+                    username,
+                );
+
                 return true;
             }
             return false;
-        }
+        };
 
         const potentiallyIllegalWordingError = async (text, type) => {
             let trigger = await this.checkForPotentiallyUnsafeUsername(text);
             if (trigger) {
-                const illegalWordIndex = await this.getIndexOfPotentiallyUnsafeUsername(text);
-    
+                const illegalWordIndex =
+                    await this.getIndexOfPotentiallyUnsafeUsername(text);
+
                 const before = text.substring(0, illegalWordIndex[0]);
                 const after = text.substring(illegalWordIndex[1]);
-                const illegalWord = text.substring(illegalWordIndex[0], illegalWordIndex[1]);
-    
+                const illegalWord = text.substring(
+                    illegalWordIndex[0],
+                    illegalWordIndex[1],
+                );
+
                 utils.logs.sendHeatLog(
                     before + "\x1b[33;1m" + illegalWord + "\x1b[0m" + after,
                     trigger,
                     type,
                     username,
                     0xffbb00,
-                )
+                );
                 return true;
             }
             return false;
-        }
+        };
 
         if (await illegalWordingError(username, "username")) {
             return false;
@@ -288,7 +383,7 @@ class UserManager {
 
         const hash = password ? await bcrypt.hash(password, 10) : "";
         const id = ULID.ulid();
-        const token = randomBytes(32).toString('hex');
+        const token = randomBytes(32).toString("hex");
         const current_time = Date.now();
         await this.users.insertOne({
             id,
@@ -324,7 +419,7 @@ class UserManager {
             privateProfile: false,
             allowFollowingView: false,
             is_studio,
-            onWatchlist: false
+            onWatchlist: false,
         });
 
         await this.minioClient.putObject("profile-pictures", id, basePFP);
@@ -333,7 +428,9 @@ class UserManager {
     }
 
     async canCreateAccount() {
-        return (await this.runtimeConfig.findOne({id: "accountCreationEnabled"})).value;
+        return (
+            await this.runtimeConfig.findOne({ id: "accountCreationEnabled" })
+        ).value;
     }
 
     /**
@@ -347,9 +444,12 @@ class UserManager {
 
         if (!result) return false;
 
-        const deletionSuccess = (await this.users.deleteOne({
-            username: username
-        })).deletedCount > 0;
+        const deletionSuccess =
+            (
+                await this.users.deleteOne({
+                    username: username,
+                })
+            ).deletedCount > 0;
 
         if (!deletionSuccess) return false;
 
@@ -358,7 +458,9 @@ class UserManager {
         // search for all projects by the user and delete them
         const user_id = result.id;
 
-        const projects = await this.projects.find({ author: user_id }).toArray();
+        const projects = await this.projects
+            .find({ author: user_id })
+            .toArray();
 
         for (const project of projects) {
             await this.deleteProject(project.id);
@@ -366,12 +468,17 @@ class UserManager {
 
         // delete all references to the user in the followers collection
         await this.followers.deleteMany({ target: user_id });
-        const target_deletes = await this.followers.find({ follower: user_id }).toArray();
+        const target_deletes = await this.followers
+            .find({ follower: user_id })
+            .toArray();
 
         for (const target of target_deletes) {
             await this.followers.deleteOne({ _id: target._id });
             // decrement the follower count of the target
-            await this.users.updateOne({ id: target.target }, { $inc: { followers: -1 } });
+            await this.users.updateOne(
+                { id: target.target },
+                { $inc: { followers: -1 } },
+            );
         }
 
         // remove all reports by the user
@@ -380,7 +487,7 @@ class UserManager {
 
         // remove all oauth methods
         await this.oauthIDs.deleteMany({ id: user_id });
-        
+
         // remove logged IPs
         await this.loggedIPs.deleteMany({ id: user_id });
 
@@ -389,11 +496,11 @@ class UserManager {
 
     /**
      * BE CAREFUL WITH THIS. DO NOT SEND IT IN ITS ENTIRETY. gets the entire user metadata.
-     * @param {string} username username of the user 
+     * @param {string} username username of the user
      * @returns {Promise<object>}
      */
     async getUserData(username) {
-        return await this.users.findOne({username: username});
+        return await this.users.findOne({ username: username });
     }
 
     /**
@@ -408,7 +515,10 @@ class UserManager {
 
         if (!result) return false;
 
-        if ((result.permBanned || result.unbanTime > Date.now()) && !allowBanned) {
+        if (
+            (result.permBanned || result.unbanTime > Date.now()) &&
+            !allowBanned
+        ) {
             return false;
         }
 
@@ -438,35 +548,63 @@ class UserManager {
     async loginWithToken(token, allowBanned) {
         const result = await this.users.findOne({ token });
 
-        if (!result) return { success: false, username: "", id: "", exists: false };
+        if (!result)
+            return { success: false, username: "", id: "", exists: false };
 
-        if ((result.permBanned || result.unbanTime > Date.now()) && !allowBanned) {
-            return { success: false, username: result.username, id: result.id, exists: true };
+        if (
+            (result.permBanned || result.unbanTime > Date.now()) &&
+            !allowBanned
+        ) {
+            return {
+                success: false,
+                username: result.username,
+                id: result.id,
+                exists: true,
+            };
         }
 
         // login invalid if more than the time
-        if (result.lastLogin + (Number(process.env.LoginInvalidationTime) || 259200000) < Date.now()) {
-            return { success: false, username: result.username, id: result.id, exists: true };
+        if (
+            result.lastLogin +
+                (Number(process.env.LoginInvalidationTime) || 259200000) <
+            Date.now()
+        ) {
+            return {
+                success: false,
+                username: result.username,
+                id: result.id,
+                exists: true,
+            };
         }
 
         this.users.updateOne({ token }, { $set: { lastLogin: Date.now() } });
-        return { success: true, username: result.username, id: result.id, exists: true };
+        return {
+            success: true,
+            username: result.username,
+            id: result.id,
+            exists: true,
+        };
     }
 
     async getRealUsername(username) {
-        return (await this.users.findOne({username: username})).real_username;
+        return (await this.users.findOne({ username: username })).real_username;
     }
 
     /**
      * Check if a user exists by username
-     * @param {string} username username of the user 
+     * @param {string} username username of the user
      * @returns {Promise<boolean>} true if the user exists, false if not
      * @async
      */
-    async existsByUsername(username, showBanned=false) {
+    async existsByUsername(username, showBanned = false) {
         let query = { username: username };
         if (!showBanned) {
-            query = { $and: [ query, { permBanned: false, unbanTime: { $lt: Date.now() } } ] };
+            query = {
+                $and: [
+                    query,
+                    { permBanned: false, unbanTime: { $lt: Date.now() } },
+                ],
+            };
         }
         const result = await this.users.findOne(query);
         if (result) return true;
@@ -491,11 +629,11 @@ class UserManager {
      * @returns {Promise<string>} id of the user
      * @async
      */
-    async getIDByUsername(username, throw_err=true) {
+    async getIDByUsername(username, throw_err = true) {
         const result = await this.users.findOne({ username: username });
         if (!result) {
             if (throw_err) {
-                const error = `----------\nCould not get ${username}'s id\n----------`
+                const error = `----------\nCould not get ${username}'s id\n----------`;
                 console.log(error);
                 throw error;
             } else {
@@ -526,11 +664,17 @@ class UserManager {
      * @async
      */
     async changeUsernameByID(id, newUsername, real_username) {
-        await this.users.updateOne({ id: id }, { $set: { username: newUsername, real_username } });
+        await this.users.updateOne(
+            { id: id },
+            { $set: { username: newUsername, real_username } },
+        );
     }
 
     async changeUsername(username, newUsername, real_username) {
-        await this.users.updateOne({ username: username }, { $set: { username: newUsername, real_username } });
+        await this.users.updateOne(
+            { username: username },
+            { $set: { username: newUsername, real_username } },
+        );
     }
 
     /**
@@ -541,7 +685,10 @@ class UserManager {
      */
     async changePassword(username, newPassword) {
         const hash = await bcrypt.hash(newPassword, 10);
-        await this.users.updateOne({ username: username }, { $set: { password: hash, lastLogin: 0 } }); // sets password and invalidates token
+        await this.users.updateOne(
+            { username: username },
+            { $set: { password: hash, lastLogin: 0 } },
+        ); // sets password and invalidates token
     }
 
     /**
@@ -563,9 +710,9 @@ class UserManager {
     async getOAuthMethods(username) {
         const id = await this.getIDByUsername(username);
 
-        const result = (await this.oauthIDs.find({ id: id })
-        .toArray())
-        .map(x => x.method);
+        const result = (await this.oauthIDs.find({ id: id }).toArray()).map(
+            (x) => x.method,
+        );
 
         return result;
     }
@@ -586,12 +733,12 @@ class UserManager {
     async addOAuthMethod(username, method, code) {
         const id = await this.getIDByUsername(username);
 
-        await this.oauthIDs.insertOne({ id: id, method: method, code: code })
+        await this.oauthIDs.insertOne({ id: id, method: method, code: code });
     }
 
     /**
      * Remove an oauth login method from a user
-     * @param {string} username Username of the user 
+     * @param {string} username Username of the user
      * @param {string} method Method to remove
      */
     async removeOAuthMethod(username, method) {
@@ -607,7 +754,10 @@ class UserManager {
      * @returns {Promise<string>} The id of the user
      */
     async getUserIDByOAuthID(method, id) {
-        const result = await this.oauthIDs.findOne({ method: method, code: id });
+        const result = await this.oauthIDs.findOne({
+            method: method,
+            code: id,
+        });
 
         if (!result) return false;
 
@@ -632,7 +782,10 @@ class UserManager {
      * @async
      */
     async setBio(username, newBio) {
-        await this.users.updateOne({ username: username }, { $set: { bio: newBio } });
+        await this.users.updateOne(
+            { username: username },
+            { $set: { bio: newBio } },
+        );
     }
 
     /**
@@ -643,7 +796,10 @@ class UserManager {
      * @async
      */
     async changeFavoriteProject(username, type, id) {
-        await this.users.updateOne({ username: username }, { $set: { favoriteProjectType: type, favoriteProjectID: id } });
+        await this.users.updateOne(
+            { username: username },
+            { $set: { favoriteProjectType: type, favoriteProjectID: id } },
+        );
     }
 
     /**
@@ -668,7 +824,7 @@ class UserManager {
 
         return result.lastLogin;
     }
-    
+
     /**
      * Get the amount of cubes a user has
      * @param {string} username username of the user
@@ -688,7 +844,10 @@ class UserManager {
      * @async
      */
     async setCubes(username, amount) {
-        await this.users.updateOne({ username: username }, { $set: { cubes: amount } });
+        await this.users.updateOne(
+            { username: username },
+            { $set: { cubes: amount } },
+        );
     }
 
     /**
@@ -710,7 +869,10 @@ class UserManager {
      * @async
      */
     async setRank(username, rank) {
-        await this.users.updateOne({ username: username }, { $set: { rank: rank } });
+        await this.users.updateOne(
+            { username: username },
+            { $set: { rank: rank } },
+        );
     }
 
     /**
@@ -732,12 +894,15 @@ class UserManager {
      * @async
      */
     async setLastUpload(username, lastUpload) {
-        await this.users.updateOne({ username: username }, { $set: { lastUpload: lastUpload } });
+        await this.users.updateOne(
+            { username: username },
+            { $set: { lastUpload: lastUpload } },
+        );
     }
 
     /**
      * Get the badges of a user
-     * @param {string} username username of the user 
+     * @param {string} username username of the user
      * @returns {Promise<Array<string>>} array of badges the user has
      * @async
      */
@@ -755,29 +920,35 @@ class UserManager {
      * @returns {Promise<boolean>} if the user is a donator or not
      */
     async isDonator(username) {
-        const result = await this.users.findOne({username: username});
+        const result = await this.users.findOne({ username: username });
 
         return result.badges.indexOf("donator") > -1;
     }
 
     /**
      * Add a badge to a user
-     * @param {string} username username of the user 
+     * @param {string} username username of the user
      * @param {string} badge the badge to add
      * @async
      */
     async addBadge(username, badge) {
-        await this.users.updateOne({ username: username }, { $push: { badges: badge } });
+        await this.users.updateOne(
+            { username: username },
+            { $push: { badges: badge } },
+        );
     }
 
     async setBadges(username, badges) {
-        await this.users.updateOne({ username: username }, { $set: { badges: badges } });
+        await this.users.updateOne(
+            { username: username },
+            { $set: { badges: badges } },
+        );
     }
 
     /**
      * Check if a user has a badge
-     * @param {string} username username of the user 
-     * @param {string} badge badge to check for 
+     * @param {string} username username of the user
+     * @param {string} badge badge to check for
      * @returns {Promise<boolean>} true if the user has the badge, false if not
      */
     async hasBadge(username, badge) {
@@ -788,12 +959,15 @@ class UserManager {
 
     /**
      * Remove a badge from a user
-     * @param {string} username username of the user 
-     * @param {string} badge the badge to remove 
+     * @param {string} username username of the user
+     * @param {string} badge the badge to remove
      * @async
      */
     async removeBadge(username, badge) {
-        await this.users.updateOne({ username: username }, { $pull: { badges: badge } });
+        await this.users.updateOne(
+            { username: username },
+            { $pull: { badges: badge } },
+        );
     }
 
     /**
@@ -809,16 +983,19 @@ class UserManager {
 
     /**
      * Set a user's featured project
-     * @param {string} username Username of the user 
+     * @param {string} username Username of the user
      * @param {number} id ID of the project
      * @async
      */
     async setFeaturedProject(username, id) {
-        await this.users.updateOne({
-            username: username
-        }, {
-            $set: { featuredProject: id }
-        });
+        await this.users.updateOne(
+            {
+                username: username,
+            },
+            {
+                $set: { featuredProject: id },
+            },
+        );
     }
 
     /**
@@ -835,21 +1012,24 @@ class UserManager {
 
     /**
      * Set a user's featured project title
-     * @param {string} username Username of the user 
+     * @param {string} username Username of the user
      * @param {number} title Index of the title in the array of titles
      * @async
      */
     async setFeaturedProjectTitle(username, title) {
-        await this.users.updateOne({
-            username: username
-        }, {
-            $set: { featuredProjectTitle: title }
-        });
+        await this.users.updateOne(
+            {
+                username: username,
+            },
+            {
+                $set: { featuredProjectTitle: title },
+            },
+        );
     }
 
     /**
      * Check if a user is an admin
-     * @param {string} username 
+     * @param {string} username
      * @returns {Promise<boolean>} true if the user is an admin, false if not
      * @async
      */
@@ -861,12 +1041,15 @@ class UserManager {
 
     /**
      * Set a user as an admin
-     * @param {string} username username of the user 
-     * @param {boolean} admin true if setting to admin, false if not 
+     * @param {string} username username of the user
+     * @param {boolean} admin true if setting to admin, false if not
      * @async
      */
     async setAdmin(username, admin) {
-        await this.users.updateOne({ username: username }, { $set: { admin: admin } });
+        await this.users.updateOne(
+            { username: username },
+            { $set: { admin: admin } },
+        );
     }
 
     /**
@@ -888,7 +1071,10 @@ class UserManager {
      * @async
      */
     async setModerator(username, moderator) {
-        await this.users.updateOne({ username: username }, { $set: { moderator: moderator } });
+        await this.users.updateOne(
+            { username: username },
+            { $set: { moderator: moderator } },
+        );
     }
 
     async isModeratorOrAdmin(username) {
@@ -905,10 +1091,11 @@ class UserManager {
      * @async
      */
     async getAllAdmins() {
-        const result = (await this.users.find({ admin: true }).toArray())
-        .map(admin => {
-            return {id: admin.id, username: admin.username};
-        })
+        const result = (await this.users.find({ admin: true }).toArray()).map(
+            (admin) => {
+                return { id: admin.id, username: admin.username };
+            },
+        );
 
         return result;
     }
@@ -919,9 +1106,10 @@ class UserManager {
      * @async
      */
     async getAllModerators() {
-        const result = (await this.users.find({ moderator: true }).toArray())
-        .map(admin => {
-            return {id: admin.id, username: admin.username};
+        const result = (
+            await this.users.find({ moderator: true }).toArray()
+        ).map((admin) => {
+            return { id: admin.id, username: admin.username };
         });
 
         return result;
@@ -945,9 +1133,12 @@ class UserManager {
      * @param {boolean} banned true if banning, false if unbanning
      * @async
      */
-    async setPermBanned(username, banned, reason, remove_follows=false) {
-        await this.users.updateOne({ username: username }, { $set: { permBanned: banned, banReason: reason } });
-        
+    async setPermBanned(username, banned, reason, remove_follows = false) {
+        await this.users.updateOne(
+            { username: username },
+            { $set: { permBanned: banned, banReason: reason } },
+        );
+
         const user_id = await this.getIDByUsername(username);
         await this.privateAllProjects(user_id, banned);
 
@@ -960,12 +1151,17 @@ class UserManager {
         if (remove_follows) {
             // get all references to the user in the followers collection
 
-            const following = await this.followers.find({ follower: user_id }).toArray();
+            const following = await this.followers
+                .find({ follower: user_id })
+                .toArray();
 
             for (const follow of following) {
                 await this.followers.deleteOne({ _id: follow._id });
                 // decrement the following count of the follower
-                await this.users.updateOne({ id: follow.follower }, { $inc: { following: -1 } });
+                await this.users.updateOne(
+                    { id: follow.follower },
+                    { $inc: { following: -1 } },
+                );
             }
 
             await this.followers.deleteMany({ target: user_id });
@@ -978,15 +1174,16 @@ class UserManager {
      * @param {boolean} toggle toggle for the privatization. true if you want them to be hidden, false if otherwise.
      */
     async privateAllProjects(user_id, toggle) {
-        await this.projects.updateMany({
-            author: user_id
-        }, {
-            $set: {
-            
-            public: !toggle
-
-            }
-        });
+        await this.projects.updateMany(
+            {
+                author: user_id,
+            },
+            {
+                $set: {
+                    public: !toggle,
+                },
+            },
+        );
     }
 
     /**
@@ -1009,8 +1206,13 @@ class UserManager {
      * @param {string} email email of the user
      * @async
      */
-    async setEmail(username, email, verify=false) {
-        await this.users.updateOne({ username: username }, { $set: { email: email, emailVerified: verify } });
+    async setEmail(username, email, verify = false) {
+        if (await this.emailInUse(email)) return;
+
+        await this.users.updateOne(
+            { username: username },
+            { $set: { email: email, emailVerified: verify } },
+        );
     }
 
     /**
@@ -1019,15 +1221,18 @@ class UserManager {
      * @async
      */
     async logout(username) {
-        await this.users.updateOne({ username: username }, { $set: { lastLogin: 0 } }); // makes the token invalid
+        await this.users.updateOne(
+            { username: username },
+            { $set: { lastLogin: 0 } },
+        ); // makes the token invalid
     }
 
     /**
      * Report something
-     * @param {number} type Type of report. 0 = user, 1 = project 
-     * @param {string} reportee ID of the person/project being reported 
-     * @param {string} reason Reason for the report 
-     * @param {string} reporter ID of the person reporting 
+     * @param {number} type Type of report. 0 = user, 1 = project
+     * @param {string} reportee ID of the person/project being reported
+     * @param {string} reason Reason for the report
+     * @param {string} reporter ID of the person reporting
      * @async
      */
     async report(type, reportee, reason, reporter) {
@@ -1037,8 +1242,8 @@ class UserManager {
             reason: reason,
             reporter: reporter,
             date: Date.now(),
-            id: ULID.ulid()
-        })
+            id: ULID.ulid(),
+        });
     }
 
     /**
@@ -1054,31 +1259,32 @@ class UserManager {
 
     /**
      * Get reports by type
-     * @param {number} type The type of reports to get 
+     * @param {number} type The type of reports to get
      * @param {number} page The page of reports to get
      * @param {number} pageSize The amount of reports to get
      * @returns {Promise<Array<object>>} Array of reports of the specified type
      * @async
      */
     async getReportsByType(type, page, pageSize) {
-        const result = await this.reports.aggregate([
-            {
-                $match: { type: type }
-            },
-            {
-                $sort: { date: -1 }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: pageSize
-            },
-            {
-                $unset: "_id",
-            }
-        ])
-        .toArray();
+        const result = await this.reports
+            .aggregate([
+                {
+                    $match: { type: type },
+                },
+                {
+                    $sort: { date: -1 },
+                },
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: pageSize,
+                },
+                {
+                    $unset: "_id",
+                },
+            ])
+            .toArray();
 
         return result;
     }
@@ -1092,24 +1298,25 @@ class UserManager {
      * @async
      */
     async getReportsByReportee(reportee, page, pageSize) {
-        const result = await this.reports.aggregate([
-            {
-                $match: { reportee: reportee }
-            },
-            {
-                $sort: { date: -1 }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: pageSize
-            },
-            {
-                $unset: "_id",
-            }
-        ])
-        .toArray();
+        const result = await this.reports
+            .aggregate([
+                {
+                    $match: { reportee: reportee },
+                },
+                {
+                    $sort: { date: -1 },
+                },
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: pageSize,
+                },
+                {
+                    $unset: "_id",
+                },
+            ])
+            .toArray();
 
         return result;
     }
@@ -1120,27 +1327,28 @@ class UserManager {
      * @param {number} page The page of reports to get
      * @param {number} pageSize The amount of reports to get
      * @returns {Promise<Array<object>>} Array of reports by the specified reporter
-     * @async 
+     * @async
      */
     async getReportsByReporter(reporter, page, pageSize) {
-        const result = await this.reports.aggregate([
-            {
-                $match: { reporter: reporter }
-            },
-            {
-                $sort: { date: -1 }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: pageSize
-            },
-            {
-                $unset: "_id",
-            }
-        ])
-        .toArray();
+        const result = await this.reports
+            .aggregate([
+                {
+                    $match: { reporter: reporter },
+                },
+                {
+                    $sort: { date: -1 },
+                },
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: pageSize,
+                },
+                {
+                    $unset: "_id",
+                },
+            ])
+            .toArray();
 
         return result;
     }
@@ -1152,7 +1360,10 @@ class UserManager {
      * @returns {Promise<boolean>} true if the user has already reported the person/project, false if not
      */
     async hasAlreadyReported(reporter, reportee) {
-        const result = await this.reports.findOne({ reporter: reporter, reportee: reportee });
+        const result = await this.reports.findOne({
+            reporter: reporter,
+            reportee: reportee,
+        });
 
         return result ? true : false;
     }
@@ -1165,21 +1376,22 @@ class UserManager {
      * @async
      */
     async getReports(page, pageSize) {
-        const result = await this.reports.aggregate([
-            {
-                $sort: { date: -1 }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: pageSize
-            },
-            {
-                $unset: "_id"
-            }
-        ])
-        .toArray();
+        const result = await this.reports
+            .aggregate([
+                {
+                    $sort: { date: -1 },
+                },
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: pageSize,
+                },
+                {
+                    $unset: "_id",
+                },
+            ])
+            .toArray();
 
         return result;
     }
@@ -1206,15 +1418,25 @@ class UserManager {
      * @param {string} rating Rating of the project.
      * @async
      */
-    async publishProject(projectBuffer, assetBuffers, author, title, imageBuffer, instructions, notes, remix, rating) {
+    async publishProject(
+        projectBuffer,
+        assetBuffers,
+        author,
+        title,
+        imageBuffer,
+        instructions,
+        notes,
+        remix,
+        rating,
+    ) {
         let id;
         // ATODO: replace this with a ulid somehow
         // i love being whimsical ^^
         do {
             id = randomInt(0, 9999999999).toString();
             id = "0".repeat(10 - id.length) + id;
-        } while (id !== 0 && await this.projects.findOne({id: id}));
-        
+        } while (id !== 0 && (await this.projects.findOne({ id: id })));
+
         await this.projects.insertOne({
             id: id,
             author: author,
@@ -1239,124 +1461,153 @@ class UserManager {
         await this.minioClient.putObject("projects", id, projectBuffer);
         await this.minioClient.putObject("project-thumbnails", id, imageBuffer);
         for (const asset of assetBuffers) {
-            await this.minioClient.putObject("project-assets", `${id}_${asset.id}`, asset.buffer);
+            await this.minioClient.putObject(
+                "project-assets",
+                `${id}_${asset.id}`,
+                asset.buffer,
+            );
         }
 
-        await this.addToFeed(author, remix !== "0" ? "remix" : "upload", remix !== "0" ? remix : id);
+        await this.addToFeed(
+            author,
+            remix !== "0" ? "remix" : "upload",
+            remix !== "0" ? remix : id,
+        );
 
         return id;
     }
 
     async isFeatured(projectId) {
-        const result = await this.projects.findOne({id: projectId, featured: true});
+        const result = await this.projects.findOne({
+            id: projectId,
+            featured: true,
+        });
 
         return !!result;
     }
 
     /**
      * Check if a project can be featured
-     * @param {string} projectID ID of the project 
+     * @param {string} projectID ID of the project
      * @returns {Promise<boolean>}
      */
     async canBeFeatured(projectID) {
-        const result = await this.projects.findOne({id: projectID});
+        const result = await this.projects.findOne({ id: projectID });
 
         return !result.noFeature;
     }
 
     /**
      * Disable/enable if a project can be featured
-     * @param {string} projectID ID of the project 
+     * @param {string} projectID ID of the project
      * @param {boolean} canBeFeatured true if can be, false if cannot be
      * @returns {Promise<>}
      */
     async setCanBeFeatured(projectID, canBeFeatured) {
-        await this.projects.updateOne({ id: projectID }, { $set: { noFeature: !canBeFeatured }});
+        await this.projects.updateOne(
+            { id: projectID },
+            { $set: { noFeature: !canBeFeatured } },
+        );
     }
 
     /**
      * Get remixes of a project
-     * @param {number} id 
+     * @param {number} id
      * @returns {Promise<Array<Object>>} Array of remixes of the specified project
      * @async
      */
     async getRemixes(id, page, pageSize) {
-        const aggResult = await this.projects.aggregate([
-            {
-                $match: { remix: id, public: true, softRejected: false }
-            },
-            {
-                $sort: { lastUpdate: -1 }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: pageSize
-            },
-            {
-                // collect author data
-                $lookup: {
-                    from: "users",
-                    localField: "author",
-                    foreignField: "id",
-                    as: "authorInfo"
-                }
-            },
-            {
-                $addFields: {
-                    "author": {
-                        id: "$author",
-                        username: { $arrayElemAt: ["$authorInfo.username", 0] }
-                    }
-                }
-            },
-            {
-                $unset: [
-                    "_id",
-                    "authorInfo"
-                ]
-            }
-        ])
-        .toArray();
+        const aggResult = await this.projects
+            .aggregate([
+                {
+                    $match: { remix: id, public: true, softRejected: false },
+                },
+                {
+                    $sort: { lastUpdate: -1 },
+                },
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: pageSize,
+                },
+                {
+                    // collect author data
+                    $lookup: {
+                        from: "users",
+                        localField: "author",
+                        foreignField: "id",
+                        as: "authorInfo",
+                    },
+                },
+                {
+                    $addFields: {
+                        author: {
+                            id: "$author",
+                            username: {
+                                $arrayElemAt: ["$authorInfo.username", 0],
+                            },
+                        },
+                    },
+                },
+                {
+                    $unset: ["_id", "authorInfo"],
+                },
+            ])
+            .toArray();
 
         return aggResult;
     }
 
     /**
      * Update a project
-     * @param {number} id ID of the project 
+     * @param {number} id ID of the project
      * @param {Buffer|null} projectBuffer The file buffer for the project. This is a zip.
      * @param {Array<Object>|null} assetBuffers asset buffers
      * @param {string} title Title of the project.
      * @param {Buffer|null} imageBuffer The file buffer for the thumbnail.
      * @param {string} instructions The instructions for the project.
-     * @param {string} notes The notes for the project 
-     * @param {string} rating Rating of the project. 
+     * @param {string} notes The notes for the project
+     * @param {string} rating Rating of the project.
      * @async
      */
-    async updateProject(id, projectBuffer, assetBuffers, title, imageBuffer, instructions, notes, rating) {
+    async updateProject(
+        id,
+        projectBuffer,
+        assetBuffers,
+        title,
+        imageBuffer,
+        instructions,
+        notes,
+        rating,
+    ) {
         if (
-            (projectBuffer === null && assetBuffers !== null)
-            ||
+            (projectBuffer === null && assetBuffers !== null) ||
             (projectBuffer !== null && assetBuffers === null)
         ) {
             return false;
         }
 
-        await this.projects.updateOne({id: id},
-            {$set: {
-                title: title,
-                instructions: instructions,
-                notes: notes,
-                rating: rating,
-                lastUpdate: Date.now()
-            }}
+        await this.projects.updateOne(
+            { id: id },
+            {
+                $set: {
+                    title: title,
+                    instructions: instructions,
+                    notes: notes,
+                    rating: rating,
+                    lastUpdate: Date.now(),
+                },
+            },
         );
 
         // minio bucket stuff
         if (imageBuffer !== null) {
-            await this.minioClient.putObject("project-thumbnails", id, imageBuffer);
+            await this.minioClient.putObject(
+                "project-thumbnails",
+                id,
+                imageBuffer,
+            );
         }
 
         if (projectBuffer !== null) {
@@ -1367,7 +1618,11 @@ class UserManager {
             // potentially we could just see which ones are new/not in use, since asset ids are meant to be the hash of the file?
 
             for (const asset of assetBuffers) {
-                await this.minioClient.putObject("project-assets", `${id}_${asset.id}`, asset.buffer);
+                await this.minioClient.putObject(
+                    "project-assets",
+                    `${id}_${asset.id}`,
+                    asset.buffer,
+                );
             }
         }
 
@@ -1384,32 +1639,41 @@ class UserManager {
      * @returns {Promise<Array<Object>>} Projects in the specified amount
      * @async
      */
-    async getProjects(show_nonranked, page, pageSize, maxLookup, user_id, reverse = false) {
+    async getProjects(
+        show_nonranked,
+        page,
+        pageSize,
+        maxLookup,
+        user_id,
+        reverse = false,
+    ) {
         let pipeline = [
             {
-                $match: { softRejected: false, hardReject: false, public: true }
+                $match: {
+                    softRejected: false,
+                    hardReject: false,
+                    public: true,
+                },
             },
             {
-                $sort: { lastUpdate: reverse ? 1 : -1 }
+                $sort: { lastUpdate: reverse ? 1 : -1 },
             },
             {
-                $skip: page * pageSize
+                $skip: page * pageSize,
             },
             {
                 $limit: maxLookup,
-            }
+            },
         ];
 
-        pipeline.push(
-            {
-                $lookup: {
-                    from: "users",
-                    localField: "author",
-                    foreignField: "id",
-                    as: "authorInfo"
-                },
+        pipeline.push({
+            $lookup: {
+                from: "users",
+                localField: "author",
+                foreignField: "id",
+                as: "authorInfo",
             },
-        );
+        });
 
         if (!show_nonranked) {
             pipeline.push({ $match: { "authorInfo.rank": { $gt: 0 } } });
@@ -1427,64 +1691,58 @@ class UserManager {
                 },
                 {
                     $match: {
-                        "block_info": {
+                        block_info: {
                             $not: {
-                                $elemMatch: { blocker: user_id, active: true},
-                            }
-                        }
-                    }
+                                $elemMatch: { blocker: user_id, active: true },
+                            },
+                        },
+                    },
                 },
                 {
-                    $unset: "block_info"
+                    $unset: "block_info",
                 },
             );
         }
 
         pipeline.push(
             {
-                $skip: page * pageSize
+                $skip: page * pageSize,
             },
             {
-                $limit: pageSize
+                $limit: pageSize,
             },
         );
 
         if (show_nonranked) {
-            pipeline.push(
-                {
-                    // collect author data
-                    $lookup: {
-                        from: "users",
-                        localField: "author",
-                        foreignField: "id",
-                        as: "authorInfo"
-                    }
-                }
-            );
+            pipeline.push({
+                // collect author data
+                $lookup: {
+                    from: "users",
+                    localField: "author",
+                    foreignField: "id",
+                    as: "authorInfo",
+                },
+            });
         }
 
         pipeline.push(
             {
                 $addFields: {
-                    "author": {
+                    author: {
                         id: "$author",
-                        username: { $arrayElemAt: ["$authorInfo.username", 0] }
+                        username: { $arrayElemAt: ["$authorInfo.username", 0] },
                     },
-                    "fromDonator": {
-                        $in: ["donator", "$authorInfo.badges"]
-                    }
-                }
+                    fromDonator: {
+                        $in: ["donator", "$authorInfo.badges"],
+                    },
+                },
             },
             {
-                $unset: [
-                    "_id",
-                    "authorInfo"
-                ]
-            }
+                $unset: ["_id", "authorInfo"],
+            },
         );
 
-        const aggResult = await this.projects.aggregate(pipeline)
-        .toArray()
+        const aggResult = await this.projects.aggregate(pipeline).toArray();
 
         /*
         const final = []
@@ -1503,17 +1761,23 @@ class UserManager {
     }
 
     async getRandomProjects(size) {
-        const result = await this.projects.aggregate([
-            {
-                $match: { softRejected: false, hardReject: false, public: true }
-            },
-            {
-                $sample: { size }
-            },
-            {
-                $unset: "_id"
-            }
-        ]).toArray();
+        const result = await this.projects
+            .aggregate([
+                {
+                    $match: {
+                        softRejected: false,
+                        hardReject: false,
+                        public: true,
+                    },
+                },
+                {
+                    $sample: { size },
+                },
+                {
+                    $unset: "_id",
+                },
+            ])
+            .toArray();
 
         return result;
     }
@@ -1524,28 +1788,35 @@ class UserManager {
      * @returns {Promise<Array<Object>>} Array of projects by the specified author
      * @async
      */
-    async getProjectsByAuthor(author, page, pageSize, getPrivate=false, getSoftRejected=false) {
-        const match = { author: author, hardReject: false }
+    async getProjectsByAuthor(
+        author,
+        page,
+        pageSize,
+        getPrivate = false,
+        getSoftRejected = false,
+    ) {
+        const match = { author: author, hardReject: false };
         if (!getPrivate) match.public = true;
         if (!getSoftRejected) match.softRejected = false;
-        const _result = await this.projects.aggregate([
-            {
-                $match: match
-            },
-            {
-                $sort: { lastUpdate: -1 }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: pageSize
-            },
-            {
-                $unset: "_id"
-            }
-        ])
-        .toArray();
+        const _result = await this.projects
+            .aggregate([
+                {
+                    $match: match,
+                },
+                {
+                    $sort: { lastUpdate: -1 },
+                },
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: pageSize,
+                },
+                {
+                    $unset: "_id",
+                },
+            ])
+            .toArray();
         // you dont need to give it the user's username as... well... you prob already know it....
 
         return _result;
@@ -1553,18 +1824,25 @@ class UserManager {
 
     objectExists(bucketName, objectName) {
         return new Promise((resolve, reject) => {
-            this.minioClient.statObject(bucketName, objectName, function (err, stat) {
-                if (err) {
-                    if (err.code === "NotFound") {
-                        resolve(false);
+            this.minioClient.statObject(
+                bucketName,
+                objectName,
+                function (err, stat) {
+                    if (err) {
+                        if (err.code === "NotFound") {
+                            resolve(false);
+                        } else {
+                            console.error(
+                                "Error checking if object exists: ",
+                                err,
+                            );
+                            reject(err);
+                        }
                     } else {
-                        console.error("Error checking if object exists: ", err);
-                        reject(err);
+                        resolve(true);
                     }
-                } else {
-                    resolve(true);
-                }
-            })
+                },
+            );
         });
     }
 
@@ -1581,19 +1859,26 @@ class UserManager {
             throw new Error("Tried to get project that doesn't exist: " + objectName);
         }
         */
-        const stream = await this.minioClient.getObject(bucketName, objectName).catch(err => {
-            console.error(`ERROR READING OBJECT "${objectName} from bucket ${bucketName}: ` + err);
-        });
+        const stream = await this.minioClient
+            .getObject(bucketName, objectName)
+            .catch((err) => {
+                console.error(
+                    `ERROR READING OBJECT "${objectName} from bucket ${bucketName}: ` +
+                        err,
+                );
+            });
 
-        if (!stream)
-            return;
+        if (!stream) return;
 
         const chunks = [];
 
         return new Promise((resolve, reject) => {
             stream.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
             stream.on("end", () => resolve(Buffer.concat(chunks)));
-            stream.on("error", (err) => {console.log("ERROR" + err);reject(err)});
+            stream.on("error", (err) => {
+                console.log("ERROR" + err);
+                reject(err);
+            });
         });
     }
 
@@ -1611,12 +1896,12 @@ class UserManager {
 
     /**
      * Get a project image
-     * @param {number} id ID of the project image wanted. 
+     * @param {number} id ID of the project image wanted.
      * @returns {Promise<Buffer>} The project image file.
      */
     async getProjectImage(id) {
         // check if the file exists
-        if (!await this.minioClient.bucketExists("project-thumbnails")) {
+        if (!(await this.minioClient.bucketExists("project-thumbnails"))) {
             return false;
         }
 
@@ -1636,7 +1921,7 @@ class UserManager {
 
     /**
      * Delete objects from a bucket with a specified prefix
-     * @param {string} bucketName Name of the bucket 
+     * @param {string} bucketName Name of the bucket
      * @param {*} prefix Prefix to search
      */
     async deleteMultipleObjects(bucketName, prefix) {
@@ -1649,7 +1934,7 @@ class UserManager {
         stream.on("end", () => {
             const names = chunks.map((chunk) => {
                 return chunk.split("_")[1];
-            })
+            });
             this.minioClient.removeObjects(bucketName, names, (err) => {
                 if (err) {
                     console.log("Error removing objects:", err);
@@ -1680,12 +1965,14 @@ class UserManager {
         const result = [];
 
         for (const item of items) {
-            const file = await this.readObjectFromBucket("project-assets", item);
+            const file = await this.readObjectFromBucket(
+                "project-assets",
+                item,
+            );
 
-            if (!file)
-                return false;
-            
-            result.push({id: item.split("_")[1], buffer: file});
+            if (!file) return false;
+
+            result.push({ id: item.split("_")[1], buffer: file });
         }
 
         return result;
@@ -1700,14 +1987,14 @@ class UserManager {
     async getProjectMetadata(id) {
         const p_id = String(id);
 
-        const tempresult = await this.projects.findOne({id: p_id});
+        const tempresult = await this.projects.findOne({ id: p_id });
 
         if (!tempresult) return false;
 
         tempresult.author = {
             id: tempresult.author,
-            username: await this.getUsernameByID(tempresult.author)
-        }
+            username: await this.getUsernameByID(tempresult.author),
+        };
 
         // add the views, loves, and votes
         const result = {
@@ -1725,13 +2012,15 @@ class UserManager {
 
     /**
      * Check if a user has seen a project
-     * @param {number} id ID of the project. 
+     * @param {number} id ID of the project.
      * @param {string} ip IP we are checking
-     * @returns {Promise<boolean>} True if they have seen the project, false if not. 
+     * @returns {Promise<boolean>} True if they have seen the project, false if not.
      * @async
      */
     async hasSeenProject(id, ip) {
-        const result = this.views.find((view) => view.id === id && view.ip === ip);
+        const result = this.views.find(
+            (view) => view.id === id && view.ip === ip,
+        );
 
         return result ? true : false;
     }
@@ -1743,15 +2032,16 @@ class UserManager {
      * @async
      */
     async projectView(id, ip) {
-        if (this.views.length >= this.maxviews ||
+        if (
+            this.views.length >= this.maxviews ||
             Date.now() - this.prevReset >= this.viewresetrate
         ) {
             this.views = [];
             this.prevReset = Date.now();
         }
 
-        this.views.push({id: id, ip: ip});
-        await this.projects.updateOne({id: id}, {$inc: {views: 1}});
+        this.views.push({ id: id, ip: ip });
+        await this.projects.updateOne({ id: id }, { $inc: { views: 1 } });
     }
 
     /**
@@ -1776,10 +2066,10 @@ class UserManager {
         const result = await this.projectStats.findOne({
             projectId: id,
             userId: userId,
-            type: "love"
+            type: "love",
         });
 
-        return result ? true : false
+        return result ? true : false;
     }
 
     /**
@@ -1794,14 +2084,14 @@ class UserManager {
             await this.projectStats.insertOne({
                 projectId: id,
                 userId: userId,
-                type: "love"
+                type: "love",
             });
             return;
         }
         await this.projectStats.deleteOne({
             projectId: id,
             userId: userId,
-            type: "love"
+            type: "love",
         });
     }
 
@@ -1811,7 +2101,9 @@ class UserManager {
      * @returns {Promise<number>} Amount of loves the project has
      */
     async getProjectLoves(id) {
-        const result = await this.projectStats.find({projectId: id, type: "love"}).toArray();
+        const result = await this.projectStats
+            .find({ projectId: id, type: "love" })
+            .toArray();
 
         return result.length;
     }
@@ -1824,21 +2116,22 @@ class UserManager {
      * @returns {Promise<Array<string>>} Array of user ids
      */
     async getWhoLoved(projectID, page, pageSize) {
-        const result = await this.projectStats.aggregate([
-            {
-                $match: { projectId: projectID, type: "love" }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: pageSize
-            },
-            {
-                $unset: "_id"
-            }
-        ])
-        .toArray();
+        const result = await this.projectStats
+            .aggregate([
+                {
+                    $match: { projectId: projectID, type: "love" },
+                },
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: pageSize,
+                },
+                {
+                    $unset: "_id",
+                },
+            ])
+            .toArray();
 
         return result;
     }
@@ -1851,21 +2144,22 @@ class UserManager {
      * @returns {Promise<Array<string>>} Array of user ids
      */
     async getWhoVoted(projectID, page, pageSize) {
-        const result = await this.projectStats.aggregate([
-            {
-                $match: { projectId: projectID, type: "vote" }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: pageSize
-            },
-            {
-                $unset: "_id"
-            }
-        ])
-        .toArray();
+        const result = await this.projectStats
+            .aggregate([
+                {
+                    $match: { projectId: projectID, type: "vote" },
+                },
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: pageSize,
+                },
+                {
+                    $unset: "_id",
+                },
+            ])
+            .toArray();
 
         return result;
     }
@@ -1881,7 +2175,7 @@ class UserManager {
         const result = await this.projectStats.findOne({
             projectId: id,
             userId: userId,
-            type: "vote"
+            type: "vote",
         });
 
         return result ? true : false;
@@ -1899,14 +2193,14 @@ class UserManager {
             await this.projectStats.insertOne({
                 projectId: id,
                 userId: userId,
-                type: "vote"
+                type: "vote",
             });
             return;
         }
         await this.projectStats.deleteOne({
             projectId: id,
             userId: userId,
-            type: "vote"
+            type: "vote",
         });
     }
 
@@ -1917,7 +2211,9 @@ class UserManager {
      * @async
      */
     async getProjectVotes(id) {
-        const result = await this.projectStats.find({projectId: id, type: "vote"}).toArray();
+        const result = await this.projectStats
+            .find({ projectId: id, type: "vote" })
+            .toArray();
 
         return result.length;
     }
@@ -1930,54 +2226,59 @@ class UserManager {
      * @async
      */
     async getFeaturedProjects(page, pageSize) {
-        const aggResult = await this.projects.aggregate([
-            {
-                $match: { featured: true, public: true, softRejected: false, hardReject: false }
-            },
-            {
-                $addFields: {
-                    featureSortDate: { $ifNull: ["$featureDate","$date"] }
-                }
-            },
-            {
-                $sort: {
-                    featureSortDate: -1
-                }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: pageSize
-            },
-            {
-                // collect author data
-                $lookup: {
-                    from: "users",
-                    localField: "author",
-                    foreignField: "id",
-                    as: "authorInfo"
-                }
-            },
-            {
-                $addFields: {
-                    "author": {
-                        id: "$author",
-                        username: { $arrayElemAt: ["$authorInfo.username", 0] }
+        const aggResult = await this.projects
+            .aggregate([
+                {
+                    $match: {
+                        featured: true,
+                        public: true,
+                        softRejected: false,
+                        hardReject: false,
                     },
-                    "fromDonator": {
-                        $in: ["donator", "$authorInfo.badges"]
-                    }
-                }
-            },
-            {
-                $unset: [
-                    "_id",
-                    "authorInfo"
-                ]
-            }
-        ])
-        .toArray();
+                },
+                {
+                    $addFields: {
+                        featureSortDate: { $ifNull: ["$featureDate", "$date"] },
+                    },
+                },
+                {
+                    $sort: {
+                        featureSortDate: -1,
+                    },
+                },
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: pageSize,
+                },
+                {
+                    // collect author data
+                    $lookup: {
+                        from: "users",
+                        localField: "author",
+                        foreignField: "id",
+                        as: "authorInfo",
+                    },
+                },
+                {
+                    $addFields: {
+                        author: {
+                            id: "$author",
+                            username: {
+                                $arrayElemAt: ["$authorInfo.username", 0],
+                            },
+                        },
+                        fromDonator: {
+                            $in: ["donator", "$authorInfo.badges"],
+                        },
+                    },
+                },
+                {
+                    $unset: ["_id", "authorInfo"],
+                },
+            ])
+            .toArray();
 
         return aggResult;
     }
@@ -1990,7 +2291,16 @@ class UserManager {
      * @async
      */
     async featureProject(id, feature, manuallyFeatured) {
-        await this.projects.updateOne({id: id}, {$set: {featured: feature, featureDate: Date.now(),manuallyFeatured}});
+        await this.projects.updateOne(
+            { id: id },
+            {
+                $set: {
+                    featured: feature,
+                    featureDate: Date.now(),
+                    manuallyFeatured,
+                },
+            },
+        );
     }
 
     /**
@@ -1999,7 +2309,7 @@ class UserManager {
      * @param {Object} data Data to set
      */
     async setProjectMetadata(id, data) {
-        await this.projects.updateOne({id: id}, {$set: data});
+        await this.projects.updateOne({ id: id }, { $set: data });
     }
 
     /**
@@ -2020,7 +2330,7 @@ class UserManager {
      * @async
      */
     async getProjectCountOfUser(user_id) {
-        const result = await this.projects.countDocuments({author:user_id});
+        const result = await this.projects.countDocuments({ author: user_id });
 
         return result;
     }
@@ -2031,10 +2341,10 @@ class UserManager {
      * @async
      */
     async deleteProject(id) {
-        await this.projects.deleteOne({id: id});
+        await this.projects.deleteOne({ id: id });
 
         // remove the loves and votes
-        await this.projectStats.deleteMany({projectId: id});
+        await this.projectStats.deleteMany({ projectId: id });
 
         // remove the project file
         await this.minioClient.removeObject("projects", id);
@@ -2047,38 +2357,60 @@ class UserManager {
 
         // just mark as hard rejected, mongodb will do the rest
         // have to separate so the index doesnt delete prematurely
-        await this.projects.updateOne({id: id}, { $set: { hardRejectTime: new Date() } });
-        await this.projects.updateOne({id: id}, { $set: { hardReject: true           } });
+        await this.projects.updateOne(
+            { id: id },
+            { $set: { hardRejectTime: new Date() } },
+        );
+        await this.projects.updateOne(
+            { id: id },
+            { $set: { hardReject: true } },
+        );
     }
 
     async isHardRejected(id) {
-        const result = await this.projects.findOne({id: id});
+        const result = await this.projects.findOne({ id: id });
 
         return result.hardReject;
     }
 
     /**
      * Follow/unfollow a user
-     * @param {string} follower ID of the person following 
+     * @param {string} follower ID of the person following
      * @param {string} followee ID of the person being followed
      * @param {boolean} follow True if following, false if unfollowing
      * @async
      */
     async followUser(follower, followee, follow) {
-        const existing = await this.followers.findOne({ follower, target: followee })
+        const existing = await this.followers.findOne({
+            follower,
+            target: followee,
+        });
 
         if (existing) {
             if (existing.active === follow) {
-                return
+                return;
             }
 
-            await this.followers.updateOne({ follower, target: followee }, { $set: { active: follow } });
+            await this.followers.updateOne(
+                { follower, target: followee },
+                { $set: { active: follow } },
+            );
         } else {
-            await this.followers.insertOne({ follower, target: followee, active: follow})
+            await this.followers.insertOne({
+                follower,
+                target: followee,
+                active: follow,
+            });
         }
 
-        await this.users.updateOne({ id: follower }, { $inc: { following: follow ? 1 : -1 } });
-        await this.users.updateOne({ id: followee }, { $inc: { followers: follow ? 1 : -1 } });
+        await this.users.updateOne(
+            { id: follower },
+            { $inc: { following: follow ? 1 : -1 } },
+        );
+        await this.users.updateOne(
+            { id: followee },
+            { $inc: { followers: follow ? 1 : -1 } },
+        );
     }
 
     /**
@@ -2089,7 +2421,11 @@ class UserManager {
      * @async
      */
     async isFollowing(follower, followee) {
-        const result = await this.followers.findOne({ follower, target: followee, active: true });
+        const result = await this.followers.findOne({
+            follower,
+            target: followee,
+            active: true,
+        });
 
         return result ? true : false;
     }
@@ -2104,47 +2440,51 @@ class UserManager {
      */
     async getFollowers(username, page, pageSize) {
         const id = await this.getIDByUsername(username);
-        const result = await this.followers.aggregate([
-            {
-                $match: { target: id, active: true }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: pageSize
-            },
-            {
-                // collect author data
-                $lookup: {
-                    from: "users",
-                    localField: "follower",
-                    foreignField: "id",
-                    as: "followerInfo"
-                }
-            },
-            {
-                $addFields: {
-                    "follower": {
-                        id: "$follower",
-                        username: { $arrayElemAt: ["$followerInfo.username", 0] },
-                        banned: { $arrayElemAt: ["$followerInfo.permBanned", 0] }
-                    }
-                }
-            },
-            {
-                $match: {
-                    "follower.banned": false
-                }
-            },
-            {
-                // only leave the follower field
-                $replaceRoot: { newRoot: "$follower" }
-            }
-            // get the usernames of the followers
-            
-        ])
-        .toArray();
+        const result = await this.followers
+            .aggregate([
+                {
+                    $match: { target: id, active: true },
+                },
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: pageSize,
+                },
+                {
+                    // collect author data
+                    $lookup: {
+                        from: "users",
+                        localField: "follower",
+                        foreignField: "id",
+                        as: "followerInfo",
+                    },
+                },
+                {
+                    $addFields: {
+                        follower: {
+                            id: "$follower",
+                            username: {
+                                $arrayElemAt: ["$followerInfo.username", 0],
+                            },
+                            banned: {
+                                $arrayElemAt: ["$followerInfo.permBanned", 0],
+                            },
+                        },
+                    },
+                },
+                {
+                    $match: {
+                        "follower.banned": false,
+                    },
+                },
+                {
+                    // only leave the follower field
+                    $replaceRoot: { newRoot: "$follower" },
+                },
+                // get the usernames of the followers
+            ])
+            .toArray();
 
         return result;
     }
@@ -2157,48 +2497,53 @@ class UserManager {
      */
     async getFollowing(username, page, pageSize) {
         const id = await this.getIDByUsername(username);
-        const result = await this.followers.aggregate([
-            {
-                $match: { follower: id, active: true }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: pageSize
-            },
-            {
-                // collect author data
-                $lookup: {
-                    from: "users",
-                    localField: "target",
-                    foreignField: "id",
-                    as: "targetInfo"
-                }
-            },
-            {
-                $addFields: {
-                    "target": {
-                        id: "$target",
-                        username: { $arrayElemAt: ["$targetInfo.username", 0] },
-                        banned: { $arrayElemAt: ["$targetInfo.permBanned", 0] }
-                    }
-                }
-            },
-            {
-                $match: {
-                    "target.banned": false
-                }
-            },
-            {
-                // only leave the follower field
-                $replaceRoot: { newRoot: "$target" }
-            },
-            {
-                $unset: "banned"
-            }
-        ])
-        .toArray();
+        const result = await this.followers
+            .aggregate([
+                {
+                    $match: { follower: id, active: true },
+                },
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: pageSize,
+                },
+                {
+                    // collect author data
+                    $lookup: {
+                        from: "users",
+                        localField: "target",
+                        foreignField: "id",
+                        as: "targetInfo",
+                    },
+                },
+                {
+                    $addFields: {
+                        target: {
+                            id: "$target",
+                            username: {
+                                $arrayElemAt: ["$targetInfo.username", 0],
+                            },
+                            banned: {
+                                $arrayElemAt: ["$targetInfo.permBanned", 0],
+                            },
+                        },
+                    },
+                },
+                {
+                    $match: {
+                        "target.banned": false,
+                    },
+                },
+                {
+                    // only leave the follower field
+                    $replaceRoot: { newRoot: "$target" },
+                },
+                {
+                    $unset: "banned",
+                },
+            ])
+            .toArray();
 
         return result;
     }
@@ -2210,9 +2555,12 @@ class UserManager {
      * @returns {Promise<boolean>} True if the person has followed/is following the other person, false if not
      */
     async hasFollowed(follower, followee) {
-        const result = await this.followers.findOne({ follower, target: followee });
+        const result = await this.followers.findOne({
+            follower,
+            target: followee,
+        });
 
-        return result ? true : false
+        return result ? true : false;
     }
 
     /**
@@ -2221,7 +2569,7 @@ class UserManager {
      * @returns {Promise<number>} Amount of people following the user
      */
     async getFollowerCount(username) {
-        const result = await this.users.findOne({username: username});
+        const result = await this.users.findOne({ username: username });
 
         return result.followers;
     }
@@ -2234,7 +2582,7 @@ class UserManager {
      * @returns {Promise<string>} ID of the message
      * @async
      */
-    async sendMessage(receiver, message, disputable, projectID=0) {
+    async sendMessage(receiver, message, disputable, projectID = 0) {
         const id = ULID.ulid();
 
         await this.messages.insertOne({
@@ -2244,7 +2592,7 @@ class UserManager {
             date: Date.now(),
             read: false,
             id: id,
-            projectID: projectID
+            projectID: projectID,
         });
 
         return id;
@@ -2259,35 +2607,38 @@ class UserManager {
      * @async
      */
     async getMessages(receiver, page, pageSize) {
-        const result = await this.messages.aggregate([
-            {
-                $match: { receiver: receiver }
-            },
-            {
-                $sort: { date: -1 }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: pageSize
-            },
-            {
-                $unset: "_id"
-            }
-        ])
-        .toArray();
+        const result = await this.messages
+            .aggregate([
+                {
+                    $match: { receiver: receiver },
+                },
+                {
+                    $sort: { date: -1 },
+                },
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: pageSize,
+                },
+                {
+                    $unset: "_id",
+                },
+            ])
+            .toArray();
 
         return result;
     }
 
     /**
      * Get the amount of messages sent to a person
-     * @param {string} receiver ID of the person who received the messages 
+     * @param {string} receiver ID of the person who received the messages
      * @returns {Promise<number>} Amount of messages sent to the person
      */
     async getMessageCount(receiver) {
-        const result = await this.messages.countDocuments({receiver: receiver});
+        const result = await this.messages.countDocuments({
+            receiver: receiver,
+        });
 
         return result;
     }
@@ -2310,30 +2661,34 @@ class UserManager {
      * @async
      */
     async getUnreadMessages(receiver, page, pageSize) {
-        const result = await this.messages.aggregate([
-            {
-                $match: { receiver: receiver, read: false }
-            },
-            {
-                $sort: { date: -1 }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: pageSize
-            },
-            {
-                $unset: "_id"
-            }
-        ])
-        .toArray();
+        const result = await this.messages
+            .aggregate([
+                {
+                    $match: { receiver: receiver, read: false },
+                },
+                {
+                    $sort: { date: -1 },
+                },
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: pageSize,
+                },
+                {
+                    $unset: "_id",
+                },
+            ])
+            .toArray();
 
         return result;
     }
 
     async getUnreadMessageCount(receiver) {
-        const result = await this.messages.countDocuments({receiver: receiver, read: false});
+        const result = await this.messages.countDocuments({
+            receiver: receiver,
+            read: false,
+        });
 
         return result;
     }
@@ -2345,9 +2700,9 @@ class UserManager {
      * @async
      */
     async modifyMessage(id, modifierFunction) {
-        const result = await this.messages.findOne({id: id});
+        const result = await this.messages.findOne({ id: id });
 
-        await this.messages.updateOne({id: id}, modifierFunction(result));
+        await this.messages.updateOne({ id: id }, modifierFunction(result));
     }
 
     /**
@@ -2356,11 +2711,11 @@ class UserManager {
      * @param {boolean} read Toggle between read and not read
      */
     async markMessageAsRead(id, read) {
-        await this.messages.updateOne({id: id}, {$set: {read: read}});
+        await this.messages.updateOne({ id: id }, { $set: { read: read } });
     }
 
     async messageExists(id) {
-        const result = await this.messages.findOne({id: id});
+        const result = await this.messages.findOne({ id: id });
 
         return result ? true : false;
     }
@@ -2370,7 +2725,10 @@ class UserManager {
      * @param {string} receiver ID of the person receiving the messages
      */
     async markAllMessagesAsRead(receiver) {
-        await this.messages.updateMany({receiver: receiver}, {$set: {read: true}});
+        await this.messages.updateMany(
+            { receiver: receiver },
+            { $set: { read: true } },
+        );
     }
 
     /**
@@ -2379,7 +2737,7 @@ class UserManager {
      * @async
      */
     async deleteMessage(id) {
-        await this.messages.deleteOne({id: id});
+        await this.messages.deleteOne({ id: id });
     }
 
     /**
@@ -2388,7 +2746,7 @@ class UserManager {
      * @returns {Promise<boolean>} True if the message is disputable, false if not
      */
     async isMessageDisputable(id) {
-        const result = await this.messages.findOne({id: id});
+        const result = await this.messages.findOne({ id: id });
 
         return result.disputable;
     }
@@ -2399,7 +2757,10 @@ class UserManager {
      * @param {string} dispute The dispute
      */
     async dispute(id, dispute) {
-        await this.messages.updateOne({id: id}, {$set: {dispute: dispute, disputable: false}});
+        await this.messages.updateOne(
+            { id: id },
+            { $set: { dispute: dispute, disputable: false } },
+        );
 
         // to respond to a dispute you just send another message
     }
@@ -2411,33 +2772,36 @@ class UserManager {
      * @async
      */
     async projectExists(id, nonPublic) {
-        const result = nonPublic ? 
-            await this.projects.findOne({id: String(id)}) :
-            await this.projects.findOne({id: String(id), public: true});
+        const result = nonPublic
+            ? await this.projects.findOne({ id: String(id) })
+            : await this.projects.findOne({ id: String(id), public: true });
 
         return result ? true : false;
     }
 
     /**
      * Check for illegal wording on text
-     * @param {string} text The text to check for illegal wording 
+     * @param {string} text The text to check for illegal wording
      * @returns {Promise<String>} Empty if there is nothing illegal, not empty if it was triggered (returns the trigger)
      * @async
      */
     async checkForIllegalWording(text) {
-        let illegalWords = (await this.illegalList.findOne
-            ({ id: "illegalWords" })).items;
-        let illegalWebsites = (await this.illegalList.findOne
-            ({ id: "illegalWebsites" })).items;
-        let spacedOutWordsOnly = (await this.illegalList.findOne
-            ({ id: "spacedOutWordsOnly" })).items;
+        let illegalWords = (
+            await this.illegalList.findOne({ id: "illegalWords" })
+        ).items;
+        let illegalWebsites = (
+            await this.illegalList.findOne({ id: "illegalWebsites" })
+        ).items;
+        let spacedOutWordsOnly = (
+            await this.illegalList.findOne({ id: "spacedOutWordsOnly" })
+        ).items;
 
         illegalWords = illegalWords ? illegalWords : [];
         illegalWebsites = illegalWebsites ? illegalWebsites : [];
         spacedOutWordsOnly = spacedOutWordsOnly ? spacedOutWordsOnly : [];
 
         const joined = illegalWords.concat(illegalWebsites);
-        
+
         const no_spaces = text.replace(REMOVE_SYMBOLS_REGEX, "");
 
         for (const item of joined) {
@@ -2459,19 +2823,19 @@ class UserManager {
 
     /**
      * Check for illegal wording on a username
-     * @param {string} username The username to check for illegal wording 
+     * @param {string} username The username to check for illegal wording
      * @returns {Promise<String>} Empty if there is nothing illegal, not empty if it was triggered (returns the trigger)
      * @async
      */
     async checkForUnsafeUsername(username) {
         const basicTrigger = await this.checkForIllegalWording(username);
-        if (basicTrigger)
-            return basicTrigger;
+        if (basicTrigger) return basicTrigger;
 
-        let unsafeUsernames = (await this.illegalList.findOne
-            ({ id: "unsafeUsernames" })).items;
+        let unsafeUsernames = (
+            await this.illegalList.findOne({ id: "unsafeUsernames" })
+        ).items;
 
-        unsafeUsernames = (unsafeUsernames || []);
+        unsafeUsernames = unsafeUsernames || [];
 
         const no_spaces = username.replace(REMOVE_SYMBOLS_REGEX, "");
 
@@ -2492,18 +2856,18 @@ class UserManager {
     async getIndexOfUnsafeUsername(username) {
         // TODO! make this work better
         const normalWording = await this.getIndexOfIllegalWording(username);
-        if (normalWording[0] != -1)
-            return normalWording;
+        if (normalWording[0] != -1) return normalWording;
 
-        const unsafeUsernames = (await this.illegalList.findOne
-            ({ id: "unsafeUsernames" })).items;
+        const unsafeUsernames = (
+            await this.illegalList.findOne({ id: "unsafeUsernames" })
+        ).items;
 
         const no_spaces = username.replace(REMOVE_SYMBOLS_REGEX, "");
-        
+
         for (const item of unsafeUsernames) {
-            const index = no_spaces.indexOf(item)
+            const index = no_spaces.indexOf(item);
             if (index + 1) {
-                return [index, index+item.length];
+                return [index, index + item.length];
             }
         }
 
@@ -2517,14 +2881,22 @@ class UserManager {
      * @async
      */
     async checkForPotentiallyUnsafeUsername(text) {
-        let potentiallyUnsafeWords = (await this.illegalList.findOne
-            ({ id: "potentiallyUnsafeWords" })).items;
-        let potentiallyUnsafeWordsSpacedOut = (await this.illegalList.findOne
-            ({ id: "potentiallyUnsafeWordsSpacedOut" })).items;
+        let potentiallyUnsafeWords = (
+            await this.illegalList.findOne({ id: "potentiallyUnsafeWords" })
+        ).items;
+        let potentiallyUnsafeWordsSpacedOut = (
+            await this.illegalList.findOne({
+                id: "potentiallyUnsafeWordsSpacedOut",
+            })
+        ).items;
 
-        potentiallyUnsafeWords = potentiallyUnsafeWords ? potentiallyUnsafeWords : [];
-        potentiallyUnsafeWordsSpacedOut = potentiallyUnsafeWordsSpacedOut ? potentiallyUnsafeWordsSpacedOut : [];
-        
+        potentiallyUnsafeWords = potentiallyUnsafeWords
+            ? potentiallyUnsafeWords
+            : [];
+        potentiallyUnsafeWordsSpacedOut = potentiallyUnsafeWordsSpacedOut
+            ? potentiallyUnsafeWordsSpacedOut
+            : [];
+
         for (const item of potentiallyUnsafeWords) {
             if (text.includes(item)) {
                 return item;
@@ -2549,16 +2921,22 @@ class UserManager {
     async getIndexOfPotentiallyUnsafeUsername(username) {
         // TODO: make this work better/correctly
 
-        const potentiallyUnsafeWords = (await this.illegalList.findOne
-            ({ id: "potentiallyUnsafeWords" })).items;
-        const potentiallyUnsafeWordsSpacedOut = (await this.illegalList.findOne
-            ({ id: "potentiallyUnsafeWordsSpacedOut" })).items;
-        const joined = potentiallyUnsafeWords.concat(potentiallyUnsafeWordsSpacedOut);
-        
+        const potentiallyUnsafeWords = (
+            await this.illegalList.findOne({ id: "potentiallyUnsafeWords" })
+        ).items;
+        const potentiallyUnsafeWordsSpacedOut = (
+            await this.illegalList.findOne({
+                id: "potentiallyUnsafeWordsSpacedOut",
+            })
+        ).items;
+        const joined = potentiallyUnsafeWords.concat(
+            potentiallyUnsafeWordsSpacedOut,
+        );
+
         for (const item of joined) {
-            const index = username.indexOf(item)
+            const index = username.indexOf(item);
             if (index + 1) {
-                return [index, index+item.length];
+                return [index, index + item.length];
             }
         }
 
@@ -2572,14 +2950,22 @@ class UserManager {
      * @async
      */
     async checkForPotentiallyIllegalWording(text) {
-        let potentiallyUnsafeWords = (await this.illegalList.findOne
-            ({ id: "potentiallyUnsafeWords" })).items;
-        let potentiallyUnsafeWordsSpacedOut = (await this.illegalList.findOne
-            ({ id: "potentiallyUnsafeWordsSpacedOut" })).items;
+        let potentiallyUnsafeWords = (
+            await this.illegalList.findOne({ id: "potentiallyUnsafeWords" })
+        ).items;
+        let potentiallyUnsafeWordsSpacedOut = (
+            await this.illegalList.findOne({
+                id: "potentiallyUnsafeWordsSpacedOut",
+            })
+        ).items;
 
-        potentiallyUnsafeWords = potentiallyUnsafeWords ? potentiallyUnsafeWords : [];
-        potentiallyUnsafeWordsSpacedOut = potentiallyUnsafeWordsSpacedOut ? potentiallyUnsafeWordsSpacedOut : [];
-        
+        potentiallyUnsafeWords = potentiallyUnsafeWords
+            ? potentiallyUnsafeWords
+            : [];
+        potentiallyUnsafeWordsSpacedOut = potentiallyUnsafeWordsSpacedOut
+            ? potentiallyUnsafeWordsSpacedOut
+            : [];
+
         for (const item of potentiallyUnsafeWords) {
             if (text.includes(item)) {
                 return item;
@@ -2603,28 +2989,31 @@ class UserManager {
      */
     async getIndexOfIllegalWording(text) {
         // TODO! make this work better
-        const illegalWords = (await this.illegalList.findOne
-            ({ id: "illegalWords" })).items;
-        const illegalWebsites = (await this.illegalList.findOne
-            ({ id: "illegalWebsites" })).items;
-        const spacedOutWordsOnly = (await this.illegalList.findOne
-            ({ id: "spacedOutWordsOnly" })).items;
+        const illegalWords = (
+            await this.illegalList.findOne({ id: "illegalWords" })
+        ).items;
+        const illegalWebsites = (
+            await this.illegalList.findOne({ id: "illegalWebsites" })
+        ).items;
+        const spacedOutWordsOnly = (
+            await this.illegalList.findOne({ id: "spacedOutWordsOnly" })
+        ).items;
         const joined = illegalWords.concat(illegalWebsites);
 
         const no_spaces = text.replace(REMOVE_SYMBOLS_REGEX, "");
-        
+
         for (const item of joined) {
-            const index = no_spaces.indexOf(item)
+            const index = no_spaces.indexOf(item);
             if (index + 1) {
-                return [index, index+item.length];
+                return [index, index + item.length];
             }
         }
 
         for (const item of spacedOutWordsOnly) {
             const with_spaces = " " + item + " ";
-            const index = text.indexOf(with_spaces)
+            const index = text.indexOf(with_spaces);
             if (index + 1) {
-                return [index, index+item.length];
+                return [index, index + item.length];
             }
         }
 
@@ -2638,14 +3027,22 @@ class UserManager {
      * @async
      */
     async checkForPotentiallyIllegalWording(text) {
-        let potentiallyUnsafeWords = (await this.illegalList.findOne
-            ({ id: "potentiallyUnsafeWords" })).items;
-        let potentiallyUnsafeWordsSpacedOut = (await this.illegalList.findOne
-            ({ id: "potentiallyUnsafeWordsSpacedOut" })).items;
+        let potentiallyUnsafeWords = (
+            await this.illegalList.findOne({ id: "potentiallyUnsafeWords" })
+        ).items;
+        let potentiallyUnsafeWordsSpacedOut = (
+            await this.illegalList.findOne({
+                id: "potentiallyUnsafeWordsSpacedOut",
+            })
+        ).items;
 
-        potentiallyUnsafeWords = potentiallyUnsafeWords ? potentiallyUnsafeWords : [];
-        potentiallyUnsafeWordsSpacedOut = potentiallyUnsafeWordsSpacedOut ? potentiallyUnsafeWordsSpacedOut : [];
-        
+        potentiallyUnsafeWords = potentiallyUnsafeWords
+            ? potentiallyUnsafeWords
+            : [];
+        potentiallyUnsafeWordsSpacedOut = potentiallyUnsafeWordsSpacedOut
+            ? potentiallyUnsafeWordsSpacedOut
+            : [];
+
         for (const item of potentiallyUnsafeWords) {
             if (text.includes(item)) {
                 return item;
@@ -2670,16 +3067,22 @@ class UserManager {
     async getIndexOfPotentiallyIllegalWording(text) {
         // TODO: make this work better/correctly
 
-        const potentiallyUnsafeWords = (await this.illegalList.findOne
-            ({ id: "potentiallyUnsafeWords" })).items;
-        const potentiallyUnsafeWordsSpacedOut = (await this.illegalList.findOne
-            ({ id: "potentiallyUnsafeWordsSpacedOut" })).items;
-        const joined = potentiallyUnsafeWords.concat(potentiallyUnsafeWordsSpacedOut);
-        
+        const potentiallyUnsafeWords = (
+            await this.illegalList.findOne({ id: "potentiallyUnsafeWords" })
+        ).items;
+        const potentiallyUnsafeWordsSpacedOut = (
+            await this.illegalList.findOne({
+                id: "potentiallyUnsafeWordsSpacedOut",
+            })
+        ).items;
+        const joined = potentiallyUnsafeWords.concat(
+            potentiallyUnsafeWordsSpacedOut,
+        );
+
         for (const item of joined) {
-            const index = text.indexOf(item)
+            const index = text.indexOf(item);
             if (index + 1) {
-                return [index, index+item.length];
+                return [index, index + item.length];
             }
         }
 
@@ -2693,7 +3096,10 @@ class UserManager {
      * @async
      */
     async setIllegalWords(type, words) {
-        await this.illegalList.updateOne({id: type}, {$set: {items: words}});
+        await this.illegalList.updateOne(
+            { id: type },
+            { $set: { items: words } },
+        );
     }
 
     /**
@@ -2703,17 +3109,23 @@ class UserManager {
      * @async
      */
     async addIllegalWord(word, type) {
-        await this.illegalList.updateOne({id: type}, {$push: {items: word}});
+        await this.illegalList.updateOne(
+            { id: type },
+            { $push: { items: word } },
+        );
     }
 
     /**
      * Remove an illegal word
-     * @param {string} word The item to remove 
+     * @param {string} word The item to remove
      * @param {string} type The type of the illegal item
      * @async
      */
     async removeIllegalWord(word, type) {
-        await this.illegalList.updateOne({id: type}, {$pull: {items: word}});
+        await this.illegalList.updateOne(
+            { id: type },
+            { $pull: { items: word } },
+        );
     }
 
     /**
@@ -2722,21 +3134,30 @@ class UserManager {
      * @async
      */
     async getIllegalWords() {
-        const illegalWords = (await this.illegalList.findOne
-            ({ id: "illegalWords" })).items;
-        const illegalWebsites = (await this.illegalList.findOne
-            ({ id: "illegalWebsites" })).items;
-        const spacedOutWordsOnly = (await this.illegalList.findOne
-            ({ id: "spacedOutWordsOnly" })).items;
-        const potentiallyUnsafeWords = (await this.illegalList.findOne
-            ({ id: "potentiallyUnsafeWords" })).items;
-        const potentiallyUnsafeWordsSpacedOut = (await this.illegalList.findOne
-            ({ id: "potentiallyUnsafeWordsSpacedOut" })).items;
+        const illegalWords = (
+            await this.illegalList.findOne({ id: "illegalWords" })
+        ).items;
+        const illegalWebsites = (
+            await this.illegalList.findOne({ id: "illegalWebsites" })
+        ).items;
+        const spacedOutWordsOnly = (
+            await this.illegalList.findOne({ id: "spacedOutWordsOnly" })
+        ).items;
+        const potentiallyUnsafeWords = (
+            await this.illegalList.findOne({ id: "potentiallyUnsafeWords" })
+        ).items;
+        const potentiallyUnsafeWordsSpacedOut = (
+            await this.illegalList.findOne({
+                id: "potentiallyUnsafeWordsSpacedOut",
+            })
+        ).items;
         const legalExtensions = await this.getLegalExtensions();
-        const unsafeUsernames = (await this.illegalList.findOne
-            ({ id: "unsafeUsernames" })).items;
-        const potentiallyUnsafeUsernames = (await this.illegalList.findOne
-            ({ id: "potentiallyUnsafeUsernames" })).items;
+        const unsafeUsernames = (
+            await this.illegalList.findOne({ id: "unsafeUsernames" })
+        ).items;
+        const potentiallyUnsafeUsernames = (
+            await this.illegalList.findOne({ id: "potentiallyUnsafeUsernames" })
+        ).items;
 
         return {
             illegalWords,
@@ -2746,23 +3167,25 @@ class UserManager {
             potentiallyUnsafeWordsSpacedOut,
             legalExtensions,
             unsafeUsernames,
-            potentiallyUnsafeUsernames
-        }
+            potentiallyUnsafeUsernames,
+        };
     }
 
     /**
      * Verify the state from an OAuth2 request
-     * @param {string} state The state to verify 
+     * @param {string} state The state to verify
      * @returns {Promise<boolean>} True if the state is valid, false if not
      * @async
      */
     async verifyOAuth2State(state) {
-        const result = await this.oauthStates.findOne({ state: state, expireAt: { $gt: Date.now() } });
+        const result = await this.oauthStates.findOne({
+            state: state,
+            expireAt: { $gt: Date.now() },
+        });
 
         // now get rid of the state cuz uh we dont need it anymore
 
-        if (result)
-        await this.oauthStates.deleteOne({ state: state })
+        if (result) await this.oauthStates.deleteOne({ state: state });
 
         return result ? true : false;
     }
@@ -2771,12 +3194,15 @@ class UserManager {
      * Generate a new OAuth2 state and save it for verification
      * @returns {Promise<string>} The state
      */
-    async generateOAuth2State(extra="") {
-        const state = (randomBytes(32).toString("base64") + extra).replaceAll("+", "-");
+    async generateOAuth2State(extra = "") {
+        const state = (randomBytes(32).toString("base64") + extra).replaceAll(
+            "+",
+            "-",
+        );
 
         await this.oauthStates.insertOne({
             state: state,
-            expireAt: Date.now() + 1000 * 60 * 5
+            expireAt: Date.now() + 1000 * 60 * 5,
         });
 
         return state;
@@ -2786,39 +3212,49 @@ class UserManager {
      * Make an OAuth2 request
      * @param {string} code The from the original OAuth2 request
      * @param {string} method The method of OAuth2 request
-     * @returns 
+     * @returns
      */
     async makeOAuth2Request(code, method) {
         let response;
         try {
             switch (method) {
                 case "scratch":
-                    response = await fetch(`https://oauth2.scratch-wiki.info/w/rest.php/soa2/v0/tokens`, {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json"
+                    response = await fetch(
+                        `https://oauth2.scratch-wiki.info/w/rest.php/soa2/v0/tokens`,
+                        {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify({
+                                client_id: Number(
+                                    process.env.ScratchOAuthClientID,
+                                ),
+                                client_secret:
+                                    process.env.ScratchOAuthClientSecret,
+                                code: code,
+                                scopes: ["identify"],
+                            }),
                         },
-                        body: JSON.stringify({
-                            client_id: Number(process.env.ScratchOAuthClientID),
-                            client_secret: process.env.ScratchOAuthClientSecret,
-                            code: code,
-                            scopes: ["identify"]
-                        })
-                    }).then(res => res.json());
+                    ).then((res) => res.json());
                     return response;
                 case "github":
-                    response = await fetch(`https://github.com/login/oauth/access_token`, {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "Accept": "application/json"
+                    response = await fetch(
+                        `https://github.com/login/oauth/access_token`,
+                        {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                Accept: "application/json",
+                            },
+                            body: JSON.stringify({
+                                client_id: process.env.GithubOAuthClientID,
+                                client_secret:
+                                    process.env.GithubOAuthClientSecret,
+                                code: code,
+                            }),
                         },
-                        body: JSON.stringify({
-                            client_id: process.env.GithubOAuthClientID,
-                            client_secret: process.env.GithubOAuthClientSecret,
-                            code: code
-                        })
-                    }).then(res => res.json());
+                    ).then((res) => res.json());
                     return response;
             }
         } catch (e) {
@@ -2843,7 +3279,7 @@ class UserManager {
                 try {
                     username = String(data.login).toLowerCase();
                     real_username = String(data.login);
-                } catch(e) {
+                } catch (e) {
                     console.error("it broke", data, e);
                     throw e;
                 }
@@ -2858,7 +3294,17 @@ class UserManager {
             n++;
         }
 
-        const info = await this.createAccount(username, real_username, null, null, null, null, false, utils, res)
+        const info = await this.createAccount(
+            username,
+            real_username,
+            null,
+            null,
+            null,
+            null,
+            false,
+            utils,
+            res,
+        );
         const token = info[0];
         const pm_id = info[1];
 
@@ -2871,7 +3317,10 @@ class UserManager {
      * @param {Array<string>} extensions Array of extension IDs to set the legal list to
      */
     async setLegalExtensions(extensions) {
-        await this.illegalList.updateOne({id: "legalExtensions"}, {$set: {items: extensions}});
+        await this.illegalList.updateOne(
+            { id: "legalExtensions" },
+            { $set: { items: extensions } },
+        );
     }
 
     /**
@@ -2879,7 +3328,10 @@ class UserManager {
      * @param {string} extension Extension ID
      */
     async addLegalExlegalExtentension(extension) {
-        await this.illegalList.updateOne({id: "legalExtensions"}, {$push: {items: extension}});
+        await this.illegalList.updateOne(
+            { id: "legalExtensions" },
+            { $push: { items: extension } },
+        );
     }
 
     /**
@@ -2887,11 +3339,16 @@ class UserManager {
      * @param {string} extension Extension ID
      */
     async removeLegalExtension(extension) {
-        await this.illegalList.updateOne({id: "legalExtensions"}, {$pull: {items: extension}});
+        await this.illegalList.updateOne(
+            { id: "legalExtensions" },
+            { $pull: { items: extension } },
+        );
     }
 
     async getLegalExtensions() {
-        const result = await this.illegalList.findOne({id: "legalExtensions"});
+        const result = await this.illegalList.findOne({
+            id: "legalExtensions",
+        });
 
         return result.items;
     }
@@ -2904,29 +3361,38 @@ class UserManager {
     async checkExtensionIsAllowed(extension) {
         if (!extension) return true;
 
-        const extensionsConfig = await this.illegalList.findOne({id: "legalExtensions"});
+        const extensionsConfig = await this.illegalList.findOne({
+            id: "legalExtensions",
+        });
         const isIncluded = extensionsConfig.items.includes(extension);
 
         return isIncluded;
-    };
-    async validateAreProjectExtensionsAllowed(extensions, extensionURLs, username) {
+    }
+    async validateAreProjectExtensionsAllowed(
+        extensions,
+        extensionURLs,
+        username,
+    ) {
         const isAdmin = await this.isAdmin(username);
         const isModerator = await this.isModerator(username);
 
         // Note, this does make the above function useless. Not sure if there's any need to keep it yet.
-        const extensionsConfig = await this.illegalList.findOne({id: "legalExtensions"});
+        const extensionsConfig = await this.illegalList.findOne({
+            id: "legalExtensions",
+        });
 
         // check the extensions
         const userRank = await this.getRank(username);
         if (userRank < 1 && !isAdmin && !isModerator) {
             const isUrlExtension = (extId) => {
                 if (!extensionURLs) return false;
-                return (extId in extensionURLs);
+                return extId in extensionURLs;
             };
 
             if (extensions && !isAdmin && !isModerator) {
                 for (let extension of extensions) {
-                    if (isUrlExtension(extension)) { // url extension names can be faked (if not trusted source)
+                    if (isUrlExtension(extension)) {
+                        // url extension names can be faked (if not trusted source)
                         let found = false;
                         for (let source of extensionsConfig.items) {
                             // http and localhost urls shouldnt be allowed anyway, and :// means no extension ID should ever collide with this
@@ -2942,7 +3408,7 @@ class UserManager {
                             continue;
                         }
                     }
-                    
+
                     if (!extensionsConfig.items.includes(extension)) {
                         return [false, extension];
                     }
@@ -2961,7 +3427,10 @@ class UserManager {
     async newTokenGen(username) {
         const token = randomBytes(32).toString("hex");
 
-        await this.users.updateOne({ username: username }, { $set: { token: token, lastLogin: Date.now() } });
+        await this.users.updateOne(
+            { username: username },
+            { $set: { token: token, lastLogin: Date.now() } },
+        );
 
         return token;
     }
@@ -2970,52 +3439,81 @@ class UserManager {
      * Search project names/instructions/notes by query
      * @param {boolean} show_unranked Show unranked users
      * @param {string} query Query to search for
-     * @param {number} page Page of projects to get 
-     * @param {number} pageSize Amount of projects to get 
+     * @param {number} page Page of projects to get
+     * @param {number} pageSize Amount of projects to get
      * @param {boolean} reverse Reverse the results
      * @returns {Promise<Array<object>>} Array of projects
      */
-    async searchProjects(show_unranked, query, type, page, pageSize, maxPageSize, reverse=false) {
+    async searchProjects(
+        show_unranked,
+        query,
+        type,
+        page,
+        pageSize,
+        maxPageSize,
+        reverse = false,
+    ) {
         let aggregateList = [
             {
-                $match: { softRejected: false, hardReject: false, public: true }
+                $match: {
+                    softRejected: false,
+                    hardReject: false,
+                    public: true,
+                },
             },
         ];
 
         const rev = reverse ? -1 : 1;
 
         function escapeRegex(input) {
-            return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         }
 
-        aggregateList.push(
-            {
-                $match: { $or: [
-                    { title: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } },
-                    { instructions: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } },
-                    { notes: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } }
-                ] },
-            }
-        );
+        aggregateList.push({
+            $match: {
+                $or: [
+                    {
+                        title: {
+                            $regex: `.*${escapeRegex(query)}.*`,
+                            $options: "i",
+                        },
+                    },
+                    {
+                        instructions: {
+                            $regex: `.*${escapeRegex(query)}.*`,
+                            $options: "i",
+                        },
+                    },
+                    {
+                        notes: {
+                            $regex: `.*${escapeRegex(query)}.*`,
+                            $options: "i",
+                        },
+                    },
+                ],
+            },
+        });
 
         switch (type) {
             case "featured":
-                aggregateList.push({
-                    $match: { featured: true }
-                },
-                {
-                    $sort: { date: -1 * rev  }
-                });
+                aggregateList.push(
+                    {
+                        $match: { featured: true },
+                    },
+                    {
+                        $sort: { date: -1 * rev },
+                    },
+                );
                 break;
             case "newest":
                 aggregateList.push({
-                    $sort: { lastUpdate: -1 * rev }
+                    $sort: { lastUpdate: -1 * rev },
                 });
                 break;
             default:
             case "views":
                 aggregateList.push({
-                    $sort: { views: -1 * rev }
+                    $sort: { views: -1 * rev },
                 });
                 break;
             case "loves":
@@ -3023,21 +3521,21 @@ class UserManager {
                 aggregateList.push(
                     // top ones are gonna have most views, so lets just get top of those first
                     {
-                        $sort: { views: -1 * rev }
+                        $sort: { views: -1 * rev },
                     },
                     {
-                        $skip: page * pageSize
+                        $skip: page * pageSize,
                     },
                     {
-                        $limit: maxPageSize
+                        $limit: maxPageSize,
                     },
                     {
                         $lookup: {
                             from: "projectStats",
                             localField: "id",
                             foreignField: "projectId",
-                            as: "projectStatsData"
-                        }
+                            as: "projectStatsData",
+                        },
                     },
                     {
                         $addFields: {
@@ -3046,35 +3544,35 @@ class UserManager {
                                     $filter: {
                                         input: "$projectStatsData",
                                         as: "stat",
-                                        cond: { $eq: ["$$stat.type", "love"] }
-                                    }
-                                }
-                            }
-                        }
+                                        cond: { $eq: ["$$stat.type", "love"] },
+                                    },
+                                },
+                            },
+                        },
                     },
                     {
-                        $sort: { loves: -1 * rev }
-                    }
+                        $sort: { loves: -1 * rev },
+                    },
                 );
                 break;
             case "votes":
                 aggregateList.push(
                     {
-                        $sort: { views: -1 * rev }
+                        $sort: { views: -1 * rev },
                     },
                     {
-                        $skip: page * pageSize
+                        $skip: page * pageSize,
                     },
                     {
-                        $limit: maxPageSize
+                        $limit: maxPageSize,
                     },
                     {
                         $lookup: {
                             from: "projectStats",
                             localField: "id",
                             foreignField: "projectId",
-                            as: "projectStatsData"
-                        }
+                            as: "projectStatsData",
+                        },
                     },
                     {
                         $addFields: {
@@ -3083,15 +3581,15 @@ class UserManager {
                                     $filter: {
                                         input: "$projectStatsData",
                                         as: "stat",
-                                        cond: { $eq: ["$$stat.type", "love"] }
-                                    }
-                                }
-                            }
-                        }
+                                        cond: { $eq: ["$$stat.type", "love"] },
+                                    },
+                                },
+                            },
+                        },
                     },
                     {
-                        $sort: { loves: -1 * rev }
-                    }
+                        $sort: { loves: -1 * rev },
+                    },
                 );
                 break;
         }
@@ -3103,61 +3601,55 @@ class UserManager {
                         from: "users",
                         localField: "author",
                         foreignField: "id",
-                        as: "authorInfo"
-                    }
+                        as: "authorInfo",
+                    },
                 },
-                { // only allow ranked users to show up
-                    $match: { "authorInfo.rank": { $gt: 0 } }
+                {
+                    // only allow ranked users to show up
+                    $match: { "authorInfo.rank": { $gt: 0 } },
                 },
             );
         }
 
         aggregateList.push(
             {
-                $skip: page * pageSize
+                $skip: page * pageSize,
             },
             {
-                $limit: pageSize
+                $limit: pageSize,
             },
-        )
+        );
 
         if (show_unranked) {
-            aggregateList.push(
-                {
-                    $lookup: {
-                        from: "users",
-                        localField: "author",
-                        foreignField: "id",
-                        as: "authorInfo"
-                    }
+            aggregateList.push({
+                $lookup: {
+                    from: "users",
+                    localField: "author",
+                    foreignField: "id",
+                    as: "authorInfo",
                 },
-            );
+            });
         }
-        
+
         aggregateList.push(
             {
                 // set author to { id: old_.author, username: authorInfo.username }
                 $addFields: {
-                    "author": {
+                    author: {
                         id: "$author",
-                        username: { $arrayElemAt: ["$authorInfo.username", 0] }
+                        username: { $arrayElemAt: ["$authorInfo.username", 0] },
                     },
-                    "fromDonator": {
-                        $in: ["donator", "$authorInfo.badges"]
-                    }
-                }
+                    fromDonator: {
+                        $in: ["donator", "$authorInfo.badges"],
+                    },
+                },
             },
             {
-                $unset: [
-                    "projectStatsData",
-                    "_id",
-                    "authorInfo",              
-                ]
-            }
+                $unset: ["projectStatsData", "_id", "authorInfo"],
+            },
         );
 
-        const result = await this.projects.aggregate(aggregateList)
-        .toArray();
+        const result = await this.projects.aggregate(aggregateList).toArray();
 
         /*
         const final = [];
@@ -3182,37 +3674,44 @@ class UserManager {
     /**
      * Search users by a query
      * @param {string} query Query to search for
-     * @param {number} page Page of projects to get 
-     * @param {number} pageSize Amount of projects to get 
+     * @param {number} page Page of projects to get
+     * @param {number} pageSize Amount of projects to get
      * @returns {Promise<Array<object>>} Array of users
      */
     async searchUsers(query, page, pageSize) {
         function escapeRegex(input) {
-            return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         }
 
-        const result = await this.users.aggregate([
-            {
-                $match: { permBanned: false, username: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } }
-            },
-            {
-                $sort: { followers: -1 }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: pageSize
-            },
-            // turn all the data into just {username, id}
-            {
-                $project: {
-                    username: true,
-                    id: true,
+        const result = await this.users
+            .aggregate([
+                {
+                    $match: {
+                        permBanned: false,
+                        username: {
+                            $regex: `.*${escapeRegex(query)}.*`,
+                            $options: "i",
+                        },
+                    },
                 },
-            }
-        ])
-        .toArray();
+                {
+                    $sort: { followers: -1 },
+                },
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: pageSize,
+                },
+                // turn all the data into just {username, id}
+                {
+                    $project: {
+                        username: true,
+                        id: true,
+                    },
+                },
+            ])
+            .toArray();
 
         /*
         const cleaned = result[0].data.map(x => {let v = x;delete v._id;return v;})
@@ -3233,44 +3732,40 @@ class UserManager {
     async specializedSearch(query, page, pageSize, maxPageSize) {
         let pipeline = [
             {
-                $sort: { lastUpdate: -1 }
+                $sort: { lastUpdate: -1 },
             },
             {
-                $skip: page * pageSize
+                $skip: page * pageSize,
             },
             {
                 $limit: maxPageSize,
             },
             ...query,
             {
-                $limit: pageSize
+                $limit: pageSize,
             },
             {
                 $lookup: {
                     from: "users",
                     localField: "author",
                     foreignField: "id",
-                    as: "authorInfo"
-                }
+                    as: "authorInfo",
+                },
             },
             {
                 $addFields: {
-                    "author": {
+                    author: {
                         id: "$author",
-                        username: { $arrayElemAt: ["$authorInfo.username", 0] }
-                    }
-                }
+                        username: { $arrayElemAt: ["$authorInfo.username", 0] },
+                    },
+                },
             },
             {
-                $unset: [
-                    "authorInfo",
-                    "_id"
-                ]
-            }
+                $unset: ["authorInfo", "_id"],
+            },
         ];
 
-        const aggResult = await this.projects.aggregate(pipeline)
-        .toArray();
+        const aggResult = await this.projects.aggregate(pipeline).toArray();
 
         /*
         const final = []
@@ -3289,153 +3784,164 @@ class UserManager {
     }
 
     async almostFeatured(page, pageSize, maxPageSize) {
-        const result = await this.projects.aggregate([
-            {
-                $match: { softRejected: false, hardReject: false, public: true, featured: false, noFeature: { $ne: true } }
-            },
-            {
-                $sort: { views: -1 }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: Math.min(maxPageSize, pageSize*2)
-            },
-            {
-                $lookup: {
-                    from: "projectStats",
-                    localField: "id",
-                    foreignField: "projectId",
-                    as: "projectStatsData"
-                }
-            },
-            {
-                $addFields: {
-                    votes: {
-                        $size: {
-                            $filter: {
-                                input: "$projectStatsData",
-                                as: "stat",
-                                cond: { $eq: ["$$stat.type", "vote"] }
-                            }
-                        }
-                    }
-                }
-            },
-            {
-                $sort: { votes: -1 }
-            },
-            {
-                $limit: pageSize
-            },
-            {
-                $lookup: {
-                    from: "users",
-                    localField: "author",
-                    foreignField: "id",
-                    as: "authorInfo"
-                }
-            },
-            {
-                // set author to { id: old_.author, username: authorInfo.username }
-                $addFields: {
-                    "author": {
-                        id: "$author",
-                        username: { $arrayElemAt: ["$authorInfo.username", 0] }
+        const result = await this.projects
+            .aggregate([
+                {
+                    $match: {
+                        softRejected: false,
+                        hardReject: false,
+                        public: true,
+                        featured: false,
+                        noFeature: { $ne: true },
                     },
-                    "fromDonator": {
-                        $in: ["donator", "$authorInfo.badges"]
-                    }
-                }
-            },
-            {
-                $unset: [
-                    "projectStatsData",
-                    "_id",
-                    "authorInfo",              
-                ]
-            }
-        ])
-        .toArray();
+                },
+                {
+                    $sort: { views: -1 },
+                },
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: Math.min(maxPageSize, pageSize * 2),
+                },
+                {
+                    $lookup: {
+                        from: "projectStats",
+                        localField: "id",
+                        foreignField: "projectId",
+                        as: "projectStatsData",
+                    },
+                },
+                {
+                    $addFields: {
+                        votes: {
+                            $size: {
+                                $filter: {
+                                    input: "$projectStatsData",
+                                    as: "stat",
+                                    cond: { $eq: ["$$stat.type", "vote"] },
+                                },
+                            },
+                        },
+                    },
+                },
+                {
+                    $sort: { votes: -1 },
+                },
+                {
+                    $limit: pageSize,
+                },
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "author",
+                        foreignField: "id",
+                        as: "authorInfo",
+                    },
+                },
+                {
+                    // set author to { id: old_.author, username: authorInfo.username }
+                    $addFields: {
+                        author: {
+                            id: "$author",
+                            username: {
+                                $arrayElemAt: ["$authorInfo.username", 0],
+                            },
+                        },
+                        fromDonator: {
+                            $in: ["donator", "$authorInfo.badges"],
+                        },
+                    },
+                },
+                {
+                    $unset: ["projectStatsData", "_id", "authorInfo"],
+                },
+            ])
+            .toArray();
 
         return result;
     }
 
     async mostLiked(page, pageSize, maxPageSize) {
-        const time_after = Date.now() - (1000 * 60 * 60 * 24 * 14);
-        const result = await this.projects.aggregate([
-            {
-                $match: { softRejected: false, hardReject: false, public: true, featured: false, date: { $gt: time_after } }
-            }, 
-            {
-                $sort: { views: -1 }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: maxPageSize * 3
-            },
-            {
-                $lookup: {
-                    from: "projectStats",
-                    localField: "id",
-                    foreignField: "projectId",
-                    as: "projectStatsData"
-                }
-            },
-            {
-                $addFields: {
-                    loves: {
-                        $size: {
-                            $filter: {
-                                input: "$projectStatsData",
-                                as: "stat",
-                                cond: { $eq: ["$$stat.type", "love"] }
-                            }
-                        }
-                    }
-                }
-            },
-            {
-                $sort: { loves: -1 }
-            },
-            {
-                $lookup: {
-                    from: "users",
-                    localField: "author",
-                    foreignField: "id",
-                    as: "authorInfo"
-                }
-            },
-            { // only allow ranked users to show up
-                $match: { "authorInfo.rank": { $gt: 0 } }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: pageSize
-            },
-            {
-                // set author to { id: old_.author, username: authorInfo.username }
-                $addFields: {
-                    "author": {
-                        id: "$author",
-                        username: { $arrayElemAt: ["$authorInfo.username", 0] }
-                    }
-                }
-            },
-            {
-                $unset: [
-                    "projectStatsData",
-                    "_id",
-                    "authorInfo",              
-                ]
-            }
-        ])
-        .toArray();
+        const time_after = Date.now() - 1000 * 60 * 60 * 24 * 14;
+        const result = await this.projects
+            .aggregate([
+                {
+                    $match: {
+                        softRejected: false,
+                        hardReject: false,
+                        public: true,
+                        featured: false,
+                        date: { $gt: time_after },
+                    },
+                },
+                {
+                    $sort: { views: -1 },
+                },
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: maxPageSize * 3,
+                },
+                {
+                    $lookup: {
+                        from: "projectStats",
+                        localField: "id",
+                        foreignField: "projectId",
+                        as: "projectStatsData",
+                    },
+                },
+                {
+                    $addFields: {
+                        loves: {
+                            $size: {
+                                $filter: {
+                                    input: "$projectStatsData",
+                                    as: "stat",
+                                    cond: { $eq: ["$$stat.type", "love"] },
+                                },
+                            },
+                        },
+                    },
+                },
+                {
+                    $sort: { loves: -1 },
+                },
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "author",
+                        foreignField: "id",
+                        as: "authorInfo",
+                    },
+                },
+                {
+                    // only allow ranked users to show up
+                    $match: { "authorInfo.rank": { $gt: 0 } },
+                },
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: pageSize,
+                },
+                {
+                    // set author to { id: old_.author, username: authorInfo.username }
+                    $addFields: {
+                        author: {
+                            id: "$author",
+                            username: {
+                                $arrayElemAt: ["$authorInfo.username", 0],
+                            },
+                        },
+                    },
+                },
+                {
+                    $unset: ["projectStatsData", "_id", "authorInfo"],
+                },
+            ])
+            .toArray();
 
         return result;
     }
@@ -3447,7 +3953,10 @@ class UserManager {
      */
     async softReject(id, toggle) {
         // dont change if public as you should still be able to go to it if you have the id
-        await this.projects.updateOne({id: id}, { $set: { softRejected: toggle } });
+        await this.projects.updateOne(
+            { id: id },
+            { $set: { softRejected: toggle } },
+        );
     }
 
     /**
@@ -3456,7 +3965,7 @@ class UserManager {
      * @returns {Promise<boolean>}
      */
     async isSoftRejected(id) {
-        const result = await this.projects.findOne({id: id});
+        const result = await this.projects.findOne({ id: id });
 
         return result.softRejected;
     }
@@ -3467,44 +3976,48 @@ class UserManager {
      * @param {boolean} toggle True if making private, false if not
      */
     async privateProject(id, toggle) {
-        await this.projects.updateOne({id: id}, { $set: { public: !toggle } });
+        await this.projects.updateOne(
+            { id: id },
+            { $set: { public: !toggle } },
+        );
     }
 
     async getAllFollowing(id, page, pageSize) {
-        const result = await this.followers.aggregate([
-            {
-                $match: { follower: id, active: true }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: pageSize
-            },
-            {
-                $lookup: {
-                    from: "users",
-                    localField: "target",
-                    foreignField: "id",
-                    as: "userInfo"
+        const result = await this.followers
+            .aggregate([
+                {
+                    $match: { follower: id, active: true },
                 },
-            },
-            {
-                $addFields: {
-                    username: { $arrayElemAt: ["$userInfo.username", 0] },
-                    // target
-                    id: "$target"
-                }
-            },
-            {
-                $project: {
-                    username: true,
-                    id: true,
-                    _id: false,
-                }
-            }
-        ])
-        .toArray();
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: pageSize,
+                },
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "target",
+                        foreignField: "id",
+                        as: "userInfo",
+                    },
+                },
+                {
+                    $addFields: {
+                        username: { $arrayElemAt: ["$userInfo.username", 0] },
+                        // target
+                        id: "$target",
+                    },
+                },
+                {
+                    $project: {
+                        username: true,
+                        id: true,
+                        _id: false,
+                    },
+                },
+            ])
+            .toArray();
 
         return result;
     }
@@ -3512,48 +4025,53 @@ class UserManager {
     /**
      * Get a users feed
      * @param {string} username Username of the user
-     * @param {number} size Size of the feed 
+     * @param {number} size Size of the feed
      * @returns {Promise<ARray<Object>>}
      */
     async getUserFeed(username, size) {
         const id = await this.getIDByUsername(username);
-        const followers = await this.getAllFollowing(id, 0, Number(process.env.MaxPageSize || 0));
+        const followers = await this.getAllFollowing(
+            id,
+            0,
+            Number(process.env.MaxPageSize || 0),
+        );
 
-        const feed = await this.userFeed.aggregate([
-            {
-                $match: { userID: { $in: followers.map(x => x.id) } }//, expireAt: { $gt: Date.now() } }
-            },
-            {
-                $sort: { date: -1 }
-            },
-            {
-                $limit: size
-            },
-            {
-                $lookup: {
-                    from: "users",
-                    localField: "userID",
-                    foreignField: "id",
-                    as: "userInfo"
-                }
-            },
-            {
-                $addFields: {
-                    username: { $arrayElemAt: ["$userInfo.username", 0] },
-                    id: "$userID"
+        const feed = await this.userFeed
+            .aggregate([
+                {
+                    $match: { userID: { $in: followers.map((x) => x.id) } }, //, expireAt: { $gt: Date.now() } }
                 },
-            },
-            {
-                $unset: ["_id", "userInfo", "userID"]
-            }
-        ])
-        .toArray();
+                {
+                    $sort: { date: -1 },
+                },
+                {
+                    $limit: size,
+                },
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "userID",
+                        foreignField: "id",
+                        as: "userInfo",
+                    },
+                },
+                {
+                    $addFields: {
+                        username: { $arrayElemAt: ["$userInfo.username", 0] },
+                        id: "$userID",
+                    },
+                },
+                {
+                    $unset: ["_id", "userInfo", "userID"],
+                },
+            ])
+            .toArray();
 
         return feed;
     }
 
     /**
-     * 
+     *
      * @param {string} userID ID of the user
      * @param {string} type Type of the feed item
      * @param {string} data Data of the feed item, for example the project id
@@ -3564,7 +4082,7 @@ class UserManager {
             type: type,
             data: data,
             date: Date.now(),
-            expireAt: Date.now() + Number(process.env.FeedExpirationTime)
+            expireAt: Date.now() + Number(process.env.FeedExpirationTime),
         });
     }
 
@@ -3589,12 +4107,11 @@ class UserManager {
 
         const buffer = await this.readObjectFromBucket("profile-pictures", id);
 
-        if (!buffer)
-            return false;
+        if (!buffer) return false;
 
         return buffer;
     }
-    
+
     /**
      * Set a user's birthday and or country
      * @param {string} username Username of the user
@@ -3627,24 +4144,36 @@ class UserManager {
             total,
             free,
             used,
-            precentage_used
+            precentage_used,
         };
     }
     async getStats() {
-        const userCount = await this.users.countDocuments({ permBanned: false }) || 0; // dont count perm banned users :tongue:
-        const bannedCount = await this.users.countDocuments({ $or: [{ permBanned: true }, { unbanTime: { $gt: Date.now() } }] }) || 0;
-        const projectCount = await this.projects.countDocuments() || 0;
+        const userCount =
+            (await this.users.countDocuments({ permBanned: false })) || 0; // dont count perm banned users :tongue:
+        const bannedCount =
+            (await this.users.countDocuments({
+                $or: [{ permBanned: true }, { unbanTime: { $gt: Date.now() } }],
+            })) || 0;
+        const projectCount = (await this.projects.countDocuments()) || 0;
         // check if remix is not 0
-        const remixCount = await this.projects.countDocuments({ remix: { $ne: "0" } }) || 0;
-        const featuredCount = await this.projects.countDocuments({ featured: true }) || 0;
-        const totalViewsResult = await this.projects.aggregate([{$match: {views:{$gte:0}}},{$group: {_id:null, total_views:{$sum:"$views"}}}]).toArray();
-        const totalViews = totalViewsResult.length > 0 ? totalViewsResult[0].total_views || 0 : 0;
+        const remixCount =
+            (await this.projects.countDocuments({ remix: { $ne: "0" } })) || 0;
+        const featuredCount =
+            (await this.projects.countDocuments({ featured: true })) || 0;
+        const totalViewsResult = await this.projects
+            .aggregate([
+                { $match: { views: { $gte: 0 } } },
+                { $group: { _id: null, total_views: { $sum: "$views" } } },
+            ])
+            .toArray();
+        const totalViews =
+            totalViewsResult.length > 0
+                ? totalViewsResult[0].total_views || 0
+                : 0;
 
-        const mongodb_stats = await this.db.command(
-            {
-              serverStatus: 1
-            }
-        );
+        const mongodb_stats = await this.db.command({
+            serverStatus: 1,
+        });
         const current_mem_usage = process.memoryUsage();
         const comp_mem_usage = this.compMemUsage();
 
@@ -3658,19 +4187,28 @@ class UserManager {
             current_mem_usage,
             comp_mem_usage,
             mongodb_stats,
-        }
+        };
     }
 
     async markPrivacyPolicyAsRead(username) {
-        await this.users.updateOne({ username: username }, { $set: { lastPrivacyPolicyRead: Date.now() } });
+        await this.users.updateOne(
+            { username: username },
+            { $set: { lastPrivacyPolicyRead: Date.now() } },
+        );
     }
 
     async markTOSAsRead(username) {
-        await this.users.updateOne({ username: username }, { $set: { lastTOSRead: Date.now() } });
+        await this.users.updateOne(
+            { username: username },
+            { $set: { lastTOSRead: Date.now() } },
+        );
     }
 
     async markGuidelinesAsRead(username) {
-        await this.users.updateOne({ username: username }, { $set: { lastGuidelinesRead: Date.now() } });
+        await this.users.updateOne(
+            { username: username },
+            { $set: { lastGuidelinesRead: Date.now() } },
+        );
     }
 
     async getLastPolicyRead(username) {
@@ -3679,15 +4217,14 @@ class UserManager {
         return {
             privacyPolicy: result.lastPrivacyPolicyRead,
             TOS: result.lastTOSRead,
-            guidelines: result.lastGuidelinesRead
-        }
+            guidelines: result.lastGuidelinesRead,
+        };
     }
 
     async getLastPolicyUpdate() {
         const out = {};
 
-        (await this.lastPolicyUpdates.find().toArray())
-        .map(x => {
+        (await this.lastPolicyUpdates.find().toArray()).map((x) => {
             out[x.id] = x.lastUpdate;
         });
 
@@ -3695,15 +4232,24 @@ class UserManager {
     }
 
     async setLastPrivacyPolicyUpdate() {
-        await this.lastPolicyUpdates.updateOne({ id: "privacyPolicy" }, { $set: { lastUpdate: Date.now() } });
+        await this.lastPolicyUpdates.updateOne(
+            { id: "privacyPolicy" },
+            { $set: { lastUpdate: Date.now() } },
+        );
     }
 
     async setLastTOSUpdate() {
-        await this.lastPolicyUpdates.updateOne({ id: "TOS" }, { $set: { lastUpdate: Date.now() } });
+        await this.lastPolicyUpdates.updateOne(
+            { id: "TOS" },
+            { $set: { lastUpdate: Date.now() } },
+        );
     }
 
     async setLastGuidelinesUpdate() {
-        await this.lastPolicyUpdates.updateOne({ id: "guidelines" }, { $set: { lastUpdate: Date.now() } });
+        await this.lastPolicyUpdates.updateOne(
+            { id: "guidelines" },
+            { $set: { lastUpdate: Date.now() } },
+        );
     }
 
     async getRuntimeConfigItem(id) {
@@ -3712,13 +4258,16 @@ class UserManager {
         if (!result) {
             console.log(`Couldn't find config item ${id}`);
             return true; // minimize disruptions
-        };
+        }
 
         return result.value;
     }
 
     async setRuntimeConfigItem(id, value) {
-        await this.runtimeConfig.updateOne({ id: id }, { $set: { value: value } });
+        await this.runtimeConfig.updateOne(
+            { id: id },
+            { $set: { value: value } },
+        );
     }
 
     async isPrivateProfile(username) {
@@ -3728,7 +4277,10 @@ class UserManager {
     }
 
     async setPrivateProfile(username, toggle) {
-        await this.users.updateOne({ username: username }, { $set: { privateProfile: toggle } });
+        await this.users.updateOne(
+            { username: username },
+            { $set: { privateProfile: toggle } },
+        );
     }
 
     async canFollowingSeeProfile(username) {
@@ -3738,7 +4290,10 @@ class UserManager {
     }
 
     async setFollowingSeeProfile(username, toggle) {
-        await this.users.updateOne({ username: username }, { $set: { allowFollowingView: toggle } });
+        await this.users.updateOne(
+            { username: username },
+            { $set: { allowFollowingView: toggle } },
+        );
     }
 
     /**
@@ -3749,11 +4304,17 @@ class UserManager {
      * @returns {Promise<void>}
      */
     async tempBanUser(username, reason, length) {
-        await this.users.updateOne({ username: username }, { $set: { banReason: reason, unbanTime: Date.now()+length } });
+        await this.users.updateOne(
+            { username: username },
+            { $set: { banReason: reason, unbanTime: Date.now() + length } },
+        );
     }
 
     async unTempBan(username) {
-        await this.users.updateOne({ username: username }, { $set: { unbanTime: 0 } });
+        await this.users.updateOne(
+            { username: username },
+            { $set: { unbanTime: 0 } },
+        );
     }
 
     async getBanReason(username) {
@@ -3799,10 +4360,10 @@ class UserManager {
             {
                 $set: { lastLogin: Date.now() },
                 $setOnInsert: {
-                    banned: false
-                }
+                    banned: false,
+                },
             },
-            { upsert: true }
+            { upsert: true },
         );
     }
 
@@ -3818,10 +4379,10 @@ class UserManager {
             {
                 $set: { lastLogin: Date.now() },
                 $setOnInsert: {
-                    banned: false
-                }
+                    banned: false,
+                },
             },
-            { upsert: true }
+            { upsert: true },
         );
     }
 
@@ -3832,14 +4393,15 @@ class UserManager {
     }
 
     async getIpsByID(id) {
-        const ips = (await this.loggedIPs.find({ id: id }).toArray())
-        .map(x => {
-            return {
-                ip: x.ip,
-                banned: x.banned,
-                lastLogin: x.lastLogin
-            }
-        });
+        const ips = (await this.loggedIPs.find({ id: id }).toArray()).map(
+            (x) => {
+                return {
+                    ip: x.ip,
+                    banned: x.banned,
+                    lastLogin: x.lastLogin,
+                };
+            },
+        );
 
         return ips;
     }
@@ -3853,13 +4415,21 @@ class UserManager {
     }
 
     async banIP(ip, toggle) {
-        await this.loggedIPs.updateMany({ ip: ip }, { $set: { banned: toggle } });
+        await this.loggedIPs.updateMany(
+            { ip: ip },
+            { $set: { banned: toggle } },
+        );
 
         if (toggle) {
             // ban all accounts with this ip
             const accounts = await this.loggedIPs.find({ ip: ip }).toArray();
             for (const account of accounts) {
-                await this.setPermBanned(await this.getUsernameByID(account.id), true, "IP banned", true);
+                await this.setPermBanned(
+                    await this.getUsernameByID(account.id),
+                    true,
+                    "IP banned",
+                    true,
+                );
             }
         }
     }
@@ -3867,7 +4437,10 @@ class UserManager {
     async banUserIP(username, toggle) {
         const id = await this.getIDByUsername(username);
 
-        await this.loggedIPs.updateMany({ id: id }, { $set: { banned: toggle } });
+        await this.loggedIPs.updateMany(
+            { id: id },
+            { $set: { banned: toggle } },
+        );
 
         if (toggle) {
             // ban all accounts with the same ip
@@ -3875,10 +4448,17 @@ class UserManager {
 
             for (const ip of ips) {
                 // find all accounts with this ip
-                const accounts = await this.loggedIPs.find({ ip: ip.ip }).toArray();
-                
+                const accounts = await this.loggedIPs
+                    .find({ ip: ip.ip })
+                    .toArray();
+
                 for (const account of accounts) {
-                    await this.setPermBanned(await this.getUsernameByID(account.id), true, "IP banned", true);
+                    await this.setPermBanned(
+                        await this.getUsernameByID(account.id),
+                        true,
+                        "IP banned",
+                        true,
+                    );
                 }
             }
         }
@@ -3892,17 +4472,11 @@ class UserManager {
         for (const account of result) {
             final.push({
                 id: account.id,
-                username: await this.getUsernameByID(account.id)
+                username: await this.getUsernameByID(account.id),
             });
         }
 
         return final;
-    }
-
-    async setEmail(username, email) {
-        if (await this.emailInUse(email)) return;
-
-        await this.users.updateOne({ username: username }, { $set: { email: email } });
     }
 
     async isEmailVerified(username) {
@@ -3912,7 +4486,10 @@ class UserManager {
     }
 
     async setEmailVerified(username, toggle) {
-        await this.users.updateOne({ username: username }, { $set: { emailVerified: toggle } });
+        await this.users.updateOne(
+            { username: username },
+            { $set: { emailVerified: toggle } },
+        );
     }
 
     async emailInUse(email) {
@@ -3941,7 +4518,9 @@ class UserManager {
     }
 
     async getEmailCount() {
-        const result = await this.sentEmails.countDocuments({expireAt: { $gt: Date.now() }});
+        const result = await this.sentEmails.countDocuments({
+            expireAt: { $gt: Date.now() },
+        });
 
         return result;
     }
@@ -3956,15 +4535,24 @@ class UserManager {
      * @param {string} messageHtml Message of the email but html (use this as primary)
      * @returns {Promise<boolean>} Success or not
      */
-    async sendEmail(userid, userip, type, email, name, subject, message, messageHtml) {
-        if (await this.getEmailCount() > process.env.EmailLimit) return false;
+    async sendEmail(
+        userid,
+        userip,
+        type,
+        email,
+        name,
+        subject,
+        message,
+        messageHtml,
+    ) {
+        if ((await this.getEmailCount()) > process.env.EmailLimit) return false;
 
         await this.sentEmails.insertOne({
             userid,
             userip,
             sentAt: Date.now(),
             expireAt: new Date(),
-            type
+            type,
         });
 
         /*/
@@ -3975,30 +4563,29 @@ class UserManager {
 
         const mailjet = new Mailjet({
             apiKey: process.env.MJApiKeyPublic,
-            apiSecret: process.env.MJApiKeyPrivate
+            apiSecret: process.env.MJApiKeyPrivate,
         });
 
         try {
-            await mailjet.post('send', { version: 'v3.1' })
-            .request({
+            await mailjet.post("send", { version: "v3.1" }).request({
                 Messages: [
                     {
-                        "From": {
-                        "Email": "no-reply@penguinmod.com",
-                        "Name": "PenguinMod"
+                        From: {
+                            Email: "no-reply@penguinmod.com",
+                            Name: "PenguinMod",
                         },
-                        "To": [
-                        {
-                            "Email": email,
-                            "Name": name
-                        }
+                        To: [
+                            {
+                                Email: email,
+                                Name: name,
+                            },
                         ],
-                        "Subject": subject,
-                        "TextPart": message,
-                        "HTMLPart": messageHtml,
-                    }
-                ]
-            })
+                        Subject: subject,
+                        TextPart: message,
+                        HTMLPart: messageHtml,
+                    },
+                ],
+            });
         } catch (e) {
             console.log("mail error", e);
             return false;
@@ -4008,15 +4595,21 @@ class UserManager {
     }
 
     async lastEmailSentByID(userid) {
-        const result = (await this.sentEmails.aggregate([{
-            $match: { userid }
-        },
-        {
-            $sort: { sentAt: -1 }
-        },
-        {
-            $limit: 1
-        }]).toArray())[0];
+        const result = (
+            await this.sentEmails
+                .aggregate([
+                    {
+                        $match: { userid },
+                    },
+                    {
+                        $sort: { sentAt: -1 },
+                    },
+                    {
+                        $limit: 1,
+                    },
+                ])
+                .toArray()
+        )[0];
 
         if (!result) return 0;
 
@@ -4024,15 +4617,21 @@ class UserManager {
     }
 
     async lastEmailSentByIP(userip) {
-        const result = (await this.sentEmails.aggregate([{
-            $match: { userip }
-        },
-        {
-            $sort: { sentAt: -1 }
-        },
-        {
-            $limit: 1
-        }]).toArray())[0];
+        const result = (
+            await this.sentEmails
+                .aggregate([
+                    {
+                        $match: { userip },
+                    },
+                    {
+                        $sort: { sentAt: -1 },
+                    },
+                    {
+                        $limit: 1,
+                    },
+                ])
+                .toArray()
+        )[0];
 
         if (!result) return 0;
 
@@ -4045,19 +4644,22 @@ class UserManager {
         await this.passwordResetStates.insertOne({
             state: state,
             email: email,
-            expireAt: Date.now() + 1000 * 60 * 60 * 2
+            expireAt: Date.now() + 1000 * 60 * 60 * 2,
         });
 
         return state;
     }
 
     async verifyPasswordResetState(state, email) {
-        const result = await this.passwordResetStates.findOne({ state: state, email: email });
+        const result = await this.passwordResetStates.findOne({
+            state: state,
+            email: email,
+        });
 
         // now get rid of the state cuz uh we dont need it anymore
 
         if (!!result)
-            await this.passwordResetStates.deleteOne({ state: state })
+            await this.passwordResetStates.deleteOne({ state: state });
 
         return !!result ? true : false;
     }
@@ -4068,12 +4670,16 @@ class UserManager {
      * @returns {Object} Arbitrary keys and values
      */
     async getUserCustomization(username) {
-        const result = await this.accountCustomization.findOne({ username: username });
+        const result = await this.accountCustomization.findOne({
+            username: username,
+        });
         if (!result) return {};
         return result.customData || {};
     }
     async getUserCustomizationDisabled(username) {
-        const result = await this.accountCustomization.findOne({ username: username });
+        const result = await this.accountCustomization.findOne({
+            username: username,
+        });
         if (!result) return false;
         return result.disabled === true;
     }
@@ -4085,7 +4691,8 @@ class UserManager {
      * @returns {null|string} `null` if the customData is valid, and a string containing the error reason if the customData is invalid.
      */
     verifyCustomData(customData) {
-        if (typeof customData !== "object" || Array.isArray(customData)) return "DataNotObject";
+        if (typeof customData !== "object" || Array.isArray(customData))
+            return "DataNotObject";
         const allowedTypes = ["string", "number", "boolean", "object"]; // object is specified but we actually only allow Arrays
         const allowedArrayValueTypes = ["string", "number", "boolean"]; // since we allow arrays, we only allow some types in those arrays
 
@@ -4093,24 +4700,33 @@ class UserManager {
         const keys = Object.keys(customData);
         const values = Object.values(customData);
         if (keys.length > 64) return "TooManyKeys";
-        if (keys.some(key => key.startsWith("_") || key.length > 64)) return "InvalidKeyName";
+        if (keys.some((key) => key.startsWith("_") || key.length > 64))
+            return "InvalidKeyName";
 
         // block values
-        const areValuesInvalid = values.some(value => (!allowedTypes.includes(typeof value)) // type isnt allowed
-            || (typeof value === "string" && value.length > 256) // string > 256 chars not allowed
-            || (typeof value === "object" && !Array.isArray(value))); // if we are an object, block if we arent an array
+        const areValuesInvalid = values.some(
+            (value) =>
+                !allowedTypes.includes(typeof value) || // type isnt allowed
+                (typeof value === "string" && value.length > 256) || // string > 256 chars not allowed
+                (typeof value === "object" && !Array.isArray(value)),
+        ); // if we are an object, block if we arent an array
         if (areValuesInvalid) return "InvalidValueFound";
 
         // block arrays specified
-        const arrayValues = values.filter(value => typeof value === "object" && Array.isArray(value));
+        const arrayValues = values.filter(
+            (value) => typeof value === "object" && Array.isArray(value),
+        );
         if (arrayValues.length > 4) return "TooManyArrays";
 
         // each array specified adds its amount of items to a total, and that total cannot exceed a certain amount
         const mixedArrays = arrayValues.flat(); // makes each array into 1 array
         if (mixedArrays.length > 64) return "TooManyValuesTotalWithinAllArrays";
 
-        const areArrayValuesInvalid = mixedArrays.some(value => (!allowedArrayValueTypes.includes(typeof value)) // type isnt allowed
-            || (typeof value === "string" && value.length > 64)); // string > 64 chars not allowed
+        const areArrayValuesInvalid = mixedArrays.some(
+            (value) =>
+                !allowedArrayValueTypes.includes(typeof value) || // type isnt allowed
+                (typeof value === "string" && value.length > 64),
+        ); // string > 64 chars not allowed
         if (areArrayValuesInvalid) return "InvalidValueWithinArrayFound";
 
         return null;
@@ -4123,18 +4739,28 @@ class UserManager {
      * @param {Object} customData Arbitrary keys and values
      */
     async setUserCustomization(username, customData) {
-        await this.accountCustomization.updateOne({ username: username }, { $set: { customData: customData } }, { upsert: true });
+        await this.accountCustomization.updateOne(
+            { username: username },
+            { $set: { customData: customData } },
+            { upsert: true },
+        );
     }
     async setUserCustomizationDisabled(username, disabled) {
-        await this.accountCustomization.updateOne({ username: username }, { $set: { disabled: disabled } }, { upsert: true });
+        await this.accountCustomization.updateOne(
+            { username: username },
+            { $set: { disabled: disabled } },
+            { upsert: true },
+        );
     }
 
     async clearAllEmails() {
         await this.sentEmails.deleteMany({});
     }
 
-    async massBanByUsername(regex, toggle, reason="Banned by staff") {
-        const users = await this.users.find({ username: { $regex: regex } }).toArray();
+    async massBanByUsername(regex, toggle, reason = "Banned by staff") {
+        const users = await this.users
+            .find({ username: { $regex: regex } })
+            .toArray();
         const count = users.length;
 
         for (const user of users) {
@@ -4154,12 +4780,18 @@ class UserManager {
             const user = await this.users.findOne({ id: follower.follower });
 
             if (user.permBanned) {
-                await this.followers.updateOne({ follower: follower.follower, target: id }, { $set: { active: false } });
+                await this.followers.updateOne(
+                    { follower: follower.follower, target: id },
+                    { $set: { active: false } },
+                );
             }
         }
 
         // count the amount of followers
-        const count = await this.followers.countDocuments({ target: id, active: true });
+        const count = await this.followers.countDocuments({
+            target: id,
+            active: true,
+        });
 
         await this.users.updateOne({ id: id }, { $set: { followers: count } });
     }
@@ -4171,16 +4803,21 @@ class UserManager {
      * @param {boolean} active true if blocking, false if unblocking
      */
     async blockUser(user_id, target_id, active) {
-        if (await this.blocking.findOne({blocker:user_id,target:target_id})) {
-            await this.blocking.updateOne({
-                blocker: user_id,
-                target: target_id,
-            }, {
-                $set: {
-                    active,
-                    time: Date.now(),
-                }
-            });
+        if (
+            await this.blocking.findOne({ blocker: user_id, target: target_id })
+        ) {
+            await this.blocking.updateOne(
+                {
+                    blocker: user_id,
+                    target: target_id,
+                },
+                {
+                    $set: {
+                        active,
+                        time: Date.now(),
+                    },
+                },
+            );
             return;
         }
 
@@ -4199,15 +4836,23 @@ class UserManager {
      * @returns {Promise<boolean>} true if they're blocked, false if not
      */
     async hasBlocked(user_id, target_id) {
-        return !!(await this.blocking.findOne({blocker:user_id,target:target_id,active:true}));
+        return !!(await this.blocking.findOne({
+            blocker: user_id,
+            target: target_id,
+            active: true,
+        }));
     }
 
     async renameObjectMinio(bucket, old_key, new_key) {
         try {
-            await this.minioClient.copyObject(bucket, new_key, `/${bucket}/${old_key}`);
+            await this.minioClient.copyObject(
+                bucket,
+                new_key,
+                `/${bucket}/${old_key}`,
+            );
             await this.minioClient.removeObject(bucket, old_key);
         } catch (err) {
-            console.error('Error renaming object:', err);
+            console.error("Error renaming object:", err);
         }
     }
 
@@ -4220,18 +4865,18 @@ class UserManager {
     listWithPrefix(bucket, prefix) {
         return new Promise((resolve, reject) => {
             const objectNames = [];
-        
+
             const stream = this.minioClient.listObjects(bucket, prefix, true); // recursive = true
-        
-            stream.on('data', obj => {
+
+            stream.on("data", (obj) => {
                 objectNames.push(obj.name);
             });
-        
-            stream.on('error', err => {
+
+            stream.on("error", (err) => {
                 reject(err);
             });
-        
-            stream.on('end', () => {
+
+            stream.on("end", () => {
                 resolve(objectNames);
             });
         });
@@ -4245,20 +4890,42 @@ class UserManager {
      */
     async changeProjectID(original_id, new_id) {
         // first lets change the entry
-        await this.projects.updateOne({id: original_id}, {$set:{id:new_id}});
+        await this.projects.updateOne(
+            { id: original_id },
+            { $set: { id: new_id } },
+        );
         // now we need to change the entries in minio
         // minio bucket stuff
         await this.renameObjectMinio("project-thumbnails", original_id, new_id);
         await this.renameObjectMinio("projects", original_id, new_id);
-        const assets = await this.listWithPrefix("project-assets", `${original_id}_`);
+        const assets = await this.listWithPrefix(
+            "project-assets",
+            `${original_id}_`,
+        );
         for (const asset of assets) {
             const actual_id = asset.split("_")[1];
-            await this.renameObjectMinio("project-assets", asset, `${new_id}_${actual_id}`);
+            await this.renameObjectMinio(
+                "project-assets",
+                asset,
+                `${new_id}_${actual_id}`,
+            );
         }
-        await this.users.updateMany({favoriteProjectID: original_id},{$set:{favoriteProjectID:new_id}});
-        await this.projectStats.updateMany({projectId:original_id},{$set:{projectId:new_id}});
-        await this.messages.updateMany({type:"upload","data.id":original_id}, {$set: {"data.id":new_id }});
-        await this.projects.updateMany({remix:original_id},{$set:{remix:new_id}});
+        await this.users.updateMany(
+            { favoriteProjectID: original_id },
+            { $set: { favoriteProjectID: new_id } },
+        );
+        await this.projectStats.updateMany(
+            { projectId: original_id },
+            { $set: { projectId: new_id } },
+        );
+        await this.messages.updateMany(
+            { type: "upload", "data.id": original_id },
+            { $set: { "data.id": new_id } },
+        );
+        await this.projects.updateMany(
+            { remix: original_id },
+            { $set: { remix: new_id } },
+        );
     }
 
     /**
@@ -4273,9 +4940,13 @@ class UserManager {
     }
 
     async idListToUsernames(ids) {
-        const usernames = (await this.users.find({
-            id: { $in: ids }
-        }).toArray()).map(x => x.username);
+        const usernames = (
+            await this.users
+                .find({
+                    id: { $in: ids },
+                })
+                .toArray()
+        ).map((x) => x.username);
         return usernames;
     }
 
@@ -4298,12 +4969,15 @@ class UserManager {
     }
 
     async getImpressions(project_id) {
-        const project = await this.projects.findOne({id:project_id});
+        const project = await this.projects.findOne({ id: project_id });
         return project.impressions ? project.impressions : 0;
     }
 
     async addImpression(project_id) {
-        await this.projects.updateOne({id:project_id},{$inc:{impressions:1}});
+        await this.projects.updateOne(
+            { id: project_id },
+            { $inc: { impressions: 1 } },
+        );
     }
 
     /**
@@ -4339,18 +5013,18 @@ class UserManager {
             await this.tagWeights.updateOne(
                 {
                     user_id,
-                    tag
+                    tag,
                 },
                 {
                     $inc: { weight },
                     $set: {
-                        most_recent: Date.now()
-                    }
+                        most_recent: Date.now(),
+                    },
                 },
                 {
                     upsert: true,
-                }
-            )
+                },
+            );
         }
     }
 
@@ -4362,8 +5036,8 @@ class UserManager {
     collectTags(text) {
         // i hate regex. but anyways. this gets occurences of a hash followed by non-whitespace characters. ty stackoverflow user
         const res = text.match(/#\w+/g);
-        const tags = res ? res.map(t => t.substring(1)) : [];
-        return tags.slice(0,10); // first 10 tags only
+        const tags = res ? res.map((t) => t.substring(1)) : [];
+        return tags.slice(0, 10); // first 10 tags only
     }
 
     /**
@@ -4429,201 +5103,218 @@ class UserManager {
         console.time("top tags & followed authors");
         // get top tags and followed authors in parallel (so we are fast)
         const [topTagsDocs, followedAuthors] = await Promise.all([
-            this.tagWeights.aggregate([
-                { $match: { user_id: userId } },
-                { $sort: { weight: -1, most_recent: -1 } },
-                { $limit: 10 },
-                { $project: { tag: 1, _id: 0 } }
-            ]).toArray(),
-            
-            this.followers.aggregate([
-                { $match: { follower: userId, active: true } },
-                { $project: { _id: 0, target: 1 } }
-            ]).toArray()
+            this.tagWeights
+                .aggregate([
+                    { $match: { user_id: userId } },
+                    { $sort: { weight: -1, most_recent: -1 } },
+                    { $limit: 10 },
+                    { $project: { tag: 1, _id: 0 } },
+                ])
+                .toArray(),
+
+            this.followers
+                .aggregate([
+                    { $match: { follower: userId, active: true } },
+                    { $project: { _id: 0, target: 1 } },
+                ])
+                .toArray(),
         ]);
-        
-        const topTags = topTagsDocs.map(doc => doc.tag);
-        const followedIds = followedAuthors.map(f => f.target);
+
+        const topTags = topTagsDocs.map((doc) => doc.tag);
+        const followedIds = followedAuthors.map((f) => f.target);
         console.timeEnd("top tags & followed authors");
 
         console.time("whole scoring");
-        const scoredProjects = await this.projects.aggregate([
-            {
-                $match: { 
-                    softRejected: false, 
-                    hardReject: false, 
-                    public: true,
-                    // date filter
-                    date: { $gte: Date.now() - (1000 * 60 * 60 * 24 * 90) } // last 90 days (fyp like tiktok lmao heh...)
-                }
-            },
-            {
-                $sort: { date: -1 }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: maxPageSize
-            },
+        const scoredProjects = await this.projects
+            .aggregate([
+                {
+                    $match: {
+                        softRejected: false,
+                        hardReject: false,
+                        public: true,
+                        // date filter
+                        date: { $gte: Date.now() - 1000 * 60 * 60 * 24 * 90 }, // last 90 days (fyp like tiktok lmao heh...)
+                    },
+                },
+                {
+                    $sort: { date: -1 },
+                },
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: maxPageSize,
+                },
 
-            // check blocking
-            {
-                $lookup: {
-                    from: "blocking",
-                    let: { authorId: "$author" },
-                    pipeline: [
-                        {
-                            $match: {
-                                $expr: {
-                                    $and: [
-                                        { $eq: ["$blocker", userId] },
-                                        { $eq: ["$target", "$$authorId"] },
-                                        { $eq: ["$active", true] }
-                                    ]
-                                }
-                            }
+                // check blocking
+                {
+                    $lookup: {
+                        from: "blocking",
+                        let: { authorId: "$author" },
+                        pipeline: [
+                            {
+                                $match: {
+                                    $expr: {
+                                        $and: [
+                                            { $eq: ["$blocker", userId] },
+                                            { $eq: ["$target", "$$authorId"] },
+                                            { $eq: ["$active", true] },
+                                        ],
+                                    },
+                                },
+                            },
+                            { $limit: 1 },
+                        ],
+                        as: "blocked",
+                    },
+                },
+                {
+                    $match: { blocked: { $size: 0 } },
+                },
+
+                // get love count
+                {
+                    $lookup: {
+                        from: "projectStats",
+                        let: { pid: "$id" },
+                        pipeline: [
+                            {
+                                $match: {
+                                    $expr: {
+                                        $and: [
+                                            { $eq: ["$projectId", "$$pid"] },
+                                            { $eq: ["$type", "love"] },
+                                        ],
+                                    },
+                                },
+                            },
+                            { $count: "count" },
+                        ],
+                        as: "loves",
+                    },
+                },
+
+                // calculate score (fast frfr)
+                // Score: +10 if followed, +2 per top tag match, +love count
+                {
+                    $addFields: {
+                        loveCount: {
+                            $ifNull: [{ $arrayElemAt: ["$loves.count", 0] }, 0],
                         },
-                        { $limit: 1 }
-                    ],
-                    as: "blocked"
-                }
-            },
-            {
-                $match: { blocked: { $size: 0 } }
-            },
-
-            // get love count
-            {
-                $lookup: {
-                    from: 'projectStats',
-                    let: { pid: '$id' },
-                    pipeline: [
-                        { 
-                            $match: { 
-                                $expr: { 
-                                    $and: [
-                                        { $eq: ['$projectId', '$$pid'] },
-                                        { $eq: ['$type', 'love'] }
-                                    ]
-                                }
-                            }
+                        followedAuthor: { $in: ["$author", followedIds] },
+                        combinedText: {
+                            $concat: [
+                                { $ifNull: ["$title", ""] },
+                                " ",
+                                { $ifNull: ["$instructions", ""] },
+                                " ",
+                                { $ifNull: ["$notes", ""] },
+                            ],
                         },
-                        { $count: 'count' }
-                    ],
-                    as: 'loves'
-                }
-            },
+                    },
+                },
+                {
+                    $addFields: {
+                        tagMatches: {
+                            $reduce: {
+                                input: topTags,
+                                initialValue: 0,
+                                in: {
+                                    $add: [
+                                        "$$value",
+                                        {
+                                            $cond: [
+                                                {
+                                                    $regexMatch: {
+                                                        input: "$combinedText",
+                                                        regex: {
+                                                            $concat: [
+                                                                ".*#",
+                                                                "$$this",
+                                                                ".*",
+                                                            ],
+                                                        },
+                                                        options: "i",
+                                                    },
+                                                },
+                                                1,
+                                                0,
+                                            ],
+                                        },
+                                    ],
+                                },
+                            },
+                        },
+                    },
+                },
+                {
+                    $addFields: {
+                        score: {
+                            $add: [
+                                { $cond: ["$followedAuthor", 10, 0] },
+                                { $multiply: ["$tagMatches", 2] },
+                                "$loveCount",
+                            ],
+                        },
+                    },
+                },
 
-            // calculate score (fast frfr)
-            // Score: +10 if followed, +2 per top tag match, +love count
-            {
-                $addFields: {
-                    loveCount: { $ifNull: [{ $arrayElemAt: ['$loves.count', 0] }, 0] },
-                    followedAuthor: { $in: ['$author', followedIds] },
-                    combinedText: {
-                        $concat: [
-                            { $ifNull: ['$title', ''] },
-                            ' ',
-                            { $ifNull: ['$instructions', ''] },
-                            ' ',
-                            { $ifNull: ['$notes', ''] }
-                        ]
-                    }
-                }
-            },
-            {
-                $addFields: {
-                    tagMatches: {
-                        $reduce: {
-                            input: topTags,
-                            initialValue: 0,
-                            in: {
-                                $add: [
-                                    "$$value",
-                                    {
-                                        $cond: [
-                                            {
-                                                $regexMatch: {
-                                                    input: "$combinedText",
-                                                    regex: { $concat: ['.*#', '$$this', '.*'] },
-                                                    options: 'i'
-                                                }
-                                            },
-                                            1,
-                                            0
-                                        ]
-                                    }
-                                ]
-                            }
-                        }
-                    }
-                }
-            },
-            {
-                $addFields: {
-                    score: {
-                        $add: [
-                            { $cond: ['$followedAuthor', 10, 0] },
-                            { $multiply: ['$tagMatches', 2] },
-                            '$loveCount'
-                        ]
-                    }
-                }
-            },
+                {
+                    $sort: { score: -1, date: -1 },
+                },
+                {
+                    $limit: pageSize,
+                },
 
-            {
-                $sort: { score: -1, date: -1 }
-            },
-            {
-                $limit: pageSize
-            },
-
-            // collect author data
-            {
-                $lookup: {
-                    from: "users",
-                    localField: "author",
-                    foreignField: "id",
-                    as: "authorInfo"
-                }
-            },
-            {
-                $addFields: {
-                    "author": {
-                        id: "$author",
-                        username: { $arrayElemAt: ["$authorInfo.username", 0] }
-                    }
-                }
-            },
-            {
-                $project: {
-                    _id: 0,
-                    authorInfo: 0,
-                    blocked: 0,
-                    loves: 0,
-                    followedAuthor: 0,
-                    combinedText: 0,
-                    tagMatches: 0,
-                    score: 0
-                }
-            }
-        ]).toArray();
+                // collect author data
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "author",
+                        foreignField: "id",
+                        as: "authorInfo",
+                    },
+                },
+                {
+                    $addFields: {
+                        author: {
+                            id: "$author",
+                            username: {
+                                $arrayElemAt: ["$authorInfo.username", 0],
+                            },
+                        },
+                    },
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        authorInfo: 0,
+                        blocked: 0,
+                        loves: 0,
+                        followedAuthor: 0,
+                        combinedText: 0,
+                        tagMatches: 0,
+                        score: 0,
+                    },
+                },
+            ])
+            .toArray();
         console.timeEnd("whole scoring");
 
         return scoredProjects;
     }
 
-
     async addImpressionsMany(project_ids) {
         await this.projects.updateMany(
-            {id: {
-                $in: project_ids
-            }},
-            {$inc:{impressions:1}}
+            {
+                id: {
+                    $in: project_ids,
+                },
+            },
+            { $inc: { impressions: 1 } },
         );
     }
-    
+
     /**
      * Convert a protobuf file to a json object
      * @param {Uint8Array} protobuf The protobuf file
@@ -4643,17 +5334,19 @@ class UserManager {
     }
 
     async getWorstOffenders(page, pageSize) {
-        return await this.performance_logging.aggregate([
-            {
-                $sort: { millis: -1 }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: pageSize
-            },
-        ]).toArray();
+        return await this.performance_logging
+            .aggregate([
+                {
+                    $sort: { millis: -1 },
+                },
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: pageSize,
+                },
+            ])
+            .toArray();
     }
 
     /**
@@ -4663,7 +5356,11 @@ class UserManager {
      */
     async deleteThumb(project_id) {
         const image_buffer = await deleted_thumb_buffer;
-        await this.minioClient.putObject("project-thumbnails", project_id, image_buffer);
+        await this.minioClient.putObject(
+            "project-thumbnails",
+            project_id,
+            image_buffer,
+        );
     }
 
     /**
@@ -4674,10 +5371,7 @@ class UserManager {
     async hasModPerms(username) {
         return !!(await this.users.findOne({
             username,
-            $or: [
-                { moderator: true },
-                { admin: true }
-            ]
+            $or: [{ moderator: true }, { admin: true }],
         }));
     }
 
@@ -4688,16 +5382,19 @@ class UserManager {
      * @returns {Promise<>}
      */
     async toggleWatchlist(username, enabled) {
-        await this.users.updateOne({username}, {$set:{onWatchlist:enabled}});
+        await this.users.updateOne(
+            { username },
+            { $set: { onWatchlist: enabled } },
+        );
     }
 
     /**
      * Check if a user is on the watchlist
-     * @param {string} username Username of the user 
+     * @param {string} username Username of the user
      * @returns {Promise<boolean>}
      */
     async isOnWatchlist(username) {
-        return !!(await this.users.findOne({username})).onWatchlist;
+        return !!(await this.users.findOne({ username })).onWatchlist;
     }
 }
 
