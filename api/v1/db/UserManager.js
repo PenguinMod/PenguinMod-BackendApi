@@ -2682,17 +2682,9 @@ class UserManager {
     }
 
     async hardRejectProject(id) {
-        // ATODO: test this
-
-        // just mark as hard rejected, mongodb will do the rest
-        // have to separate so the index doesnt delete prematurely
         await this.projects.updateOne(
             { id: id },
-            { $set: { hardRejectTime: new Date() } },
-        );
-        await this.projects.updateOne(
-            { id: id },
-            { $set: { hardReject: true } },
+            { $set: { hardReject: true, hardRejectTime: new Date() } }, // doesn't need to be separate any more - we don't delete hard reject
         );
     }
 
