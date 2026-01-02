@@ -1,5 +1,5 @@
 require("dotenv").config();
-const { randomInt, randomBytes } = require("node:crypto");
+const { randomInt, randomBytes, createHash } = require("node:crypto");
 const bcrypt = require("bcrypt");
 const { MongoClient } = require("mongodb");
 const ULID = require("ulid");
@@ -11,6 +11,8 @@ const Mailjet = require("node-mailjet");
 const os = require("os");
 const pmp_protobuf = require("pmp-protobuf");
 const sharp = require("sharp");
+
+const using_backblaze = process.env.UseBackblaze == "true";
 
 const basePFP = fs.readFileSync(path.join(__dirname, "./penguin.png"));
 const deleted_thumb = fs.readFileSync(
@@ -222,6 +224,322 @@ class UserManager {
         await this._makeBucket("project-assets");
         // pfp bucket
         await this._makeBucket("profile-pictures");
+
+        if (using_backblaze) {
+            await this.generateBBAuthToken();
+        }
+    }
+
+    /**
+     * Generate an auth token
+     * @returns {Promise<void>}
+     */
+    async generateBBAuthToken() {
+        const key_id = process.env.BackblazeKeyID;
+        const key = process.env.BackblazeKey;
+
+        const auth_header =
+            "Basic" + Buffer.from(key_id + ":" + key).toString("base64");
+
+        const headers = new Headers();
+        headers.set("Authorization", auth_header);
+
+        const results = await fetch(
+            "https://api.backblazeb2.com/b2api/v4/b2_authorize_account",
+            {
+                headers,
+            },
+        ).then((res) => res.json());
+
+        this.bb_auth_token = results.authorizationToken;
+
+        const hour = 1000 * 60 * 60;
+        const day = hour * 24;
+        this.need_new_bb_auth_token = Date.now() + day - hour;
+
+        const sa = results.apiInfo.storageApi;
+        this.bb_api_url = sa.apiUrl;
+        this.bb_download_url =
+            process.env.UseCustomBackblazeDownloadUrl == "true"
+                ? process.env.BackblazeDownloadUrl
+                : sa.downloadUrl;
+
+        await this.generateBackblazeUploadURL();
+    }
+
+    /**
+     * Generates an upload url
+     * @returns {Promise<void>}
+     */
+    async generateBackblazeUploadURL() {
+        if (this.need_new_bb_upload_url || 0 > Date.now()) {
+            return;
+        }
+
+        const headers = new Headers();
+        headers.set("Authorization", await this.getBBAuthToken());
+        headers.set("bucketId", process.env.BackblazeBucketID);
+
+        const hour = 1000 * 60 * 60;
+        const day = hour * 24;
+        this.need_new_bb_upload_url = Date.now() + day - hour;
+
+        const results = await fetch(
+            "https://api.backblazeb2.com/b2api/v4/b2_get_upload_url",
+            {
+                headers,
+            },
+        );
+
+        this.bb_upload_url = results.uploadUrl;
+        this.bb_upload_auth_token = results.authorizationToken;
+    }
+
+    /**
+     * Gets the Backblaze auth token or fetches it if its expired
+     * @returns {Promise<string>}
+     */
+    async getBBAuthToken() {
+        if (this.need_new_bb_auth_token <= Date.now()) {
+            await this.generateBBAuthToken();
+        }
+
+        return this.bb_auth_token;
+    }
+
+    /**
+     * Gets the Backblaze upload url or fetches it if its expired
+     * @returns {Promise<string>}
+     */
+    async getBBUploadUrl() {
+        if (this.need_new_bb_upload_url <= Date.now()) {
+            await this.generateBackblazeUploadURL();
+        }
+
+        return this.bb_upload_url;
+    }
+
+    /**
+     * List the raw data returned by Backblaze's search.
+     * @param {string} prefix The prefix to search for
+     * @param {number} n The amount of items to return. Cannot exceed 10000.
+     * @returns {Promise<Array<Object>>}
+     */
+    async listDataWithPrefixBackblaze(prefix, n = 1000) {
+        // n is default 1k because max per class c is 1k, so we don't wanna go above that.
+        // if we do, it charges us for 2 instead of 1.
+        // we shouldn't have that many assets anyways.
+
+        const headers = new Headers();
+        headers.set("Authorization", await this.getBBAuthToken());
+
+        const bucketID = process.env.BackblazeBucketID;
+
+        const results = [];
+        let startFileName = null;
+
+        while (n != 0) {
+            const num = n > 10000 ? 10000 : n;
+
+            let url =
+                this.bb_api_url +
+                `/b2api/v4/b2_list_file_names?bucketId=${bucketID}&maxFileCount=${num}&prefix=${prefix}`;
+
+            if (startFileName) {
+                url += `&startFileName=${startFileName}`;
+            }
+
+            // we don't url encode prefix since it *should* just be a number and maybe an underscore and also im lazy
+            const res = await fetch(url, {
+                headers,
+            }).then((res) => res.json());
+
+            results.push(...res.files);
+
+            n -= num;
+
+            startFileName = res.nextFileName;
+        }
+
+        return results;
+    }
+
+    /**
+     * List the names of files with a given prefix from Backblaze.
+     * @param {string} prefix The prefix to search for
+     * @param {number} n The number of results to get. Cannot exceed 10000.
+     * @returns {Promise<Array<string>>}
+     */
+    async listWithPrefixBackblaze(prefix, n = 1000) {
+        return await this.listDataWithPrefixBackblaze(prefix, n).map(
+            (file) => file.fileName,
+        );
+    }
+
+    /**
+     * Save a file to Backblaze.
+     * @param {string} name The name of the file
+     * @param {Buffer} file The buffer of the file
+     */
+    async saveToBackblaze(name, file) {
+        const upload_url = this.getBBUploadUrl();
+        const auth_token = this.bb_upload_auth_token;
+
+        const len = file.length;
+
+        const headers = new Headers();
+        headers.set("Authorization", auth_token);
+        headers.set("X-Bz-File-Name", encodeURIComponent(name));
+        headers.set("Content-Type", "b2/x-auto");
+        headers.set("Content-Length", len);
+        const hash = createHash("sha1");
+        hash.update(file);
+        headers.set("X-Bz-Content-Sha1", hash.digest("hex"));
+
+        const result = await fetch(upload_url, {
+            method: "POST",
+            headers,
+            body: file,
+        }).then((res) => res.ok());
+
+        if (!result) {
+            console.log("FAILED TO SAVE TO BACKBLAZE!!!! BIG BAD!!!!!");
+        }
+    }
+
+    /**
+     * Download a file from the backblaze asset storage
+     * @param {string} name The name of the requested file
+     * @returns {Promise<Buffer>}
+     */
+    async downloadFromBackblaze(name) {
+        const url = `${this.bb_download_url}/file/${process.env.BackblazeBucketName}/${name}`;
+
+        return await fetch(url).then((res) => res.arrayBuffer());
+    }
+
+    /**
+     * Rename an object in Backblaze.
+     * @param {string} old_name The old name
+     * @param {string} new_name The new name
+     * @returns {Promise<void>}
+     */
+    async renameObjectBackblaze(old_name, new_name) {
+        const id = await this.getBBFileID(old_name);
+
+        await this.copyObjectBackblazeID(id, new_name);
+        await this.deleteFileBackblazeID(old_name, id);
+    }
+
+    /**
+     * Copy an object in Backblaze
+     * @param {string} old_name The old name
+     * @param {string} new_name The new name
+     * @returns {Promise<void>}
+     */
+    async copyObjectBackblaze(old_name, new_name) {
+        const file_id = await this.getBBFileID(old_name);
+
+        return await this.copyObjectBackblazeID(file_id, new_name);
+    }
+
+    /**
+     * Copy an object in Backblaze given it's ID, in order to avoid multiple ID lookups.
+     * @param {string} file_id The ID of the file
+     * @param {string} new_name The new name
+     * @returns {Promise<void>}
+     */
+    async copyObjectBackblazeID(file_id, new_name) {
+        const auth_token = await this.getBBAuthToken();
+        const api_url = this.bb_api_url;
+
+        const headers = new Headers();
+        headers.set("Authorization", auth_token);
+
+        const body = JSON.stringify({
+            sourceFileId: file_id,
+            destinationBucketId: process.env.BackblazeBucketID,
+            fileName: new_name,
+            metadataDirective: "COPY",
+        });
+
+        const url = api_url + "/b2api/v4/b2_copy_file";
+
+        const result = await fetch(url, {
+            method: "POST",
+            headers,
+            body,
+        }).then((res) => res.ok());
+
+        if (!result) {
+            console.log("FAILED TO COPY!!!! VERY BAD!!!!!!!!!!!");
+        }
+    }
+
+    /**
+     * Delete a file from Backblaze
+     * @param {string} fileName The name of the file
+     * @returns {Promise<void>}
+     */
+    async deleteFileBackblaze(fileName) {
+        const id = await this.getBBFileID(fileName);
+
+        return await this.deleteFileBackblazeID(fileName, id);
+    }
+
+    /**
+     * Delete a file from Backblaze given it's ID, in order to avoid multiple ID lookups.
+     * @param {string} fileName The name of the file
+     * @param {string} fileId the ID of the file
+     * @returns {Promise<void>}
+     */
+    async deleteFileBackblazeID(fileName, fileId) {
+        const auth_token = await this.getBBAuthToken();
+        const api_url = this.bb_api_url;
+
+        const headers = new Headers();
+        headers.set("Authorization", auth_token);
+
+        const body = JSON.stringify({
+            fileName,
+            fileId,
+            bypassGovernance: false,
+        });
+
+        const url = api_url + "/b2api/v4/b2_delete_file_version";
+
+        const result = await fetch(url, {
+            method: "POST",
+            headers,
+            body,
+        }).then((res) => res.ok());
+
+        if (!result) {
+            console.log("FAILED TO DELETE FILE!!!! BIG BAD!!!!");
+        }
+    }
+
+    /**
+     * Get the ID of a file from Backblaze
+     * @param {string} name The name of the file
+     * @returns {Promise<string>}
+     */
+    async getBBFileID(name) {
+        // boy do i hate backblaze
+        return await this.listWithPrefixBackblaze(name, 1)[0];
+    }
+
+    /**
+     * Delete multiple objects from Backblaze given a prefix
+     * @param {string} prefix The prefix to search for
+     * @param {number} n The number of objects to search for. Cannot exceed 10000.
+     */
+    async deleteMultipleObjectsBackblaze(prefix, n = 1000) {
+        const objects = await this.listDataWithPrefixBackblaze(prefix, n);
+
+        for (obj in objects) {
+            await this.deleteFileBackblazeID(obj.fileName, obj.fileId);
+        }
     }
 
     _makeBucket(bucketName) {
@@ -260,7 +578,7 @@ class UserManager {
      * @async
      */
     async reset(understands = false) {
-        throw new Error("Resseting is disabled");
+        throw new Error("Resetting is disabled");
 
         if (!understands) {
             let unde = prompt("This deletes ALL DATA. Are you sure? (Y/n) ");
@@ -1414,7 +1732,7 @@ class UserManager {
      * @param {Buffer} imageBuffer The file buffer for the thumbnail.
      * @param {string} instructions The instructions for the project.
      * @param {string} notes The notes for the project
-     * @param {String} remix ID of the project this is a remix of. Undefined if not a remix.
+     * @param {string} remix ID of the project this is a remix of. Undefined if not a remix.
      * @param {string} rating Rating of the project.
      * @async
      */
@@ -1461,11 +1779,17 @@ class UserManager {
         await this.minioClient.putObject("projects", id, projectBuffer);
         await this.minioClient.putObject("project-thumbnails", id, imageBuffer);
         for (const asset of assetBuffers) {
-            await this.minioClient.putObject(
-                "project-assets",
-                `${id}_${asset.id}`,
-                asset.buffer,
-            );
+            const name = `${id}_${asset.id}`;
+
+            if (using_backblaze) {
+                await this.saveToBackblaze(name, asset.buffer);
+            } else {
+                await this.minioClient.putObject(
+                    "project-assets",
+                    name,
+                    asset.buffer,
+                );
+            }
         }
 
         await this.addToFeed(
@@ -1613,16 +1937,27 @@ class UserManager {
         if (projectBuffer !== null) {
             await this.minioClient.putObject("projects", id, projectBuffer);
 
-            await this.deleteMultipleObjects("project-assets", id); // delete all the old assets
+            if (this.using_backblaze) {
+                await this.deleteMultipleObjectsBackblaze(id);
+            } else {
+                await this.deleteMultipleObjects("project-assets", id);
+            }
             // ATODO: instead of doing this just replace the ones that were edited
             // potentially we could just see which ones are new/not in use, since asset ids are meant to be the hash of the file?
+            // we'll need to start verifying that the name IS the hash but we need to do that anyways to save on storage space.
 
             for (const asset of assetBuffers) {
-                await this.minioClient.putObject(
-                    "project-assets",
-                    `${id}_${asset.id}`,
-                    asset.buffer,
-                );
+                const name = `${id}_${asset.id}`;
+
+                if (this.using_backblaze) {
+                    await this.saveToBackblaze(name, asset.buffer);
+                } else {
+                    await this.minioClient.putObject(
+                        "project-assets",
+                        name,
+                        asset.buffer,
+                    );
+                }
             }
         }
 
@@ -1863,7 +2198,7 @@ class UserManager {
             .getObject(bucketName, objectName)
             .catch((err) => {
                 console.error(
-                    `ERROR READING OBJECT "${objectName} from bucket ${bucketName}: ` +
+                    `ERROR READING OBJECT "${objectName}" from bucket ${bucketName}: ` +
                         err,
                 );
             });
@@ -1949,26 +2284,16 @@ class UserManager {
      * @returns {Promise<Array<Object>>} Array of project assets
      */
     async getProjectAssets(id) {
-        const stream = this.minioClient.listObjects("project-assets", id);
-
-        // deal with the object stream :sob:
-
-        const chunks = [];
-
-        // :canny:
-        const items = await new Promise((resolve, reject) => {
-            stream.on("data", (chunk) => chunks.push(chunk.name));
-            stream.on("end", () => resolve(chunks));
-            stream.on("error", (err) => reject(err));
-        });
+        const items = this.using_backblaze
+            ? this.listWithPrefixBackblaze(id)
+            : this.listWithPrefix("project-assets", id);
 
         const result = [];
 
         for (const item of items) {
-            const file = await this.readObjectFromBucket(
-                "project-assets",
-                item,
-            );
+            const file = this.using_backblaze
+                ? await this.downloadFromBackblaze(item)
+                : await this.readObjectFromBucket("project-assets", item);
 
             if (!file) return false;
 
@@ -1980,7 +2305,7 @@ class UserManager {
 
     /**
      * Get project metadata for a specified project
-     * @param {String} id ID of the project wanted.
+     * @param {string} id ID of the project wanted.
      * @returns {Promise<Object>} The project data.
      * @async
      */
@@ -2343,13 +2668,17 @@ class UserManager {
     async deleteProject(id) {
         await this.projects.deleteOne({ id: id });
 
+        // TODO: remove mentions of the project from feed
+
         // remove the loves and votes
         await this.projectStats.deleteMany({ projectId: id });
 
         // remove the project file
         await this.minioClient.removeObject("projects", id);
         await this.minioClient.removeObject("project-thumbnails", id);
-        this.deleteMultipleObjects("project-assets", id);
+
+        if (using_backblaze) this.deleteMultipleObjectsBackblaze(id);
+        else this.deleteMultipleObjects("project-assets", id);
     }
 
     async hardRejectProject(id) {
@@ -2773,8 +3102,8 @@ class UserManager {
      */
     async projectExists(id, nonPublic) {
         const result = nonPublic
-            ? await this.projects.findOne({ id: String(id) })
-            : await this.projects.findOne({ id: String(id), public: true });
+            ? await this.projects.findOne({ id: string(id) })
+            : await this.projects.findOne({ id: string(id), public: true });
 
         return result ? true : false;
     }
@@ -2782,7 +3111,7 @@ class UserManager {
     /**
      * Check for illegal wording on text
      * @param {string} text The text to check for illegal wording
-     * @returns {Promise<String>} Empty if there is nothing illegal, not empty if it was triggered (returns the trigger)
+     * @returns {Promise<string>} Empty if there is nothing illegal, not empty if it was triggered (returns the trigger)
      * @async
      */
     async checkForIllegalWording(text) {
@@ -2824,7 +3153,7 @@ class UserManager {
     /**
      * Check for illegal wording on a username
      * @param {string} username The username to check for illegal wording
-     * @returns {Promise<String>} Empty if there is nothing illegal, not empty if it was triggered (returns the trigger)
+     * @returns {Promise<string>} Empty if there is nothing illegal, not empty if it was triggered (returns the trigger)
      * @async
      */
     async checkForUnsafeUsername(username) {
@@ -2877,7 +3206,7 @@ class UserManager {
     /**
      * Check for potentially illegal wording on text
      * @param {string} text The text to check for slightly illegal wording
-     * @returns {Promise<String>} same as normal illegal
+     * @returns {Promise<string>} same as normal illegal
      * @async
      */
     async checkForPotentiallyUnsafeUsername(text) {
@@ -2946,7 +3275,7 @@ class UserManager {
     /**
      * Check for potentially illegal wording on text
      * @param {string} text The text to check for slightly illegal wording
-     * @returns {Promise<String>} same as normal illegal
+     * @returns {Promise<string>} same as normal illegal
      * @async
      */
     async checkForPotentiallyIllegalWording(text) {
@@ -3023,7 +3352,7 @@ class UserManager {
     /**
      * Check for potentially illegal wording on text
      * @param {string} text The text to check for slightly illegal wording
-     * @returns {Promise<String>} same as normal illegal
+     * @returns {Promise<string>} same as normal illegal
      * @async
      */
     async checkForPotentiallyIllegalWording(text) {
@@ -4862,7 +5191,7 @@ class UserManager {
      * @param {string} prefix Prefix to search for
      * @returns {Promise<string[]>}
      */
-    listWithPrefix(bucket, prefix) {
+    async listWithPrefix(bucket, prefix) {
         return new Promise((resolve, reject) => {
             const objectNames = [];
 
@@ -4898,17 +5227,26 @@ class UserManager {
         // minio bucket stuff
         await this.renameObjectMinio("project-thumbnails", original_id, new_id);
         await this.renameObjectMinio("projects", original_id, new_id);
-        const assets = await this.listWithPrefix(
-            "project-assets",
-            `${original_id}_`,
-        );
+
+        const search_term = `${original_id}_`;
+        const assets = this.using_backblaze
+            ? await this.listWithPrefixBackblaze(search_term)
+            : await this.listWithPrefix("project-assets", search_term);
         for (const asset of assets) {
-            const actual_id = asset.split("_")[1];
-            await this.renameObjectMinio(
-                "project-assets",
-                asset,
-                `${new_id}_${actual_id}`,
-            );
+            const asset_id = asset.split("_")[1];
+
+            if (this.using_backblaze) {
+                await this.renameObjectBackblaze(
+                    asset,
+                    `${new_id}_${asset_id}`,
+                );
+            } else {
+                await this.renameObjectMinio(
+                    "project-assets",
+                    asset,
+                    `${new_id}_${asset_id}`,
+                );
+            }
         }
         await this.users.updateMany(
             { favoriteProjectID: original_id },
@@ -4931,7 +5269,7 @@ class UserManager {
     /**
      * Get alts of a user, by ip. NOTE: THIS IS RECURSIVE!!!
      * @param {string} user_id id of the user
-     * @returns {Promise<String[]>} ids of the alts
+     * @returns {Promise<string[]>} ids of the alts
      */
     async getAlts(user_id) {
         const current_ids = new Set();
