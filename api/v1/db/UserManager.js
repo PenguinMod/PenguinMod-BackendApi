@@ -3897,19 +3897,19 @@ class UserManager {
                     },
                     {
                         $addFields: {
-                            loves: {
+                            votes: {
                                 $size: {
                                     $filter: {
                                         input: "$projectStatsData",
                                         as: "stat",
-                                        cond: { $eq: ["$$stat.type", "love"] },
+                                        cond: { $eq: ["$$stat.type", "vote"] },
                                     },
                                 },
                             },
                         },
                     },
                     {
-                        $sort: { loves: -1 * rev },
+                        $sort: { votes: -1 * rev },
                     },
                 );
                 break;
