@@ -111,6 +111,6 @@ module.exports = (app, utils) => {
         utils.UserManager.addImpressionsMany(Object.values(page).flat()).filter(v => Array.isArray(v)).flat())
             .catch(e => {
                 //
-            });;
+            });
     });
 }
