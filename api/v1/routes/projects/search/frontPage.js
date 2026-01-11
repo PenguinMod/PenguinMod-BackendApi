@@ -60,13 +60,6 @@ module.exports = (app, utils) => {
 
         const tag = "#" + tags[Math.floor(Math.random() * tags.length)];
 
-        const featured = await utils.UserManager.getFeaturedProjects(0, Number(utils.env.PageSize));
-
-        const almostFeatured = await utils.UserManager.almostFeatured(0,
-            Number(utils.env.PageSize) || 20,
-            Number(utils.env.MaxPageSize) || 100,
-        );
-
         /*
         const highViews = await utils.UserManager.specializedSearch(
             [{ $match: { featured: false, views: { $gte: 30 }, softRejected: false, hardReject: false } }],
@@ -79,9 +72,12 @@ module.exports = (app, utils) => {
 
         const user_id = user_and_logged_in ? await utils.UserManager.getIDByUsername(username) : null;
 
-        const fitsTags = await utils.UserManager.searchProjects(is_mod, tag, "newest", 0, Number(utils.env.PageSize), Number(utils.env.MaxPageSize))
-
-        const latest = await utils.UserManager.getProjects(is_mod, 0, Number(utils.env.PageSize), Number(utils.env.MaxPageSize), user_id);
+        const [featured, almostFeatured, fitsTags, latest] = await Promise.all([
+          utils.UserManager.getFeaturedProjects(0, Number(utils.env.PageSize)),
+          utils.UserManager.almostFeatured(0, Number(utils.env.PageSize) || 20, Number(utils.env.MaxPageSize) || 100),
+          utils.UserManager.searchProjects(is_mod, tag, "newest", 0, Number(utils.env.PageSize), Number(utils.env.MaxPageSize)),
+          utils.UserManager.getProjects(is_mod, 0, Number(utils.env.PageSize), Number(utils.env.MaxPageSize), user_id)
+        ]);
 
         const page = {
             featured: featured,
@@ -105,13 +101,16 @@ module.exports = (app, utils) => {
         }
         */
 
-        await utils.UserManager.addImpressionsMany(Object.values(page).flat());
-
         page.selectedTag = tag;
 
         res.header("Content-Type", "application/json");
         res.header("Cache-Control", "public, max-age=90");
         res.status(200);
         res.send(page);
+
+        utils.UserManager.addImpressionsMany(Object.values(page).flat()).filter(v => Array.isArray(v)).flat())
+            .catch(e => {
+                //
+            });;
     });
 }
