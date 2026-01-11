@@ -382,7 +382,7 @@ class UserManager {
      * @param {Buffer} file The buffer of the file
      */
     async saveToBackblaze(name, file) {
-        const upload_url = this.getBBUploadUrl();
+        const upload_url = await this.getBBUploadUrl();
         const auth_token = this.bb_upload_auth_token;
 
         const len = file.length;
@@ -3094,8 +3094,8 @@ class UserManager {
      */
     async projectExists(id, nonPublic) {
         const result = nonPublic
-            ? await this.projects.findOne({ id: string(id) })
-            : await this.projects.findOne({ id: string(id), public: true });
+            ? await this.projects.findOne({ id: String(id) })
+            : await this.projects.findOne({ id: String(id), public: true });
 
         return result ? true : false;
     }
