@@ -108,9 +108,13 @@ module.exports = (app, utils) => {
         res.status(200);
         res.send(page);
 
-        utils.UserManager.addImpressionsMany(Object.values(page).flat()).filter(v => Array.isArray(v)).flat())
-            .catch(e => {
-                //
-            });
+        const impressions = Object.values(page)
+            .filter(v => Array.isArray(v))
+            .flat();
+        
+        utils.UserManager
+            .addImpressionsMany(impressions)
+            .catch(() => {});
+
     });
 }
