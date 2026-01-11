@@ -4171,11 +4171,13 @@ class UserManager {
                 ? totalViewsResult[0].total_views || 0
                 : 0;
 
+        /*
         const mongodb_stats = await this.db.command({
             serverStatus: 1,
         });
         const current_mem_usage = process.memoryUsage();
         const comp_mem_usage = this.compMemUsage();
+        */
 
         return {
             userCount,
@@ -4184,9 +4186,11 @@ class UserManager {
             remixCount,
             featuredCount,
             totalViews,
+            /*
             current_mem_usage,
             comp_mem_usage,
             mongodb_stats,
+            */
         };
     }
 
