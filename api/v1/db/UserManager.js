@@ -44,12 +44,12 @@ class UserManager {
         this.passwordResetStates = this.db.collection("passwordResetStates");
         await this.passwordResetStates.createIndex(
             { expireAt: 1 },
-            { expireAfterSeconds: 60 * 60 * 2 },
-        ); // give 2 hours
+            { expireAfterSeconds: Number(process.env.LinkExpire) * 60 },
+        );
         this.sentEmails = this.db.collection("sentEmails");
         await this.sentEmails.createIndex(
             { expireAt: 1 },
-            { expireAfterSeconds: 60 * 60 * 24 },
+            { expireAfterSeconds: Number(process.env.LinkExpire) * 60 },
         );
         this.followers = this.db.collection("followers");
         this.oauthIDs = this.db.collection("oauthIDs");
@@ -4555,7 +4555,7 @@ class UserManager {
             userid,
             userip,
             sentAt: Date.now(),
-            expireAt: new Date(),
+            expireAt: Date.now() + Number(process.env.LinkExpire) * 60 * 1000,
             type,
         });
 
@@ -4649,7 +4649,7 @@ class UserManager {
         await this.passwordResetStates.insertOne({
             state: state,
             email: email,
-            expireAt: Date.now() + 1000 * 60 * 60 * 2,
+            expireAt: Date.now() + Number(process.env.LinkExpire) * 60 * 1000,
         });
 
         return state;
