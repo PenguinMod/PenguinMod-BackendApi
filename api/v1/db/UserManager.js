@@ -1133,7 +1133,7 @@ class UserManager {
      * @param {boolean} banned true if banning, false if unbanning
      * @async
      */
-    async setPermBanned(username, banned, reason, remove_follows = false) {
+    async setPermBanned(username, banned, reason, remove_follows = true) {
         await this.users.updateOne(
             { username: username },
             { $set: { permBanned: banned, banReason: reason } },
@@ -4642,8 +4642,9 @@ class UserManager {
         return result.sentAt;
     }
 
-    async generatePasswordResetState(email) {
-        const state = randomBytes(32).toString("hex");
+    async generatePasswordResetState(email, is_verify_email = false) {
+        const state =
+            randomBytes(32).toString("hex") + is_verify_email ? "_VE" : "";
 
         await this.passwordResetStates.insertOne({
             state: state,
@@ -4654,18 +4655,18 @@ class UserManager {
         return state;
     }
 
-    async verifyPasswordResetState(state, email) {
+    async verifyPasswordResetState(state, email, is_verify_email = false) {
         const result = await this.passwordResetStates.findOne({
-            state: state,
+            state: state + is_verify_email ? "_VE" : "",
             email: email,
         });
 
-        // now get rid of the state cuz uh we dont need it anymore
+        const is_valid = !!result;
 
-        if (!!result)
+        if (is_valid)
             await this.passwordResetStates.deleteOne({ state: state });
 
-        return !!result ? true : false;
+        return is_valid;
     }
 
     /**
