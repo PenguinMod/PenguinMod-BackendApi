@@ -2566,12 +2566,12 @@ class UserManager {
     /**
      * Get the amount of people following a user
      * @param {string} username Username of the user
-     * @returns {Promise<number>} Amount of people following the user
+     * @returns {Promise<number|undefined>} Amount of people following the user
      */
     async getFollowerCount(username) {
         const result = await this.users.findOne({ username: username });
 
-        return result.followers;
+        return result ? result.followers : undefined;
     }
 
     /**
