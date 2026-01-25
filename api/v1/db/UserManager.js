@@ -4644,7 +4644,7 @@ class UserManager {
 
     async generatePasswordResetState(email, is_verify_email = false) {
         const state =
-            randomBytes(32).toString("hex") + is_verify_email ? "_VE" : "";
+            randomBytes(32).toString("hex") + (is_verify_email ? "_VE" : "");
 
         await this.passwordResetStates.insertOne({
             state: state,
@@ -4657,7 +4657,7 @@ class UserManager {
 
     async verifyPasswordResetState(state, email, is_verify_email = false) {
         const result = await this.passwordResetStates.findOne({
-            state: state + is_verify_email ? "_VE" : "",
+            state: state + (is_verify_email ? "_VE" : ""),
             email: email,
         });
 
