@@ -24,6 +24,7 @@ module.exports = (app, utils) => {
                 !(await utils.UserManager.verifyPasswordResetState(
                     state,
                     email,
+                    true,
                 ))
             ) {
                 utils.error(
