@@ -42,11 +42,13 @@ class UserManager {
         await this.loggedIPs.createIndex({ id: 1 });
         await this.loggedIPs.createIndex({ ip: 1 });
         this.passwordResetStates = this.db.collection("passwordResetStates");
+        await this.passwordResetStates.dropIndexes();
         await this.passwordResetStates.createIndex(
             { expireAt: 1 },
             { expireAfterSeconds: Number(process.env.LinkExpire) * 60 },
         );
         this.sentEmails = this.db.collection("sentEmails");
+        await this.sentEmails.dropIndexes();
         await this.sentEmails.createIndex(
             { expireAt: 1 },
             { expireAfterSeconds: Number(process.env.LinkExpire) * 60 },
