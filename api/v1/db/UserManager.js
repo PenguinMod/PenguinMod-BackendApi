@@ -4657,9 +4657,9 @@ class UserManager {
         return state;
     }
 
-    async verifyPasswordResetState(state, email, is_verify_email = false) {
+    async verifyPasswordResetState(state, email) {
         const result = await this.passwordResetStates.findOne({
-            state: state + (is_verify_email ? "_VE" : ""),
+            state: state,
             email: email,
         });
 
