@@ -4663,6 +4663,9 @@ class UserManager {
         const result = await this.passwordResetStates.findOne({
             state: state,
             email: email,
+            expireAt: {
+                $gt: Date.now() + Number(process.env.LinkExpire) * 1000 * 60,
+            },
         });
 
         const is_valid = !!result;
