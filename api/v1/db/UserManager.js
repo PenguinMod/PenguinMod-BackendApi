@@ -293,6 +293,8 @@ class UserManager {
             },
         ).then((res) => res.json());
 
+        console.log(results);
+
         this.bb_upload_url = results.uploadUrl;
         this.bb_upload_auth_token = results.authorizationToken;
     }
