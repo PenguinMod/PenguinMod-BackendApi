@@ -226,7 +226,7 @@ class UserManager {
         await this._makeBucket("profile-pictures");
 
         if (using_backblaze) {
-            this.using_bb_upload_url = false;
+            this.using_bb_upload_url = 0;
             await this.generateBBAuthToken();
         }
     }
@@ -302,7 +302,7 @@ class UserManager {
     async getBBAuthToken() {
         if (
             this.need_new_bb_auth_token <= Date.now() ||
-            this.using_bb_upload_url
+            this.using_bb_upload_url > 0
         ) {
             await this.generateBBAuthToken();
         }
@@ -387,7 +387,7 @@ class UserManager {
     async saveToBackblaze(name, file) {
         const upload_url = await this.getBBUploadUrl();
         const auth_token = this.bb_upload_auth_token;
-        this.using_bb_upload_url = true;
+        this.using_bb_upload_url += 1;
 
         const len = file.length;
 
@@ -406,7 +406,7 @@ class UserManager {
             body: file,
         }).then((res) => res.ok());
 
-        this.using_bb_upload_url = false;
+        this.using_bb_upload_url -= 1;
 
         if (!result) {
             console.log("FAILED TO SAVE TO BACKBLAZE!!!! BIG BAD!!!!!");
