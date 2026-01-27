@@ -402,6 +402,8 @@ class UserManager {
         hash.update(file);
         headers.set("X-Bz-Content-Sha1", hash.digest("hex"));
 
+        console.log(upload_url);
+
         const result = await fetch(upload_url, {
             method: "POST",
             headers,
