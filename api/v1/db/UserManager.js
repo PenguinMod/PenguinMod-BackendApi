@@ -422,6 +422,7 @@ class UserManager {
      */
     async downloadFromBackblaze(name) {
         const url = `${this.bb_download_url}/file/${process.env.BackblazeBucketName}/${name}`;
+        console.log(url);
 
         return await fetch(url).then((res) => res.arrayBuffer());
     }
@@ -2299,7 +2300,6 @@ class UserManager {
         const result = [];
 
         for (const item of items) {
-            console.log(using_backblaze);
             const file = using_backblaze
                 ? await this.downloadFromBackblaze(item)
                 : await this.readObjectFromBucket("project-assets", item);
