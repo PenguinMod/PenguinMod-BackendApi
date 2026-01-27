@@ -549,7 +549,7 @@ class UserManager {
     async deleteMultipleObjectsBackblaze(prefix, n = 1000) {
         const objects = await this.listDataWithPrefixBackblaze(prefix, n);
 
-        for (obj in objects) {
+        for (const obj of objects) {
             await this.deleteFileBackblazeID(obj.fileName, obj.fileId);
         }
     }
@@ -2299,6 +2299,8 @@ class UserManager {
         const items = using_backblaze
             ? await this.listWithPrefixBackblaze(id)
             : await this.listWithPrefix("project-assets", id);
+
+        console.log(items);
 
         const result = [];
 
