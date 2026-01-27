@@ -293,8 +293,6 @@ class UserManager {
             },
         ).then((res) => res.json());
 
-        console.log(results);
-
         this.bb_upload_url = results.uploadUrl;
         this.bb_upload_auth_token = results.authorizationToken;
     }
@@ -403,8 +401,6 @@ class UserManager {
         const hash = createHash("sha1");
         hash.update(file);
         headers.set("X-Bz-Content-Sha1", hash.digest("hex"));
-
-        console.log(upload_url);
 
         const result = await fetch(upload_url, {
             method: "POST",
