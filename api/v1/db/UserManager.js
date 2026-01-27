@@ -2309,8 +2309,6 @@ class UserManager {
 
             if (!file) return false;
 
-            console.log(file);
-
             result.push({ id: item.split("_")[1], buffer: file });
         }
 
