@@ -410,7 +410,7 @@ class UserManager {
             method: "POST",
             headers,
             body: file,
-        }).then((res) => res.ok());
+        }).then((res) => res.ok);
 
         this.using_bb_upload_url -= 1;
 
