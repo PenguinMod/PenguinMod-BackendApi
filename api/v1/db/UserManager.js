@@ -287,7 +287,7 @@ class UserManager {
         this.need_new_bb_upload_url = Date.now() + day - hour;
 
         const results = await fetch(
-            `https://api.backblazeb2.com/b2api/v4/b2_get_upload_url?bucketId=${process.env.BackblazeBucketID}`,
+            `${this.bb_api_url}/b2api/v4/b2_get_upload_url?bucketId=${process.env.BackblazeBucketID}`,
             {
                 headers,
             },
