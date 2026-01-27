@@ -425,6 +425,10 @@ class UserManager {
 
         console.log(url);
 
+        const buffer = await fetch(url).then((res) => res.arrayBuffer());
+
+        console.log(buffer);
+
         return await fetch(url).then((res) => res.arrayBuffer());
     }
 
