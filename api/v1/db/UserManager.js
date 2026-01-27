@@ -376,7 +376,7 @@ class UserManager {
      * @returns {Promise<Array<string>>}
      */
     async listWithPrefixBackblaze(prefix, n = 1000) {
-        return await this.listDataWithPrefixBackblaze(prefix, n).map(
+        return (await this.listDataWithPrefixBackblaze(prefix, n)).map(
             (file) => file.fileName,
         );
     }
