@@ -423,13 +423,9 @@ class UserManager {
     async downloadFromBackblaze(name) {
         const url = `${this.bb_download_url}/file/${process.env.BackblazeBucketName}/${name}`;
 
-        console.log("----pre----");
-        console.log(url);
-
-        const buffer = await fetch(url).then((res) => res.arrayBuffer());
-
-        console.log(buffer);
-        console.log("----post----");
+        const buffer = Buffer.from(
+            await fetch(url).then((res) => res.arrayBuffer()),
+        );
 
         return buffer;
     }
