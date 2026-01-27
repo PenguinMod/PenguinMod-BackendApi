@@ -2293,8 +2293,8 @@ class UserManager {
      */
     async getProjectAssets(id) {
         const items = this.using_backblaze
-            ? this.listWithPrefixBackblaze(id)
-            : this.listWithPrefix("project-assets", id);
+            ? await this.listWithPrefixBackblaze(id)
+            : await this.listWithPrefix("project-assets", id);
 
         const result = [];
 
