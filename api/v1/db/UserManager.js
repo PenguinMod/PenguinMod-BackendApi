@@ -429,7 +429,7 @@ class UserManager {
 
         console.log(buffer);
 
-        return await fetch(url).then((res) => res.arrayBuffer());
+        return buffer;
     }
 
     /**
