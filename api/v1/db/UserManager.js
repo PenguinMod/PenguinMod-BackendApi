@@ -1945,7 +1945,7 @@ class UserManager {
         if (projectBuffer !== null) {
             await this.minioClient.putObject("projects", id, projectBuffer);
 
-            if (this.using_backblaze) {
+            if (using_backblaze) {
                 await this.deleteMultipleObjectsBackblaze(id);
             } else {
                 await this.deleteMultipleObjects("project-assets", id);
@@ -1957,7 +1957,7 @@ class UserManager {
             for (const asset of assetBuffers) {
                 const name = `${id}_${asset.id}`;
 
-                if (this.using_backblaze) {
+                if (using_backblaze) {
                     await this.saveToBackblaze(name, asset.buffer);
                 } else {
                     await this.minioClient.putObject(
@@ -2292,14 +2292,15 @@ class UserManager {
      * @returns {Promise<Array<Object>>} Array of project assets
      */
     async getProjectAssets(id) {
-        const items = this.using_backblaze
+        const items = using_backblaze
             ? await this.listWithPrefixBackblaze(id)
             : await this.listWithPrefix("project-assets", id);
 
         const result = [];
 
         for (const item of items) {
-            const file = this.using_backblaze
+            console.log(using_backblaze);
+            const file = using_backblaze
                 ? await this.downloadFromBackblaze(item)
                 : await this.readObjectFromBucket("project-assets", item);
 
@@ -5239,13 +5240,13 @@ class UserManager {
         await this.renameObjectMinio("projects", original_id, new_id);
 
         const search_term = `${original_id}_`;
-        const assets = this.using_backblaze
+        const assets = using_backblaze
             ? await this.listWithPrefixBackblaze(search_term)
             : await this.listWithPrefix("project-assets", search_term);
         for (const asset of assets) {
             const asset_id = asset.split("_")[1];
 
-            if (this.using_backblaze) {
+            if (using_backblaze) {
                 await this.renameObjectBackblaze(
                     asset,
                     `${new_id}_${asset_id}`,
