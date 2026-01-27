@@ -226,6 +226,7 @@ class UserManager {
         await this._makeBucket("profile-pictures");
 
         if (using_backblaze) {
+            this.using_bb_upload_url = false;
             await this.generateBBAuthToken();
         }
     }
@@ -264,32 +265,31 @@ class UserManager {
                 ? process.env.BackblazeDownloadUrl
                 : sa.downloadUrl;
 
-        await this.generateBackblazeUploadURL();
+        await this.generateBBUploadURL();
     }
 
     /**
      * Generates an upload url
      * @returns {Promise<void>}
      */
-    async generateBackblazeUploadURL() {
+    async generateBBUploadURL() {
         if (this.need_new_bb_upload_url || 0 > Date.now()) {
             return;
         }
 
         const headers = new Headers();
         headers.set("Authorization", await this.getBBAuthToken());
-        headers.set("bucketId", process.env.BackblazeBucketID);
 
         const hour = 1000 * 60 * 60;
         const day = hour * 24;
         this.need_new_bb_upload_url = Date.now() + day - hour;
 
         const results = await fetch(
-            "https://api.backblazeb2.com/b2api/v4/b2_get_upload_url",
+            `https://api.backblazeb2.com/b2api/v4/b2_get_upload_url?bucketId=${process.env.BackblazeBucketID}`,
             {
                 headers,
             },
-        );
+        ).then((res) => res.json());
 
         this.bb_upload_url = results.uploadUrl;
         this.bb_upload_auth_token = results.authorizationToken;
@@ -300,7 +300,10 @@ class UserManager {
      * @returns {Promise<string>}
      */
     async getBBAuthToken() {
-        if (this.need_new_bb_auth_token <= Date.now()) {
+        if (
+            this.need_new_bb_auth_token <= Date.now() ||
+            this.using_bb_upload_url
+        ) {
             await this.generateBBAuthToken();
         }
 
@@ -313,7 +316,7 @@ class UserManager {
      */
     async getBBUploadUrl() {
         if (this.need_new_bb_upload_url <= Date.now()) {
-            await this.generateBackblazeUploadURL();
+            await this.generateBBUploadURL();
         }
 
         return this.bb_upload_url;
@@ -384,6 +387,7 @@ class UserManager {
     async saveToBackblaze(name, file) {
         const upload_url = await this.getBBUploadUrl();
         const auth_token = this.bb_upload_auth_token;
+        this.using_bb_upload_url = true;
 
         const len = file.length;
 
@@ -401,6 +405,8 @@ class UserManager {
             headers,
             body: file,
         }).then((res) => res.ok());
+
+        this.using_bb_upload_url = false;
 
         if (!result) {
             console.log("FAILED TO SAVE TO BACKBLAZE!!!! BIG BAD!!!!!");
