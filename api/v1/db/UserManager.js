@@ -2300,8 +2300,6 @@ class UserManager {
             ? await this.listWithPrefixBackblaze(id)
             : await this.listWithPrefix("project-assets", id);
 
-        console.log(items);
-
         const result = [];
 
         for (const item of items) {

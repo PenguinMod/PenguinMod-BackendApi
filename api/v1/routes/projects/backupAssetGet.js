@@ -24,11 +24,7 @@ module.exports = (app, utils) => {
             return utils.error(res, 400, "No asset");
         }
 
-        console.log(asset_name);
-
         const asset = await utils.UserManager.backupAssetCheck(asset_name);
-
-        console.log(asset);
 
         if (!asset) {
             return utils.error(res, 400, "Not found");
