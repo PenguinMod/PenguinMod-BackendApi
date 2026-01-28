@@ -406,11 +406,12 @@ class UserManager {
             method: "POST",
             headers,
             body: file,
-        }).then((res) => res.ok);
+        });
 
         this.using_bb_upload_url -= 1;
 
-        if (!result) {
+        if (!result.ok) {
+            console.log(result);
             console.log("FAILED TO SAVE TO BACKBLAZE!!!! BIG BAD!!!!!");
         }
     }
