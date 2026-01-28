@@ -275,10 +275,6 @@ class UserManager {
      * @returns {Promise<void>}
      */
     async generateBBUploadURL() {
-        if (this.need_new_bb_upload_url || 0 > Date.now()) {
-            return;
-        }
-
         const headers = new Headers();
         headers.set("Authorization", await this.getBBAuthToken());
 
