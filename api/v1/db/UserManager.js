@@ -521,7 +521,7 @@ class UserManager {
             method: "POST",
             headers,
             body,
-        }).then((res) => res.ok());
+        }).then((res) => res.ok);
 
         if (!result) {
             console.log("FAILED TO DELETE FILE!!!! BIG BAD!!!!");
