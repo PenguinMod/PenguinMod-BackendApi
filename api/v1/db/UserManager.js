@@ -5750,6 +5750,20 @@ class UserManager {
     async isOnWatchlist(username) {
         return !!(await this.users.findOne({ username })).onWatchlist;
     }
+
+    async backupAssetCheck(asset_name) {
+        // we will use minio here
+        const item = await this.readObjectFromBucket(
+            "project-assets",
+            asset_name,
+        );
+        if (item) {
+            if (using_backblaze) {
+                await this.saveToBackblaze(asset_name, item);
+            }
+        }
+        return item;
+    }
 }
 
 module.exports = UserManager;
