@@ -411,7 +411,7 @@ class UserManager {
         this.using_bb_upload_url -= 1;
 
         if (!result.ok) {
-            console.log(result.json());
+            console.log(await result.json());
             console.log("FAILED TO SAVE TO BACKBLAZE!!!! BIG BAD!!!!!");
         }
     }
