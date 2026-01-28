@@ -24,7 +24,9 @@ module.exports = (app, utils) => {
             return utils.error(res, 400, "No asset");
         }
 
-        const asset = await utils.UserManager.backupAssetCheck(asset_name);
+        const asset = Uint8Array(
+            await utils.UserManager.backupAssetCheck(asset_name),
+        ).buffer;
 
         if (!asset) {
             return utils.error(res, 400, "Not found");
