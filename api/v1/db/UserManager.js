@@ -302,10 +302,7 @@ class UserManager {
      * @returns {Promise<string>}
      */
     async getBBAuthToken() {
-        if (
-            this.need_new_bb_auth_token <= Date.now() ||
-            this.using_bb_upload_url > 0
-        ) {
+        if (this.need_new_bb_auth_token <= Date.now()) {
             await this.generateBBAuthToken();
         }
 
@@ -317,7 +314,10 @@ class UserManager {
      * @returns {Promise<string>}
      */
     async getBBUploadUrl() {
-        if (this.need_new_bb_upload_url <= Date.now()) {
+        if (
+            this.need_new_bb_upload_url <= Date.now() ||
+            this.using_bb_upload_url > 1
+        ) {
             await this.generateBBUploadURL();
         }
 
@@ -387,9 +387,9 @@ class UserManager {
      * @param {Buffer} file The buffer of the file
      */
     async saveToBackblaze(name, file) {
+        this.using_bb_upload_url += 1;
         const upload_url = await this.getBBUploadUrl();
         const auth_token = this.bb_upload_auth_token;
-        this.using_bb_upload_url += 1;
 
         const len = file.length;
 
