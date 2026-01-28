@@ -20,7 +20,7 @@ module.exports = (app, utils) => {
 
         const asset_name = String(packet.asset_name);
 
-        if (!asset_name) {
+        if (!asset_name || asset_name == "0") {
             return utils.error(res, 400, "No asset");
         }
 
