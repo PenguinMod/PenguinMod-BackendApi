@@ -20,9 +20,6 @@ module.exports = (app, utils) => {
             const email = packet.email;
             const state = packet.state;
 
-            console.log(email);
-            console.log(state);
-
             if (
                 !(await utils.UserManager.verifyPasswordResetState(
                     state,

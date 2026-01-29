@@ -4986,24 +4986,17 @@ class UserManager {
     }
 
     async verifyPasswordResetState(state, email, is_verify_email = false) {
-        console.log(is_verify_email);
         if (state.endsWith("_VE") != is_verify_email) return false;
 
         const result = await this.passwordResetStates.findOne({
             state: state,
             email: email,
             expireAt: {
-                $gt: Date.now() + Number(process.env.LinkExpire) * 1000 * 60,
+                $gt: Date.now(),
             },
         });
 
         const is_valid = !!result;
-
-        console.log("IS VALID:");
-        console.log(is_valid);
-
-        console.log("EXPIRES AT:");
-        console.log(Date.now() + Number(process.env.LinkExpire) * 1000 * 60);
 
         if (is_valid)
             await this.passwordResetStates.deleteOne({ state: state });
