@@ -4999,6 +4999,9 @@ class UserManager {
 
         const is_valid = !!result;
 
+        console.log("IS VALID:");
+        console.log(is_valid);
+
         if (is_valid)
             await this.passwordResetStates.deleteOne({ state: state });
 
