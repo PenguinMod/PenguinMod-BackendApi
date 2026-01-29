@@ -5002,6 +5002,9 @@ class UserManager {
         console.log("IS VALID:");
         console.log(is_valid);
 
+        console.log("EXPIRES AT:");
+        console.log(Date.now() + Number(process.env.LinkExpire) * 1000 * 60);
+
         if (is_valid)
             await this.passwordResetStates.deleteOne({ state: state });
 
