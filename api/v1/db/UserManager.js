@@ -4986,6 +4986,7 @@ class UserManager {
     }
 
     async verifyPasswordResetState(state, email, is_verify_email = false) {
+        console.log(is_verify_email);
         if (state.endsWith("_VE") != is_verify_email) return false;
 
         const result = await this.passwordResetStates.findOne({
