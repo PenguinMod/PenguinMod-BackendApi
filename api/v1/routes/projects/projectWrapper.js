@@ -104,8 +104,8 @@ module.exports = (app, utils) => {
         // NOTE: the date for when it begins may not be entirely
         // accurate. hopefully it is. idk
         const get_assets_tmp =
-            (metadata.date > Date.parse("2025-01-19T08:00:00Z") &&
-                metadata.date < Date.parse("2025-01-27T00:00:00Z")) ||
+            (metadata.date > Date.parse("2026-01-19T08:00:00Z") &&
+                metadata.date < Date.parse("2026-01-27T00:00:00Z")) ||
             get_assets;
 
         const assets = get_assets_tmp
