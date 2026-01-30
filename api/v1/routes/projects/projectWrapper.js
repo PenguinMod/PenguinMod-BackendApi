@@ -115,7 +115,6 @@ module.exports = (app, utils) => {
         let assets = [];
         if (needs_intervention) {
             assets = await utils.UserManager.backupGetProjAssets(projectId);
-            console.log(assets);
         } else if (get_assets) {
             assets = await utils.UserManager.getProjectAssets(projectId);
         }
