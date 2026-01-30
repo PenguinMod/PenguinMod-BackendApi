@@ -5762,7 +5762,10 @@ class UserManager {
     }
 
     async backupGetProjAssets(proj_id) {
-        const assets = this.listWithPrefix("project-assets", `${proj_id}_`);
+        const assets = await this.listWithPrefix(
+            "project-assets",
+            `${proj_id}_`,
+        );
 
         const promises = [];
         for (const asset_name of assets) {
