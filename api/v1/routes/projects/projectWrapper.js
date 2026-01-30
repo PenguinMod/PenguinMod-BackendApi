@@ -103,11 +103,6 @@ module.exports = (app, utils) => {
         // condition.
         // NOTE: the date for when it begins may not be entirely
         // accurate. hopefully it is. idk
-        console.log(new Date(metadata.lastUpdate));
-        console.log(
-            metadata.lastUpdate > Date.parse("2026-01-19T08:00:00Z") &&
-                metadata.lastUpdate < Date.parse("2026-01-27T00:00:00Z"),
-        );
         const needs_intervention =
             metadata.lastUpdate > Date.parse("2026-01-19T08:00:00Z") &&
             metadata.lastUpdate < Date.parse("2026-01-27T00:00:00Z");
