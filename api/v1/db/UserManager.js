@@ -2293,9 +2293,10 @@ class UserManager {
      * @returns {Promise<Array<Object>>} Array of project assets
      */
     async getProjectAssets(id) {
+        const search_term = `${id}_`;
         const items = using_backblaze
-            ? await this.listWithPrefixBackblaze(id)
-            : await this.listWithPrefix("project-assets", id);
+            ? await this.listWithPrefixBackblaze(search_term)
+            : await this.listWithPrefix("project-assets", search_term);
 
         const result = [];
 
@@ -5758,6 +5759,17 @@ class UserManager {
             }
         }
         return item;
+    }
+
+    async backupGetProjAssets(proj_id) {
+        const assets = this.listWithPrefix("project-assets", `${proj_id}_`);
+
+        const promises = [];
+        for (const asset_name of assets) {
+            promises.push(this.backupAssetCheck(asset_name));
+        }
+
+        return await Promise.all(promises);
     }
 }
 
