@@ -108,15 +108,16 @@ module.exports = (app, utils) => {
             metadata.lastUpdate > Date.parse("2026-01-19T08:00:00Z") &&
                 metadata.lastUpdate < Date.parse("2026-01-27T00:00:00Z"),
         );
-        const get_assets_tmp =
-            (metadata.lastUpdate > Date.parse("2026-01-19T08:00:00Z") &&
-                metadata.lastUpdate < Date.parse("2026-01-27T00:00:00Z")) ||
-            get_assets;
+        const needs_intervention =
+            metadata.lastUpdate > Date.parse("2026-01-19T08:00:00Z") &&
+            metadata.lastUpdate < Date.parse("2026-01-27T00:00:00Z");
 
         let assets = [];
-        if (get_assets_tmp) {
-            assets = await utils.UserManager.getProjectAssets(projectId);
+        if (needs_intervention) {
+            assets = await utils.UserManager.backupGetProjAssets(projectId);
             console.log(assets);
+        } else if (get_assets) {
+            assets = await utils.UserManager.getProjectAssets(projectId);
         }
 
         return res.send({ project, assets });
