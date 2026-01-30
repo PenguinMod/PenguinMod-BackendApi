@@ -113,9 +113,11 @@ module.exports = (app, utils) => {
                 metadata.lastUpdate < Date.parse("2026-01-27T00:00:00Z")) ||
             get_assets;
 
-        const assets = get_assets_tmp
-            ? await utils.UserManager.getProjectAssets(projectId)
-            : [];
+        let assets = [];
+        if (get_assets_tmp) {
+            assets = await utils.UserManager.getProjectAssets(projectId);
+            console.log(assets);
+        }
 
         return res.send({ project, assets });
     });
