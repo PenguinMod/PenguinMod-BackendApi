@@ -116,6 +116,20 @@ module.exports = (app, utils) => {
 
         switch (requestType) {
             case "protobuf":
+                // views get checked here because projects have to be gotten from here
+                // or projectwrapper but we don't use that rn
+                const has_seen = await utils.UserManager.hasSeenProject(
+                    projectID,
+                    req.clientIp,
+                );
+
+                if (!has_seen) {
+                    await utils.UserManager.projectView(
+                        projectID,
+                        req.clientIp,
+                    );
+                }
+
                 const project =
                     await utils.UserManager.getProjectFile(projectID);
 

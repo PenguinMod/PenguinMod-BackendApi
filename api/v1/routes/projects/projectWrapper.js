@@ -88,7 +88,6 @@ module.exports = (app, utils) => {
             }
         }
 
-        // only do project view here, as other endpoints can be used elsewhere
         if (
             !(await utils.UserManager.hasSeenProject(projectId, req.clientIp))
         ) {

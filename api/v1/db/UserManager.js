@@ -2206,10 +2206,13 @@ class UserManager {
         const stream = await this.minioClient
             .getObject(bucketName, objectName)
             .catch((err) => {
+                /*
+                // temporarily disable: this is spamming logs rn
                 console.error(
                     `ERROR READING OBJECT "${objectName}" from bucket ${bucketName}: ` +
                         err,
                 );
+                */
             });
 
         if (!stream) return;
