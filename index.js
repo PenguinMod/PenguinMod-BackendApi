@@ -269,11 +269,21 @@ console.error = (str) => {
 
     app.use((err, req, res, next) => {
         if (err instanceof multer.MulterError) {
-            return error(
-                res,
-                400,
-                `One of your assets is too large. The maximum size is ${Number(process.env.UploadSize) || 5}mb.`,
-            );
+            switch (err.code) {
+                case "LIMIT_UNEXPECTED_FILE":
+                    return error(
+                        res,
+                        400,
+                        `You have too many files. The maximum amount is ${Number(process.env.MaxFilesUpload)}.`,
+                    );
+                case "LIMIT_FILE_SIZE":
+                default:
+                    return error(
+                        res,
+                        400,
+                        `One of your assets is too large. The maximum size is ${Number(process.env.UploadSize) || 5}mb.`,
+                    );
+            }
         }
 
         console.error(err);
