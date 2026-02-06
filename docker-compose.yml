@@ -8,6 +8,8 @@ services:
             - ${DOCKER_CURRENT_DIR_LOCATION}
         networks:
             - sigma_network
+        environment:
+            - TERM=xterm-256color
         restart: always
         tty: true
 
