@@ -9,6 +9,10 @@ services:
         networks:
             - sigma_network
         restart: always
+        tty: true
+        stdin_open: true
+        environment:
+            - FORCE_COLOR=1
 
     mongo:
         restart: always
