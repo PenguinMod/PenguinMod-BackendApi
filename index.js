@@ -92,20 +92,20 @@ const UserManager = new um();
 
 console.real_log = console.log;
 console.log = (str) => {
-    const date_str = `(${new Date().toISOString()})`.gray;
-    console.real_log(`${"LOG".blue} ${date_str}: ${str}`);
+    const date_str = `(${new Date().toISOString()})`.gray.dim;
+    console.real_log(`${"LOG".dim.blue} ${date_str}: ${str}`);
 };
 
 console.real_warn = console.warn;
 console.warn = (str) => {
     const date_str = `(${new Date().toISOString()})`.gray;
-    console.real_warn(`${"WARNING".yellow} ${date_str}: ${str}`);
+    console.real_warn(`${"WARNING".bgYellow.white} ${date_str}: ${str}`);
 };
 
 console.real_error = console.error;
 console.error = (str) => {
     const date_str = `(${new Date().toISOString()})`.gray;
-    console.real_error(`${"ERORR".red} ${date_str}: ${str}`);
+    console.real_error(`${"ERORR".bgRed.white} ${date_str}: ${str}`);
 };
 
 (async () => {
