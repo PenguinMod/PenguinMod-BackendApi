@@ -2,5 +2,4 @@ FROM node:20
 WORKDIR /app
 COPY . .
 RUN npm i
-ENV FORCE_COLOR=1
-CMD node index.js
+CMD FORCE_COLOR=1 node index.js
