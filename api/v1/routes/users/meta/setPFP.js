@@ -69,7 +69,7 @@ module.exports = (app, utils) => {
                         .resize(100, 100)
                         .toBuffer();
                 } catch (e) {
-                    console.log("Sharp error: " + e);
+                    console.warn(`Sharp error: ${e}`);
                     return utils.error(res, 400, "Invalid image");
                 }
 

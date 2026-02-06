@@ -6,7 +6,7 @@ const UserManager = require("../../../../db/UserManager");
  */
 
 /**
- * 
+ *
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
@@ -22,7 +22,7 @@ module.exports = (app, utils) => {
             return;
         }
 
-        if (!await utils.UserManager.verifyOAuth2State(state)) {
+        if (!(await utils.UserManager.verifyOAuth2State(state))) {
             utils.error(res, 400, "InvalidState");
             return;
         }
@@ -30,32 +30,38 @@ module.exports = (app, utils) => {
         const userid = state.split("_")[1]; // get the userid from the state (a little hacky)
 
         // now make the request
-        const response = await utils.UserManager.makeOAuth2Request(code, "scratch");
+        const response = await utils.UserManager.makeOAuth2Request(
+            code,
+            "scratch",
+        );
 
         if (!response) {
-            utils.error(res, 500, "OAuthServerDidNotRespond")
+            utils.error(res, 500, "OAuthServerDidNotRespond");
             return;
         }
 
-        const user = await fetch("https://oauth2.scratch-wiki.info/w/rest.php/soa2/v0/user", {
-            headers: {
-                Authorization: `Bearer ${btoa(response.access_token)}`
-            }
-        })
-        .then(async res => {
-            return {"user": await res.json(), "status": res.status};
-        })
-        .catch(e => {
-            utils.error(res, 500, "OAuthServerDidNotRespond");
-            return new Promise((resolve, reject) => resolve());
-        })
+        const user = await fetch(
+            "https://oauth2.scratch-wiki.info/w/rest.php/soa2/v0/user",
+            {
+                headers: {
+                    Authorization: `Bearer ${btoa(response.access_token)}`,
+                },
+            },
+        )
+            .then(async (res) => {
+                return { user: await res.json(), status: res.status };
+            })
+            .catch((e) => {
+                utils.error(res, 500, "OAuthServerDidNotRespond");
+                return new Promise((resolve, reject) => resolve());
+            });
 
         if (!user) {
             return;
         }
 
         if (user.status !== 200) {
-            console.log(`Error with oauth status: ${JSON.stringify(user)}`)
+            console.error(`Error with oauth status: ${JSON.stringify(user)}`);
             utils.error(res, 500, "InternalError");
             return;
         }
@@ -69,11 +75,17 @@ module.exports = (app, utils) => {
             return;
         }
 
-        await utils.UserManager.addOAuthMethod(username, "scratch", user.user.user_id);
+        await utils.UserManager.addOAuthMethod(
+            username,
+            "scratch",
+            user.user.user_id,
+        );
 
         const token = await utils.UserManager.newTokenGen(username);
 
         res.status(200);
-        res.redirect(`/api/v1/users/sendloginsuccess?token=${token}&username=${username}`);
+        res.redirect(
+            `/api/v1/users/sendloginsuccess?token=${token}&username=${username}`,
+        );
     });
-}
+};

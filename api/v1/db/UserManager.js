@@ -404,11 +404,14 @@ class UserManager {
             body: file,
         });
 
+        // TODO: instead of doing this, have an array of useable links that just store if they're in use.
+        // thatll prevent us from generating new urls all the time
         this.using_bb_upload_url -= 1;
 
         if (!result.ok) {
-            console.log(await result.json());
-            console.log("FAILED TO SAVE TO BACKBLAZE!!!! BIG BAD!!!!!");
+            console.error(
+                `FAILED TO SAVE TO BACKBLAZE!!!! BIG BAD!!!!!: ${await result.json()}`,
+            );
         }
     }
 
@@ -478,10 +481,10 @@ class UserManager {
             method: "POST",
             headers,
             body,
-        }).then((res) => res.ok());
+        });
 
-        if (!result) {
-            console.log("FAILED TO COPY!!!! VERY BAD!!!!!!!!!!!");
+        if (!result.ok) {
+            console.error(`FAILED TO COPY!!!! VERY BAD!!! ${await res.json()}`);
         }
     }
 
@@ -521,10 +524,12 @@ class UserManager {
             method: "POST",
             headers,
             body,
-        }).then((res) => res.ok);
+        });
 
-        if (!result) {
-            console.log("FAILED TO DELETE FILE!!!! BIG BAD!!!!");
+        if (!result.ok) {
+            console.error(
+                `FAILED TO DELETE FILE!!!! BIG BAD!!!! ${await res.json()}`,
+            );
         }
     }
 
@@ -555,14 +560,14 @@ class UserManager {
         return new Promise((resolve, reject) => {
             this.minioClient.bucketExists(bucketName, (err, exists) => {
                 if (err) {
-                    console.log("Error checking if bucket exists:", err);
+                    console.error(`Error checking if bucket exists: ${err}`);
                     reject("error making bucket: " + err);
                     return;
                 }
                 if (!exists) {
                     this.minioClient.makeBucket(bucketName, (err) => {
                         if (err) {
-                            console.log("Error making bucket:", err);
+                            console.error(`Error making bucket: ${err}`);
                             reject("error making bucket: " + err);
                         }
                     });
@@ -960,8 +965,8 @@ class UserManager {
         const result = await this.users.findOne({ username: username });
         if (!result) {
             if (throw_err) {
-                const error = `----------\nCould not get ${username}'s id\n----------`;
-                console.log(error);
+                const error = `Could not get ${username}'s id`;
+                console.error(error);
                 throw error;
             } else {
                 return false;
@@ -2223,7 +2228,7 @@ class UserManager {
             stream.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
             stream.on("end", () => resolve(Buffer.concat(chunks)));
             stream.on("error", (err) => {
-                console.log("ERROR" + err);
+                console.error(`Error reading from bucket: ${err}`);
                 reject(err);
             });
         });
@@ -2277,14 +2282,16 @@ class UserManager {
         const chunks = [];
 
         stream.on("data", (chunk) => chunks.push(chunk.name));
-        stream.on("error", (err) => console.log("Error listing objects:", err));
+        stream.on("error", (err) =>
+            console.error(`Error listing objects: ${err}`),
+        );
         stream.on("end", () => {
             const names = chunks.map((chunk) => {
                 return chunk.split("_")[1];
             });
             this.minioClient.removeObjects(bucketName, names, (err) => {
                 if (err) {
-                    console.log("Error removing objects:", err);
+                    console.error(`Error removing objects: ${err}`);
                 }
             });
         });
@@ -3614,7 +3621,7 @@ class UserManager {
                     username = String(data.login).toLowerCase();
                     real_username = String(data.login);
                 } catch (e) {
-                    console.error("it broke", data, e);
+                    console.error(`gh oauth broke: ${data} --- ${e}`);
                     throw e;
                 }
                 id = data.id;
@@ -4454,7 +4461,7 @@ class UserManager {
      */
     async setUserBirthdayAndOrCountry(username, birthday, country) {
         if (!birthday && !country) {
-            console.log("neither birthday nor country entered");
+            console.warn("neither birthday nor country entered");
             return;
         }
         const updateObj = {};
@@ -4594,7 +4601,7 @@ class UserManager {
         const result = await this.runtimeConfig.findOne({ id: id });
 
         if (!result) {
-            console.log(`Couldn't find config item ${id}`);
+            console.warn(`Couldn't find config item ${id}`);
             return true; // minimize disruptions
         }
 
@@ -4925,7 +4932,7 @@ class UserManager {
                 ],
             });
         } catch (e) {
-            console.log("mail error", e);
+            console.error(`mail error: ${e}`);
             return false;
         }
 
@@ -5196,7 +5203,7 @@ class UserManager {
             );
             await this.minioClient.removeObject(bucket, old_key);
         } catch (err) {
-            console.error("Error renaming object:", err);
+            console.error(`Error renaming object: ${err}`);
         }
     }
 

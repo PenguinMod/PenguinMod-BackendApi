@@ -139,7 +139,7 @@ module.exports = (app, utils) => {
                 .map((i) => i.id);
 
             utils.UserManager.addImpressionsMany(pids).catch((e) => {
-                console.log("FAILED TO ADD IMPRESSIONS: " + e);
+                console.error(`FAILED TO ADD IMPRESSIONS: ${e}`);
             });
         },
     );
