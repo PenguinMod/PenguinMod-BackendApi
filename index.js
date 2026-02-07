@@ -93,7 +93,7 @@ const UserManager = new um();
 console.real_log = console.log;
 console.log = (str) => {
     const date_str = `(${new Date().toISOString()})`.gray.dim;
-    console.real_log(`${"LOG".dim.blue} ${date_str}: ${str}`);
+    console.real_log(`${"LOG".bgBlack.blue} ${date_str}: ${str}`);
 };
 
 console.real_warn = console.warn;
