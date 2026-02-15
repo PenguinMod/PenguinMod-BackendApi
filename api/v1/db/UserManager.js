@@ -2461,22 +2461,24 @@ class UserManager {
      * @returns {Promise<Array<string>>} Array of user ids
      */
     async getWhoLoved(projectID, page, pageSize) {
-        const result = await this.projectStats
-            .aggregate([
-                {
-                    $match: { projectId: projectID, type: "love" },
-                },
-                {
-                    $skip: page * pageSize,
-                },
-                {
-                    $limit: pageSize,
-                },
-                {
-                    $unset: "_id",
-                },
-            ])
-            .toArray();
+        const result = (
+            await this.projectStats
+                .aggregate([
+                    {
+                        $match: { projectId: projectID, type: "love" },
+                    },
+                    {
+                        $skip: page * pageSize,
+                    },
+                    {
+                        $limit: pageSize,
+                    },
+                    {
+                        $unset: "_id",
+                    },
+                ])
+                .toArray()
+        ).map((data) => data.userId);
 
         return result;
     }
