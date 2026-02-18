@@ -410,7 +410,7 @@ class UserManager {
 
         if (!result.ok) {
             console.error(
-                `FAILED TO SAVE TO BACKBLAZE!!!! BIG BAD!!!!!: ${await result.json()}`,
+                `FAILED TO SAVE TO BACKBLAZE!!!! BIG BAD!!!!!: ${JSON.stringify(await result.json())}`,
             );
         }
     }
@@ -484,7 +484,9 @@ class UserManager {
         });
 
         if (!result.ok) {
-            console.error(`FAILED TO COPY!!!! VERY BAD!!! ${await res.json()}`);
+            console.error(
+                `FAILED TO COPY!!!! VERY BAD!!! ${JSON.stringify(await res.json())}`,
+            );
         }
     }
 
@@ -528,7 +530,7 @@ class UserManager {
 
         if (!result.ok) {
             console.error(
-                `FAILED TO DELETE FILE!!!! BIG BAD!!!! ${await res.json()}`,
+                `FAILED TO DELETE FILE!!!! BIG BAD!!!! ${JSON.stringify(await res.json())}`,
             );
         }
     }
