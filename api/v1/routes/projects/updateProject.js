@@ -76,7 +76,7 @@ module.exports = (app, utils) => {
                 await utils.UserManager.getProjectMetadata(projectID);
 
             if (
-                project.author.username !== username &&
+                (project.author.username !== username || project.hardReject) &&
                 !isAdmin &&
                 !isModerator
             ) {
