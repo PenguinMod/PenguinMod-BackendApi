@@ -1458,7 +1458,7 @@ class UserManager {
     async isBanned(username) {
         const result = await this.users.findOne({ username: username });
 
-        return result.permBanned || result.unbanTime > Date.now();
+        return result && (result.permBanned || result.unbanTime > Date.now());
     }
 
     /**
