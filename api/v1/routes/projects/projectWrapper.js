@@ -25,6 +25,7 @@ module.exports = (app, utils) => {
         const projectId = String(packet.projectId);
         const safe = String(packet.safe) === "true";
         const get_assets = String(packet.assets) !== "false";
+        const force_intervention = String(packet.loadAssetsLocally) == "true";
 
         const safeReturn = () => {
             const project = fs.readFileSync(
@@ -103,8 +104,9 @@ module.exports = (app, utils) => {
         // NOTE: the date for when it begins may not be entirely
         // accurate. hopefully it is. idk
         const needs_intervention =
-            metadata.lastUpdate > Date.parse("2026-01-19T08:00:00Z") &&
-            metadata.lastUpdate < Date.parse("2026-01-27T00:00:00Z");
+            (metadata.lastUpdate > Date.parse("2026-01-19T08:00:00Z") &&
+                metadata.lastUpdate < Date.parse("2026-01-27T00:00:00Z")) ||
+            force_intervention;
 
         let assets = [];
         if (needs_intervention) {
