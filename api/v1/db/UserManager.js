@@ -530,7 +530,7 @@ class UserManager {
 
         if (!result.ok) {
             console.error(
-                `FAILED TO DELETE FILE!!!! BIG BAD!!!! ${JSON.stringify(await res.json())}`,
+                `FAILED TO DELETE FILE!!!! BIG BAD!!!! ${JSON.stringify(await result.json())}`,
             );
         }
     }
