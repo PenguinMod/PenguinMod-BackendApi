@@ -20,7 +20,11 @@ module.exports = (app, utils) => {
 
         const asset_name = String(packet.asset_name);
 
-        if (!asset_name || asset_name.startsWith("0_")) {
+        if (
+            !asset_name ||
+            asset_name.startsWith("0_") ||
+            !asset_name.includes("_")
+        ) {
             return utils.error(res, 400, "No asset");
         }
 
