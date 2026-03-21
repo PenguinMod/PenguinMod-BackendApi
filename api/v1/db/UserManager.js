@@ -327,11 +327,16 @@ class UserManager {
             }
 
             if (!url_data.in_use) {
+                // i dont trust JS object shenanigans... its probably a reference,
+                // but better safe than sorry
+                this.bb_upload_urls[key].in_use = true;
                 return url_data;
             }
         }
 
-        return await this.generateBBUploadURL();
+        const data = await this.generateBBUploadURL();
+        this.bb_upload_urls[data.index].in_use = true;
+        return data;
     }
 
     async doneWithBBUpload(url_data) {
