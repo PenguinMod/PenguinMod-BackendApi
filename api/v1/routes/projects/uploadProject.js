@@ -35,7 +35,11 @@ module.exports = (app, utils) => {
                 }
             };
 
-            if (!utils.UserManager.getRuntimeConfigItem("uploadingEnabled")) {
+            if (
+                !(await utils.UserManager.getRuntimeConfigItem(
+                    "uploadingEnabled",
+                ))
+            ) {
                 await unlink();
                 return utils.error(res, 503, "Uploading is disabled");
             }
@@ -134,6 +138,19 @@ module.exports = (app, utils) => {
 
             if (!notes || typeof notes !== "string") {
                 notes = "";
+            }
+
+            if (
+                title.length > 100 ||
+                instructions.length > 4096 ||
+                notes.length > 4096
+            ) {
+                await unlink();
+                return utils.error(
+                    res,
+                    400,
+                    "title, instructions, or notes are too long",
+                );
             }
 
             if (await illegalWordingError(title, "projectTitle")) {
