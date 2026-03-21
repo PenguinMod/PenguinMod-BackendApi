@@ -228,7 +228,6 @@ class UserManager {
         await this._makeBucket("profile-pictures");
 
         if (using_backblaze) {
-            this.using_bb_upload_url = 0;
             await this.generateBBAuthToken();
         }
     }
@@ -267,6 +266,7 @@ class UserManager {
                 ? process.env.BackblazeDownloadUrl
                 : sa.downloadUrl;
 
+        this.bb_upload_urls = {};
         await this.generateBBUploadURL();
     }
 
@@ -280,7 +280,7 @@ class UserManager {
 
         const hour = 1000 * 60 * 60;
         const day = hour * 24;
-        this.need_new_bb_upload_url = Date.now() + day - hour;
+        const need_new = Date.now() + day - hour;
 
         const results = await fetch(
             `${this.bb_api_url}/b2api/v4/b2_get_upload_url?bucketId=${process.env.BackblazeBucketID}`,
@@ -289,8 +289,15 @@ class UserManager {
             },
         ).then((res) => res.json());
 
-        this.bb_upload_url = results.uploadUrl;
-        this.bb_upload_auth_token = results.authorizationToken;
+        const index = ULID.ulid();
+
+        this.bb_upload_urls[index] = {
+            url: results.uploadUrl,
+            token: results.authorizationToken,
+            expires: need_new,
+            in_use: false,
+            index,
+        };
     }
 
     /**
@@ -307,17 +314,30 @@ class UserManager {
 
     /**
      * Gets the Backblaze upload url or fetches it if its expired
-     * @returns {Promise<string>}
+     * @returns {Promise<object>}
      */
     async getBBUploadUrl() {
-        if (
-            this.need_new_bb_upload_url <= Date.now() ||
-            this.using_bb_upload_url > 1
-        ) {
-            await this.generateBBUploadURL();
+        for (const url_data of this.bb_upload_urls) {
+            if (Date.now() > url_data.expires) {
+                this.removeBBUrl(url_data);
+                continue;
+            }
+
+            if (!url_data.in_use) {
+                return url_data;
+            }
         }
 
-        return this.bb_upload_url;
+        await this.generateBBUploadURL();
+        return this.bb_upload_urls[this.bb_upload_urls.length - 1];
+    }
+
+    async doneWithBBUpload(url_data) {
+        this.bb_upload_urls[url_data.index].in_use = false;
+    }
+
+    async removeBBUrl(url_data) {
+        delete this.bb_upload_urls[url_data.index];
     }
 
     /**
@@ -382,10 +402,16 @@ class UserManager {
      * @param {string} name The name of the file
      * @param {Buffer} file The buffer of the file
      */
-    async saveToBackblaze(name, file) {
-        this.using_bb_upload_url += 1;
-        const upload_url = await this.getBBUploadUrl();
-        const auth_token = this.bb_upload_auth_token;
+    async saveToBackblaze(name, file, trying_again = 0) {
+        if (trying_again > 2) {
+            // TODO: log to webhook and ping either ian or devs
+            console.error("Backblaze IS NOT SAVING!!!!!");
+            throw "bb aint working"; // so we dont send a 200
+        }
+
+        const url_data = await this.getBBUploadUrl();
+        const upload_url = url_data.url;
+        const auth_token = url_data.token;
 
         const len = file.length;
 
@@ -404,15 +430,16 @@ class UserManager {
             body: file,
         });
 
-        // TODO: instead of doing this, have an array of useable links that just store if they're in use.
-        // thatll prevent us from generating new urls all the time
-        this.using_bb_upload_url -= 1;
-
         if (!result.ok) {
-            console.error(
-                `FAILED TO SAVE TO BACKBLAZE!!!! BIG BAD!!!!!: ${JSON.stringify(await result.json())}`,
-            );
+            // PROBABLY just saying its full - try again
+            this.removeBBUrl(url_data);
+            setTimeout(async () => {
+                await this.saveToBackblaze(name, file, trying_again + 1);
+            }, 250);
+            return;
         }
+
+        this.doneWithBBUpload(url_data);
     }
 
     /**
@@ -1771,6 +1798,23 @@ class UserManager {
             id = "0".repeat(10 - id.length) + id;
         } while (id !== 0 && (await this.projects.findOne({ id: id })));
 
+        // we do this first so if something errors, we dont save an invalid project
+        await this.minioClient.putObject("projects", id, projectBuffer);
+        await this.minioClient.putObject("project-thumbnails", id, imageBuffer);
+        for (const asset of assetBuffers) {
+            const name = `${id}_${asset.id}`;
+
+            if (using_backblaze) {
+                await this.saveToBackblaze(name, asset.buffer);
+            } else {
+                await this.minioClient.putObject(
+                    "project-assets",
+                    name,
+                    asset.buffer,
+                );
+            }
+        }
+
         await this.projects.insertOne({
             id: id,
             author: author,
@@ -1790,23 +1834,6 @@ class UserManager {
             impressions: 0,
             noFeature: false,
         });
-
-        // minio bucket stuff
-        await this.minioClient.putObject("projects", id, projectBuffer);
-        await this.minioClient.putObject("project-thumbnails", id, imageBuffer);
-        for (const asset of assetBuffers) {
-            const name = `${id}_${asset.id}`;
-
-            if (using_backblaze) {
-                await this.saveToBackblaze(name, asset.buffer);
-            } else {
-                await this.minioClient.putObject(
-                    "project-assets",
-                    name,
-                    asset.buffer,
-                );
-            }
-        }
 
         await this.addToFeed(
             author,
