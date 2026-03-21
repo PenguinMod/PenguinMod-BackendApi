@@ -317,7 +317,7 @@ class UserManager {
      * @returns {Promise<object>}
      */
     async getBBUploadUrl() {
-        for (const url_data of this.bb_upload_urls) {
+        for (const url_data of this.bb_upload_urls.values()) {
             if (Date.now() > url_data.expires) {
                 this.removeBBUrl(url_data);
                 continue;
