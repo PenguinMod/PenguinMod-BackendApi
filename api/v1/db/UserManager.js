@@ -272,7 +272,7 @@ class UserManager {
 
     /**
      * Generates an upload url
-     * @returns {Promise<void>}
+     * @returns {Promise<object>}
      */
     async generateBBUploadURL() {
         const headers = new Headers();
@@ -298,6 +298,8 @@ class UserManager {
             in_use: false,
             index,
         };
+
+        return this.bb_upload_urls[index];
     }
 
     /**
@@ -329,8 +331,7 @@ class UserManager {
             }
         }
 
-        await this.generateBBUploadURL();
-        return this.bb_upload_urls[this.bb_upload_urls.length - 1];
+        return await this.generateBBUploadURL();
     }
 
     async doneWithBBUpload(url_data) {
