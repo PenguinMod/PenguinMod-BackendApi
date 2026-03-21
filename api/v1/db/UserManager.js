@@ -1689,6 +1689,10 @@ class UserManager {
         return result;
     }
 
+    async deleteReports(type, id) {
+        await this.reports.deleteMany({ id: id, type: type });
+    }
+
     /**
      * Get reports by reporter
      * @param {string} reporter ID of the person reporting

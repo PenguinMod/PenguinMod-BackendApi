@@ -6,12 +6,12 @@ const UserManager = require("../../../../db/UserManager");
  */
 
 /**
- * 
+ *
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.post('/api/v1/projects/hardreject', utils.cors(), async (req, res) => {
+    app.post("/api/v1/projects/hardreject", utils.cors(), async (req, res) => {
         const packet = req.body;
 
         const token = packet.token;
@@ -25,16 +25,16 @@ module.exports = (app, utils) => {
 
         const login = await utils.UserManager.loginWithToken(token);
         if (!login.success) {
-            utils.error(res, 401, "Reauthenticate")
+            utils.error(res, 401, "Reauthenticate");
             return;
         }
         const username = login.username;
 
-        if (!await utils.UserManager.hasModPerms(username)) {
+        if (!(await utils.UserManager.hasModPerms(username))) {
             return utils.error(res, 401, "Invalid credentials");
         }
 
-        if (!await utils.UserManager.projectExists(project, true)) {
+        if (!(await utils.UserManager.projectExists(project, true))) {
             return utils.error(res, 404, "ProjectNotFound");
         }
 
@@ -46,7 +46,17 @@ module.exports = (app, utils) => {
 
         const projectData = await utils.UserManager.getProjectMetadata(project);
 
-        await utils.UserManager.sendMessage(projectData.author.id, {type: "reject", message, hardReject: true, title: projectData.title}, true, project);
+        await utils.UserManager.sendMessage(
+            projectData.author.id,
+            {
+                type: "reject",
+                message,
+                hardReject: true,
+                title: projectData.title,
+            },
+            true,
+            project,
+        );
 
         utils.logs.sendAdminLog(
             {
@@ -55,36 +65,40 @@ module.exports = (app, utils) => {
                 fields: [
                     {
                         name: "Mod",
-                        value: username
+                        value: username,
                     },
                     {
                         name: "Reason",
-                        value: `\`\`\`\n${message}\n\`\`\``
+                        value: `\`\`\`\n${message}\n\`\`\``,
                     },
                     {
                         name: "Title",
-                        value: projectData.title
+                        value: projectData.title,
                     },
                     {
                         name: "ID",
-                        value: project
+                        value: project,
                     },
                     {
                         name: "Author",
-                        value: projectData.author.username
+                        value: projectData.author.username,
                     },
-                ]
+                ],
             },
             {
                 name: username,
-                icon_url: String(`${utils.env.ApiURL}/api/v1/users/getpfp?username=${username}`),
-                url: String("https://penguinmod.com/profile?user=" + username)
+                icon_url: String(
+                    `${utils.env.ApiURL}/api/v1/users/getpfp?username=${username}`,
+                ),
+                url: String("https://penguinmod.com/profile?user=" + username),
             },
-            0xe51810
+            0xe51810,
         );
 
+        await utils.UserManager.deleteReports("project", project);
+
         res.status(200);
-        res.header('Content-type', "application/json");
+        res.header("Content-type", "application/json");
         res.send({ success: true });
     });
-}
+};
