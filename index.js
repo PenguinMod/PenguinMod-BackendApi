@@ -15,7 +15,6 @@ const { OAuth2Client } = require("google-auth-library");
 const ipaddr = require("ipaddr.js");
 const { promisify } = require("util");
 const mcache = require("memory-cache");
-const body_parser_error_handler = require("express-body-parser-error-handler");
 require("colors");
 
 function escapeXML(unsafe) {
@@ -73,7 +72,6 @@ app.use(
         limit: process.env.ServerSize,
     }),
 );
-app.use(body_parser_error_handler());
 app.set("trust proxy", 1);
 app.use(
     rateLimit({
@@ -106,6 +104,10 @@ console.warn = (str) => {
 
 console.real_error = console.error;
 console.error = (str) => {
+    if (str === "Error: Request aborted") {
+        return; // yes, this is dumb, no i dont care
+    }
+
     const date_str = `(${new Date().toISOString()})`.gray;
     console.real_error(`${"ERORR".bgRed.white} ${date_str}: ${str}`);
 };
