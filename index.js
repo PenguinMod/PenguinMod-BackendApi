@@ -15,6 +15,7 @@ const { OAuth2Client } = require("google-auth-library");
 const ipaddr = require("ipaddr.js");
 const { promisify } = require("util");
 const mcache = require("memory-cache");
+const body_parser_error_handler = require("express-body-parser-error-handler");
 require("colors");
 
 function escapeXML(unsafe) {
@@ -64,7 +65,7 @@ app.use(bodyParser.json());
 app.use(
     express.urlencoded({
         limit: process.env.ServerSize,
-        extended: false,
+        extended: true,
     }),
 );
 app.use(
@@ -72,6 +73,7 @@ app.use(
         limit: process.env.ServerSize,
     }),
 );
+app.use(body_parser_error_handler());
 app.set("trust proxy", 1);
 app.use(
     rateLimit({
