@@ -96,12 +96,11 @@ console.log = (str) => {
     console.real_log(`${"LOG".bgBlack.blue} ${date_str}: ${str}`);
 };
 
-console.real_trace = console.trace;
 console.real_warn = console.warn;
 console.warn = (str) => {
     const date_str = `(${new Date().toISOString()})`.gray;
     console.real_warn(`${"WARNING".bgYellow.white} ${date_str}: ${str}`);
-    console.real_trace("why are we logging so much...");
+    console.real_log("why are we logging so much...", new Error().stack);
 };
 
 console.real_error = console.error;
@@ -110,7 +109,10 @@ console.error = (str) => {
         return; // yes, this is dumb, no i dont care
     }
 
-    console.real_trace(`why are we logging so much... "${str}"`);
+    console.real_log(
+        `why are we logging so much... "${str}"`,
+        new Error().stack,
+    );
     const date_str = `(${new Date().toISOString()})`.gray;
     console.real_error(`${"ERORR".bgRed.white} ${date_str}: ${str}`);
 };
