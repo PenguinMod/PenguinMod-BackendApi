@@ -107,16 +107,8 @@ console.real_error = console.error;
 console.error = (...args) => {
     const str = args[0];
 
-    if (str === "Error: Request aborted") {
+    if (String(str) === "Error: Request aborted") {
         return; // yes, this is dumb, no i dont care
-    }
-
-    if (str instanceof Error) {
-        console.real_log(
-            `why are we logging so much... "${str}"`,
-            new Error().stack,
-        );
-        console.real_log(str.stack);
     }
     const date_str = `(${new Date().toISOString()})`.gray;
     console.real_error(`${"ERORR".bgRed.white} ${date_str}: ${str}`);

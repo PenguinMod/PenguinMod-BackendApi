@@ -217,6 +217,9 @@ class UserManager {
             useSSL: false,
             accessKey: process.env.MinioClientID,
             secretKey: process.env.MinioClientSecret,
+            retryOptions: {
+                maximumRetryCount: 0,
+            },
         });
         // project bucket
         await this._makeBucket("projects");
