@@ -1,5 +1,10 @@
 const UserManager = require("../../../../db/UserManager");
 
+const cached = {
+    item: null,
+    time: 0,
+};
+
 /**
  * @typedef {Object} Utils
  * @property {UserManager} UserManager
@@ -34,7 +39,15 @@ module.exports = (app, utils) => {
                 return utils.error(res, 401, "Unauthorized");
             }
 
+            const hour = 1000 * 60 * 60;
+            if (cached.time + 2 * hour >= Date.now()) {
+                return cached.item;
+            }
+
             const stats = await utils.UserManager.getUserStats();
+
+            cached.item = stats;
+            cached.time = Date.now();
 
             res.status(200);
             res.header("Content-type", "application/json");
