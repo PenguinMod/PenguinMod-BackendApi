@@ -40,7 +40,8 @@ module.exports = (app, utils) => {
             }
 
             const hour = 1000 * 60 * 60;
-            if (cached.time + 2 * hour >= Date.now()) {
+            const day = hour * 24;
+            if (cached.time + day >= Date.now()) {
                 return cached.item;
             }
 
