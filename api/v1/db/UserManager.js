@@ -5829,6 +5829,109 @@ class UserManager {
 
         return await Promise.all(promises);
     }
+
+    async getUserStats() {
+        const result = await this.users
+            .aggregate([
+                {
+                    $match: { birthdayEntered: true },
+                },
+                {
+                    $addFields: {
+                        age: {
+                            $dateDiff: {
+                                startDate: { $toDate: "$birthday" },
+                                endDate: "$$NOW",
+                                unit: "year",
+                            },
+                        },
+                    },
+                },
+                {
+                    $bucket: {
+                        groupBy: "$age",
+                        boundaries: [
+                            0, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
+                            26, 65, 500,
+                        ],
+                        default: "unknown",
+                        output: {
+                            count: { $sum: 1 },
+                        },
+                    },
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        range: {
+                            $switch: {
+                                branches: [
+                                    {
+                                        case: { $eq: ["$_id", 0] },
+                                        then: "under 5",
+                                    },
+                                    { case: { $eq: ["$_id", 6] }, then: "6" },
+                                    { case: { $eq: ["$_id", 7] }, then: "7" },
+                                    { case: { $eq: ["$_id", 8] }, then: "8" },
+                                    { case: { $eq: ["$_id", 9] }, then: "9" },
+                                    { case: { $eq: ["$_id", 10] }, then: "10" },
+                                    { case: { $eq: ["$_id", 11] }, then: "11" },
+                                    { case: { $eq: ["$_id", 12] }, then: "12" },
+                                    { case: { $eq: ["$_id", 13] }, then: "13" },
+                                    { case: { $eq: ["$_id", 14] }, then: "14" },
+                                    { case: { $eq: ["$_id", 15] }, then: "15" },
+                                    { case: { $eq: ["$_id", 16] }, then: "16" },
+                                    { case: { $eq: ["$_id", 17] }, then: "17" },
+                                    {
+                                        case: { $eq: ["$_id", 18] },
+                                        then: "18-25",
+                                    },
+                                    {
+                                        case: { $eq: ["$_id", 26] },
+                                        then: "26-64",
+                                    },
+                                    {
+                                        case: { $eq: ["$_id", 65] },
+                                        then: "65+",
+                                    },
+                                ],
+                                default: "unknown",
+                            },
+                        },
+                        count: 1,
+                    },
+                },
+            ])
+            .toArray();
+
+        // zed is evil and formats "6" as 6 so it looks like this... but its okay
+        const formatted = {
+            "under 5": 0,
+            6: 0,
+            7: 0,
+            8: 0,
+            9: 0,
+            10: 0,
+            11: 0,
+            12: 0,
+            13: 0,
+            14: 0,
+            15: 0,
+            16: 0,
+            17: 0,
+            "18-25": 0,
+            "26-64": 0,
+            "65+": 0,
+        };
+
+        for (const r of result) {
+            if (formatted.hasOwnProperty(r.range)) {
+                formatted[r.range] = r.count;
+            }
+        }
+
+        return formatted;
+    }
 }
 
 module.exports = UserManager;
