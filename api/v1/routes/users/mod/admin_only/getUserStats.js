@@ -42,7 +42,10 @@ module.exports = (app, utils) => {
             const hour = 1000 * 60 * 60;
             const day = hour * 24;
             if (cached.time + day >= Date.now()) {
-                return cached.item;
+                res.status(200);
+                res.header("Content-type", "application/json");
+                res.send({ stats: cached.item });
+                return;
             }
 
             const stats = await utils.UserManager.getUserStats();
