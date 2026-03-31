@@ -434,11 +434,19 @@ class UserManager {
         hash.update(file);
         headers.set("X-Bz-Content-Sha1", hash.digest("hex"));
 
-        const result = await fetch(upload_url, {
-            method: "POST",
-            headers,
-            body: file,
-        });
+        let result = { ok: false };
+        try {
+            result = await fetch(upload_url, {
+                method: "POST",
+                headers,
+                body: file,
+            });
+        } catch (e) {
+            console.error(e);
+            // result.ok is already false
+            // but just in case
+            result = { ok: false };
+        }
 
         if (!result.ok) {
             // PROBABLY just saying its full - try again

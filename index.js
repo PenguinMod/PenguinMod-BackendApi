@@ -1,7 +1,6 @@
 require("dotenv").config();
 const cors = require("cors");
 const rateLimit = require("express-rate-limit");
-const bodyParser = require("body-parser");
 const express = require("express");
 const endpointLoader = require("./api/endpointLoader");
 const um = require("./api/v1/db/UserManager");
@@ -60,16 +59,15 @@ app.use(
         utilsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204
     }),
 );
-app.use(bodyParser.json());
+app.use(
+    express.json({
+        limit: process.env.ServerSize,
+    }),
+);
 app.use(
     express.urlencoded({
         limit: process.env.ServerSize,
         extended: true,
-    }),
-);
-app.use(
-    express.json({
-        limit: process.env.ServerSize,
     }),
 );
 app.set("trust proxy", 1);
@@ -178,6 +176,11 @@ console.error = (...args) => {
             const maxSingleSize =
                 (Number(process.env.UploadSize) * (is_donator ? 1.75 : 1) ||
                     5) * 1000000;
+
+            if (!req.files) {
+                return utils.error(res, 400, "What??");
+            }
+            console.error(e);
 
             for (let file_key in req.files) {
                 let file = req.files[file_key];
