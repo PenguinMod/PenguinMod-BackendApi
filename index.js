@@ -180,7 +180,6 @@ console.error = (...args) => {
             if (!req.files) {
                 return utils.error(res, 400, "What??");
             }
-            console.error(e);
 
             for (let file_key in req.files) {
                 let file = req.files[file_key];
