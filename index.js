@@ -98,7 +98,6 @@ console.real_warn = console.warn;
 console.warn = (str) => {
     const date_str = `(${new Date().toISOString()})`.gray;
     console.real_warn(`${"WARNING".bgYellow.white} ${date_str}: ${str}`);
-    console.real_log("why are we logging so much...", new Error().stack);
 };
 
 console.real_error = console.error;
