@@ -3904,6 +3904,11 @@ class UserManager {
                     $sort: { lastUpdate: -1 * rev },
                 });
                 break;
+            case "uploaddate":
+                aggregateList.push({
+                    $sort: { date: -1 * rev },
+                });
+                break;
             default:
             case "views":
                 aggregateList.push({
