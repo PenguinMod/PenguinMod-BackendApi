@@ -49,18 +49,19 @@ module.exports = (app, utils) => {
                 return;
             }
     
-            const success = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded"
-                },
-                body: `secret=${utils.env.CFCaptchaSecret}&response=${captcha_token}`
-            }).then(res => res.json());
-    
-            if (!success.success) {
-                utils.error(res, 400, "InvalidCaptcha");
-                return;
-            }
+            await utils.retryIfFailure(async () => {
+                const success = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded"
+                    },
+                    body: `secret=${utils.env.CFCaptchaSecret}&response=${captcha_token}`
+                }).then(res => res.json());
+                if (!success.success) {
+                    utils.error(res, 400, "InvalidCaptcha");
+                    return;
+                }
+            }, 3, 500);
         } else {
             console.warn("createAccount ran with CFCaptchaEnabled set to false");
         }
