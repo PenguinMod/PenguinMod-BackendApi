@@ -1357,7 +1357,15 @@ class UserManager {
     async getFeaturedProject(username) {
         const result = await this.users.findOne({ username: username });
 
-        return result.featuredProject;
+        let res;
+        try {
+            res = result.featuredProject;
+        } catch (e) {
+            console.warn(`couldn't find fp??? ${username}`);
+            res = "0";
+        }
+
+        return res;
     }
 
     /**
