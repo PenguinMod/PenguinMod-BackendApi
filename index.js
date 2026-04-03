@@ -272,6 +272,36 @@ console.error = (...args) => {
                     }
                 },
             }),
+        retryIfFailure: async (todo, retries, delay, onFail = null) => {
+            // TODO: actually use this
+            const f = async (todo, curRetries, finalRetries, delay, onFail) => {
+                try {
+                    return await todo();
+                } catch (e) {
+                    if (onFail) onFail();
+                    if (curRetries > finalRetries) {
+                        console.error("exceeded max retry count");
+                        throw e;
+                    }
+                    console.warn(
+                        `Try if failed has failed (${curRetries}/${finalRetries})`,
+                    );
+                    return await new Promise((resolve) => {
+                        setTimeout(() => {
+                            f(
+                                todo,
+                                curRetries + 1,
+                                finalRetries,
+                                delay,
+                                onFail,
+                            ).then(resolve);
+                        }, delay);
+                    });
+                }
+            };
+
+            return await f(todo, 0, retries, delay, onFail);
+        },
     });
 
     app.use((err, req, res, next) => {

@@ -239,9 +239,14 @@ module.exports = (app, utils) => {
                 req.files.thumbnail[0].path,
             );
 
-            const thumbnail = await sharp(unsized_thumbnail)
-                .resize(240, 180)
-                .toBuffer();
+            let thumbnail;
+            try {
+                thumbnail = await sharp(unsized_thumbnail)
+                    .resize(240, 180)
+                    .toBuffer();
+            } catch (e) {
+                return utils.error(res, 400, "Invalid image");
+            }
 
             // ATODO: use mmmagic to verify this is a valid image
 
