@@ -1014,6 +1014,7 @@ class UserManager {
             if (throw_err) {
                 const error = `Could not get ${username}'s id`;
                 console.error(error);
+                console.trace();
                 throw error;
             } else {
                 return false;
