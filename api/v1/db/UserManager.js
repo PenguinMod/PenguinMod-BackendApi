@@ -1009,7 +1009,7 @@ class UserManager {
      * @async
      */
     async getIDByUsername(username, throw_err = true) {
-        const result = await this.users.findOne({ username: username });
+        const result = await this.users.findOne({ username });
         if (!result) {
             if (throw_err) {
                 const error = `Could not get ${username}'s id`;
@@ -1395,7 +1395,15 @@ class UserManager {
     async getFeaturedProjectTitle(username) {
         const result = await this.users.findOne({ username: username });
 
-        return result.featuredProjectTitle;
+        let res;
+        try {
+            res = result.featuredProjectTitle;
+        } catch (e) {
+            console.warn(`couldn't find fp title??? ${username}`);
+            res = -1;
+        }
+
+        return res;
     }
 
     /**
@@ -5064,7 +5072,7 @@ class UserManager {
     }
 
     async verifyPasswordResetState(state, email, is_verify_email = false) {
-        if (state.endsWith("_VE") != is_verify_email) return false;
+        if (!state || state.endsWith("_VE") != is_verify_email) return false;
 
         const result = await this.passwordResetStates.findOne({
             state: state,
