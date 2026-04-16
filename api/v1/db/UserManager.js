@@ -939,6 +939,9 @@ class UserManager {
                 username: result.username,
                 id: result.id,
                 exists: true,
+                isDonator: result.badges.conatins("donator"),
+                isMod: result.moderator || result.admin,
+                isAdmin: result.admin,
             };
         }
 

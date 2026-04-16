@@ -54,15 +54,14 @@ module.exports = (app, utils) => {
                 return utils.error(res, 401, "Invalid credentials");
             }
             const username = login.username;
-
-            const isAdmin = await utils.UserManager.isAdmin(username);
-            const isModerator = await utils.UserManager.isModerator(username);
+            const isDonator = login.isDonator;
+            const hasModPerms = login.isMod;
 
             if (
                 (await utils.UserManager.getLastUpload(username)) >
                     Date.now() - utils.uploadCooldown &&
-                !isAdmin &&
-                !isModerator
+                !hasModPerms &&
+                !isDonator
             ) {
                 await unlink();
                 return utils.error(res, 400, "Uploaded in the last 8 minutes");
