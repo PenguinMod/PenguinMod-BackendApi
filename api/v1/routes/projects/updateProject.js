@@ -57,12 +57,12 @@ module.exports = (app, utils) => {
             const isDonator = login.isDonator;
             const hasModPerms = login.isMod;
 
-            if (
-                (await utils.UserManager.getLastUpload(username)) >
-                    Date.now() - utils.uploadCooldown &&
-                !hasModPerms &&
-                !isDonator
-            ) {
+            const lastUpload = await utils.UserManager.getLastUpload(username);
+            const now = Date.now();
+            const tooSoon = isDonator
+                ? lastUpload > now - 10 * 1000
+                : lastUpload > now - utils.uploadCooldown;
+            if (tooSoon && !hasModPerms && !isDonator) {
                 await unlink();
                 return utils.error(res, 400, "Uploaded in the last 8 minutes");
             }
