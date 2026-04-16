@@ -944,7 +944,7 @@ class UserManager {
         data.username = result.username;
         data.id = result.id;
         data.exists = true;
-        data.isDonator = result.badges.conatins("donator");
+        data.isDonator = result.badges.contains("donator");
         data.isMod = result.moderator || result.admin;
         data.isAdmin = result.admin;
 
