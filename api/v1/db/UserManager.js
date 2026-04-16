@@ -925,47 +925,43 @@ class UserManager {
      * @async
      */
     async loginWithToken(token, allowBanned) {
+        const data = {
+            success: false,
+            username: "",
+            id: "",
+            exists: false,
+            isDonator: false,
+            isMod: false,
+            isAdmin: false,
+        };
+
+        if (String(token) === "undefined") return data;
+
         const result = await this.users.findOne({ token });
 
-        if (!result)
-            return { success: false, username: "", id: "", exists: false };
+        if (!result) return data;
+
+        data.username = result.username;
+        data.id = result.id;
+        data.exists = true;
+        data.isDonator = result.badges.conatins("donator");
+        data.isMod = result.moderator || result.admin;
+        data.isAdmin = result.admin;
 
         if (
-            (result.permBanned || result.unbanTime > Date.now()) &&
-            !allowBanned
-        ) {
-            return {
-                success: false,
-                username: result.username,
-                id: result.id,
-                exists: true,
-                isDonator: result.badges.conatins("donator"),
-                isMod: result.moderator || result.admin,
-                isAdmin: result.admin,
-            };
-        }
-
-        // login invalid if more than the time
-        if (
+            ((result.permBanned || result.unbanTime > Date.now()) &&
+                !allowBanned) ||
             result.lastLogin +
                 (Number(process.env.LoginInvalidationTime) || 259200000) <
-            Date.now()
+                Date.now()
         ) {
-            return {
-                success: false,
-                username: result.username,
-                id: result.id,
-                exists: true,
-            };
+            return data;
         }
 
+        data.success = true;
+
         this.users.updateOne({ token }, { $set: { lastLogin: Date.now() } });
-        return {
-            success: true,
-            username: result.username,
-            id: result.id,
-            exists: true,
-        };
+        return data;
     }
 
     async getRealUsername(username) {
