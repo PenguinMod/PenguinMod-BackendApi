@@ -80,8 +80,7 @@ module.exports = (app, utils) => {
 
             if (
                 (project.author.username !== username || project.hardReject) &&
-                !isAdmin &&
-                !isModerator
+                !hasModPerms
             ) {
                 await unlink();
                 return utils.error(res, 403, "Unauthorized");
