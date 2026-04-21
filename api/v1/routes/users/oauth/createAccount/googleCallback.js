@@ -6,7 +6,7 @@ const UserManager = require("../../../../db/UserManager");
  */
 
 /**
- * 
+ *
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
@@ -22,7 +22,7 @@ module.exports = (app, utils) => {
             return;
         }
 
-        if (!await utils.UserManager.verifyOAuth2State(state)) {
+        if (!(await utils.UserManager.verifyOAuth2State(state))) {
             utils.error(res, 400, "Invalid state");
             return;
         }
@@ -30,14 +30,13 @@ module.exports = (app, utils) => {
         const oauth2Client = new utils.googleOAuth2Client(
             utils.env.GoogleOAuthClientID,
             utils.env.GoogleOAuthClientSecret,
-            `${utils.env.ApiURL}/api/v1/users/googlecallback/createaccount`
+            `${utils.env.ApiURL}/api/v1/users/googlecallback/createaccount`,
         );
 
         let r;
         try {
             r = await oauth2Client.getToken(code);
-        }
-        catch (e) {
+        } catch (e) {
             utils.error(res, 400, "Failed to get token");
             return;
         }
@@ -45,10 +44,11 @@ module.exports = (app, utils) => {
 
         oauth2Client.setCredentials(tokens);
 
-        const url = 'https://people.googleapis.com/v1/people/me?personFields=names';
-        const user = await oauth2Client.request({url});
-        
-        const id = user.data.resourceName.split('/')[1];
+        const url =
+            "https://people.googleapis.com/v1/people/me?personFields=names";
+        const user = await oauth2Client.request({ url });
+
+        const id = user.data.resourceName.split("/")[1];
 
         if (await utils.UserManager.getUserIDByOAuthID("google", id)) {
             utils.error(res, 400, "AccountExists");
@@ -94,7 +94,7 @@ module.exports = (app, utils) => {
             "Pig",
             "Eagle",
             "Cat",
-            "Mouse"
+            "Mouse",
         ];
 
         const name1 = nameGroup1[Math.floor(Math.random() * nameGroup1.length)];
@@ -103,15 +103,32 @@ module.exports = (app, utils) => {
 
         const username = `${name1}${name2}${randomNum}`;
 
-        const userdata = await utils.UserManager.makeOAuth2Account("google", {id, username}, utils, res);
+        const userdata = await utils.UserManager.makeOAuth2Account(
+            "google",
+            { id, username },
+            utils,
+            res,
+        );
+
+        if (!userdata) {
+            utils.error(res, 400, "UnknownError");
+            return;
+        }
 
         const accountUsername = userdata.username;
         const token = userdata.token;
 
         await utils.UserManager.addIPID(userdata.id, req.realIP);
-        await utils.logs.sendCreationLog(accountUsername, userdata.id, "", "account");
+        await utils.logs.sendCreationLog(
+            accountUsername,
+            userdata.id,
+            "",
+            "account",
+        );
 
         res.status(200);
-        res.redirect(`/api/v1/users/sendloginsuccess?token=${token}&username=${accountUsername}`);
+        res.redirect(
+            `/api/v1/users/sendloginsuccess?token=${token}&username=${accountUsername}`,
+        );
     });
-}
+};

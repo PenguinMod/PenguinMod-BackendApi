@@ -3701,6 +3701,7 @@ class UserManager {
         let orig_username = username;
         while (await this.existsByUsername(username)) {
             username = `${orig_username}${n}`;
+            real_username = `${real_username}${n}`;
             n++;
         }
 
@@ -3715,6 +3716,11 @@ class UserManager {
             utils,
             res,
         );
+
+        if (!info) {
+            return false;
+        }
+
         const token = info[0];
         const pm_id = info[1];
 
