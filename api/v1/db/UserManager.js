@@ -3718,6 +3718,7 @@ class UserManager {
         );
 
         if (!info) {
+            console.error(`failed to create oauth account: ${username}`);
             return false;
         }
 
