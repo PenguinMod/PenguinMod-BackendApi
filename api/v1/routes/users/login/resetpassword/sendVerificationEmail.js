@@ -72,6 +72,7 @@ module.exports = (app, utils) => {
 
             const state = await utils.UserManager.generatePasswordResetState(
                 email,
+                userid,
                 true,
             );
 

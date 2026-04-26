@@ -5077,13 +5077,14 @@ class UserManager {
         return result.sentAt;
     }
 
-    async generatePasswordResetState(email, is_verify_email = false) {
+    async generatePasswordResetState(email, userid, is_verify_email = false) {
         const state =
             randomBytes(32).toString("hex") + (is_verify_email ? "_VE" : "");
 
         await this.passwordResetStates.insertOne({
             state: state,
             email: email,
+            id: userid,
             expireAt: Date.now() + Number(process.env.LinkExpire) * 60 * 1000,
         });
 
@@ -5091,7 +5092,14 @@ class UserManager {
     }
 
     async verifyPasswordResetState(state, email, is_verify_email = false) {
-        if (!state || state.endsWith("_VE") != is_verify_email) return false;
+        if (!state || state.endsWith("_VE") != is_verify_email) {
+            console.warn(
+                state.endsWith("_VE")
+                    ? "says ve but not ve"
+                    : "ve but says not ve",
+            );
+            return false;
+        }
 
         const result = await this.passwordResetStates.findOne({
             state: state,
