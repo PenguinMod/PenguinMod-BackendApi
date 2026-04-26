@@ -109,6 +109,11 @@ console.error = (...args) => {
     }
     const date_str = `(${new Date().toISOString()})`.gray;
     console.real_error(`${"ERORR".bgRed.white} ${date_str}: ${str}`);
+
+    const fake = console.error;
+    console.error = console.real_error;
+    console.trace();
+    console.error = fake;
 };
 
 (async () => {

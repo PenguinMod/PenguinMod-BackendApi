@@ -683,6 +683,7 @@ class UserManager {
      * @param {string?} birthday birth date of the user formatted as an ISO string "1990-01-01T00:00:00.000Z", if provided
      * @param {string?} country country code if the user as defined by ISO 3166-1 Alpha-2, if provided
      * @param {boolean} is_studio whether or not the account being created is a studio or not
+     * @param {boolean?} check_username check if the username breaks illegal wording rules
      * @returns {Promise<[string, string]|boolean>} token & id if successful, false if not
      * @async
      */
@@ -696,6 +697,7 @@ class UserManager {
         is_studio,
         utils,
         res,
+        check_username = false,
     ) {
         const result = await this.users.findOne({ username: username });
         if (result) {
@@ -754,7 +756,10 @@ class UserManager {
             return false;
         };
 
-        if (await illegalWordingError(username, "username")) {
+        if (
+            check_username &&
+            (await illegalWordingError(username, "username"))
+        ) {
             return false;
         }
 
@@ -2344,7 +2349,12 @@ class UserManager {
      * @param {*} prefix Prefix to search
      */
     async deleteMultipleObjects(bucketName, prefix) {
-        const stream = this.minioClient.listObjects(bucketName, prefix);
+        // TODO: this still errors because currently the minio sdk
+        // has an "outdated" version of fast-xml-parser
+        // basically its paging has the wrong limit
+        // so its like "no this is too long"
+        // and then it doesnt page because the JS ecosystem sucks
+        const stream = this.minioClient.listObjectsV2(bucketName, prefix, true);
 
         const chunks = [];
 
@@ -3674,6 +3684,7 @@ class UserManager {
 
     async makeOAuth2Account(method, data, utils, res) {
         let username, id, real_username;
+        let check_username = true;
         switch (method) {
             case "scratch":
                 username = data.user_name.toLowerCase();
@@ -3684,6 +3695,7 @@ class UserManager {
                 id = data.id;
                 username = data.username.toLowerCase();
                 real_username = data.username;
+                check_username = false;
                 break;
             case "github":
                 try {
@@ -3715,6 +3727,7 @@ class UserManager {
             false,
             utils,
             res,
+            check_username,
         );
 
         if (!info) {
@@ -5844,10 +5857,8 @@ class UserManager {
             "project-assets",
             asset_name,
         );
-        if (item) {
-            if (using_backblaze) {
-                await this.saveToBackblaze(asset_name, item);
-            }
+        if (item && using_backblaze) {
+            await this.saveToBackblaze(asset_name, item);
         }
         return item;
     }
