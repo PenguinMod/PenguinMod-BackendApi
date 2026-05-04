@@ -5094,9 +5094,9 @@ class UserManager {
     async verifyPasswordResetState(state, email, is_verify_email = false) {
         if (!state || state.endsWith("_VE") != is_verify_email) {
             console.warn(
-                state.endsWith("_VE")
+                (state.endsWith("_VE")
                     ? "says ve but not ve"
-                    : "ve but says not ve",
+                    : "ve but says not ve") + ` - ${state.slice(-4)}`,
             );
             return false;
         }
