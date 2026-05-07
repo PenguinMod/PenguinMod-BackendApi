@@ -75,9 +75,10 @@ module.exports = (app, utils) => {
                     );
                 }
 
-                const resized_picture = await sharp(picture)
-                    .resize(100, 100)
-                    .toBuffer();
+                const resized_picture =
+                    result == "image/gif"
+                        ? picture
+                        : await sharp(picture).resize(100, 100).toBuffer();
 
                 await utils.UserManager.setProfilePicture(
                     target,

@@ -49,7 +49,7 @@ module.exports = (app, utils) => {
                 path.join(utils.homeDir, pictureName.path),
             );
 
-            const allowedTypes = ["image/png", "image/jpeg", "image/gif"];
+            const allowedTypes = ["image/png", "image/jpeg"];
 
             // ATODO: make sure the pfp isnt too big
 
