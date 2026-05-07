@@ -59,7 +59,7 @@ module.exports = (app, utils) => {
                 path.join(utils.homeDir, pictureName.path),
             );
 
-            const allowedTypes = ["image/png", "image/jpeg"];
+            const allowedTypes = ["image/png", "image/jpeg", "image/gif"];
 
             magic.detect(picture, async (err, result) => {
                 if (err) {
