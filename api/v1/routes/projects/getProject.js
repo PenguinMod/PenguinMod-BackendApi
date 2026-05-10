@@ -106,8 +106,12 @@ module.exports = (app, utils) => {
         const login = await utils.UserManager.loginWithToken(token);
 
         const is_author = login && metadata.author === login.username;
+        const is_mod = login.isMod;
 
-        if (!is_author && !metadata.public) {
+        if (
+            ((!is_author && !metadata.public) || metadata.hardReject) &&
+            !is_mod
+        ) {
             if (safe) {
                 return safeReturn();
             }
