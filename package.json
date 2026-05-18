@@ -1,4 +1,23 @@
 {
+    "name": "penguinmod-backendapi",
+    "version": "1.0.0",
+    "description": "![PenguinMod Logo](icon.png \"PenguinMod Logo\")",
+    "homepage": "https://github.com/PenguinMod/PenguinMod-BackendApi#readme",
+    "bugs": {
+        "url": "https://github.com/PenguinMod/PenguinMod-BackendApi/issues"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/PenguinMod/PenguinMod-BackendApi.git"
+    },
+    "license": "MIT",
+    "author": "",
+    "type": "commonjs",
+    "main": "index.js",
+    "scripts": {
+        "dev": "nodemon index.js",
+        "start": "node index.js"
+    },
     "dependencies": {
         "bcrypt": "^6.0.0",
         "body-parser": "^1.20.4",
@@ -26,12 +45,6 @@
         "request-ip": "^3.3.0",
         "sharp": "^0.33.5",
         "ulid": "^2.3.0"
-    },
-    "scripts": {
-        "dev": "nodemon index.js",
-        "reset": "node reset.js",
-        "test": "node api/v1/db/UMTests.js",
-        "start": "node index.js"
     },
     "devDependencies": {
         "nodemon": "^3.1.3",
