@@ -980,7 +980,7 @@ class UserManager {
         return await this.projects
             .find({ author: author_id, hardReject: false })
             .limit(at_least)
-            .count();
+            .countDocuments();
     }
 
     /**
