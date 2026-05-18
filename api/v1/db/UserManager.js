@@ -929,7 +929,7 @@ class UserManager {
      * @returns {Promise<loginResult>} Result of the login attempt
      * @async
      */
-    async loginWithToken(token, allowBanned) {
+    async loginWithToken(token, allowBanned, get_full_meta = false) {
         const data = {
             success: false,
             username: "",
@@ -953,7 +953,8 @@ class UserManager {
         data.isDonator = result.badges.includes("donator");
         data.isMod = result.moderator || result.admin;
         data.isAdmin = result.admin;
-        data.fullMeta = result;
+
+        if (get_full_meta) data.fullMeta = result;
 
         if (
             ((result.permBanned || result.unbanTime > Date.now()) &&
