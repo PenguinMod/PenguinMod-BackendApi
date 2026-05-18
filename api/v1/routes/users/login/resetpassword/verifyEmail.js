@@ -17,8 +17,8 @@ module.exports = (app, utils) => {
         async (req, res) => {
             const packet = req.query;
 
-            const email = packet.email;
-            const state = packet.state;
+            const email = String(packet.email);
+            const state = String(packet.state);
 
             if (
                 !(await utils.UserManager.verifyPasswordResetState(
