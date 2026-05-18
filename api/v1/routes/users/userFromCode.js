@@ -40,7 +40,10 @@ module.exports = (app, utils) => {
                 // avoid doing the check if we're already ranked up
                 rank > 0
                     ? new Promise((resolve) => resolve(projs_to_rankup))
-                    : utils.UserManager.quickProjectCountCheck(projs_to_rankup),
+                    : utils.UserManager.quickProjectCountCheck(
+                          id,
+                          projs_to_rankup,
+                      ),
                 utils.UserManager.getOAuthMethods(username),
             ]);
 
