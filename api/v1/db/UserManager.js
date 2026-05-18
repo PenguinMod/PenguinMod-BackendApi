@@ -930,6 +930,8 @@ class UserManager {
      * @async
      */
     async loginWithToken(token, allowBanned, get_full_meta = false) {
+        token = String(token);
+
         const data = {
             success: false,
             username: "",
@@ -941,7 +943,7 @@ class UserManager {
             badges: [],
         };
 
-        if (String(token) === "undefined") return data;
+        if (token === "undefined") return data;
 
         const result = await this.users.findOne({ token });
 
