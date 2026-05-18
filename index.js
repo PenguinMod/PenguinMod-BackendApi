@@ -234,7 +234,7 @@ console.error = (...args) => {
         return Math.max(0, Number(page) || 0);
     }
 
-    endpointLoader(app, "v1/routes", {
+    const utils = {
         UserManager: UserManager,
         homeDir: path.join(__dirname, "./"),
         Cast: Cast,
@@ -258,6 +258,18 @@ console.error = (...args) => {
         },
         rateLimiter: rateLimit,
         file_size_limit: file_size_limit,
+        cachinator: (refreshTime) => ({
+            curr: null,
+            lastRefresh: 0,
+            get: async (else_then) => {
+                if (!this.curr || this.lastRefresh + refreshTime < Date.now()) {
+                    this.curr = await else_then();
+                    this.lastRefresh = Date.now();
+                }
+
+                return this.curr;
+            },
+        }),
         cors: () =>
             cors({
                 origin: function (origin, callback) {
@@ -307,7 +319,9 @@ console.error = (...args) => {
 
             return await f(todo, 0, retries, delay, onFail);
         },
-    });
+    };
+
+    endpointLoader(app, "v1/routes", utils);
 
     app.use((err, req, res, next) => {
         if (err instanceof multer.MulterError) {

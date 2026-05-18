@@ -2067,6 +2067,7 @@ class UserManager {
         maxLookup,
         user_id,
         reverse = false,
+        remove_blocked = false,
     ) {
         let pipeline = [
             {
@@ -2100,7 +2101,7 @@ class UserManager {
             pipeline.push({ $match: { "authorInfo.rank": { $gt: 0 } } });
         }
 
-        if (user_id) {
+        if (user_id && remove_blocked) {
             pipeline.push(
                 {
                     $lookup: {
@@ -5247,6 +5248,17 @@ class UserManager {
         });
 
         await this.users.updateOne({ id: id }, { $set: { followers: count } });
+    }
+
+    async getAllBlocked(user_id) {
+        return (
+            await this.blocking
+                .aggregate([
+                    { $match: { blocker: user_id } },
+                    { $project: { target: 1 } },
+                ])
+                .toArray()
+        ).map((t) => t.target);
     }
 
     /**
