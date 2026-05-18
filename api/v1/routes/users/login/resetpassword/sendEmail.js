@@ -27,7 +27,7 @@ module.exports = (app, utils) => {
         async (req, res) => {
             const packet = req.body;
 
-            const email = packet.email;
+            const email = String(packet.email);
             const captcha_token = packet.captcha_token;
 
             if (!email || !captcha_token) {
