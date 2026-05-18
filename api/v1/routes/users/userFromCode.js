@@ -25,27 +25,34 @@ module.exports = (app, utils) => {
                 return;
             }
             const username = login.username;
+            const id = login.id;
+            const user_meta = login.fullMeta;
 
-            const user_meta = await utils.UserManager.getUserData(username);
+            const rank = user_meta.rank;
 
-            const id = user_meta.id;
+            const projs_to_rankup = 3;
+
+            const [userProjects, loginMethods] = await Promise.all([
+                // avoid doing the check if we're already ranked up
+                rank > 0
+                    ? new Promise((resolve) => resolve(projs_to_rankup))
+                    : utils.UserManager.quickProjectCountCheck(projs_to_rankup),
+                utils.UserManager.getOAuthMethods(username),
+            ]);
+
             const badges = user_meta.badges;
             const isDonator = badges.includes("donator");
             const isBanned = user_meta.permBanned || user_meta > Date.now();
-            const rank = user_meta.rank;
+
             const signUpDate = user_meta.firstLogin;
 
-            // its fine to do this since its just metadata
-            const userProjects = await utils.UserManager.getProjectsByAuthor(
-                id,
-                0,
-                3,
-                true,
-                true,
-            );
+            const day = 1000 * 60 * 60 * 24;
+
+            const has_enough_projects = userProjects >= projs_to_rankup;
+
             const canRequestRankUp =
-                (userProjects.length >= 3 && // if we have 3 projects and
-                    Date.now() - signUpDate >= 4.32e8) || // first signed in 5 days ago
+                (has_enough_projects && // if we have 3 projects and
+                    Date.now() - signUpDate >= day * 5) || // first signed in 5 days ago
                 badges.length > 0; // or we have a badge
 
             const myFeaturedProject = user_meta.featuredProject;
@@ -53,9 +60,6 @@ module.exports = (app, utils) => {
 
             const isAdmin = user_meta.admin;
             const isModerator = user_meta.moderator;
-
-            const loginMethods =
-                await utils.UserManager.getOAuthMethods(username);
 
             const followers = user_meta.followers;
 

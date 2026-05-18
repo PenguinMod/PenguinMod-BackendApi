@@ -938,6 +938,7 @@ class UserManager {
             isDonator: false,
             isMod: false,
             isAdmin: false,
+            badges: [],
         };
 
         if (String(token) === "undefined") return data;
@@ -952,6 +953,7 @@ class UserManager {
         data.isDonator = result.badges.includes("donator");
         data.isMod = result.moderator || result.admin;
         data.isAdmin = result.admin;
+        data.fullMeta = result;
 
         if (
             ((result.permBanned || result.unbanTime > Date.now()) &&
@@ -971,6 +973,13 @@ class UserManager {
 
     async getRealUsername(username) {
         return (await this.users.findOne({ username: username })).real_username;
+    }
+
+    async quickProjectCountCheck(author_id, at_least) {
+        return await this.projects
+            .find({ author: author_id, hardReject: false })
+            .limit(at_least)
+            .count();
     }
 
     /**
