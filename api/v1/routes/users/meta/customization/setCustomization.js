@@ -31,7 +31,7 @@ module.exports = (app, utils) => {
 
         // you can change other people's customization if you are a mod
         const target = packet.target ? String(packet.target).toLowerCase() : null;
-        if (target && !utils.UserManager.isModeratorOrAdmin(username)) {
+        if (target && !await utils.UserManager.isModeratorOrAdmin(username)) {
             return utils.error(res, 401, "Invalid credentials");
         }
         if (!target) {
