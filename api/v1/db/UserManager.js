@@ -977,10 +977,13 @@ class UserManager {
     }
 
     async quickProjectCountCheck(author_id, at_least) {
-        return await this.projects
-            .find({ author: author_id, hardReject: false })
-            .limit(at_least)
-            .countDocuments();
+        // TODO: this is shitty. is there any better way?
+        return (
+            await this.projects
+                .find({ author: author_id, hardReject: false })
+                .limit(at_least)
+                .toArray()
+        ).length;
     }
 
     /**
