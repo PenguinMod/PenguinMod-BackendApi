@@ -6,12 +6,12 @@ const UserManager = require("../../db/UserManager");
  */
 
 /**
- * 
+ *
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.get('/api/v1/users/profile', utils.cors(), async function (req, res) {
+    app.get("/api/v1/users/profile", utils.cors(), async function (req, res) {
         const packet = req.query;
 
         const target = String(packet.target).toLowerCase();
@@ -20,22 +20,25 @@ module.exports = (app, utils) => {
 
         const login = await utils.UserManager.loginWithToken(token);
         let loggedIn = login.success;
-        const username = login.username;
+        const username = String(login.username).toLowerCase();
 
         const target_data = await utils.UserManager.getUserData(target);
         const user_data = await utils.UserManager.getUserData(username);
 
         if (!target_data) {
-            utils.error(res, 404, "NotFound")
+            utils.error(res, 404, "NotFound");
             return;
         }
 
         let isMod = false;
-        if (loggedIn)
-            isMod = user_data.moderator || user_data.admin;
+        if (loggedIn) isMod = user_data.moderator || user_data.admin;
 
-        if ((target_data.permBanned || target_data.unbanTime > Date.now()) && username !== target && !isMod) {
-            utils.error(res, 404, "NotFound")
+        if (
+            (target_data.permBanned || target_data.unbanTime > Date.now()) &&
+            username !== target &&
+            !isMod
+        ) {
+            utils.error(res, 404, "NotFound");
             return;
         }
 
@@ -63,7 +66,10 @@ module.exports = (app, utils) => {
         const targetID = target_data.id;
         if (loggedIn) {
             const usernameID = login.id;
-            user.isFollowing = await utils.UserManager.isFollowing(targetID, usernameID);
+            user.isFollowing = await utils.UserManager.isFollowing(
+                targetID,
+                usernameID,
+            );
         }
 
         if (privateProfile) {
@@ -74,9 +80,11 @@ module.exports = (app, utils) => {
                 return;
             }
 
-            if (username !== target && (
-                !(user.isFollowing && canFollowingSeeProfile) && !isMod
-            )) {
+            if (
+                username !== target &&
+                !(user.isFollowing && canFollowingSeeProfile) &&
+                !isMod
+            ) {
                 res.status(200);
                 res.header("Content-Type", "application/json");
                 res.send(user);
@@ -85,22 +93,31 @@ module.exports = (app, utils) => {
         }
 
         const badges = target_data.badges;
-        const isDonator = badges.includes('donator');
+        const isDonator = badges.includes("donator");
 
         const rank = target_data.rank;
 
         const signInDate = target_data.firstLogin;
 
-        const userProjects = await utils.UserManager.getProjectsByAuthor(targetID, 0, 3, true, true);
+        const userProjects = await utils.UserManager.getProjectsByAuthor(
+            targetID,
+            0,
+            3,
+            true,
+            true,
+        );
 
-        const canRequestRankUp = ((userProjects.length >= 3) // if we have 3 projects and
-            && ((Date.now() - signInDate) / 1000 >= 432000)) // first signed in 5 days ago
-            || (badges.length > 0); // or we have a badge
+        const canRequestRankUp =
+            (userProjects.length >= 3 && // if we have 3 projects and
+                (Date.now() - signInDate) / 1000 >= 432000) || // first signed in 5 days ago
+            badges.length > 0; // or we have a badge
 
         const followers = await utils.UserManager.getFollowerCount(target);
 
-        const myFeaturedProject = await utils.UserManager.getFeaturedProject(target);
-        const myFeaturedProjectTitle = await utils.UserManager.getFeaturedProjectTitle(target);
+        const myFeaturedProject =
+            await utils.UserManager.getFeaturedProject(target);
+        const myFeaturedProjectTitle =
+            await utils.UserManager.getFeaturedProjectTitle(target);
 
         const bio = await utils.UserManager.getBio(target);
 
@@ -126,4 +143,4 @@ module.exports = (app, utils) => {
         res.header("Content-Type", "application/json");
         res.send(user);
     });
-}
+};

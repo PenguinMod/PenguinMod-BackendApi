@@ -201,6 +201,7 @@ class UserManager {
 
         this.blocking = this.db.collection("blocking");
         this.prevReset = Date.now();
+        // TODO: use a set - gotta worry about JS equality BS
         this.views = [];
 
         this.maxviews = maxviews ? maxviews : 10000;
@@ -884,6 +885,7 @@ class UserManager {
      * @returns {Promise<object>}
      */
     async getUserData(username) {
+        username = String(username);
         return await this.users.findOne({ username: username });
     }
 
@@ -895,6 +897,7 @@ class UserManager {
      * @async
      */
     async loginWithPassword(username, password, allowBanned) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
         if (!result) return false;
@@ -975,11 +978,13 @@ class UserManager {
     }
 
     async getRealUsername(username) {
+        username = String(username);
         return (await this.users.findOne({ username: username })).real_username;
     }
 
     async quickProjectCountCheck(author_id, at_least) {
         // TODO: this is shitty. is there any better way?
+        author_id = String(author_id);
         return (
             await this.projects
                 .find({ author: author_id, hardReject: false })
@@ -995,6 +1000,7 @@ class UserManager {
      * @async
      */
     async existsByUsername(username, showBanned = false) {
+        username = String(username);
         let query = { username: username };
         if (!showBanned) {
             query = {
@@ -1016,6 +1022,7 @@ class UserManager {
      * @async
      */
     async existsByID(id) {
+        id = String(id);
         const result = await this.users.findOne({ id: id });
         if (result) return true;
         return false;
@@ -1028,6 +1035,7 @@ class UserManager {
      * @async
      */
     async getIDByUsername(username, throw_err = true) {
+        username = String(username);
         const result = await this.users.findOne({ username });
         if (!result) {
             if (throw_err) {
@@ -1049,6 +1057,7 @@ class UserManager {
      * @async
      */
     async getUsernameByID(id) {
+        id = String(id);
         const result = await this.users.findOne({ id: id });
 
         if (!result) return false; // prevent crashes
@@ -1063,6 +1072,8 @@ class UserManager {
      * @async
      */
     async changeUsernameByID(id, newUsername, real_username) {
+        id = String(id);
+        newUsername = String(newUsername);
         await this.users.updateOne(
             { id: id },
             { $set: { username: newUsername, real_username } },
@@ -1070,6 +1081,8 @@ class UserManager {
     }
 
     async changeUsername(username, newUsername, real_username) {
+        username = String(username);
+        newUsername = String(newUsername);
         await this.users.updateOne(
             { username: username },
             { $set: { username: newUsername, real_username } },
@@ -1083,6 +1096,7 @@ class UserManager {
      * @async
      */
     async changePassword(username, newPassword) {
+        username = String(username);
         const hash = await bcrypt.hash(newPassword, 10);
         await this.users.updateOne(
             { username: username },
@@ -1096,6 +1110,7 @@ class UserManager {
      * @returns {Promise<boolean>} Whether the user can login with a password
      */
     async canPasswordLogin(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
         return result.password ? true : false;
@@ -1170,6 +1185,7 @@ class UserManager {
      * @async
      */
     async getBio(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
         return result.bio;
     }
@@ -1181,6 +1197,7 @@ class UserManager {
      * @async
      */
     async setBio(username, newBio) {
+        username = String(username);
         await this.users.updateOne(
             { username: username },
             { $set: { bio: newBio } },
@@ -1195,6 +1212,7 @@ class UserManager {
      * @async
      */
     async changeFavoriteProject(username, type, id) {
+        username = String(username);
         await this.users.updateOne(
             { username: username },
             { $set: { favoriteProjectType: type, favoriteProjectID: id } },
@@ -1207,6 +1225,7 @@ class UserManager {
      * @returns {Promise<number>} When the user first logged in Unix time
      */
     async getFirstLogin(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
         return result.firstLogin;
@@ -1219,6 +1238,7 @@ class UserManager {
      * @async
      */
     async getLastLogin(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
         return result.lastLogin;
@@ -1231,6 +1251,7 @@ class UserManager {
      * @async
      */
     async getCubes(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
         return result.cubes;
@@ -1243,6 +1264,7 @@ class UserManager {
      * @async
      */
     async setCubes(username, amount) {
+        username = String(username);
         await this.users.updateOne(
             { username: username },
             { $set: { cubes: amount } },
@@ -1256,6 +1278,7 @@ class UserManager {
      * @async
      */
     async getRank(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
         return result.rank;
@@ -1268,6 +1291,7 @@ class UserManager {
      * @async
      */
     async setRank(username, rank) {
+        username = String(username);
         await this.users.updateOne(
             { username: username },
             { $set: { rank: rank } },
@@ -1281,6 +1305,7 @@ class UserManager {
      * @async
      */
     async getLastUpload(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
         return result.lastUpload;
@@ -1293,6 +1318,7 @@ class UserManager {
      * @async
      */
     async setLastUpload(username, lastUpload) {
+        username = String(username);
         await this.users.updateOne(
             { username: username },
             { $set: { lastUpload: lastUpload } },
@@ -1306,6 +1332,7 @@ class UserManager {
      * @async
      */
     async getBadges(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
         if (!result) return false;
@@ -1319,6 +1346,7 @@ class UserManager {
      * @returns {Promise<boolean>} if the user is a donator or not
      */
     async isDonator(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
         return result.badges.indexOf("donator") > -1;
@@ -1331,6 +1359,7 @@ class UserManager {
      * @async
      */
     async addBadge(username, badge) {
+        username = String(username);
         await this.users.updateOne(
             { username: username },
             { $push: { badges: badge } },
@@ -1338,6 +1367,7 @@ class UserManager {
     }
 
     async setBadges(username, badges) {
+        username = String(username);
         await this.users.updateOne(
             { username: username },
             { $set: { badges: badges } },
@@ -1351,6 +1381,7 @@ class UserManager {
      * @returns {Promise<boolean>} true if the user has the badge, false if not
      */
     async hasBadge(username, badge) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
         return result.badges.includes(badge);
@@ -1363,6 +1394,7 @@ class UserManager {
      * @async
      */
     async removeBadge(username, badge) {
+        username = String(username);
         await this.users.updateOne(
             { username: username },
             { $pull: { badges: badge } },
@@ -1375,6 +1407,7 @@ class UserManager {
      * @returns {Promise<number>} ID of the user's favorite project
      */
     async getFeaturedProject(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
         let res;
@@ -1395,6 +1428,7 @@ class UserManager {
      * @async
      */
     async setFeaturedProject(username, id) {
+        username = String(username);
         await this.users.updateOne(
             {
                 username: username,
@@ -1412,6 +1446,7 @@ class UserManager {
      * @async
      */
     async getFeaturedProjectTitle(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
         let res;
@@ -1432,6 +1467,7 @@ class UserManager {
      * @async
      */
     async setFeaturedProjectTitle(username, title) {
+        username = String(username);
         await this.users.updateOne(
             {
                 username: username,
@@ -1449,6 +1485,7 @@ class UserManager {
      * @async
      */
     async isAdmin(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
         return result.admin;
@@ -1461,6 +1498,7 @@ class UserManager {
      * @async
      */
     async setAdmin(username, admin) {
+        username = String(username);
         await this.users.updateOne(
             { username: username },
             { $set: { admin: admin } },
@@ -1474,6 +1512,7 @@ class UserManager {
      * @async
      */
     async isModerator(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
         return result.moderator;
@@ -1486,6 +1525,7 @@ class UserManager {
      * @async
      */
     async setModerator(username, moderator) {
+        username = String(username);
         await this.users.updateOne(
             { username: username },
             { $set: { moderator: moderator } },
@@ -1493,6 +1533,7 @@ class UserManager {
     }
 
     async isModeratorOrAdmin(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
         if (!result) return false;
@@ -1537,6 +1578,7 @@ class UserManager {
      * @async
      */
     async isBanned(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
         return result && (result.permBanned || result.unbanTime > Date.now());
@@ -1549,6 +1591,7 @@ class UserManager {
      * @async
      */
     async setPermBanned(username, banned, reason, remove_follows = true) {
+        username = String(username);
         await this.users.updateOne(
             { username: username },
             { $set: { permBanned: banned, banReason: reason } },
@@ -1608,6 +1651,7 @@ class UserManager {
      * @async
      */
     async getEmail(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
         if (!result) return false;
@@ -1622,6 +1666,7 @@ class UserManager {
      * @async
      */
     async setEmail(username, email, verify = false) {
+        username = String(username);
         if (await this.emailInUse(email)) return;
 
         await this.users.updateOne(
@@ -1636,6 +1681,7 @@ class UserManager {
      * @async
      */
     async logout(username) {
+        username = String(username);
         await this.users.updateOne(
             { username: username },
             { $set: { lastLogin: 0 } },
@@ -1667,6 +1713,7 @@ class UserManager {
      * @returns {Promise<boolean>} true if the report exists, false if not
      */
     async reportExists(id) {
+        id = String(id);
         const result = await this.reports.findOne({ id: id });
 
         return result ? true : false;
@@ -1737,6 +1784,7 @@ class UserManager {
     }
 
     async deleteReports(type, id) {
+        id = String(id);
         await this.reports.deleteMany({ id: id, type: type });
     }
 
@@ -1779,6 +1827,8 @@ class UserManager {
      * @returns {Promise<boolean>} true if the user has already reported the person/project, false if not
      */
     async hasAlreadyReported(reporter, reportee) {
+        reporter = String(reporter);
+        reportee = String(reportee);
         const result = await this.reports.findOne({
             reporter: reporter,
             reportee: reportee,
@@ -1821,6 +1871,7 @@ class UserManager {
      * @async
      */
     async deleteReport(id) {
+        id = String(id);
         await this.reports.deleteOne({ id: id });
     }
 
@@ -1903,6 +1954,7 @@ class UserManager {
     }
 
     async isFeatured(projectId) {
+        projectId = String(projectId);
         const result = await this.projects.findOne({
             id: projectId,
             featured: true,
@@ -1917,6 +1969,7 @@ class UserManager {
      * @returns {Promise<boolean>}
      */
     async canBeFeatured(projectID) {
+        projectID = String(projectID);
         const result = await this.projects.findOne({ id: projectID });
 
         return !result.noFeature;
@@ -1929,6 +1982,7 @@ class UserManager {
      * @returns {Promise<>}
      */
     async setCanBeFeatured(projectID, canBeFeatured) {
+        projectID = String(projectID);
         await this.projects.updateOne(
             { id: projectID },
             { $set: { noFeature: !canBeFeatured } },
@@ -1942,6 +1996,7 @@ class UserManager {
      * @async
      */
     async getRemixes(id, page, pageSize) {
+        id = String(id);
         const aggResult = await this.projects
             .aggregate([
                 {
@@ -2006,6 +2061,7 @@ class UserManager {
         notes,
         rating,
     ) {
+        id = String(id);
         if (
             (projectBuffer === null && assetBuffers !== null) ||
             (projectBuffer !== null && assetBuffers === null)
@@ -2232,6 +2288,7 @@ class UserManager {
         getPrivate = false,
         getSoftRejected = false,
     ) {
+        author = String(author);
         const match = { author: author, hardReject: false };
         if (!getPrivate) match.public = true;
         if (!getSoftRejected) match.softRejected = false;
@@ -2329,6 +2386,7 @@ class UserManager {
      * @async
      */
     async getProjectFile(id) {
+        id = String(id);
         const file = await this.readObjectFromBucket("projects", id);
 
         return file;
@@ -2340,6 +2398,7 @@ class UserManager {
      * @returns {Promise<Buffer>} The project image file.
      */
     async getProjectImage(id) {
+        id = String(id);
         // check if the file exists
         if (!(await this.minioClient.bucketExists("project-thumbnails"))) {
             return false;
@@ -2396,6 +2455,7 @@ class UserManager {
      * @returns {Promise<Array<Object>>} Array of project assets
      */
     async getProjectAssets(id) {
+        id = String(id);
         const search_term = `${id}_`;
         const items = using_backblaze
             ? await this.listWithPrefixBackblaze(search_term)
@@ -2456,6 +2516,7 @@ class UserManager {
      * @async
      */
     async hasSeenProject(id, ip) {
+        id = String(id);
         const result = this.views.find(
             (view) => view.id === id && view.ip === ip,
         );
@@ -2470,6 +2531,7 @@ class UserManager {
      * @async
      */
     async projectView(id, ip) {
+        id = String(id);
         if (
             this.views.length >= this.maxviews ||
             Date.now() - this.prevReset >= this.viewresetrate
@@ -2488,6 +2550,7 @@ class UserManager {
      * @returns {Promise<number>} The number of views the project has
      */
     async getProjectViews(id) {
+        id = String(id);
         const result = this.projects.findOne({ id: id });
 
         return result.views;
@@ -2501,6 +2564,8 @@ class UserManager {
      * @async
      */
     async hasLovedProject(id, userId) {
+        id = String(id);
+        userId = String(userId);
         const result = await this.projectStats.findOne({
             projectId: id,
             userId: userId,
@@ -2518,6 +2583,8 @@ class UserManager {
      * @async
      */
     async loveProject(id, userId, love) {
+        id = String(id);
+        userId = String(userId);
         if (love) {
             await this.projectStats.insertOne({
                 projectId: id,
@@ -2539,6 +2606,7 @@ class UserManager {
      * @returns {Promise<number>} Amount of loves the project has
      */
     async getProjectLoves(id) {
+        id = String(id);
         const result = await this.projectStats
             .find({ projectId: id, type: "love" })
             .toArray();
@@ -2554,6 +2622,7 @@ class UserManager {
      * @returns {Promise<Array<string>>} Array of user ids
      */
     async getWhoLoved(projectID, page, pageSize) {
+        projectID = String(projectID);
         const result = (
             await this.projectStats
                 .aggregate([
@@ -2584,6 +2653,7 @@ class UserManager {
      * @returns {Promise<Array<string>>} Array of user ids
      */
     async getWhoVoted(projectID, page, pageSize) {
+        projectID = String(projectID);
         const result = await this.projectStats
             .aggregate([
                 {
@@ -2612,6 +2682,8 @@ class UserManager {
      * @async
      */
     async hasVotedProject(id, userId) {
+        id = String(id);
+        userId = String(userId);
         const result = await this.projectStats.findOne({
             projectId: id,
             userId: userId,
@@ -2629,6 +2701,8 @@ class UserManager {
      * @async
      */
     async voteProject(id, userId, vote) {
+        id = String(id);
+        userId = String(userId);
         if (vote) {
             await this.projectStats.insertOne({
                 projectId: id,
@@ -2651,6 +2725,7 @@ class UserManager {
      * @async
      */
     async getProjectVotes(id) {
+        id = String(id);
         const result = await this.projectStats
             .find({ projectId: id, type: "vote" })
             .toArray();
@@ -2731,6 +2806,7 @@ class UserManager {
      * @async
      */
     async featureProject(id, feature, manuallyFeatured) {
+        id = String(id);
         await this.projects.updateOne(
             { id: id },
             {
@@ -2749,6 +2825,7 @@ class UserManager {
      * @param {Object} data Data to set
      */
     async setProjectMetadata(id, data) {
+        id = String(id);
         await this.projects.updateOne({ id: id }, { $set: data });
     }
 
@@ -2770,6 +2847,7 @@ class UserManager {
      * @async
      */
     async getProjectCountOfUser(user_id) {
+        user_id = String(user_id);
         const result = await this.projects.countDocuments({ author: user_id });
 
         return result;
@@ -2781,6 +2859,7 @@ class UserManager {
      * @async
      */
     async deleteProject(id) {
+        id = String(id);
         await this.projects.deleteOne({ id: id });
 
         // TODO: remove mentions of the project from feed
@@ -2797,6 +2876,7 @@ class UserManager {
     }
 
     async hardRejectProject(id) {
+        id = String(id);
         await this.projects.updateOne(
             { id: id },
             { $set: { hardReject: true, hardRejectTime: new Date() } }, // doesn't need to be separate any more - we don't delete hard reject
@@ -2804,6 +2884,7 @@ class UserManager {
     }
 
     async isHardRejected(id) {
+        id = String(id);
         const result = await this.projects.findOne({ id: id });
 
         return result.hardReject;
@@ -2817,6 +2898,8 @@ class UserManager {
      * @async
      */
     async followUser(follower, followee, follow) {
+        follower = String(follower);
+        followee = String(followee);
         const existing = await this.followers.findOne({
             follower,
             target: followee,
@@ -2857,6 +2940,8 @@ class UserManager {
      * @async
      */
     async isFollowing(follower, followee) {
+        follower = String(follower);
+        followee = String(followee);
         const result = await this.followers.findOne({
             follower,
             target: followee,
@@ -2875,6 +2960,7 @@ class UserManager {
      * @async
      */
     async getFollowers(username, page, pageSize) {
+        username = String(username);
         const id = await this.getIDByUsername(username);
         const result = await this.followers
             .aggregate([
@@ -2932,6 +3018,7 @@ class UserManager {
      * @async
      */
     async getFollowing(username, page, pageSize) {
+        username = String(username);
         const id = await this.getIDByUsername(username);
         const result = await this.followers
             .aggregate([
@@ -2991,6 +3078,8 @@ class UserManager {
      * @returns {Promise<boolean>} True if the person has followed/is following the other person, false if not
      */
     async hasFollowed(follower, followee) {
+        follower = String(follower);
+        followee = String(followee);
         const result = await this.followers.findOne({
             follower,
             target: followee,
@@ -3005,6 +3094,7 @@ class UserManager {
      * @returns {Promise<number|undefined>} Amount of people following the user
      */
     async getFollowerCount(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
         return result ? result.followers : undefined;
@@ -3019,6 +3109,7 @@ class UserManager {
      * @async
      */
     async sendMessage(receiver, message, disputable, projectID = 0) {
+        receiver = String(receiver);
         const id = ULID.ulid();
 
         await this.messages.insertOne({
@@ -3043,6 +3134,7 @@ class UserManager {
      * @async
      */
     async getMessages(receiver, page, pageSize) {
+        receiver = String(receiver);
         const result = await this.messages
             .aggregate([
                 {
@@ -3072,6 +3164,7 @@ class UserManager {
      * @returns {Promise<number>} Amount of messages sent to the person
      */
     async getMessageCount(receiver) {
+        receiver = String(receiver);
         const result = await this.messages.countDocuments({
             receiver: receiver,
         });
@@ -3085,6 +3178,7 @@ class UserManager {
      * @returns {Promise<Object>} The message
      */
     async getMessage(messageID) {
+        messageID = String(messageID);
         const result = await this.messages.findOne({ id: messageID });
 
         return result;
@@ -3097,6 +3191,7 @@ class UserManager {
      * @async
      */
     async getUnreadMessages(receiver, page, pageSize) {
+        receiver = String(receiver);
         const result = await this.messages
             .aggregate([
                 {
@@ -3121,6 +3216,7 @@ class UserManager {
     }
 
     async getUnreadMessageCount(receiver) {
+        receiver = String(receiver);
         const result = await this.messages.countDocuments({
             receiver: receiver,
             read: false,
@@ -3136,6 +3232,7 @@ class UserManager {
      * @async
      */
     async modifyMessage(id, modifierFunction) {
+        id = String(id);
         const result = await this.messages.findOne({ id: id });
 
         await this.messages.updateOne({ id: id }, modifierFunction(result));
@@ -3147,10 +3244,12 @@ class UserManager {
      * @param {boolean} read Toggle between read and not read
      */
     async markMessageAsRead(id, read) {
+        id = String(id);
         await this.messages.updateOne({ id: id }, { $set: { read: read } });
     }
 
     async messageExists(id) {
+        id = String(id);
         const result = await this.messages.findOne({ id: id });
 
         return result ? true : false;
@@ -3161,6 +3260,7 @@ class UserManager {
      * @param {string} receiver ID of the person receiving the messages
      */
     async markAllMessagesAsRead(receiver) {
+        receiver = String(receiver);
         await this.messages.updateMany(
             { receiver: receiver },
             { $set: { read: true } },
@@ -3173,6 +3273,7 @@ class UserManager {
      * @async
      */
     async deleteMessage(id) {
+        id = String(id);
         await this.messages.deleteOne({ id: id });
     }
 
@@ -3182,6 +3283,7 @@ class UserManager {
      * @returns {Promise<boolean>} True if the message is disputable, false if not
      */
     async isMessageDisputable(id) {
+        id = String(id);
         const result = await this.messages.findOne({ id: id });
 
         return result.disputable;
@@ -3193,6 +3295,7 @@ class UserManager {
      * @param {string} dispute The dispute
      */
     async dispute(id, dispute) {
+        id = String(id);
         await this.messages.updateOne(
             { id: id },
             { $set: { dispute: dispute, disputable: false } },
@@ -3532,6 +3635,7 @@ class UserManager {
      * @async
      */
     async setIllegalWords(type, words) {
+        type = String(type);
         await this.illegalList.updateOne(
             { id: type },
             { $set: { items: words } },
@@ -3545,6 +3649,7 @@ class UserManager {
      * @async
      */
     async addIllegalWord(word, type) {
+        type = String(type);
         await this.illegalList.updateOne(
             { id: type },
             { $push: { items: word } },
@@ -3558,6 +3663,7 @@ class UserManager {
      * @async
      */
     async removeIllegalWord(word, type) {
+        type = String(type);
         await this.illegalList.updateOne(
             { id: type },
             { $pull: { items: word } },
@@ -3614,6 +3720,7 @@ class UserManager {
      * @async
      */
     async verifyOAuth2State(state) {
+        state = String(state);
         const result = await this.oauthStates.findOne({
             state: state,
             expireAt: { $gt: Date.now() },
@@ -3774,6 +3881,7 @@ class UserManager {
      * @param {string} extension Extension ID
      */
     async addLegalExlegalExtentension(extension) {
+        extension = String(extension);
         await this.illegalList.updateOne(
             { id: "legalExtensions" },
             { $push: { items: extension } },
@@ -3785,6 +3893,7 @@ class UserManager {
      * @param {string} extension Extension ID
      */
     async removeLegalExtension(extension) {
+        extension = String(extension);
         await this.illegalList.updateOne(
             { id: "legalExtensions" },
             { $pull: { items: extension } },
@@ -3806,6 +3915,7 @@ class UserManager {
      */
     async checkExtensionIsAllowed(extension) {
         if (!extension) return true;
+        extension = String(extension);
 
         const extensionsConfig = await this.illegalList.findOne({
             id: "legalExtensions",
@@ -3912,7 +4022,7 @@ class UserManager {
         const rev = reverse ? -1 : 1;
 
         function escapeRegex(input) {
-            return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            return String(input).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         }
 
         aggregateList.push({
@@ -4131,7 +4241,7 @@ class UserManager {
      */
     async searchUsers(query, page, pageSize) {
         function escapeRegex(input) {
-            return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            return String(input).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         }
 
         const result = await this.users
@@ -4403,6 +4513,7 @@ class UserManager {
      * @param {boolean} toggle True if soft rejecting, false if undoing it
      */
     async softReject(id, toggle) {
+        id = String(id);
         // dont change if public as you should still be able to go to it if you have the id
         await this.projects.updateOne(
             { id: id },
@@ -4416,6 +4527,7 @@ class UserManager {
      * @returns {Promise<boolean>}
      */
     async isSoftRejected(id) {
+        id = String(id);
         const result = await this.projects.findOne({ id: id });
 
         return result.softRejected;
@@ -4427,6 +4539,7 @@ class UserManager {
      * @param {boolean} toggle True if making private, false if not
      */
     async privateProject(id, toggle) {
+        id = String(id);
         await this.projects.updateOne(
             { id: id },
             { $set: { public: !toggle } },
@@ -4434,6 +4547,7 @@ class UserManager {
     }
 
     async getAllFollowing(id, page, pageSize) {
+        id = String(id);
         const result = await this.followers
             .aggregate([
                 {
@@ -4480,6 +4594,7 @@ class UserManager {
      * @returns {Promise<ARray<Object>>}
      */
     async getUserFeed(username, size) {
+        username = String(username);
         const id = await this.getIDByUsername(username);
         const followers = await this.getAllFollowing(
             id,
@@ -4528,6 +4643,7 @@ class UserManager {
      * @param {string} data Data of the feed item, for example the project id
      */
     async addToFeed(userID, type, data) {
+        userID = String(userID);
         await this.userFeed.insertOne({
             userID: userID,
             type: type,
@@ -4543,6 +4659,7 @@ class UserManager {
      * @param {Buffer} buffer Buffer of the pfp
      */
     async setProfilePicture(username, buffer) {
+        username = String(username);
         const id = await this.getIDByUsername(username);
 
         await this.minioClient.putObject("profile-pictures", id, buffer);
@@ -4554,6 +4671,7 @@ class UserManager {
      * @returns {Promise<Buffer>} User's pfp
      */
     async getProfilePicture(username) {
+        username = String(username);
         const id = await this.getIDByUsername(username);
 
         const buffer = await this.readObjectFromBucket("profile-pictures", id);
@@ -4570,6 +4688,7 @@ class UserManager {
      * @param {string?} country country code if the user as defined by ISO 3166-1 Alpha-2, if provided
      */
     async setUserBirthdayAndOrCountry(username, birthday, country) {
+        username = String(username);
         if (!birthday && !country) {
             console.warn("neither birthday nor country entered");
             return;
@@ -4646,6 +4765,7 @@ class UserManager {
     }
 
     async markPrivacyPolicyAsRead(username) {
+        username = String(username);
         await this.users.updateOne(
             { username: username },
             { $set: { lastPrivacyPolicyRead: Date.now() } },
@@ -4653,6 +4773,7 @@ class UserManager {
     }
 
     async markTOSAsRead(username) {
+        username = String(username);
         await this.users.updateOne(
             { username: username },
             { $set: { lastTOSRead: Date.now() } },
@@ -4660,6 +4781,7 @@ class UserManager {
     }
 
     async markGuidelinesAsRead(username) {
+        username = String(username);
         await this.users.updateOne(
             { username: username },
             { $set: { lastGuidelinesRead: Date.now() } },
@@ -4667,6 +4789,7 @@ class UserManager {
     }
 
     async getLastPolicyRead(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
         return {
@@ -4726,12 +4849,14 @@ class UserManager {
     }
 
     async isPrivateProfile(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
         return result.privateProfile;
     }
 
     async setPrivateProfile(username, toggle) {
+        username = String(username);
         await this.users.updateOne(
             { username: username },
             { $set: { privateProfile: toggle } },
@@ -4739,12 +4864,14 @@ class UserManager {
     }
 
     async canFollowingSeeProfile(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
         return result.allowFollowingView;
     }
 
     async setFollowingSeeProfile(username, toggle) {
+        username = String(username);
         await this.users.updateOne(
             { username: username },
             { $set: { allowFollowingView: toggle } },
@@ -4759,6 +4886,7 @@ class UserManager {
      * @returns {Promise<void>}
      */
     async tempBanUser(username, reason, length) {
+        username = String(username);
         await this.users.updateOne(
             { username: username },
             { $set: { banReason: reason, unbanTime: Date.now() + length } },
@@ -4766,6 +4894,7 @@ class UserManager {
     }
 
     async unTempBan(username) {
+        username = String(username);
         await this.users.updateOne(
             { username: username },
             { $set: { unbanTime: 0 } },
@@ -4773,18 +4902,21 @@ class UserManager {
     }
 
     async getBanReason(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
         return result.banReason;
     }
 
     async isTempBanned(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
         return result.unbanTime > Date.now();
     }
 
     async getStanding(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
         if (result.unbanTime > Date.now()) return 2;
@@ -4794,6 +4926,8 @@ class UserManager {
     }
 
     async hasLoggedInWithIP(username, ip) {
+        username = String(username);
+        ip = String(ip);
         const id = await this.getIDByUsername(username);
 
         const result = await this.loggedIPs.findOne({ id: id, ip: ip });
@@ -4808,6 +4942,8 @@ class UserManager {
      * @returns {Promise<>}
      */
     async addIP(username, ip) {
+        username = String(username);
+        ip = String(ip);
         const id = await this.getIDByUsername(username);
 
         await this.loggedIPs.updateOne(
@@ -4829,6 +4965,8 @@ class UserManager {
      * @returns {Promise<>}
      */
     async addIPID(id, ip) {
+        id = String(id);
+        ip = String(ip);
         await this.loggedIPs.updateOne(
             { id: id, ip: ip }, // match condition
             {
@@ -4842,12 +4980,14 @@ class UserManager {
     }
 
     async getIPs(username) {
+        username = String(username);
         const id = await this.getIDByUsername(username);
 
         return await this.getIpsByID(id);
     }
 
     async getIpsByID(id) {
+        id = String(id);
         const ips = (await this.loggedIPs.find({ id: id }).toArray()).map(
             (x) => {
                 return {
@@ -4862,6 +5002,7 @@ class UserManager {
     }
 
     async isIPBanned(ip) {
+        ip = String(ip);
         const result = await this.loggedIPs.findOne({ ip: ip });
 
         if (!result) return false;
@@ -4870,6 +5011,7 @@ class UserManager {
     }
 
     async banIP(ip, toggle) {
+        ip = String(ip);
         await this.loggedIPs.updateMany(
             { ip: ip },
             { $set: { banned: toggle } },
@@ -4890,6 +5032,7 @@ class UserManager {
     }
 
     async banUserIP(username, toggle) {
+        username = String(username);
         const id = await this.getIDByUsername(username);
 
         await this.loggedIPs.updateMany(
@@ -4920,6 +5063,7 @@ class UserManager {
     }
 
     async getAllAccountsWithIP(ip) {
+        ip = String(ip);
         const result = await this.loggedIPs.find({ ip: ip }).toArray();
         //.map(x => ({id: x.id, username: await this.getUsernameByID(x.id)}));
 
@@ -4935,12 +5079,14 @@ class UserManager {
     }
 
     async isEmailVerified(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
         return result.emailVerified;
     }
 
     async setEmailVerified(username, toggle) {
+        username = String(username);
         await this.users.updateOne(
             { username: username },
             { $set: { emailVerified: toggle } },
@@ -4948,12 +5094,14 @@ class UserManager {
     }
 
     async emailInUse(email) {
+        email = String(email);
         const result = await this.users.findOne({ email: email });
 
         return result ? true : false;
     }
 
     async getUsernameByEmail(email) {
+        email = String(email);
         const result = await this.users.findOne({ email: email });
 
         if (!result) return false;
@@ -4967,6 +5115,7 @@ class UserManager {
      * @returns {Promise<string>}  The ID of the user
      */
     async getIDByEmail(email) {
+        email = String(email);
         const result = await this.users.findOne({ email: email });
 
         return result.id;
@@ -5050,6 +5199,7 @@ class UserManager {
     }
 
     async lastEmailSentByID(userid) {
+        userid = String(userid);
         const result = (
             await this.sentEmails
                 .aggregate([
@@ -5072,6 +5222,7 @@ class UserManager {
     }
 
     async lastEmailSentByIP(userip) {
+        userip = String(userip);
         const result = (
             await this.sentEmails
                 .aggregate([
@@ -5108,6 +5259,8 @@ class UserManager {
     }
 
     async verifyPasswordResetState(state, email, is_verify_email = false) {
+        state = String(state);
+        email = String(email);
         if (!state || state.endsWith("_VE") != is_verify_email) {
             console.warn(
                 (state.endsWith("_VE")
@@ -5139,6 +5292,7 @@ class UserManager {
      * @returns {Object} Arbitrary keys and values
      */
     async getUserCustomization(username) {
+        username = String(username);
         const result = await this.accountCustomization.findOne({
             username: username,
         });
@@ -5146,6 +5300,7 @@ class UserManager {
         return result.customData || {};
     }
     async getUserCustomizationDisabled(username) {
+        username = String(username);
         const result = await this.accountCustomization.findOne({
             username: username,
         });
@@ -5208,6 +5363,7 @@ class UserManager {
      * @param {Object} customData Arbitrary keys and values
      */
     async setUserCustomization(username, customData) {
+        username = String(username);
         await this.accountCustomization.updateOne(
             { username: username },
             { $set: { customData: customData } },
@@ -5215,6 +5371,7 @@ class UserManager {
         );
     }
     async setUserCustomizationDisabled(username, disabled) {
+        username = String(username);
         await this.accountCustomization.updateOne(
             { username: username },
             { $set: { disabled: disabled } },
@@ -5240,6 +5397,7 @@ class UserManager {
     }
 
     async verifyFollowers(username) {
+        username = String(username);
         // what this means: go through the followers. if they are banned, remove them.
         const id = await this.getIDByUsername(username);
 
@@ -5266,6 +5424,7 @@ class UserManager {
     }
 
     async getAllBlocked(user_id) {
+        user_id = String(user_id);
         return (
             await this.blocking
                 .aggregate([
@@ -5283,6 +5442,8 @@ class UserManager {
      * @param {boolean} active true if blocking, false if unblocking
      */
     async blockUser(user_id, target_id, active) {
+        user_id = String(user_id);
+        target_id = String(target_id);
         if (
             await this.blocking.findOne({ blocker: user_id, target: target_id })
         ) {
@@ -5316,6 +5477,8 @@ class UserManager {
      * @returns {Promise<boolean>} true if they're blocked, false if not
      */
     async hasBlocked(user_id, target_id) {
+        user_id = String(user_id);
+        target_id = String(target_id);
         return !!(await this.blocking.findOne({
             blocker: user_id,
             target: target_id,
@@ -5369,6 +5532,8 @@ class UserManager {
      * @returns {Promise<null>}
      */
     async changeProjectID(original_id, new_id) {
+        original_id = String(original_id);
+        new_id = String(new_id);
         // first lets change the entry
         await this.projects.updateOne(
             { id: original_id },
@@ -5423,6 +5588,7 @@ class UserManager {
      * @returns {Promise<string[]>} ids of the alts
      */
     async getAlts(user_id) {
+        user_id = String(user_id);
         const current_ids = new Set();
         await this._getAltsRec(user_id, current_ids);
         return [...current_ids];
@@ -5458,11 +5624,13 @@ class UserManager {
     }
 
     async getImpressions(project_id) {
+        project_id = String(project_id);
         const project = await this.projects.findOne({ id: project_id });
         return project.impressions ? project.impressions : 0;
     }
 
     async addImpression(project_id) {
+        project_id = String(project_id);
         await this.projects.updateOne(
             { id: project_id },
             { $inc: { impressions: 1 } },
@@ -5477,6 +5645,7 @@ class UserManager {
      * @returns {Promise<>}
      */
     async registerInteraction(user_id, interaction_type, tags) {
+        user_id = String(user_id);
         let weight;
         switch (interaction_type) {
             case "view":
@@ -5587,6 +5756,7 @@ class UserManager {
      * @returns {Promise<object[]>} The projects
      */
     async getFYP(username, page, pageSize, maxPageSize) {
+        username = String(username);
         const userId = await this.getIDByUsername(username);
 
         console.time("top tags & followed authors");
@@ -5794,10 +5964,12 @@ class UserManager {
     }
 
     async addImpressionsMany(project_ids) {
+        if (!Array.isArray(project_ids)) return;
+        const sanitized_ids = project_ids.map((id) => String(id));
         await this.projects.updateMany(
             {
                 id: {
-                    $in: project_ids,
+                    $in: sanitized_ids,
                 },
             },
             { $inc: { impressions: 1 } },
@@ -5844,6 +6016,7 @@ class UserManager {
      * @returns {Promise<>}
      */
     async deleteThumb(project_id) {
+        project_id = String(project_id);
         const image_buffer = await deleted_thumb_buffer;
         await this.minioClient.putObject(
             "project-thumbnails",
@@ -5858,6 +6031,7 @@ class UserManager {
      * @returns {Promise<boolean>} If they have mod perms
      */
     async hasModPerms(username) {
+        username = String(username);
         return !!(await this.users.findOne({
             username,
             $or: [{ moderator: true }, { admin: true }],
@@ -5871,6 +6045,7 @@ class UserManager {
      * @returns {Promise<>}
      */
     async toggleWatchlist(username, enabled) {
+        username = String(username);
         await this.users.updateOne(
             { username },
             { $set: { onWatchlist: enabled } },
@@ -5883,6 +6058,7 @@ class UserManager {
      * @returns {Promise<boolean>}
      */
     async isOnWatchlist(username) {
+        username = String(username);
         return !!(await this.users.findOne({ username })).onWatchlist;
     }
 
@@ -5899,6 +6075,7 @@ class UserManager {
     }
 
     async backupGetProjAssets(proj_id) {
+        proj_id = String(proj_id);
         const assets = await this.listWithPrefix(
             "project-assets",
             `${proj_id}_`,
