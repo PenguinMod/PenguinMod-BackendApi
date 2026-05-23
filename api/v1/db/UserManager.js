@@ -4278,6 +4278,7 @@ class UserManager {
                 {
                     $project: {
                         username: true,
+                        real_username: true,
                         id: true,
                     },
                 },
