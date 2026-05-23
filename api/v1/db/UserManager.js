@@ -4274,12 +4274,12 @@ class UserManager {
                 {
                     $limit: pageSize,
                 },
-                // turn all the data into just {username, id}
                 {
                     $project: {
                         username: true,
                         real_username: true,
                         id: true,
+                        _id: false,
                     },
                 },
             ])
