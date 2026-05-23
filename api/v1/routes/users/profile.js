@@ -20,18 +20,15 @@ module.exports = (app, utils) => {
 
         const login = await utils.UserManager.loginWithToken(token);
         let loggedIn = login.success;
-        const username = String(login.username).toLowerCase();
+        const isMod = login.isMod;
+        const username = login.username;
 
         const target_data = await utils.UserManager.getUserData(target);
-        const user_data = await utils.UserManager.getUserData(username);
 
         if (!target_data) {
             utils.error(res, 404, "NotFound");
             return;
         }
-
-        let isMod = false;
-        if (loggedIn) isMod = user_data.moderator || user_data.admin;
 
         if (
             (target_data.permBanned || target_data.unbanTime > Date.now()) &&
