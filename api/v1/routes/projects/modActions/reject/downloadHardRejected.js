@@ -17,7 +17,7 @@ module.exports = (app, utils) => {
         async (req, res) => {
             const packet = req.query;
 
-            const token = packet.token;
+            const token = String(packet.token);
 
             const project = String(packet.project);
 

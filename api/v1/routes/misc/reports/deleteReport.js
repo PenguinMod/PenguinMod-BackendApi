@@ -14,7 +14,7 @@ module.exports = (app, utils) => {
     app.post("/api/v1/reports/deleteReport", utils.cors(), async (req, res) => {
         const packet = req.body;
 
-        const token = packet.token;
+        const token = String(packet.token);
 
         const login = await utils.UserManager.loginWithToken(token);
         if (!login.success) {
@@ -27,7 +27,7 @@ module.exports = (app, utils) => {
             return utils.error(res, 403, "Unauthorized");
         }
 
-        const reportID = packet.reportID;
+        const reportID = String(packet.reportID);
 
         if (!reportID) {
             return utils.error(res, 400, "Missing report ID");

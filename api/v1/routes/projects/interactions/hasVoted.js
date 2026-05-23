@@ -14,9 +14,9 @@ module.exports = (app, utils) => {
     app.get('/api/v1/projects/hasVoted', utils.cors(), async (req, res) => {
         const packet = req.query;
         
-        const token = packet.token;
+        const token = String(packet.token);
 
-        const projectID = packet.projectID;
+        const projectID = String(packet.projectID);
 
         if (!token || !projectID) {
             return utils.error(res, 400, "Missing token or projectID");

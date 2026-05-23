@@ -20,7 +20,7 @@ module.exports = (app, utils) => {
         const page = utils.handle_page(packet.page);
         const reverse = String(packet.reverse || false) === "true";
 
-        const token = packet.token;
+        const token = String(packet.token);
 
         const login = await utils.UserManager.loginWithToken(token, false);
         const is_mod = login.success && await utils.UserManager.isModerator(login.username);

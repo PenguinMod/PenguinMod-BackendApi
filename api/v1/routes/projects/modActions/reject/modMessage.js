@@ -14,12 +14,12 @@ module.exports = (app, utils) => {
     app.post('/api/v1/projects/modmessage', utils.cors(), async (req, res) => {
         const packet = req.body;
 
-        const token = packet.token;
+        const token = String(packet.token);
 
-        const target = packet.target;
-        const message = packet.message;
+        const target = String(packet.target);
+        const message = String(packet.message);
 
-        const disputable = packet.disputable || false;
+        const disputable = Boolean(packet.disputable);
 
         if (!token || !target || typeof message !== "string") {
             return utils.error(res, 400, "Missing token, target, or message");

@@ -14,9 +14,9 @@ module.exports = (app, utils) => {
     app.post('/api/v1/projects/deletethumb', utils.cors(), async (req, res) => {
         const packet = req.body;
 
-        const token = packet.token;
+        const token = String(packet.token);
 
-        const projectID = packet.projectID;
+        const projectID = String(packet.projectID);
 
         if (!token || typeof projectID !== "string") {
             return utils.error(res, 400, "Missing token or projectID");

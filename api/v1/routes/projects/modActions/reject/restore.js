@@ -14,7 +14,7 @@ module.exports = (app, utils) => {
     app.post('/api/v1/projects/restore', utils.cors(), async (req, res) => {
         const packet = req.body;
 
-        const token = packet.token;
+        const token = String(packet.token);
 
         const project = String(packet.project);
 

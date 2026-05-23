@@ -14,8 +14,8 @@ module.exports = (app, utils) => {
     app.get("/api/v1/users/googlecallback/createaccount", async (req, res) => {
         const packet = req.query;
 
-        const code = packet.code;
-        const state = packet.state;
+        const code = String(packet.code);
+        const state = String(packet.state);
 
         if (!code || !state) {
             utils.error(res, 400, "Missing code or state");

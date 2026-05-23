@@ -14,10 +14,10 @@ module.exports = (app, utils) => {
     app.post('/api/v1/projects/manualfeature', utils.cors(), async (req, res) => {
         const packet = req.body;
 
-        const token = packet.token;
+        const token = String(packet.token);
 
-        const toggle = packet.toggle;
-        const projectID = packet.projectID;
+        const toggle = Boolean(packet.toggle);
+        const projectID = String(packet.projectID);
 
         if (!token || typeof toggle !== "boolean" || typeof projectID !== "string") {
             return utils.error(res, 400, "Missing token, toggle, or projectID");

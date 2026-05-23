@@ -14,7 +14,7 @@ module.exports = (app, utils) => {
     app.get('/api/v1/projects/getremixes', async (req, res) => {
         const packet = req.query;
 
-        const projectID = packet.projectID;
+        const projectID = String(packet.projectID);
         const page = utils.handle_page(packet.page);
 
         if (!projectID) {

@@ -15,8 +15,8 @@ module.exports = (app, utils) => {
         // get the method
         const packet = req.query;
 
-        const method = packet.method;
-        const token = packet.token;
+        const method = String(packet.method);
+        const token = String(packet.token);
 
         if (!method || !token) {
             utils.error(res, 400, "Missing method or token");

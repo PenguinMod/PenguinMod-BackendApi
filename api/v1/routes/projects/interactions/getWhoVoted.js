@@ -14,11 +14,11 @@ module.exports = (app, utils) => {
     app.get('/api/v1/projects/getWhoVoted', utils.cors(), async (req, res) => {
         const packet = req.query;
         
-        const token = packet.token;
+        const token = String(packet.token);
 
         const page = utils.handle_page(packet.page);
 
-        const projectID = packet.projectID;
+        const projectID = String(packet.projectID);
 
         if (!token || !projectID || typeof page !== "number") {
             return utils.error(res, 400, "Missing token, projectID, or page");

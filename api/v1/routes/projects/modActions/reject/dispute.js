@@ -14,10 +14,10 @@ module.exports = (app, utils) => {
     app.post('/api/v1/projects/dispute', utils.cors(), async (req, res) => {
         const packet = req.body;
 
-        const token = packet.token;
+        const token = String(packet.token);
 
-        const messageID = packet.messageID;
-        const dispute = packet.dispute;
+        const messageID = String(packet.messageID);
+        const dispute = String(packet.dispute);
 
         if (!token || typeof messageID !== "string" || typeof dispute !== "string") {
             return utils.error(res, 400, "Missing token, messageID, or dispute");

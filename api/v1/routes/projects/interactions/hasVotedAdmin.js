@@ -14,11 +14,11 @@ module.exports = (app, utils) => {
     app.get('/api/v1/projects/hasVotedAdmin', utils.cors(), async (req, res) => {
         const packet = req.query;
         
-        const token = packet.token;
+        const token = String(packet.token);
 
         const target = (String(packet.target)).toLowerCase();
 
-        const projectID = packet.projectID;
+        const projectID = String(packet.projectID);
 
         if (!token || !projectID || !target) {
             return utils.error(res, 400, "Missing token, projectID, or target");

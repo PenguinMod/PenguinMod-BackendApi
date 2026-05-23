@@ -6,7 +6,7 @@ const UserManager = require("../../db/UserManager");
  */
 
 /**
- * 
+ *
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
@@ -14,13 +14,13 @@ module.exports = (app, utils) => {
     app.post("/api/v1/users/setEmail", utils.cors(), async (req, res) => {
         const packet = req.body;
 
-        const token = packet.token;
+        const token = String(packet.token);
 
-        const email = packet.email;
+        const email = String(packet.email);
 
         const validateEmail = (email) => {
             return email.match(
-                /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+                /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
             );
         };
 
@@ -50,6 +50,6 @@ module.exports = (app, utils) => {
 
         res.status(200);
         res.header("Content-Type", "application/json");
-        res.send({ "success": true });
+        res.send({ success: true });
     });
-}
+};

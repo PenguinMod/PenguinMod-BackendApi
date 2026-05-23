@@ -14,9 +14,9 @@ module.exports = (app, utils) => {
     app.post('/api/v1/projects/interactions/voteToggle', utils.cors(), async (req, res) => {
         const packet = req.body;
 
-        const token = packet.token;
+        const token = String(packet.token);
 
-        const vote = packet.toggle;
+        const vote = Boolean(packet.toggle);
         const projectID = String(packet.projectId);
 
         if (!token || typeof vote !== "boolean" || !projectID) {

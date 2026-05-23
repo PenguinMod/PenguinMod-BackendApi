@@ -19,7 +19,7 @@ module.exports = (app, utils) => {
             return utils.error(res, 403, "Account creation is not enabled");
         }
 
-        const method = packet.method;
+        const method = String(packet.method);
 
         if (!method) {
             utils.error(res, 400, "Missing method");

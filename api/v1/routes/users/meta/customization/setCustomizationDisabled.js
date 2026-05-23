@@ -14,10 +14,10 @@ module.exports = (app, utils) => {
     app.post("/api/v1/users/customization/setCustomizationDisabled", utils.cors(), async (req, res) => {
         const packet = req.body;
 
-        const token = packet.token;
+        const token = String(packet.token);
 
         const target = String(packet.target).toLowerCase();
-        const isEnabled = packet.toggle;
+        const isEnabled = Boolean(packet.toggle);
 
         if (!token || typeof isEnabled !== "boolean") {
             return utils.error(res, 400, "Missing token, or toggle");

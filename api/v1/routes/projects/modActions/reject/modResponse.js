@@ -14,10 +14,10 @@ module.exports = (app, utils) => {
     app.post('/api/v1/projects/modresponse', utils.cors(), async (req, res) => {
         const packet = req.body;
 
-        const token = packet.token;
+        const token = String(packet.token);
 
-        const disputeID = packet.disputeID;
-        const message = packet.message;
+        const disputeID = String(packet.disputeID);
+        const message = String(packet.message);
 
         if (!token || typeof disputeID !== "string" || typeof message !== "string") {
             return utils.error(res, 400, "Missing token, disputeID, or message");

@@ -14,14 +14,14 @@ module.exports = (app, utils) => {
     app.post("/api/v1/users/changePassword", utils.cors(), async function (req, res) {
         const packet = req.body;
 
-        const token = packet.token;
+        const token = String(packet.token);
         if (typeof token !== "string") {
             utils.error(res, 400, "Missing token");
             return;
         }
 
-        const old_password = packet.old_password;
-        const new_password = packet.new_password;
+        const old_password = String(packet.old_password);
+        const new_password = String(packet.new_password);
         if (!old_password || !new_password) {
             utils.error(res, 400, "Missing old_password or new_password");
             return;

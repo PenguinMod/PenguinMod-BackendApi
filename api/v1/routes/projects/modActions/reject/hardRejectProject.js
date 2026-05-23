@@ -14,10 +14,10 @@ module.exports = (app, utils) => {
     app.post("/api/v1/projects/hardreject", utils.cors(), async (req, res) => {
         const packet = req.body;
 
-        const token = packet.token;
+        const token = String(packet.token);
 
         const project = String(packet.project);
-        const message = packet.message;
+        const message = String(packet.message);
 
         if (!token || !project || typeof message !== "string") {
             return utils.error(res, 400, "Missing token, project, or message");

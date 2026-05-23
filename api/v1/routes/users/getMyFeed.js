@@ -15,7 +15,7 @@ module.exports = (app, utils) => {
         const packet = req.query;
 
 
-        const token = packet.token;
+        const token = String(packet.token);
 
         if (!token) {
             utils.error(res, 400, "Missing token");

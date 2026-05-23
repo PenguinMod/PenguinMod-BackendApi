@@ -14,10 +14,10 @@ module.exports = (app, utils) => {
     app.get('/api/v1/projects/searchprojects', async (req, res) => {
         const packet = req.query;
 
-        const query = packet.query || "";
+        const query = String(packet.query || "");
         const page = utils.handle_page(packet.page);
-        const type = packet.type || "";
-        let reverse = packet.reverse || false;
+        const type = String(packet.type || "");
+        let reverse = Boolean(packet.reverse);
 
         if (reverse === "false") {
             reverse = false;
@@ -26,7 +26,7 @@ module.exports = (app, utils) => {
             reverse = true;
         }
 
-        const token = packet.token;
+        const token = String(packet.token);
 
         const login = await utils.UserManager.loginWithToken(token);
 

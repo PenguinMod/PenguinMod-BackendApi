@@ -14,10 +14,10 @@ module.exports = (app, utils) => {
     app.post('/api/v1/users/banuserip', utils.cors(), async function (req, res) {
         const packet = req.body;
 
-        const token = packet.token;
+        const token = String(packet.token);
 
         const target = (String(packet.target)).toLowerCase();
-        const toggle = packet.toggle;
+        const toggle = Boolean(packet.toggle);
 
         if (!token || !target || typeof toggle !== "boolean") {
             utils.error(res, 400, "Missing token, target, or toggle");

@@ -17,7 +17,7 @@ module.exports = (app, utils) => {
         async (req, res) => {
             const packet = req.body;
 
-            const token = packet.token;
+            const token = String(packet.token);
             const customization = packet.customization;
 
             if (!token || !customization || typeof customization !== "object") {

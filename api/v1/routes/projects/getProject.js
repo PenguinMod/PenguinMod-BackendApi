@@ -22,10 +22,10 @@ module.exports = (app, utils) => {
 
         const packet = req.query;
 
-        const requestType = packet.requestType;
-        const safe = packet.safe;
+        const requestType = String(packet.requestType);
+        const safe = Boolean(packet.safe);
         const projectID = String(packet.projectID);
-        const token = packet.token;
+        const token = String(packet.token);
 
         if (!requestType) {
             return utils.error(res, 400, "Missing requestType");

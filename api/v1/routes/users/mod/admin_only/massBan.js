@@ -6,70 +6,88 @@ const UserManager = require("../../../../db/UserManager");
  */
 
 /**
- * 
+ *
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.post('/api/v1/users/massbanregex', utils.cors(), async function (req, res) {
-        const packet = req.body;
+    app.post(
+        "/api/v1/users/massbanregex",
+        utils.cors(),
+        async function (req, res) {
+            const packet = req.body;
 
-        const token = packet.token;
+            res.status(420);
+            res.send({
+                error: "This endpoint has been disabled. Contact ian if you really need it.",
+            });
 
-        const toggle = packet.toggle;
-
-        const targetRegex = packet.targetRegex;
-
-        if (!token || !targetRegex || typeof toggle !== "boolean") {
-            utils.error(res, 400, "Missing token, target, or toggle");
             return;
-        }
 
-        const login = await utils.UserManager.loginWithToken(token);
-        if (!login.success) {
-            utils.error(res, 400, "Reauthenticate");
-            return;
-        }
-        const username = login.username;
+            const token = String(packet.token);
 
-        if (!await utils.UserManager.isAdmin(username)) {
-            utils.error(res, 403, "Unauthorized");
-            return;
-        }
+            const toggle = Boolean(packet.toggle);
 
-        // dont send a message since they cant access the site anyways :bleh:
+            const targetRegex = packet.targetRegex;
 
-        const count = await utils.UserManager.massBanByUsername(targetRegex, toggle);
+            if (!token || !targetRegex || typeof toggle !== "boolean") {
+                utils.error(res, 400, "Missing token, target, or toggle");
+                return;
+            }
 
-        utils.logs.sendAdminLog(
-            {
-                action: `Admin has mass ${toggle ? "" : "un"}banned by regex \`${targetRegex}\``,
-                content: `${username} ${toggle ? "" : "un"}banned by regex: \`${targetRegex}\``,
-                fields: [
-                    {
-                        name: "Mod",
-                        value: username
-                    },
-                    {
-                        name: "Target Regex",
-                        value: `\`${targetRegex}\``
-                    },
-                    {
-                        name: "Count banned",
-                        value: `${count}`
-                    }
-                ]
-            },
-            {
-                name: username,
-                icon_url: String(`${utils.env.ApiURL}/api/v1/users/getpfp?username=${username}`),
-                url: String("https://penguinmod.com/profile?user=" + username)
-            },
-            toggle ? 0xc40404 : 0x45efc6
-        );
+            const login = await utils.UserManager.loginWithToken(token);
+            if (!login.success) {
+                utils.error(res, 400, "Reauthenticate");
+                return;
+            }
+            const username = login.username;
 
-        res.status(200);
-        res.header("Content-Type", "application/json");
-        res.send({ success: true, count });
-    });
-}
+            if (!(await utils.UserManager.isAdmin(username))) {
+                utils.error(res, 403, "Unauthorized");
+                return;
+            }
+
+            // dont send a message since they cant access the site anyways :bleh:
+
+            const count = await utils.UserManager.massBanByUsername(
+                targetRegex,
+                toggle,
+            );
+
+            utils.logs.sendAdminLog(
+                {
+                    action: `Admin has mass ${toggle ? "" : "un"}banned by regex \`${targetRegex}\``,
+                    content: `${username} ${toggle ? "" : "un"}banned by regex: \`${targetRegex}\``,
+                    fields: [
+                        {
+                            name: "Mod",
+                            value: username,
+                        },
+                        {
+                            name: "Target Regex",
+                            value: `\`${targetRegex}\``,
+                        },
+                        {
+                            name: "Count banned",
+                            value: `${count}`,
+                        },
+                    ],
+                },
+                {
+                    name: username,
+                    icon_url: String(
+                        `${utils.env.ApiURL}/api/v1/users/getpfp?username=${username}`,
+                    ),
+                    url: String(
+                        "https://penguinmod.com/profile?user=" + username,
+                    ),
+                },
+                toggle ? 0xc40404 : 0x45efc6,
+            );
+
+            res.status(200);
+            res.header("Content-Type", "application/json");
+            res.send({ success: true, count });
+        },
+    );
+};

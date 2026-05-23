@@ -14,7 +14,7 @@ module.exports = (app, utils) => {
     app.post('/api/v1/users/changeprojectid', utils.cors(), async function (req, res) {
         const packet = req.body;
 
-        const token = packet.token;
+        const token = String(packet.token);
 
         const target = String(packet.target);
         const newId = String(packet.newId);

@@ -17,7 +17,7 @@ module.exports = (app, utils) => {
         async function (req, res) {
             const packet = req.query;
 
-            const token = packet.token;
+            const token = String(packet.token);
 
             const login = await utils.UserManager.loginWithToken(
                 token,

@@ -14,7 +14,7 @@ module.exports = (app, utils) => {
     app.get("/api/v1/reports/getReports", utils.cors(), async (req, res) => {
         const packet = req.query;
 
-        const token = packet.token;
+        const token = String(packet.token);
 
         const login = await utils.UserManager.loginWithToken(token);
         if (!login.success) {
@@ -27,7 +27,7 @@ module.exports = (app, utils) => {
             return utils.error(res, 403, "Unauthorized");
         }
 
-        const type = packet.type;
+        const type = String(packet.type);
         const page = utils.handle_page(packet.page);
 
         const reports = type

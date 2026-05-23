@@ -14,9 +14,9 @@ module.exports = (app, utils) => {
     app.get("/api/v1/users/getAllIPs", utils.cors(), async function (req, res) {
         const packet = req.query;
 
-        const token = packet.token;
+        const token = String(packet.token);
 
-        const target = packet.target;
+        const target = String(packet.target);
 
         const login = await utils.UserManager.loginWithToken(token);
         if (!login.success) {

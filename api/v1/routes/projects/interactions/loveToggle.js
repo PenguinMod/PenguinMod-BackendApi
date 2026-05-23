@@ -14,9 +14,9 @@ module.exports = (app, utils) => {
     app.post('/api/v1/projects/interactions/loveToggle', utils.cors(), async (req, res) => {
         const packet = req.body;
 
-        const token = packet.token;
+        const token = String(packet.token);
 
-        const love = packet.toggle;
+        const love = Boolean(packet.toggle);
         const projectID = String(packet.projectId);
 
         if (!token || typeof love !== "boolean" || !projectID) {

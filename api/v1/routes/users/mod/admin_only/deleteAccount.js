@@ -14,9 +14,9 @@ module.exports = (app, utils) => {
     app.post('/api/v1/users/deleteaccount', utils.cors(), async function (req, res) {
         const packet = req.body;
 
-        const token = packet.token;
+        const token = String(packet.token);
         const target = (String(packet.target)).toLowerCase();
-        const reason = packet.reason;
+        const reason = String(packet.reason);
 
         if (!token || !target || typeof reason !== "string" || reason.length > 512) {
             return utils.error(res, 400, "Missing token, target, or reason, or reason is too long");

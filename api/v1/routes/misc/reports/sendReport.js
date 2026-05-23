@@ -14,7 +14,7 @@ module.exports = (app, utils) => {
     app.post('/api/v1/reports/sendReport', utils.cors(), async (req, res) => {
         const packet = req.body;
 
-        const token = packet.token;
+        const token = String(packet.token);
 
         const login = await utils.UserManager.loginWithToken(token);
         if (!login.success) {
@@ -23,9 +23,9 @@ module.exports = (app, utils) => {
         }
         const username = login.username;
 
-        const report = packet.report;
+        const report = String(packet.report);
         let target = String(packet.target).toLowerCase();
-        const type = packet.type;
+        const type = String(packet.type);
 
         if (!report || !type) {
             return utils.error(res, 400, "Invalid request");

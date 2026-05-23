@@ -28,7 +28,7 @@ module.exports = (app, utils) => {
             const packet = req.body;
 
             const email = String(packet.email);
-            const captcha_token = packet.captcha_token;
+            const captcha_token = String(packet.captcha_token);
 
             if (!email || !captcha_token) {
                 utils.error(res, 400, "MissingFields");

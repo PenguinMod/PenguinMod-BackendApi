@@ -14,7 +14,7 @@ module.exports = (app, utils) => {
     app.get('/api/v1/users/getadmins', utils.cors(), async function (req, res) {
         const packet = req.query;
 
-        const token = packet.token;
+        const token = String(packet.token);
 
         if (!token) {
             return utils.error(res, 400, "Missing token");

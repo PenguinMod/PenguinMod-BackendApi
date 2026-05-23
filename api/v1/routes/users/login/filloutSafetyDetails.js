@@ -15,10 +15,10 @@ module.exports = (app, utils) => {
     app.post("/api/v1/users/filloutSafetyDetails", utils.cors(), async function (req, res) {
         const packet = req.body;
 
-        const token = packet.token;
+        const token = String(packet.token);
         
-        const birthday = packet.birthday;
-        const countryCode = packet.country;
+        const birthday = String(packet.birthday);
+        const countryCode = String(packet.country);
 
         if (typeof token !== "string") {
             utils.error(res, 400, "Missing token");

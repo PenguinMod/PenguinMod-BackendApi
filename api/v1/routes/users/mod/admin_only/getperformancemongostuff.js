@@ -17,7 +17,7 @@ module.exports = (app, utils) => {
         async function (req, res) {
             const packet = req.query;
 
-            const token = packet.token;
+            const token = String(packet.token);
             const page = Number(packet.page) || 0;
 
             if (!token) {

@@ -14,11 +14,11 @@ module.exports = (app, utils) => {
     app.post('/api/v1/users/setmyfeaturedprojectadmin', utils.cors(), async function (req, res) {
         const packet = req.body;
 
-        const token = packet.token;
+        const token = String(packet.token);
 
         const target = (String(packet.target)).toLowerCase();
         const project = String(packet.project);
-        const title = packet.title;
+        const title = String(packet.title);
 
         const login = await utils.UserManager.loginWithToken(token);
         if (!login.success) {

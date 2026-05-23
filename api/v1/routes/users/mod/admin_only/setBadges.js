@@ -14,7 +14,7 @@ module.exports = (app, utils) => {
     app.post('/api/v1/users/setBadges', utils.cors(), async function (req, res) {
         const packet = req.body;
 
-        const token = packet.token;
+        const token = String(packet.token);
 
         const target = (String(packet.target)).toLowerCase();
         const badges = packet.badges;

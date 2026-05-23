@@ -14,11 +14,11 @@ module.exports = (app, utils) => {
     app.post('/api/v1/users/assignPossition', utils.cors(), async function (req, res) {
         const packet = req.body;
 
-        const token = packet.token;
+        const token = String(packet.token);
 
         const target = (String(packet.target)).toLowerCase();
-        const admin = packet.admin;
-        const approver = packet.approver;
+        const admin = Boolean(packet.admin);
+        const approver = Boolean(packet.approver);
 
         const login = await utils.UserManager.loginWithToken(token);
         if (!login.success) {

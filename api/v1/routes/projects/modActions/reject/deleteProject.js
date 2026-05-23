@@ -16,8 +16,8 @@ module.exports = (app, utils) => {
 
         const projectID = String(packet.projectID);
 
-        const token = packet.token;
-        const reason = packet.reason;
+        const token = String(packet.token);
+        const reason = String(packet.reason);
 
         if (!token) {
             return utils.error(res, 400, "Missing token");

@@ -14,8 +14,8 @@ module.exports = (app, utils) => {
     app.get("/api/v1/users/addpasswordtooauth", utils.cors(), async function (req, res) {
         const packet = req.query;
 
-        const method = packet.method;
-        const token = packet.token;
+        const method = String(packet.method);
+        const token = String(packet.token);
 
         if (!method || !token) {
             utils.error(res, 400, "Missing method, username, or token");

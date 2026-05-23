@@ -33,13 +33,13 @@ module.exports = (app, utils) => {
             }
 
             const username = String(packet.username).toLowerCase();
-            const real_username = packet.username;
-            const password = packet.password;
+            const real_username = String(packet.username);
+            const password = String(packet.password);
 
-            const email = packet.email || "";
-            const birthday = packet.birthday;
-            const countryCode = packet.country;
-            const captcha_token = packet.captcha_token;
+            const email = String(packet.email || "");
+            const birthday = String(packet.birthday);
+            const countryCode = String(packet.country);
+            const captcha_token = String(packet.captcha_token);
 
             if (utils.env.CFCaptchaEnabled !== "false") {
                 // verify token

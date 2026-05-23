@@ -16,7 +16,7 @@ module.exports = (app, utils) => {
 
         const target = String(packet.target).toLowerCase();
 
-        const token = packet.token || "";
+        const token = String(packet.token);
 
         const login = await utils.UserManager.loginWithToken(token);
         let loggedIn = login.success;

@@ -14,7 +14,7 @@ module.exports = (app, utils) => {
     app.get('/api/v1/users/getunreadmessages', utils.cors(), async (req, res) => {
         const packet = req.query;
 
-        const token = packet.token;
+        const token = String(packet.token);
 
         const page = utils.handle_page(packet.page);
 

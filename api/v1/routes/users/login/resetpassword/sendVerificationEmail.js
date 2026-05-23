@@ -17,7 +17,7 @@ module.exports = (app, utils) => {
         async (req, res) => {
             const packet = req.body;
 
-            const token = packet.token;
+            const token = String(packet.token);
 
             const login = await utils.UserManager.loginWithToken(token);
             if (!login.success) {

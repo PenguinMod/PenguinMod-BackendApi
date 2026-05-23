@@ -14,9 +14,9 @@ module.exports = (app, utils) => {
     app.post('/api/v1/users/setBio', utils.cors(), async function (req, res) {
         const packet = req.body;
 
-        const token = packet.token;
+        const token = String(packet.token);
 
-        const bio = packet.bio;
+        const bio = String(packet.bio);
 
         const login = await utils.UserManager.loginWithToken(token);
         if (!login.success) {

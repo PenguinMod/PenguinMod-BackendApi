@@ -14,17 +14,17 @@ module.exports = (app, utils) => {
     app.get("/api/v1/users/scratchaddpasswordfinal", async function (req, res) {
         const packet = req.query;
 
-        const access_token = packet.at;
-        const password = packet.password;
+        const access_token = String(packet.at);
+        const password = String(packet.password);
 
         if (!access_token || !password) {
             utils.error(res, 400, "Missing access_token or password");
             return;
         }
 
-        const passwordDoesNotMeetLength = packet.password.length < 8 || packet.password.length > 50;
-        const passwordMeetsTextInclude = packet.password.match(/[a-z]/) && packet.password.match(/[A-Z]/);
-        const passwordMeetsSpecialInclude = packet.password.match(/[0-9]/) && packet.password.match(/[^a-z0-9]/i);
+        const passwordDoesNotMeetLength = password.length < 8 || password.length > 50;
+        const passwordMeetsTextInclude = password.match(/[a-z]/) && password.match(/[A-Z]/);
+        const passwordMeetsSpecialInclude = ppassword.match(/[0-9]/) && password.match(/[^a-z0-9]/i);
         if (passwordDoesNotMeetLength) {
             utils.error(res, 400, "InvalidLengthPassword");
             return;

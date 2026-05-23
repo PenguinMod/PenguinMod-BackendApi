@@ -14,7 +14,7 @@ module.exports = (app, utils) => {
     app.post("/api/v1/users/logout", utils.cors(), async function (req, res) {
         const packet = req.body;
 
-        const token = packet.token;
+        const token = String(packet.token);
 
         if (typeof token !== "string") {
             utils.error(res, 400, "Missing token");

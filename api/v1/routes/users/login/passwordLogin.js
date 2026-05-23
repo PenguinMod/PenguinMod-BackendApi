@@ -24,8 +24,8 @@ module.exports = (app, utils) => {
         const packet = req.body;
 
         const username = (String(packet.username)).toLowerCase();
-        const password = packet.password;
-        const captcha_token = packet.captcha_token;
+        const password = String(packet.password);
+        const captcha_token = String(packet.captcha_token);
 
         if (utils.env.CFCaptchaEnabled !== "false") {
             if (!captcha_token) {

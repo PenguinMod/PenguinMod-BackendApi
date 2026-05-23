@@ -14,9 +14,9 @@ module.exports = (app, utils) => {
     app.post('/api/v1/users/banip', utils.cors(), async function (req, res) {
         const packet = req.body;
 
-        const token = packet.token;
+        const token = String(packet.token);
 
-        const toggle = packet.toggle;
+        const toggle = Boolean(packet.toggle);
 
         let targetIP;
         try {

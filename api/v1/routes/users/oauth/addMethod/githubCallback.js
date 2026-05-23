@@ -14,8 +14,8 @@ module.exports = (app, utils) => {
     app.get("/api/v1/users/githubcallback/addmethod", async function (req, res) {
         const packet = req.query;
 
-        const state = packet.state;
-        const code = packet.code;
+        const state = String(packet.state);
+        const code = String(packet.code);
 
         if (!state || !code) {
             utils.error(res, 400, "Missing state or code");

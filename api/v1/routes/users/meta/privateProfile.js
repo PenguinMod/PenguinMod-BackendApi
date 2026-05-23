@@ -14,7 +14,7 @@ module.exports = (app, utils) => {
     app.post('/api/v1/users/privateProfile', utils.cors(), async function (req, res) {
         const packet = req.body;
 
-        const token = packet.token;
+        const token = String(packet.token);
 
         const login = await utils.UserManager.loginWithToken(token);
         if (!login.success) {
@@ -23,8 +23,8 @@ module.exports = (app, utils) => {
         }
         const username = login.username;
 
-        const privateProfile = packet.privateProfile;
-        const privateToFollowing = packet.privateToFollowing;
+        const privateProfile = Boolean(packet.privateProfile);
+        const privateToFollowing = Boolean(packet.privateToFollowing);
 
         if (typeof privateProfile !== "boolean" || typeof privateToFollowing !== "boolean") {
             utils.error(res, 400, "InvalidBody")

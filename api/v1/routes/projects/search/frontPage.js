@@ -25,7 +25,7 @@ module.exports = (app, utils) => {
     app.get("/api/v1/projects/frontpage", async (req, res) => {
         const packet = req.query;
 
-        const token = packet.token;
+        const token = String(packet.token);
 
         const login = await utils.UserManager.loginWithToken(token);
         const user_and_logged_in = login.success;

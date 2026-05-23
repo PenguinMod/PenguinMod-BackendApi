@@ -14,9 +14,9 @@ module.exports = (app, utils) => {
     app.post('/api/v1/users/markmessageasread', utils.cors(), async (req, res) => {
         const packet = req.body;
 
-        const token = packet.token;
+        const token = String(packet.token);
 
-        const messageID = packet.messageID;
+        const messageID = String(packet.messageID);
 
         if (!token) {
             return utils.error(res, 400, "Missing token");

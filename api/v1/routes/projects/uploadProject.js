@@ -46,7 +46,7 @@ module.exports = (app, utils) => {
 
             const packet = req.body;
 
-            const token = packet.token;
+            const token = String(packet.token);
 
             const login = await utils.UserManager.loginWithToken(token);
             if (!login.success) {
@@ -125,9 +125,9 @@ module.exports = (app, utils) => {
                 return false;
             };
 
-            let title = packet.title;
-            let instructions = packet.instructions;
-            let notes = packet.notes;
+            let title = String(packet.title);
+            let instructions = String(packet.instructions);
+            let notes = String(packet.notes);
 
             if (!title || typeof title !== "string") {
                 title = "";

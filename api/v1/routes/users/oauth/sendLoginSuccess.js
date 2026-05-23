@@ -16,7 +16,7 @@ module.exports = (app, utils) => {
     app.get("/api/v1/users/sendloginsuccess", async function (req, res) {
         const packet = req.query;
 
-        const token = packet.token;
+        const token = String(packet.token);
         const username = (String(packet.username)).toLowerCase();
 
         if (!token || !username) {

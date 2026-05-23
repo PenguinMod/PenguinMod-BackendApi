@@ -17,7 +17,7 @@ module.exports = (app, utils) => {
         async function (req, res) {
             const packet = req.body;
 
-            const token = packet.token;
+            const token = String(packet.token);
 
             const target = String(packet.target).toLowerCase();
             const newUsername = String(packet.newUsername).toLowerCase();

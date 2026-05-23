@@ -14,12 +14,12 @@ module.exports = (app, utils) => {
     app.post("/api/v1/users/ban", utils.cors(), async function (req, res) {
         const packet = req.body;
 
-        const token = packet.token;
+        const token = String(packet.token);
 
         const target = String(packet.target).toLowerCase();
-        const toggle = packet.toggle;
-        const time = packet.time || 0;
-        const reason = packet.reason;
+        const toggle = Boolean(packet.toggle);
+        const time = Number(packet.time) || 0;
+        const reason = String(packet.reason);
         const remove_follows = String(packet.remove_follows) !== "false";
 
         if (

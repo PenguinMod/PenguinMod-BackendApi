@@ -19,7 +19,7 @@ module.exports = (app, utils) => {
 
             const email = String(packet.email);
             const state = String(packet.state);
-            const password = packet.password;
+            const password = String(packet.password);
 
             if (
                 !(await utils.UserManager.verifyPasswordResetState(

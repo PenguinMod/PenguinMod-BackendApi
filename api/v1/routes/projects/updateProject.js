@@ -67,7 +67,7 @@ module.exports = (app, utils) => {
                 return utils.error(res, 400, "Uploaded in the last 8 minutes");
             }
 
-            const projectID = packet.projectID;
+            const projectID = String(packet.projectID);
 
             // check if the project exists
             if (!(await utils.UserManager.projectExists(projectID))) {
@@ -144,9 +144,9 @@ module.exports = (app, utils) => {
                 return false;
             };
 
-            let title = packet.title;
-            let instructions = packet.instructions;
-            let notes = packet.notes;
+            let title = String(packet.title);
+            let instructions = String(packet.instructions);
+            let notes = String(packet.notes);
 
             if (!title || typeof title !== "string") {
                 title = "";

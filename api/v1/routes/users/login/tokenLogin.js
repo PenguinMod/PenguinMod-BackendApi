@@ -14,7 +14,7 @@ module.exports = (app, utils) => {
     app.get("/api/v1/users/tokenlogin", utils.cors(), async function (req, res) {
         const packet = req.query;
 
-        const token = packet.token;
+        const token = String(packet.token);
 
         if (!token) {
             utils.error(res, 400, "Missing token");

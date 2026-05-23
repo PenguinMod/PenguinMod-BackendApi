@@ -14,9 +14,9 @@ module.exports = (app, utils) => {
     app.post('/api/v1/projects/setCanBeFeatured', utils.cors(), async (req, res) => {
         const packet = req.body;
 
-        const token = packet.token;
+        const token = String(packet.token);
 
-        const projectID = packet.projectID;
+        const projectID = String(packet.projectID);
 
         const canBeFeatured = !!packet.toggle;
 

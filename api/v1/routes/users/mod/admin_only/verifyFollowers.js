@@ -14,9 +14,9 @@ module.exports = (app, utils) => {
     app.post('/api/v1/users/verifyfollowers', utils.cors(), async function (req, res) {
         const packet = req.body;
 
-        const token = packet.token;
+        const token = String(packet.token);
 
-        const target = packet.target;
+        const target = String(packet.target);
 
         if (!token || !target) {
             utils.error(res, 400, "Missing token or target");
