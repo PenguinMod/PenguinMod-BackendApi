@@ -295,7 +295,7 @@ console.error = (...args) => {
                 try {
                     return await todo();
                 } catch (e) {
-                    if (onFail) onFail();
+                    if (onFail) onFail(e);
                     if (curRetries > finalRetries) {
                         console.error("exceeded max retry count");
                         throw e;

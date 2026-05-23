@@ -381,10 +381,20 @@ class UserManager {
                 url += `&startFileName=${startFileName}`;
             }
 
-            // we don't url encode prefix since it *should* just be a number and maybe an underscore and also im lazy
-            const res = await fetch(url, {
-                headers,
-            }).then((res) => res.json());
+            let res = null;
+            utils.retryIfFailure(
+                async () => {
+                    // we don't url encode prefix since it *should* just be a number and maybe an underscore and also im lazy
+                    res = await fetch(url, {
+                        headers,
+                    }).then((res) => res.json());
+                },
+                3,
+                500,
+                (e) => {
+                    console.warn(`Failed to list data from backblaze: ${e}`);
+                },
+            );
 
             results.push(...res.files);
 
@@ -443,7 +453,7 @@ class UserManager {
                 body: file,
             });
         } catch (e) {
-            console.error(e);
+            console.warn(`Got error after fetching. trying again: ${e}`);
             // result.ok is already false
             // but just in case
             result = { ok: false };
