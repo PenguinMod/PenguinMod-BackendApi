@@ -21,7 +21,7 @@ module.exports = (app, utils) => {
 
             const projectID = String(packet.projectID);
 
-            const canBeFeatured = !!packet.toggle === "true";
+            const canBeFeatured = packet.toggle === "true";
 
             if (!token || typeof projectID !== "string") {
                 return utils.error(res, 400, "Missing token or projectID");
