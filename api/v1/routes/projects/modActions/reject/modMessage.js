@@ -19,7 +19,7 @@ module.exports = (app, utils) => {
         const target = String(packet.target);
         const message = String(packet.message);
 
-        const disputable = Boolean(packet.disputable);
+        const disputable = packet.disputable === "true";
 
         if (!token || !target || typeof message !== "string") {
             return utils.error(res, 400, "Missing token, target, or message");

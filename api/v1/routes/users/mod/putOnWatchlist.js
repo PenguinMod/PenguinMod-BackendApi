@@ -17,7 +17,7 @@ module.exports = (app, utils) => {
         const token = String(packet.token);
 
         const target = (String(packet.target)).toLowerCase();
-        const enabled = Boolean(packet.enabled);
+        const enabled = packet.enabled === "true";
 
         const login = await utils.UserManager.loginWithToken(token);
         if (!login.success) {

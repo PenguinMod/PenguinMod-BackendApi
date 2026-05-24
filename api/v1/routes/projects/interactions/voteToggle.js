@@ -16,7 +16,7 @@ module.exports = (app, utils) => {
 
         const token = String(packet.token);
 
-        const vote = Boolean(packet.toggle);
+        const vote = packet.toggle === "true";
         const projectID = String(packet.projectId);
 
         if (!token || typeof vote !== "boolean" || !projectID) {

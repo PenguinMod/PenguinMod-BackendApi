@@ -18,7 +18,7 @@ module.exports = (app, utils) => {
 
         const target = (String(packet.target)).toLowerCase();
 
-        const toggle = Boolean(packet.toggle);
+        const toggle = packet.toggle === "true";
 
         if (!token || !target || typeof toggle !== "boolean") {
             utils.error(res, 400, "Missing token, target, or toggle.");

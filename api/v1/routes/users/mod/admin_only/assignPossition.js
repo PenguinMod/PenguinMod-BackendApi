@@ -17,8 +17,8 @@ module.exports = (app, utils) => {
         const token = String(packet.token);
 
         const target = (String(packet.target)).toLowerCase();
-        const admin = Boolean(packet.admin);
-        const approver = Boolean(packet.approver);
+        const admin = packet.admin === "true";
+        const approver = packet.approver === "true";
 
         const login = await utils.UserManager.loginWithToken(token);
         if (!login.success) {
@@ -39,8 +39,8 @@ module.exports = (app, utils) => {
         const isAdmin = await utils.UserManager.isAdmin(target);
         const isModerator = await utils.UserManager.isModerator(target);
 
-        await utils.UserManager.setAdmin(target, Boolean(admin));
-        await utils.UserManager.setModerator(target, Boolean(approver));
+        await utils.UserManager.setAdmin(target, admin);
+        await utils.UserManager.setModerator(target, approver);
 
         let fields = [];
 

@@ -26,7 +26,7 @@ module.exports = (app, utils) => {
 
             const token = String(packet.token);
 
-            const toggle = Boolean(packet.toggle);
+            const toggle = packet.toggle === "true";
 
             const targetRegex = packet.targetRegex;
 
