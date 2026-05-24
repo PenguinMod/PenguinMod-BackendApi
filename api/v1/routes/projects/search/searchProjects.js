@@ -6,18 +6,18 @@ const UserManager = require("../../../db/UserManager");
  */
 
 /**
- * 
+ *
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.get('/api/v1/projects/searchprojects', async (req, res) => {
+    app.get("/api/v1/projects/searchprojects", async (req, res) => {
         const packet = req.query;
 
         const query = String(packet.query || "");
         const page = utils.handle_page(packet.page);
         const type = String(packet.type || "");
-        let reverse = Boolean(packet.reverse);
+        let reverse = packet.reverse === "true";
 
         if (reverse === "false") {
             reverse = false;
@@ -30,16 +30,26 @@ module.exports = (app, utils) => {
 
         const login = await utils.UserManager.loginWithToken(token);
 
-        const is_mod = login.success && await utils.UserManager.isModeratorOrAdmin(login.username);
+        const is_mod =
+            login.success &&
+            (await utils.UserManager.isModeratorOrAdmin(login.username));
 
-        const projects = await utils.UserManager.searchProjects(is_mod, query, type, page, Number(utils.env.PageSize), Number(utils.env.MaxPageSize), reverse);
+        const projects = await utils.UserManager.searchProjects(
+            is_mod,
+            query,
+            type,
+            page,
+            Number(utils.env.PageSize),
+            Number(utils.env.MaxPageSize),
+            reverse,
+        );
 
         for (const project of projects) {
             await utils.UserManager.addImpression(project.id);
         }
 
         res.status(200);
-        res.header({"Content-Type": "application/json"})
+        res.header({ "Content-Type": "application/json" });
         return res.send(projects);
     });
-}
+};
