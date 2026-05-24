@@ -382,17 +382,14 @@ class UserManager {
             }
 
             let res = null;
-            const f = async (curRetries, finalRetries, delay, onFail) => {
+            const f = async (curRetries, finalRetries, delay) => {
                 try {
                     // we don't url encode prefix since it *should* just be a number and maybe an underscore and also im lazy
                     res = await fetch(url, {
                         headers,
                     }).then((res) => res.json());
                 } catch (e) {
-                    if (onFail)
-                        console.warn(
-                            `Failed to list data from backblaze: ${e}`,
-                        );
+                    console.warn(`Failed to list data from backblaze: ${e}`);
                     if (curRetries > finalRetries) {
                         console.error("exceeded max retry count");
                         throw e;
@@ -402,14 +399,14 @@ class UserManager {
                     );
                     return await new Promise((resolve) => {
                         setTimeout(() => {
-                            f(curRetries + 1, finalRetries, delay, onFail).then(
+                            f(curRetries + 1, finalRetries, delay).then(
                                 resolve,
                             );
                         }, delay);
                     });
                 }
             };
-            await f(0, 3, 500, onFail);
+            await f(0, 3, 500);
 
             if (res == null) {
                 throw "idk man";
