@@ -382,19 +382,38 @@ class UserManager {
             }
 
             let res = null;
-            utils.retryIfFailure(
-                async () => {
+            const f = async (curRetries, finalRetries, delay, onFail) => {
+                try {
                     // we don't url encode prefix since it *should* just be a number and maybe an underscore and also im lazy
                     res = await fetch(url, {
                         headers,
                     }).then((res) => res.json());
-                },
-                3,
-                500,
-                (e) => {
-                    console.warn(`Failed to list data from backblaze: ${e}`);
-                },
-            );
+                } catch (e) {
+                    if (onFail)
+                        console.warn(
+                            `Failed to list data from backblaze: ${e}`,
+                        );
+                    if (curRetries > finalRetries) {
+                        console.error("exceeded max retry count");
+                        throw e;
+                    }
+                    console.warn(
+                        `Try if failed has failed (${curRetries}/${finalRetries})`,
+                    );
+                    return await new Promise((resolve) => {
+                        setTimeout(() => {
+                            f(curRetries + 1, finalRetries, delay, onFail).then(
+                                resolve,
+                            );
+                        }, delay);
+                    });
+                }
+            };
+            await f(0, 3, 500, onFail);
+
+            if (res == null) {
+                throw "idk man";
+            }
 
             results.push(...res.files);
 
