@@ -23,8 +23,8 @@ module.exports = (app, utils) => {
         }
         const username = login.username;
 
-        const privateProfile = packet.privateProfile === "true";
-        const privateToFollowing = packet.privateToFollowing === "true";
+        const privateProfile = String(packet.privateProfile) === "true";
+        const privateToFollowing = String(packet.privateToFollowing) === "true";
 
         if (typeof privateProfile !== "boolean" || typeof privateToFollowing !== "boolean") {
             utils.error(res, 400, "InvalidBody")

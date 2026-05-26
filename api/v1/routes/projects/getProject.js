@@ -23,7 +23,7 @@ module.exports = (app, utils) => {
         const packet = req.query;
 
         const requestType = String(packet.requestType);
-        const safe = packet.safe === "true";
+        const safe = String(packet.safe) === "true";
         const projectID = String(packet.projectID);
         const token = String(packet.token);
 

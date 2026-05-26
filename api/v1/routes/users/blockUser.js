@@ -37,7 +37,7 @@ module.exports = (app, utils) => {
                 return utils.error(res, 401, "Cannot block yourself");
             }
 
-            const active = packet.active === "true";
+            const active = String(packet.active) === "true";
 
             await utils.UserManager.blockUser(user_id, target_id, active);
 

@@ -17,7 +17,7 @@ module.exports = (app, utils) => {
         const token = String(packet.token);
 
         const target = String(packet.target).toLowerCase();
-        const toggle = packet.toggle === "true";
+        const toggle = String(packet.toggle) === "true";
         const time = Number(packet.time) || 0;
         const reason = String(packet.reason);
         const remove_follows = String(packet.remove_follows) !== "false";

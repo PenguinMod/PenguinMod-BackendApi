@@ -17,7 +17,7 @@ module.exports = (app, utils) => {
         const query = String(packet.query || "");
         const page = utils.handle_page(packet.page);
         const type = String(packet.type || "");
-        let reverse = packet.reverse === "true";
+        let reverse = String(packet.reverse) === "true";
 
         if (reverse === "false") {
             reverse = false;
