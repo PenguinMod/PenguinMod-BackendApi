@@ -81,15 +81,21 @@ class UserManager {
             });
 
         this.projects = this.db.collection("projects");
-        //this.projects.dropIndexes();
+        this.projects.dropIndexes();
         await this.projects.createIndex({
             title: "text",
             instructions: "text",
             notes: "text",
         });
-        // index for front page, sort by newest
-        await this.projects.createIndex({ lastUpdate: -1 });
         await this.projects.createIndex({ id: 1 }, { unique: true });
+        await this.projects.createIndex({
+            softRejected: 1,
+            hardReject: 1,
+            public: 1,
+            featured: 1,
+            date: -1,
+            lastUpdate: -1,
+        });
         this.projectStats = this.db.collection("projectStats");
         this.messages = this.db.collection("messages");
         this.oauthStates = this.db.collection("oauthStates");
@@ -4034,47 +4040,51 @@ class UserManager {
         pageSize,
         maxPageSize,
         reverse = false,
+        notes_and_instructions = false,
     ) {
+        function escapeRegex(input) {
+            return String(input).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        }
+
+        let text_search = [
+            {
+                title: {
+                    $regex: `.*${escapeRegex(query)}.*`,
+                    $options: "i",
+                },
+            },
+        ];
+
+        //if (notes_and_instructions) {
+        text_search.push(
+            {
+                instructions: {
+                    $regex: `.*${escapeRegex(query)}.*`,
+                    $options: "i",
+                },
+            },
+            {
+                notes: {
+                    $regex: `.*${escapeRegex(query)}.*`,
+                    $options: "i",
+                },
+            },
+        );
+        //}
+
         let aggregateList = [
             {
                 $match: {
                     softRejected: false,
                     hardReject: false,
                     public: true,
+                    // $text: { $search: query },
+                    $or: text_search,
                 },
             },
         ];
 
         const rev = reverse ? -1 : 1;
-
-        function escapeRegex(input) {
-            return String(input).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        }
-
-        aggregateList.push({
-            $match: {
-                $or: [
-                    {
-                        title: {
-                            $regex: `.*${escapeRegex(query)}.*`,
-                            $options: "i",
-                        },
-                    },
-                    {
-                        instructions: {
-                            $regex: `.*${escapeRegex(query)}.*`,
-                            $options: "i",
-                        },
-                    },
-                    {
-                        notes: {
-                            $regex: `.*${escapeRegex(query)}.*`,
-                            $options: "i",
-                        },
-                    },
-                ],
-            },
-        });
 
         switch (type) {
             case "featured":
@@ -4180,6 +4190,10 @@ class UserManager {
                 );
                 break;
         }
+
+        aggregateList.push({
+            $limit: maxPageSize,
+        });
 
         if (!show_unranked) {
             aggregateList.push(

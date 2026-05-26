@@ -30,7 +30,8 @@ module.exports = (app, utils) => {
                 utils.error(res, 401, "Reauthenticate");
                 return;
             }
-            const username = login.username;
+            const isAdmin = login.isAdmin;
+            const id = login.id;
 
             if (!(await utils.UserManager.projectExists(project, true))) {
                 return utils.error(res, 404, "ProjectNotFound");
@@ -38,13 +39,9 @@ module.exports = (app, utils) => {
 
             const projectMeta =
                 await utils.UserManager.getProjectMetadata(project);
-            const userID = await utils.UserManager.getIDByUsername(username);
             const authorID = projectMeta.author.id;
 
-            if (
-                !(await utils.UserManager.isAdmin(username)) ||
-                userID !== authorID
-            ) {
+            if (!isAdmin || id !== authorID) {
                 return utils.error(res, 401, "Invalid credentials");
             }
 

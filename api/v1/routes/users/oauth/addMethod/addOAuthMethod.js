@@ -40,6 +40,8 @@ module.exports = (app, utils) => {
         const userid = await utils.UserManager.getIDByUsername(username);
         
         // using switch case cuz erm i like it
+        // TODO: we should not store the user id in the state. it exposes the user id to the methods.
+        // which isnt terrible but still. Instead, we should store the user id with the state in the DB.
         let state = await utils.UserManager.generateOAuth2State(`_${userid}`);
         switch (method) {
             case "scratch":
