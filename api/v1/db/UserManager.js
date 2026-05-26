@@ -81,7 +81,7 @@ class UserManager {
             });
 
         this.projects = this.db.collection("projects");
-        this.projects.dropIndexes();
+        //this.projects.dropIndexes();
         await this.projects.createIndex({
             title: "text",
             instructions: "text",
