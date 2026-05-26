@@ -5345,15 +5345,15 @@ class UserManager {
     /**
      * Gets arbitrary customization data, meant for donators to customize their profile.
      * @param {string} username The user with the customization data
-     * @returns {Object} Arbitrary keys and values
+     * @returns {string} JSON with Arbitrary keys and values
      */
     async getUserCustomization(username) {
         username = String(username);
         const result = await this.accountCustomization.findOne({
             username: username,
         });
-        if (!result) return {};
-        return result.customData || {};
+        if (!result) return "{}";
+        return result.customJson || "{}";
     }
     async getUserCustomizationDisabled(username) {
         username = String(username);
@@ -5367,62 +5367,45 @@ class UserManager {
     /**
      * User customization is arbitrary customization data, meant for donators to customize their profile.
      * This function checks whether or not the arbitrary data fits our requirements
-     * @param {Object} customData Arbitrary keys and values
-     * @returns {null|string} `null` if the customData is valid, and a string containing the error reason if the customData is invalid.
+     * The arbitrary data should be a stringified JSON.
+     * @param {string} customJson Stringified JSON containing Arbitrary keys and values
+     * @returns {null|string} `null` if the customJson is valid, and a string containing the error reason if the customJson is invalid.
      */
-    verifyCustomData(customData) {
-        if (typeof customData !== "object" || Array.isArray(customData))
+    verifyCustomizationJson(customJson) {
+        if (typeof customJson !== "string") return "JSONNotString";
+        // NOTE: 2kb for now, can increase later if we somehow need more
+        if (customJson.length > 2 * 1024) return "DataTooLarge";
+        // NOTE: why parse if {} will always be valid customization JSON
+        if (customJson === "{}") return null;
+        
+        let customData = {};
+        try {
+            customData = JSON.parse(customJson);
+        } catch (err) {
+            return err;
+        }
+
+        // verify the object itself
+        if ((typeof customData !== "object") || Array.isArray(customData))
             return "DataNotObject";
-        const allowedTypes = ["string", "number", "boolean", "object"]; // object is specified but we actually only allow Arrays
-        const allowedArrayValueTypes = ["string", "number", "boolean"]; // since we allow arrays, we only allow some types in those arrays
-
-        // block too much stuff and also reserve stuff incase we have some weird reason to use it later
-        const keys = Object.keys(customData);
-        const values = Object.values(customData);
-        if (keys.length > 64) return "TooManyKeys";
-        if (keys.some((key) => key.startsWith("_") || key.length > 64))
-            return "InvalidKeyName";
-
-        // block values
-        const areValuesInvalid = values.some(
-            (value) =>
-                !allowedTypes.includes(typeof value) || // type isnt allowed
-                (typeof value === "string" && value.length > 256) || // string > 256 chars not allowed
-                (typeof value === "object" && !Array.isArray(value)),
-        ); // if we are an object, block if we arent an array
-        if (areValuesInvalid) return "InvalidValueFound";
-
-        // block arrays specified
-        const arrayValues = values.filter(
-            (value) => typeof value === "object" && Array.isArray(value),
-        );
-        if (arrayValues.length > 4) return "TooManyArrays";
-
-        // each array specified adds its amount of items to a total, and that total cannot exceed a certain amount
-        const mixedArrays = arrayValues.flat(); // makes each array into 1 array
-        if (mixedArrays.length > 64) return "TooManyValuesTotalWithinAllArrays";
-
-        const areArrayValuesInvalid = mixedArrays.some(
-            (value) =>
-                !allowedArrayValueTypes.includes(typeof value) || // type isnt allowed
-                (typeof value === "string" && value.length > 64),
-        ); // string > 64 chars not allowed
-        if (areArrayValuesInvalid) return "InvalidValueWithinArrayFound";
-
         return null;
     }
 
     /**
      * Sets arbitrary customization data, meant for donators to customize their profile.
-     * Any endpoint that exposes this functionality to regular users should also make sure `verifyCustomData` does not give an error reason.
+     * Any endpoint that exposes this functionality to regular users should also make sure `verifyCustomizationJson` does not give an error reason.
      * @param {string} username The user to set the customization data for
-     * @param {Object} customData Arbitrary keys and values
+     * @param {string} customJson JSON with Arbitrary keys and values
      */
-    async setUserCustomization(username, customData) {
+    async setUserCustomization(username, customJson) {
         username = String(username);
+        customJson = String(customJson);
+
+        const errorReason = this.verifyCustomizationJson(customJson);
+        if (errorReason) throw new Error(errorReason);
         await this.accountCustomization.updateOne(
             { username: username },
-            { $set: { customData: customData } },
+            { $set: { customJson: customJson } },
             { upsert: true },
         );
     }

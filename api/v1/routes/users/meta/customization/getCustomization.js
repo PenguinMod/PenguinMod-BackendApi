@@ -37,7 +37,7 @@ module.exports = (app, utils) => {
         if (await utils.UserManager.getUserCustomizationDisabled(target)) {
             res.status(200);
             res.header("Content-Type", "application/json");
-            return res.send({ customization: {} });
+            return res.send({ customization: "{}" });
         }
 
         const customization = await utils.UserManager.getUserCustomization(target);
