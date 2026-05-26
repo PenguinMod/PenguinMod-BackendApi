@@ -4055,22 +4055,22 @@ class UserManager {
             },
         ];
 
-        //if (notes_and_instructions) {
-        text_search.push(
-            {
-                instructions: {
-                    $regex: `.*${escapeRegex(query)}.*`,
-                    $options: "i",
+        if (notes_and_instructions) {
+            text_search.push(
+                {
+                    instructions: {
+                        $regex: `.*${escapeRegex(query)}.*`,
+                        $options: "i",
+                    },
                 },
-            },
-            {
-                notes: {
-                    $regex: `.*${escapeRegex(query)}.*`,
-                    $options: "i",
+                {
+                    notes: {
+                        $regex: `.*${escapeRegex(query)}.*`,
+                        $options: "i",
+                    },
                 },
-            },
-        );
-        //}
+            );
+        }
 
         let aggregateList = [
             {
@@ -4268,6 +4268,19 @@ class UserManager {
             final.push(project);
         }
             */
+
+        if (result.length < 10 && !notes_and_instructions) {
+            return await this.searchProjects(
+                show_unranked,
+                query,
+                type,
+                page,
+                pageSize,
+                maxPageSize,
+                reverse,
+                true,
+            );
+        }
 
         return result;
     }
