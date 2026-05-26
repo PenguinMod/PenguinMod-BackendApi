@@ -234,10 +234,6 @@ console.error = (...args) => {
         return Math.max(0, Number(page) || 0);
     }
 
-    console.log(
-        JSON.stringify(await UserManager.checkForIllegalWording("ballssss")),
-    );
-
     const utils = {
         UserManager: UserManager,
         homeDir: path.join(__dirname, "./"),
