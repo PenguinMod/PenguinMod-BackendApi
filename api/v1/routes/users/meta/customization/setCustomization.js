@@ -18,9 +18,9 @@ module.exports = (app, utils) => {
             const packet = req.body;
 
             const token = String(packet.token);
-            const customization = packet.customization;
+            const customization = String(packet.customization);
 
-            if (!token || !customization || typeof customization !== "object") {
+            if (!token || !customization) {
                 utils.error(res, 400, "Missing token or customization");
                 return;
             }
@@ -60,7 +60,7 @@ module.exports = (app, utils) => {
             }
 
             const errorReason =
-                utils.UserManager.verifyCustomData(customization);
+                utils.UserManager.verifyCustomizationJson(customization);
             if (errorReason) return utils.error(res, 400, errorReason);
             await utils.UserManager.setUserCustomization(
                 target || username,
