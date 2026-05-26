@@ -89,12 +89,12 @@ class UserManager {
         });
         await this.projects.createIndex({ id: 1 }, { unique: true });
         await this.projects.createIndex({
+            views: -1,
+            lastUpdate: -1,
             softRejected: 1,
+            date: -1,
             hardReject: 1,
             public: 1,
-            featured: 1,
-            date: -1,
-            lastUpdate: -1,
         });
         this.projectStats = this.db.collection("projectStats");
         this.messages = this.db.collection("messages");
