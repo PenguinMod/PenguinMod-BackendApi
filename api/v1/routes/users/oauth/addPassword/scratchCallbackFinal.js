@@ -24,7 +24,7 @@ module.exports = (app, utils) => {
 
         const passwordDoesNotMeetLength = password.length < 8 || password.length > 50;
         const passwordMeetsTextInclude = password.match(/[a-z]/) && password.match(/[A-Z]/);
-        const passwordMeetsSpecialInclude = ppassword.match(/[0-9]/) && password.match(/[^a-z0-9]/i);
+        const passwordMeetsSpecialInclude = password.match(/[0-9]/) && password.match(/[^a-z0-9]/i);
         if (passwordDoesNotMeetLength) {
             utils.error(res, 400, "InvalidLengthPassword");
             return;
