@@ -2528,8 +2528,8 @@ class UserManager {
         // add the views, loves, and votes
         const result = {
             ...tempresult,
-            loves: await this.getProjectLoves(p_id),
-            votes: await this.getProjectVotes(p_id),
+            loves: await this.getProjectLoves(id),
+            votes: await this.getProjectVotes(id),
         };
 
         if (!result.impressions) {
