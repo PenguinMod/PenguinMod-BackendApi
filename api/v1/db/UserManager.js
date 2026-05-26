@@ -2515,9 +2515,8 @@ class UserManager {
      * @async
      */
     async getProjectMetadata(id) {
-        const p_id = String(id);
-
-        const tempresult = await this.projects.findOne({ id: p_id });
+        id = String(id);
+        const tempresult = await this.projects.findOne({ id });
 
         if (!tempresult) return false;
 
@@ -5377,7 +5376,7 @@ class UserManager {
         if (customJson.length > 2 * 1024) return "DataTooLarge";
         // NOTE: why parse if {} will always be valid customization JSON
         if (customJson === "{}") return null;
-        
+
         let customData = {};
         try {
             customData = JSON.parse(customJson);
@@ -5386,7 +5385,7 @@ class UserManager {
         }
 
         // verify the object itself
-        if ((typeof customData !== "object") || Array.isArray(customData))
+        if (typeof customData !== "object" || Array.isArray(customData))
             return "DataNotObject";
         return null;
     }
