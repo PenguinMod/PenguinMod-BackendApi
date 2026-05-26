@@ -81,7 +81,7 @@ class UserManager {
             });
 
         this.projects = this.db.collection("projects");
-        //this.projects.dropIndexes();
+        this.projects.dropIndexes();
         await this.projects.createIndex({
             title: "text",
             instructions: "text",
@@ -89,8 +89,8 @@ class UserManager {
         });
         await this.projects.createIndex({ id: 1 }, { unique: true });
         await this.projects.createIndex({
-            views: -1,
             lastUpdate: -1,
+            views: -1,
             date: -1,
         });
         this.projectStats = this.db.collection("projectStats");
@@ -2513,27 +2513,61 @@ class UserManager {
      */
     async getProjectMetadata(id) {
         id = String(id);
-        const tempresult = await this.projects.findOne({ id });
+        const [result] = await this.projects
+            .aggregate([
+                {
+                    $match: { id },
+                },
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "author",
+                        foreignField: "id",
+                        as: "authorInfo",
+                    },
+                },
+                {
+                    $lookup: {
+                        from: "projectStats",
+                        localField: "id",
+                        foreignField: "projectId",
+                        as: "statsData",
+                    },
+                },
+                {
+                    $addFields: {
+                        author: {
+                            id: "$author",
+                            username: {
+                                $arrayElemAt: ["$authorInfo.username", 0],
+                            },
+                        },
+                        loves: {
+                            $size: {
+                                $filter: {
+                                    input: "$statsData",
+                                    as: "s",
+                                    cond: { $eq: ["$$s.type", "love"] },
+                                },
+                            },
+                        },
+                        votes: {
+                            $size: {
+                                $filter: {
+                                    input: "$statsData",
+                                    as: "s",
+                                    cond: { $eq: ["$$s.type", "vote"] },
+                                },
+                            },
+                        },
+                        impressions: { $ifNull: ["$impressions", 0] },
+                    },
+                },
+                { $unset: ["_id", "authorInfo", "statsData"] },
+            ])
+            .toArray();
 
-        if (!tempresult) return false;
-
-        tempresult.author = {
-            id: tempresult.author,
-            username: await this.getUsernameByID(tempresult.author),
-        };
-
-        // add the views, loves, and votes
-        const result = {
-            ...tempresult,
-            loves: await this.getProjectLoves(id),
-            votes: await this.getProjectVotes(id),
-        };
-
-        if (!result.impressions) {
-            result.impressions = 0;
-        }
-
-        return result;
+        return result ?? false;
     }
 
     /**
@@ -3353,15 +3387,14 @@ class UserManager {
      * @async
      */
     async checkForIllegalWording(text) {
-        let illegalWords = (
-            await this.illegalList.findOne({ id: "illegalWords" })
-        ).items;
-        let illegalWebsites = (
-            await this.illegalList.findOne({ id: "illegalWebsites" })
-        ).items;
-        let spacedOutWordsOnly = (
-            await this.illegalList.findOne({ id: "spacedOutWordsOnly" })
-        ).items;
+        // TODO: probably cache this
+        let [illegalWords, illegalWebsites, spacedOutWordsOnly] = (
+            await Promise.all([
+                this.illegalList.findOne({ id: "illegalWords" }),
+                this.illegalList.findOne({ id: "illegalWebsites" }),
+                this.illegalList.findOne({ id: "spacedOutWordsOnly" }),
+            ])
+        ).map((t) => t.items);
 
         illegalWords = illegalWords ? illegalWords : [];
         illegalWebsites = illegalWebsites ? illegalWebsites : [];
@@ -3448,14 +3481,14 @@ class UserManager {
      * @async
      */
     async checkForPotentiallyUnsafeUsername(text) {
-        let potentiallyUnsafeWords = (
-            await this.illegalList.findOne({ id: "potentiallyUnsafeWords" })
-        ).items;
-        let potentiallyUnsafeWordsSpacedOut = (
-            await this.illegalList.findOne({
-                id: "potentiallyUnsafeWordsSpacedOut",
-            })
-        ).items;
+        let [potentiallyUnsafeWords, potentiallyUnsafeWordsSpacedOut] = (
+            await Promise.all([
+                this.illegalList.findOne({ id: "potentiallyUnsafeWords" }),
+                this.illegalList.findOne({
+                    id: "potentiallyUnsafeWordsSpacedOut",
+                }),
+            ])
+        ).map((t) => t.items);
 
         potentiallyUnsafeWords = potentiallyUnsafeWords
             ? potentiallyUnsafeWords
@@ -3487,15 +3520,15 @@ class UserManager {
      */
     async getIndexOfPotentiallyUnsafeUsername(username) {
         // TODO: make this work better/correctly
+        let [potentiallyUnsafeWords, potentiallyUnsafeWordsSpacedOut] = (
+            await Promise.all([
+                this.illegalList.findOne({ id: "potentiallyUnsafeWords" }),
+                this.illegalList.findOne({
+                    id: "potentiallyUnsafeWordsSpacedOut",
+                }),
+            ])
+        ).map((t) => t.items);
 
-        const potentiallyUnsafeWords = (
-            await this.illegalList.findOne({ id: "potentiallyUnsafeWords" })
-        ).items;
-        const potentiallyUnsafeWordsSpacedOut = (
-            await this.illegalList.findOne({
-                id: "potentiallyUnsafeWordsSpacedOut",
-            })
-        ).items;
         const joined = potentiallyUnsafeWords.concat(
             potentiallyUnsafeWordsSpacedOut,
         );
@@ -3517,14 +3550,14 @@ class UserManager {
      * @async
      */
     async checkForPotentiallyIllegalWording(text) {
-        let potentiallyUnsafeWords = (
-            await this.illegalList.findOne({ id: "potentiallyUnsafeWords" })
-        ).items;
-        let potentiallyUnsafeWordsSpacedOut = (
-            await this.illegalList.findOne({
-                id: "potentiallyUnsafeWordsSpacedOut",
-            })
-        ).items;
+        let [potentiallyUnsafeWords, potentiallyUnsafeWordsSpacedOut] = (
+            await Promise.all([
+                this.illegalList.findOne({ id: "potentiallyUnsafeWords" }),
+                this.illegalList.findOne({
+                    id: "potentiallyUnsafeWordsSpacedOut",
+                }),
+            ])
+        ).map((t) => t.items);
 
         potentiallyUnsafeWords = potentiallyUnsafeWords
             ? potentiallyUnsafeWords
@@ -3556,15 +3589,13 @@ class UserManager {
      */
     async getIndexOfIllegalWording(text) {
         // TODO! make this work better
-        const illegalWords = (
-            await this.illegalList.findOne({ id: "illegalWords" })
-        ).items;
-        const illegalWebsites = (
-            await this.illegalList.findOne({ id: "illegalWebsites" })
-        ).items;
-        const spacedOutWordsOnly = (
-            await this.illegalList.findOne({ id: "spacedOutWordsOnly" })
-        ).items;
+        let [illegalWords, illegalWebsites, spacedOutWordsOnly] = (
+            await Promise.all([
+                this.illegalList.findOne({ id: "illegalWords" }),
+                this.illegalList.findOne({ id: "illegalWebsites" }),
+                this.illegalList.findOne({ id: "spacedOutWordsOnly" }),
+            ])
+        ).map((t) => t.items);
         const joined = illegalWords.concat(illegalWebsites);
 
         const no_spaces = text.replace(REMOVE_SYMBOLS_REGEX, "");
@@ -3594,14 +3625,14 @@ class UserManager {
      * @async
      */
     async checkForPotentiallyIllegalWording(text) {
-        let potentiallyUnsafeWords = (
-            await this.illegalList.findOne({ id: "potentiallyUnsafeWords" })
-        ).items;
-        let potentiallyUnsafeWordsSpacedOut = (
-            await this.illegalList.findOne({
-                id: "potentiallyUnsafeWordsSpacedOut",
-            })
-        ).items;
+        let [potentiallyUnsafeWords, potentiallyUnsafeWordsSpacedOut] = (
+            await Promise.all([
+                this.illegalList.findOne({ id: "potentiallyUnsafeWords" }),
+                this.illegalList.findOne({
+                    id: "potentiallyUnsafeWordsSpacedOut",
+                }),
+            ])
+        ).map((t) => t.items);
 
         potentiallyUnsafeWords = potentiallyUnsafeWords
             ? potentiallyUnsafeWords
@@ -3634,14 +3665,14 @@ class UserManager {
     async getIndexOfPotentiallyIllegalWording(text) {
         // TODO: make this work better/correctly
 
-        const potentiallyUnsafeWords = (
-            await this.illegalList.findOne({ id: "potentiallyUnsafeWords" })
-        ).items;
-        const potentiallyUnsafeWordsSpacedOut = (
-            await this.illegalList.findOne({
-                id: "potentiallyUnsafeWordsSpacedOut",
-            })
-        ).items;
+        let [potentiallyUnsafeWords, potentiallyUnsafeWordsSpacedOut] = (
+            await Promise.all([
+                this.illegalList.findOne({ id: "potentiallyUnsafeWords" }),
+                this.illegalList.findOne({
+                    id: "potentiallyUnsafeWordsSpacedOut",
+                }),
+            ])
+        ).map((t) => t.items);
         const joined = potentiallyUnsafeWords.concat(
             potentiallyUnsafeWordsSpacedOut,
         );
@@ -3704,30 +3735,29 @@ class UserManager {
      * @async
      */
     async getIllegalWords() {
-        const illegalWords = (
-            await this.illegalList.findOne({ id: "illegalWords" })
-        ).items;
-        const illegalWebsites = (
-            await this.illegalList.findOne({ id: "illegalWebsites" })
-        ).items;
-        const spacedOutWordsOnly = (
-            await this.illegalList.findOne({ id: "spacedOutWordsOnly" })
-        ).items;
-        const potentiallyUnsafeWords = (
-            await this.illegalList.findOne({ id: "potentiallyUnsafeWords" })
-        ).items;
-        const potentiallyUnsafeWordsSpacedOut = (
-            await this.illegalList.findOne({
-                id: "potentiallyUnsafeWordsSpacedOut",
-            })
-        ).items;
-        const legalExtensions = await this.getLegalExtensions();
-        const unsafeUsernames = (
-            await this.illegalList.findOne({ id: "unsafeUsernames" })
-        ).items;
-        const potentiallyUnsafeUsernames = (
-            await this.illegalList.findOne({ id: "potentiallyUnsafeUsernames" })
-        ).items;
+        let [
+            illegalWords,
+            illegalWebsites,
+            spacedOutWordsOnly,
+            potentiallyUnsafeWords,
+            potentiallyUnsafeWordsSpacedOut,
+            unsafeUsernames,
+            potentiallyUnsafeUsernames,
+            legalExtensions,
+        ] = (
+            await Promise.all([
+                this.illegalList.findOne({ id: "illegalWords" }),
+                this.illegalList.findOne({ id: "illegalWebsites" }),
+                this.illegalList.findOne({ id: "spacedOutWordsOnly" }),
+                this.illegalList.findOne({ id: "potentiallyUnsafeWords" }),
+                this.illegalList.findOne({
+                    id: "potentiallyUnsafeWordsSpacedOut",
+                }),
+                this.illegalList.findOne({ id: "unsafeUsernames" }),
+                this.illegalList.findOne({ id: "potentiallyUnsafeUsernames" }),
+                this.getLegalExtensions(),
+            ])
+        ).map((t) => t.items);
 
         return {
             illegalWords,
@@ -3748,6 +3778,7 @@ class UserManager {
      * @async
      */
     async verifyOAuth2State(state) {
+        // TODO: find & delete should be combined to avoid race conditions
         state = String(state);
         const result = await this.oauthStates.findOne({
             state: state,
@@ -3957,16 +3988,16 @@ class UserManager {
         extensionURLs,
         username,
     ) {
-        const isAdmin = await this.isAdmin(username);
-        const isModerator = await this.isModerator(username);
+        const [userData, extensionsConfig] = await Promise.all([
+            this.getUserData(username),
+            this.illegalList.findOne({
+                id: "legalExtensions",
+            }),
+        ]);
+        const isAdmin = userData.admin;
+        const isModerator = userData.moderator;
+        const userRank = userData.rank;
 
-        // Note, this does make the above function useless. Not sure if there's any need to keep it yet.
-        const extensionsConfig = await this.illegalList.findOne({
-            id: "legalExtensions",
-        });
-
-        // check the extensions
-        const userRank = await this.getRank(username);
         if (userRank < 1 && !isAdmin && !isModerator) {
             const isUrlExtension = (extId) => {
                 if (!extensionURLs) return false;
@@ -4712,6 +4743,7 @@ class UserManager {
      */
     async setProfilePicture(username, buffer) {
         username = String(username);
+        // TODO: not just a here issue, but in a load of places we take username then convert to id. we should just take id
         const id = await this.getIDByUsername(username);
 
         await this.minioClient.putObject("profile-pictures", id, buffer);
