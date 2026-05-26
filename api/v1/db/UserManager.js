@@ -81,7 +81,7 @@ class UserManager {
             });
 
         this.projects = this.db.collection("projects");
-        //this.projects.dropIndexes();
+        this.projects.dropIndexes();
         await this.projects.createIndex({
             title: "text",
             instructions: "text",
@@ -91,10 +91,7 @@ class UserManager {
         await this.projects.createIndex({
             views: -1,
             lastUpdate: -1,
-            softRejected: 1,
             date: -1,
-            hardReject: 1,
-            public: 1,
         });
         this.projectStats = this.db.collection("projectStats");
         this.messages = this.db.collection("messages");
