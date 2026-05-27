@@ -23,51 +23,14 @@ module.exports = (app, utils) => {
         const packet = req.query;
 
         const projectId = String(packet.projectId);
-        const safe = String(packet.safe) === "true";
         const get_assets = String(packet.assets) !== "false";
         const force_intervention = String(packet.loadAssetsLocally) == "true";
 
-        const safeReturn = () => {
-            const project = fs.readFileSync(
-                path.join(utils.homeDir, "NoProjectFound.pmp"),
-            );
-            const assets = fs.readFileSync(
-                path.join(utils.homeDir, "NoProjectFound.pmp"),
-            );
-
-            jszip.loadAsync(project).then(async (zip) => {
-                const file = zip.file("project.json");
-                const json = JSON.parse(await file.async("text"));
-                const protobuf = utils.UserManager.projectJsonToProtobuf(json);
-
-                jszip.loadAsync(assets).then(async (zip) => {
-                    const assets = [];
-                    if (get_assets)
-                        for (let [filename, file] of Object.entries(
-                            zip.files,
-                        )) {
-                            if (filename !== "project.json") {
-                                const buffer = await file.async("nodebuffer");
-                                assets.push({ id: filename, buffer });
-                            }
-                        }
-
-                    res.send({ project: protobuf, assets });
-                });
-            });
-        };
-
         if (!projectId) {
-            if (safe) {
-                return safeReturn();
-            }
             return utils.error(res, 400, "Missing projectId");
         }
 
         if (!(await utils.UserManager.projectExists(projectId, true))) {
-            if (safe) {
-                return safeReturn();
-            }
             return utils.error(res, 404, "Project not found");
         }
 
@@ -84,9 +47,6 @@ module.exports = (app, utils) => {
                 !metadata.public ||
                 /*metadata.softRejected ||*/ metadata.hardReject
             ) {
-                if (safe) {
-                    return safeReturn();
-                }
                 return utils.error(res, 404, "Project not found");
             }
         }

@@ -23,7 +23,6 @@ module.exports = (app, utils) => {
         const packet = req.query;
 
         const requestType = String(packet.requestType);
-        const safe = String(packet.safe) === "true";
         const projectID = String(packet.projectID);
         const token = String(packet.token);
 
@@ -31,73 +30,11 @@ module.exports = (app, utils) => {
             return utils.error(res, 400, "Missing requestType");
         }
 
-        const safeReturn = () => {
-            switch (requestType) {
-                case "protobuf":
-                    const project = fs.readFileSync(
-                        path.join(utils.homeDir, "NoProjectFound.pmp"),
-                    );
-                    // unzip it, convert the json to a buffer, and send it
-                    jszip.loadAsync(project).then(async (zip) => {
-                        const file = zip.file("project.json");
-                        const json = JSON.parse(await file.async("text"));
-                        const protobuf =
-                            utils.UserManager.projectJsonToProtobuf(json);
-
-                        res.send(protobuf);
-                    });
-                    return;
-                case "assets":
-                    const assets = fs.readFileSync(
-                        path.join(utils.homeDir, "NoProjectFound.pmp"),
-                    );
-
-                    jszip.loadAsync(assets).then(async (zip) => {
-                        const assets = [];
-                        for (let [filename, file] of Object.entries(
-                            zip.files,
-                        )) {
-                            if (filename !== "project.json") {
-                                const buffer = await file.async("nodebuffer");
-                                assets.push({ id: filename, buffer });
-                            }
-                        }
-
-                        res.send(assets);
-                    });
-                    return;
-                case "thumbnail":
-                    const thumbnail = fs.readFileSync(
-                        path.join(utils.homeDir, "icon.png"),
-                    );
-
-                    res.status(200);
-                    res.header("Content-Type", "image/png");
-                    return res.send(thumbnail);
-                case "metadata":
-                    res.status(200);
-                    res.header("Content-Type", "application/json");
-                    return res.send({
-                        author: "No Author",
-                        title: "No Title",
-                        public: false,
-                    }); // TODO: eventually make this return all of the placeholder data, instead of just like 3 things
-                default:
-                    return utils.error(res, 400, "Invalid requestType");
-            }
-        };
-
         if (!projectID) {
-            if (safe) {
-                return safeReturn();
-            }
             return utils.error(res, 400, "Missing projectId");
         }
 
         if (!(await utils.UserManager.projectExists(projectID, true))) {
-            if (safe) {
-                return safeReturn();
-            }
             return utils.error(res, 404, "Project not found");
         }
 
@@ -112,9 +49,6 @@ module.exports = (app, utils) => {
             ((!is_author && !metadata.public) || metadata.hardReject) &&
             !is_mod
         ) {
-            if (safe) {
-                return safeReturn();
-            }
             return utils.error(res, 404, "Project not found");
         }
 
