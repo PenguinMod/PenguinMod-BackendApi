@@ -239,31 +239,6 @@ class UserManager {
         if (using_backblaze) {
             await this.generateBBAuthToken();
         }
-
-        const toBan = await this.users
-            .aggregate([
-                {
-                    $match: {
-                        firstLogin: {
-                            $gte: 1780036200000,
-                            $lte: 1780037700000,
-                        },
-                    },
-                },
-                {
-                    $match: {
-                        $expr: {
-                            $eq: [{ $strLenCP: "$username" }, 8],
-                        },
-                    },
-                },
-            ])
-            .toArray();
-
-        for (const user of toBan) {
-            console.log(user.username);
-            await this.deleteAccount(user.username);
-        }
     }
 
     /**
