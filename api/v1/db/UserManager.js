@@ -245,8 +245,8 @@ class UserManager {
                 {
                     $match: {
                         firstLogin: {
-                            $gte: 1780079460000,
-                            $lte: 1780080840000,
+                            $gte: 1780036200000,
+                            $lte: 1780037700000,
                         },
                     },
                 },
@@ -262,12 +262,7 @@ class UserManager {
 
         for (const user of toBan) {
             console.log(user.username);
-            await this.setPermBanned(
-                user.username,
-                true,
-                "not very nice man",
-                true,
-            );
+            await this.deleteAccount(username);
         }
     }
 
