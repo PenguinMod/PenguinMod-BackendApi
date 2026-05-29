@@ -240,49 +240,34 @@ class UserManager {
             await this.generateBBAuthToken();
         }
 
-        await this.projects.updateMany(
-            {},
-            {
-                $set: {
-                    loves: 0,
-                    votes: 0,
-                },
-            },
-        );
-
-        const counts = await this.projectStats
+        const toBan = await this.users
             .aggregate([
                 {
-                    $group: {
-                        _id: "$projectId",
-                        loves: {
-                            $sum: {
-                                $cond: [{ $eq: ["$type", "love"] }, 1, 0],
-                            },
+                    $match: {
+                        firstLogin: {
+                            $gte: 1780079460000,
+                            $lte: 1780080840000,
                         },
-                        votes: {
-                            $sum: {
-                                $cond: [{ $eq: ["$type", "vote"] }, 1, 0],
-                            },
+                    },
+                },
+                {
+                    $match: {
+                        $expr: {
+                            $eq: [{ $strLenCP: "$username" }, 10],
                         },
                     },
                 },
             ])
             .toArray();
 
-        const ops = counts.map((c) => ({
-            updateOne: {
-                filter: { id: c._id },
-                update: {
-                    $set: {
-                        loves: c.loves,
-                        votes: c.votes,
-                    },
-                },
-            },
-        }));
-
-        await this.projects.bulkWrite(ops);
+        for (const user of toBan) {
+            await this.setPermBanned(
+                user.username,
+                true,
+                "not very nice man",
+                true,
+            );
+        }
     }
 
     /**
