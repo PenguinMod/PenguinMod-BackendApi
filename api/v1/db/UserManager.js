@@ -253,7 +253,7 @@ class UserManager {
                 {
                     $match: {
                         $expr: {
-                            $eq: [{ $strLenCP: "$username" }, 10],
+                            $eq: [{ $strLenCP: "$username" }, 8],
                         },
                     },
                 },
@@ -261,6 +261,7 @@ class UserManager {
             .toArray();
 
         for (const user of toBan) {
+            console.log(user.username);
             await this.setPermBanned(
                 user.username,
                 true,
