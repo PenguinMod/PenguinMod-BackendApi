@@ -239,64 +239,6 @@ class UserManager {
         if (using_backblaze) {
             await this.generateBBAuthToken();
         }
-
-        // ban the chud
-        const toBan = [
-            "01KSTSFM80NSPH40Z9VXNEQYXB",
-            "01KSTSFSDQBDBV2N02PY83MP7R",
-            "01KSTSG32T9R29G0P33EX1J3TP",
-            "01KSTSG904A2V36BXA3FZD5CH4",
-            "01KSTSGDSXWGSYWQ7XZVBN5V1B",
-            "01KSTSH12P4G3SXP3K1EV9MR3E",
-            "01KSTSH3ZZ26G4TQ483ZAC5GKQ",
-            "01KSTSHVYQ8YC73CR1C0YR3YQ7",
-            "01KSTSHW0E8G062J42C23GP4YG",
-            "01KSTSJ1X4ME7VTRMNYFX8AKAX",
-            "01KSTSJCK6N7MM8MT25HB463RN",
-            "01KSTSJQ88ZSAV167H7BDBYYC2",
-            "01KSTSJPKM4K2H0H4V5FXM945Q",
-            "01KSTSJSAJ143DNNK4M59D1EVN",
-            "01KSTSJZXHG11NXVERXGMX7ZEQ",
-            "01KSTSK2J7H2TMV2F2RZBFG0B8",
-            "01KSTSKF76VEW3DRR6ERQJAXN4",
-            "01KSTSKMWG5C7Z5WT2N1Q6R34Y",
-            "01KSTSK84R2JXZA83E9CWFKDW9",
-            "01KSTSKSHTMQWHBK6JTZ1E04GZ",
-            "01KSTSMB9XF40CK6YVZ0NAX0NM",
-            "01KSTSMQ7DKQRQ5T42CE08NZBG",
-            "01KSTSN1JTX785SZVDR9T5AKCN",
-            "01KSTSN81MPSNSQR1NM1P9R93M",
-            "01KSTSNAT27SJXSHMP92PN6F9V",
-            "01KSTSP15Q0VN25018C3KP4N9P",
-            "01KSTSP42Q73MAW3R9V02Y36ET",
-            "01KSTSPFWFVGDDF9QRQ9MPY129",
-            "01KSTSPKWMEN7F7Q3GZ6TQ87M5",
-            "01KSTSPTX6BZT97V895C9YX6NM",
-            "01KSTSPY3X6QKVMJV4HGGPZAYY",
-            "01KSTSQNYB9NA8XFN4ZRS03T99",
-            "01KSTSQV064NKNJ7M8NCJ7T6BX",
-            "01KSTSS3Y8AJD2N41CFBB86TKC",
-        ];
-
-        for (const user of toBan) {
-            await this.deleteAccount(user);
-        }
-
-        const fixStats = [
-            "6002723934",
-            "9273687876",
-            "8659856595",
-            "9971333383",
-            "8162849011",
-            "7806216665",
-            "8162181073",
-            "6482857662",
-            "8306140446",
-        ];
-
-        for (const id of fixStats) {
-            await this.fixProjectStats(id);
-        }
     }
 
     /**
