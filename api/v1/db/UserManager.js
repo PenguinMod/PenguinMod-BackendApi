@@ -94,7 +94,9 @@ class UserManager {
             date: -1,
         });
         this.projectStats = this.db.collection("projectStats");
+        this.projectStats.createIndex({ projectId: -1, type: -1 });
         this.messages = this.db.collection("messages");
+        this.messages.createIndex({ receiver: -1, id: -1 });
         this.oauthStates = this.db.collection("oauthStates");
         await this.oauthStates.createIndex(
             { expireAt: 1 },
@@ -237,6 +239,50 @@ class UserManager {
         if (using_backblaze) {
             await this.generateBBAuthToken();
         }
+
+        await this.projects.updateMany(
+            {},
+            {
+                $set: {
+                    loves: 0,
+                    votes: 0,
+                },
+            },
+        );
+
+        const counts = await this.projectStats
+            .aggregate([
+                {
+                    $group: {
+                        _id: "$projectId",
+                        loves: {
+                            $sum: {
+                                $cond: [{ $eq: ["$type", "love"] }, 1, 0],
+                            },
+                        },
+                        votes: {
+                            $sum: {
+                                $cond: [{ $eq: ["$type", "vote"] }, 1, 0],
+                            },
+                        },
+                    },
+                },
+            ])
+            .toArray();
+
+        const ops = counts.map((c) => ({
+            updateOne: {
+                filter: { id: c._id },
+                update: {
+                    $set: {
+                        loves: c.loves,
+                        votes: c.votes,
+                    },
+                },
+            },
+        }));
+
+        await this.projects.bulkWrite(ops);
     }
 
     /**
@@ -2527,11 +2573,43 @@ class UserManager {
                     },
                 },
                 {
+                    $addFields: {
+                        author: {
+                            id: "$author",
+                            username: {
+                                $arrayElemAt: ["$authorInfo.username", 0],
+                            },
+                        },
+                        impressions: { $ifNull: ["$impressions", 0] },
+                    },
+                },
+                { $unset: ["_id", "authorInfo"] },
+            ])
+            .toArray();
+
+        return result ?? false;
+    }
+
+    /**
+     * Get metadata for multiple projects.
+     * @param {Array<string>} ids IDs of the projects wanted.
+     * @returns {Promise<Array<Object>>} The project data.
+     * @async
+     */
+    async getProjectsMetadata(ids) {
+        // TODO: use this
+        ids = ids.map((id) => String(id));
+        const results = await this.projects
+            .aggregate([
+                {
+                    $match: { id: { $in: ids } },
+                },
+                {
                     $lookup: {
-                        from: "projectStats",
-                        localField: "id",
-                        foreignField: "projectId",
-                        as: "statsData",
+                        from: "users",
+                        localField: "author",
+                        foreignField: "id",
+                        as: "authorInfo",
                     },
                 },
                 {
@@ -2542,32 +2620,16 @@ class UserManager {
                                 $arrayElemAt: ["$authorInfo.username", 0],
                             },
                         },
-                        loves: {
-                            $size: {
-                                $filter: {
-                                    input: "$statsData",
-                                    as: "s",
-                                    cond: { $eq: ["$$s.type", "love"] },
-                                },
-                            },
-                        },
-                        votes: {
-                            $size: {
-                                $filter: {
-                                    input: "$statsData",
-                                    as: "s",
-                                    cond: { $eq: ["$$s.type", "vote"] },
-                                },
-                            },
-                        },
                         impressions: { $ifNull: ["$impressions", 0] },
                     },
                 },
-                { $unset: ["_id", "authorInfo", "statsData"] },
+                {
+                    $unset: ["_id", "authorInfo"],
+                },
             ])
             .toArray();
 
-        return result ?? false;
+        return results;
     }
 
     /**
@@ -2653,13 +2715,15 @@ class UserManager {
                 userId: userId,
                 type: "love",
             });
-            return;
+            await this.projects.updateOne({ id }, { $inc: { loves: 1 } });
+        } else {
+            await this.projectStats.deleteOne({
+                projectId: id,
+                userId: userId,
+                type: "love",
+            });
+            await this.projects.updateOne({ id }, { $inc: { loves: -1 } });
         }
-        await this.projectStats.deleteOne({
-            projectId: id,
-            userId: userId,
-            type: "love",
-        });
     }
 
     /**
@@ -2669,11 +2733,7 @@ class UserManager {
      */
     async getProjectLoves(id) {
         id = String(id);
-        const result = await this.projectStats
-            .find({ projectId: id, type: "love" })
-            .toArray();
-
-        return result.length;
+        return (await this.projects.findOne({ id })).loves;
     }
 
     /**
@@ -2771,13 +2831,15 @@ class UserManager {
                 userId: userId,
                 type: "vote",
             });
-            return;
+            await this.projects.updateOne({ id }, { $inc: { votes: 1 } });
+        } else {
+            await this.projectStats.deleteOne({
+                projectId: id,
+                userId: userId,
+                type: "vote",
+            });
+            await this.projects.updateOne({ id }, { $inc: { votes: -1 } });
         }
-        await this.projectStats.deleteOne({
-            projectId: id,
-            userId: userId,
-            type: "vote",
-        });
     }
 
     /**
@@ -2788,11 +2850,7 @@ class UserManager {
      */
     async getProjectVotes(id) {
         id = String(id);
-        const result = await this.projectStats
-            .find({ projectId: id, type: "vote" })
-            .toArray();
-
-        return result.length;
+        return (await this.projects.findOne({ id })).votes;
     }
 
     /**
@@ -4154,27 +4212,6 @@ class UserManager {
                         $limit: maxPageSize,
                     },
                     {
-                        $lookup: {
-                            from: "projectStats",
-                            localField: "id",
-                            foreignField: "projectId",
-                            as: "projectStatsData",
-                        },
-                    },
-                    {
-                        $addFields: {
-                            loves: {
-                                $size: {
-                                    $filter: {
-                                        input: "$projectStatsData",
-                                        as: "stat",
-                                        cond: { $eq: ["$$stat.type", "love"] },
-                                    },
-                                },
-                            },
-                        },
-                    },
-                    {
                         $sort: { loves: -1 * rev },
                     },
                 );
@@ -4189,27 +4226,6 @@ class UserManager {
                     },
                     {
                         $limit: maxPageSize,
-                    },
-                    {
-                        $lookup: {
-                            from: "projectStats",
-                            localField: "id",
-                            foreignField: "projectId",
-                            as: "projectStatsData",
-                        },
-                    },
-                    {
-                        $addFields: {
-                            votes: {
-                                $size: {
-                                    $filter: {
-                                        input: "$projectStatsData",
-                                        as: "stat",
-                                        cond: { $eq: ["$$stat.type", "vote"] },
-                                    },
-                                },
-                            },
-                        },
                     },
                     {
                         $sort: { votes: -1 * rev },
@@ -4273,7 +4289,7 @@ class UserManager {
                 },
             },
             {
-                $unset: ["projectStatsData", "_id", "authorInfo"],
+                $unset: ["_id", "authorInfo"],
             },
         );
 
@@ -4449,27 +4465,6 @@ class UserManager {
                     $limit: Math.min(maxPageSize, pageSize * 2),
                 },
                 {
-                    $lookup: {
-                        from: "projectStats",
-                        localField: "id",
-                        foreignField: "projectId",
-                        as: "projectStatsData",
-                    },
-                },
-                {
-                    $addFields: {
-                        votes: {
-                            $size: {
-                                $filter: {
-                                    input: "$projectStatsData",
-                                    as: "stat",
-                                    cond: { $eq: ["$$stat.type", "vote"] },
-                                },
-                            },
-                        },
-                    },
-                },
-                {
                     $sort: { votes: -1 },
                 },
                 {
@@ -4498,7 +4493,7 @@ class UserManager {
                     },
                 },
                 {
-                    $unset: ["projectStatsData", "_id", "authorInfo"],
+                    $unset: ["_id", "authorInfo"],
                 },
             ])
             .toArray();
@@ -4527,27 +4522,6 @@ class UserManager {
                 },
                 {
                     $limit: maxPageSize * 3,
-                },
-                {
-                    $lookup: {
-                        from: "projectStats",
-                        localField: "id",
-                        foreignField: "projectId",
-                        as: "projectStatsData",
-                    },
-                },
-                {
-                    $addFields: {
-                        loves: {
-                            $size: {
-                                $filter: {
-                                    input: "$projectStatsData",
-                                    as: "stat",
-                                    cond: { $eq: ["$$stat.type", "love"] },
-                                },
-                            },
-                        },
-                    },
                 },
                 {
                     $sort: { loves: -1 },
@@ -4582,7 +4556,7 @@ class UserManager {
                     },
                 },
                 {
-                    $unset: ["projectStatsData", "_id", "authorInfo"],
+                    $unset: ["_id", "authorInfo"],
                 },
             ])
             .toArray();
@@ -5823,6 +5797,9 @@ class UserManager {
      * @returns {Promise<object[]>} The projects
      */
     async getFYP(username, page, pageSize, maxPageSize) {
+        throw "disabled";
+
+        /*
         username = String(username);
         const userId = await this.getIDByUsername(username);
 
@@ -6028,6 +6005,7 @@ class UserManager {
         console.timeEnd("whole scoring");
 
         return scoredProjects;
+        */
     }
 
     async addImpressionsMany(project_ids) {

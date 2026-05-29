@@ -56,13 +56,11 @@ module.exports = (app, utils) => {
 
             await utils.UserManager.voteProject(projectID, id, vote);
 
-            const votes = await utils.UserManager.getProjectVotes(projectID);
-
             const metadata =
                 await utils.UserManager.getProjectMetadata(projectID);
 
             if (
-                votes >= utils.env.FeatureAmount &&
+                metadata.votes >= utils.env.FeatureAmount &&
                 !(await utils.UserManager.isFeatured(projectID)) &&
                 (await utils.UserManager.canBeFeatured(projectID))
             ) {
@@ -119,7 +117,7 @@ module.exports = (app, utils) => {
             const author_username = metadata.author.username;
 
             if (
-                votes >= utils.env.LoveAmount &&
+                metadata.votes >= utils.env.LoveAmount &&
                 !(await utils.UserManager.hasBadge(author_username, "votes"))
             ) {
                 await utils.UserManager.addBadge(author_username, "votes");

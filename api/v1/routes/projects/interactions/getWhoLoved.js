@@ -51,6 +51,7 @@ module.exports = (app, utils) => {
             const username = await utils.UserManager.getUsernameByID(love);
             usernames.push(username);
         }
+        // TODO: have the getWhoLoved method do this. because this is slow.
 
         return res.send({ loves: usernames });
     });
