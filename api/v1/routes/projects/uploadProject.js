@@ -67,6 +67,15 @@ module.exports = (app, utils) => {
                 return utils.error(res, 400, "Uploaded in the last 8 minutes");
             }
 
+            if (!login.emailVerified) {
+                await unlink();
+                return utils.error(
+                    res,
+                    400,
+                    "You must verify your email to upload a project",
+                );
+            }
+
             const illegalWordingError = async (text, type) => {
                 const trigger =
                     await utils.UserManager.checkForIllegalWording(text);

@@ -974,6 +974,7 @@ class UserManager {
             isDonator: false,
             isMod: false,
             isAdmin: false,
+            emailVerified: false,
             badges: [],
         };
 
@@ -989,6 +990,7 @@ class UserManager {
         data.isDonator = result.badges.includes("donator");
         data.isMod = result.moderator || result.admin;
         data.isAdmin = result.admin;
+        data.emailVerified = result.emailVerified;
 
         if (get_full_meta) data.fullMeta = result;
 

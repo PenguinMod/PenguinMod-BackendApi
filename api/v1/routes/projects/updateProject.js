@@ -59,6 +59,7 @@ module.exports = (app, utils) => {
             const isDonator = login.isDonator;
             const hasModPerms = login.isMod;
 
+            // TODO: just use meta
             const lastUpload = await utils.UserManager.getLastUpload(username);
             const now = Date.now();
             const tooSoon = isDonator
@@ -67,6 +68,15 @@ module.exports = (app, utils) => {
             if (tooSoon && !hasModPerms && !isDonator) {
                 await unlink();
                 return utils.error(res, 400, "Uploaded in the last 8 minutes");
+            }
+
+            if (!login.emailVerified) {
+                await unlink();
+                return utils.error(
+                    res,
+                    400,
+                    "You must verify your email to upload a project",
+                );
             }
 
             const projectID = String(packet.projectID);
