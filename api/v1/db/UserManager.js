@@ -262,7 +262,7 @@ class UserManager {
 
         for (const user of toBan) {
             console.log(user.username);
-            await this.deleteAccount(username);
+            await this.deleteAccount(user.username);
         }
     }
 
