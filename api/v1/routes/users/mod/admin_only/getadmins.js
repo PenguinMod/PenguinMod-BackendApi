@@ -6,12 +6,12 @@ const UserManager = require("../../../../db/UserManager");
  */
 
 /**
- * 
+ *
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.get('/api/v1/users/getadmins', utils.cors(), async function (req, res) {
+    app.get("/api/v1/users/getadmins", utils.cors(), async function (req, res) {
         const packet = req.query;
 
         const token = String(packet.token);
@@ -27,14 +27,14 @@ module.exports = (app, utils) => {
         }
         const username = login.username;
 
-        if (!await utils.UserManager.isAdmin(username)) {
+        if (!(await utils.UserManager.isAdmin(username))) {
             return utils.error(res, 401, "Unauthorized");
         }
 
         const admins = await utils.UserManager.getAllAdmins();
 
         res.status(200);
-        res.header('Content-type', "application/json");
+        res.header("Content-type", "application/json");
         res.send({ admins: admins });
     });
-}
+};

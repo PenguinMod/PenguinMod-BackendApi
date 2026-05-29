@@ -6,7 +6,7 @@ const UserManager = require("../../../../db/UserManager");
  */
 
 /**
- * 
+ *
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
@@ -22,9 +22,12 @@ module.exports = (app, utils) => {
             return;
         }
 
-        const passwordDoesNotMeetLength = password.length < 8 || password.length > 50;
-        const passwordMeetsTextInclude = password.match(/[a-z]/) && password.match(/[A-Z]/);
-        const passwordMeetsSpecialInclude = password.match(/[0-9]/) && password.match(/[^a-z0-9]/i);
+        const passwordDoesNotMeetLength =
+            password.length < 8 || password.length > 50;
+        const passwordMeetsTextInclude =
+            password.match(/[a-z]/) && password.match(/[A-Z]/);
+        const passwordMeetsSpecialInclude =
+            password.match(/[0-9]/) && password.match(/[^a-z0-9]/i);
         if (passwordDoesNotMeetLength) {
             utils.error(res, 400, "InvalidLengthPassword");
             return;
@@ -34,13 +37,15 @@ module.exports = (app, utils) => {
             return;
         }
 
-        const user = await fetch("https://oauth2.scratch-wiki.info/w/rest.php/soa2/v0/user", {
-            headers: {
-                Authorization: `Bearer ${btoa(access_token)}`
-            }
-        })
-        .then(async res => {
-            return {"user": await res.json(), "status": res.status};
+        const user = await fetch(
+            "https://oauth2.scratch-wiki.info/w/rest.php/soa2/v0/user",
+            {
+                headers: {
+                    Authorization: `Bearer ${btoa(access_token)}`,
+                },
+            },
+        ).then(async (res) => {
+            return { user: await res.json(), status: res.status };
         });
 
         if (user.status !== 200) {
@@ -48,7 +53,10 @@ module.exports = (app, utils) => {
             return;
         }
 
-        const userid = await utils.UserManager.getUserIDByOAuthID("scratch", user.user.user_id);
+        const userid = await utils.UserManager.getUserIDByOAuthID(
+            "scratch",
+            user.user.user_id,
+        );
         const username = await utils.UserManager.getUsernameByID(userid);
 
         await utils.UserManager.changePassword(username, password);
@@ -57,6 +65,8 @@ module.exports = (app, utils) => {
 
         await utils.UserManager.addIPID(userid, req.realIP);
 
-        res.redirect(`/api/v1/users/sendloginsuccess?token=${token}&username=${username}`);
+        res.redirect(
+            `/api/v1/users/sendloginsuccess?token=${token}&username=${username}`,
+        );
     });
-}
+};

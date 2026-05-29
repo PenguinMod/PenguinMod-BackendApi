@@ -6,7 +6,7 @@ const UserManager = require("../../../../db/UserManager");
  */
 
 /**
- * 
+ *
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
@@ -22,20 +22,25 @@ module.exports = (app, utils) => {
             return;
         }
 
-        if (!await utils.UserManager.verifyOAuth2State(state)) {
+        if (!(await utils.UserManager.verifyOAuth2State(state))) {
             utils.error(res, 400, "Invalid state");
             return;
         }
 
         // now make the request
-        const response = await utils.UserManager.makeOAuth2Request(code, "scratch");
+        const response = await utils.UserManager.makeOAuth2Request(
+            code,
+            "scratch",
+        );
 
         if (!response) {
-            utils.error(res, 500, "OAuthServerDidNotRespond")
+            utils.error(res, 500, "OAuthServerDidNotRespond");
             return;
         }
 
         res.status(200);
-        res.redirect(`${utils.env.HomeURL}/oauthchangepasswordintermediate?method=scratch&at=${response.access_token}`);
+        res.redirect(
+            `${utils.env.HomeURL}/oauthchangepasswordintermediate?method=scratch&at=${response.access_token}`,
+        );
     });
-}
+};

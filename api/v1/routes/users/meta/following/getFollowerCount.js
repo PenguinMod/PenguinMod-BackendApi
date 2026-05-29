@@ -6,7 +6,7 @@ const UserManager = require("../../../../db/UserManager");
  */
 
 /**
- * 
+ *
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
@@ -14,7 +14,7 @@ module.exports = (app, utils) => {
     app.get("/api/v1/users/meta/getfollowercount", async function (req, res) {
         const packet = req.query;
 
-        const username = (String(packet.username)).toLowerCase();
+        const username = String(packet.username).toLowerCase();
 
         if (!username) {
             utils.error(res, 400, "Missing username");
@@ -27,4 +27,4 @@ module.exports = (app, utils) => {
         res.header("Content-Type", "application/json");
         res.send({ count: count });
     });
-}
+};

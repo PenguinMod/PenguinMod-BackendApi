@@ -7,7 +7,7 @@ class Cast {
     static toNumber(value) {
         // If value is already a number we don't need to coerce it with
         // Number().
-        if (typeof value === 'number') {
+        if (typeof value === "number") {
             // Treat NaN as 0 when needed as a number.
             // E.g., 0 + NaN -> 0.
             if (Number.isNaN(value)) {
@@ -31,14 +31,16 @@ class Cast {
      */
     static toBoolean(value) {
         // Already a boolean?
-        if (typeof value === 'boolean') {
+        if (typeof value === "boolean") {
             return value;
         }
-        if (typeof value === 'string') {
+        if (typeof value === "string") {
             // These specific strings are treated as false.
-            if ((value === '') ||
-                (value === '0') ||
-                (value.toLowerCase() === 'false')) {
+            if (
+                value === "" ||
+                value === "0" ||
+                value.toLowerCase() === "false"
+            ) {
                 return false;
             }
             // All other strings treated as true.
@@ -63,10 +65,10 @@ class Cast {
      */
     static dataURLToBuffer(dataUrl) {
         const stringed = Cast.toString(dataUrl);
-        if (!stringed.startsWith('data:')) return null;
-        if (!stringed.includes(';base64,')) return null;
+        if (!stringed.startsWith("data:")) return null;
+        if (!stringed.includes(";base64,")) return null;
         const split = stringed.split(",");
-        const buffer = Buffer.from(split[1], 'base64');
+        const buffer = Buffer.from(split[1], "base64");
         return buffer;
     }
 
@@ -76,7 +78,9 @@ class Cast {
      * @return {boolean} True if the argument is all white spaces or null / empty.
      */
     static isWhiteSpace(val) {
-        return val === null || (typeof val === 'string' && val.trim().length === 0);
+        return (
+            val === null || (typeof val === "string" && val.trim().length === 0)
+        );
     }
 
     /**
@@ -86,18 +90,19 @@ class Cast {
      */
     static isInt(val) {
         // Values that are already numbers.
-        if (typeof val === 'number') {
-            if (isNaN(val)) { // NaN is considered an integer.
+        if (typeof val === "number") {
+            if (isNaN(val)) {
+                // NaN is considered an integer.
                 return true;
             }
             // True if it's "round" (e.g., 2.0 and 2).
             return val === Math.floor(val);
-        } else if (typeof val === 'boolean') {
+        } else if (typeof val === "boolean") {
             // `True` and `false` always represent integer after cast.
             return true;
-        } else if (typeof val === 'string') {
+        } else if (typeof val === "string") {
             // If it contains a decimal point, don't consider it an int.
-            return val.indexOf('.') < 0;
+            return val.indexOf(".") < 0;
         }
         return false;
     }
@@ -110,7 +115,7 @@ class Cast {
      */
     static isArrayBuffer(val) {
         if (!val) return false;
-        return typeof val.transfer === 'function';
+        return typeof val.transfer === "function";
     }
 
     /**
@@ -118,7 +123,7 @@ class Cast {
      * @returns {boolean}
      */
     static isString(val) {
-        return typeof val === 'string';
+        return typeof val === "string";
     }
 }
 

@@ -6,7 +6,7 @@ const UserManager = require("../../../db/UserManager");
  */
 
 /**
- * 
+ *
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
@@ -18,12 +18,12 @@ module.exports = (app, utils) => {
 
         const login = await utils.UserManager.loginWithToken(token);
         if (!login.success) {
-            utils.error(res, 401, "Reauthenticate")
+            utils.error(res, 401, "Reauthenticate");
             return;
         }
         const username = login.username;
 
-        if (!await utils.UserManager.hasModPerms(username)) {
+        if (!(await utils.UserManager.hasModPerms(username))) {
             return utils.error(res, 403, "Unauthorized");
         }
 
@@ -33,7 +33,7 @@ module.exports = (app, utils) => {
             return utils.error(res, 400, "Missing report ID");
         }
 
-        if (!await utils.UserManager.reportExists(reportID)) {
+        if (!(await utils.UserManager.reportExists(reportID))) {
             return utils.error(res, 404, "Report not found");
         }
 
@@ -43,4 +43,4 @@ module.exports = (app, utils) => {
         res.header("Content-Type", "application/json");
         res.send({ success: true });
     });
-}
+};

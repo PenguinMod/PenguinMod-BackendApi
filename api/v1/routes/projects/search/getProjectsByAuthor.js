@@ -6,12 +6,12 @@ const UserManager = require("../../../db/UserManager");
  */
 
 /**
- * 
+ *
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.get('/api/v1/projects/getprojectsbyauthor', async (req, res) => {
+    app.get("/api/v1/projects/getprojectsbyauthor", async (req, res) => {
         const packet = req.query;
 
         const token = String(packet.token);
@@ -23,7 +23,7 @@ module.exports = (app, utils) => {
             return utils.error(res, 400, "Missing author username");
         }
 
-        if (!await utils.UserManager.existsByUsername(authorUsername)) {
+        if (!(await utils.UserManager.existsByUsername(authorUsername))) {
             return utils.error(res, 404, "User not found");
         }
 
@@ -49,21 +49,31 @@ module.exports = (app, utils) => {
             }
 
             const user_id = await utils.UserManager.getIDByUsername(username);
-            const is_following = await utils.UserManager.isFollowing(id, user_id);
+            const is_following = await utils.UserManager.isFollowing(
+                id,
+                user_id,
+            );
 
-            if (username !== authorUsername && (
-                !(is_following && canFollowingSeeProfile) && !isMod
-            )) {
+            if (
+                username !== authorUsername &&
+                !(is_following && canFollowingSeeProfile) &&
+                !isMod
+            ) {
                 return await utils.error(res, 403, "PrivateProfile");
             }
         }
 
-        const projects = (await utils.UserManager.getProjectsByAuthor(id, page, Number(utils.env.PageSize)))
-        .map(project => {
+        const projects = (
+            await utils.UserManager.getProjectsByAuthor(
+                id,
+                page,
+                Number(utils.env.PageSize),
+            )
+        ).map((project) => {
             project.author = {
                 username: authorUsername,
-                id: id
-            }
+                id: id,
+            };
 
             return project;
         });
@@ -74,4 +84,4 @@ module.exports = (app, utils) => {
 
         return res.send(projects);
     });
-}
+};

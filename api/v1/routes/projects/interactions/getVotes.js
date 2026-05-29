@@ -6,21 +6,21 @@ const UserManager = require("../../../db/UserManager");
  */
 
 /**
- * 
+ *
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.get('/api/v1/projects/getVotes', async (req, res) => {
+    app.get("/api/v1/projects/getVotes", async (req, res) => {
         const packet = req.query;
-        
+
         const projectID = String(packet.projectID);
 
         if (!projectID) {
             return utils.error(res, 400, "InvalidProjectID");
         }
 
-        if (!await utils.UserManager.projectExists(projectID)) {
+        if (!(await utils.UserManager.projectExists(projectID))) {
             return utils.error(res, 404, "Project not found");
         }
 
@@ -28,4 +28,4 @@ module.exports = (app, utils) => {
 
         return res.send({ votes: votes });
     });
-}
+};

@@ -6,7 +6,7 @@ const UserManager = require("../../../../db/UserManager");
  */
 
 /**
- * 
+ *
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
@@ -25,11 +25,11 @@ module.exports = (app, utils) => {
         }
         const username = login.username;
 
-        if (!await utils.UserManager.isAdmin(username)) {
+        if (!(await utils.UserManager.isAdmin(username))) {
             return utils.error(res, 403, "Unauthorized");
         }
 
-        if (!await utils.UserManager.existsByUsername(target, true)) {
+        if (!(await utils.UserManager.existsByUsername(target, true))) {
             return utils.error(res, 404, "User not found");
         }
 
@@ -39,4 +39,4 @@ module.exports = (app, utils) => {
         res.header("Content-Type", "application/json");
         res.json({ ips });
     });
-}
+};

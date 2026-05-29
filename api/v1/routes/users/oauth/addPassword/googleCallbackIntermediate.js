@@ -6,44 +6,48 @@ const UserManager = require("../../../../db/UserManager");
  */
 
 /**
- * 
+ *
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.get("/api/v1/users/googlecallback/addpassword", async function (req, res) {
-        const packet = req.query;
+    app.get(
+        "/api/v1/users/googlecallback/addpassword",
+        async function (req, res) {
+            const packet = req.query;
 
-        const state = String(packet.state);
-        const code = String(packet.code);
+            const state = String(packet.state);
+            const code = String(packet.code);
 
-        if (!state || !code) {
-            utils.error(res, 400, "Missing state or code");
-            return;
-        }
+            if (!state || !code) {
+                utils.error(res, 400, "Missing state or code");
+                return;
+            }
 
-        if (!await utils.UserManager.verifyOAuth2State(state)) {
-            utils.error(res, 400, "Invalid state");
-            return;
-        }
+            if (!(await utils.UserManager.verifyOAuth2State(state))) {
+                utils.error(res, 400, "Invalid state");
+                return;
+            }
 
-        const oauth2Client = new utils.googleOAuth2Client(
-            utils.env.GoogleOAuthClientID,
-            utils.env.GoogleOAuthClientSecret,
-            `${utils.env.ApiURL}/api/v1/users/googlecallback/addpassword`
-        );
+            const oauth2Client = new utils.googleOAuth2Client(
+                utils.env.GoogleOAuthClientID,
+                utils.env.GoogleOAuthClientSecret,
+                `${utils.env.ApiURL}/api/v1/users/googlecallback/addpassword`,
+            );
 
-        let r;
-        try {
-            r = await oauth2Client.getToken(code);
-        }
-        catch (e) {
-            utils.error(res, 400, "Failed to get token");
-            return;
-        }
-        const tokens = r.tokens;
+            let r;
+            try {
+                r = await oauth2Client.getToken(code);
+            } catch (e) {
+                utils.error(res, 400, "Failed to get token");
+                return;
+            }
+            const tokens = r.tokens;
 
-        res.status(200);
-        res.redirect(`${utils.env.HomeURL}/oauthchangepasswordintermediate?method=google&at=${JSON.stringify(tokens)}`);
-    });
-}
+            res.status(200);
+            res.redirect(
+                `${utils.env.HomeURL}/oauthchangepasswordintermediate?method=google&at=${JSON.stringify(tokens)}`,
+            );
+        },
+    );
+};

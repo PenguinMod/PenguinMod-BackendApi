@@ -1,5 +1,5 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 const UserManager = require("../../../db/UserManager");
 
 /**
@@ -8,7 +8,7 @@ const UserManager = require("../../../db/UserManager");
  */
 
 /**
- * 
+ *
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
@@ -17,14 +17,17 @@ module.exports = (app, utils) => {
         const packet = req.query;
 
         const token = String(packet.token);
-        const username = (String(packet.username)).toLowerCase();
+        const username = String(packet.username).toLowerCase();
 
         if (!token || !username) {
             utils.error(res, 400, "Missing token or username");
             return;
         }
 
-        let html = fs.readFileSync(path.join(utils.homeDir, 'success.html'), 'utf8');
+        let html = fs.readFileSync(
+            path.join(utils.homeDir, "success.html"),
+            "utf8",
+        );
 
         html = html.replace("{{ HOMEPAGE }}", `"${utils.env.HomeURL}"`);
 
@@ -32,4 +35,4 @@ module.exports = (app, utils) => {
         res.header("Content-Type", "text/html");
         res.send(html);
     });
-}
+};

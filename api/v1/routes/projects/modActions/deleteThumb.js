@@ -6,12 +6,12 @@ const UserManager = require("../../../db/UserManager");
  */
 
 /**
- * 
+ *
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.post('/api/v1/projects/deletethumb', utils.cors(), async (req, res) => {
+    app.post("/api/v1/projects/deletethumb", utils.cors(), async (req, res) => {
         const packet = req.body;
 
         const token = String(packet.token);
@@ -24,16 +24,16 @@ module.exports = (app, utils) => {
 
         const login = await utils.UserManager.loginWithToken(token);
         if (!login.success) {
-            utils.error(res, 401, "Reauthenticate")
+            utils.error(res, 401, "Reauthenticate");
             return;
         }
         const username = login.username;
 
-        if (!await utils.UserManager.hasModPerms(username)) {
+        if (!(await utils.UserManager.hasModPerms(username))) {
             return utils.error(res, 401, "Invalid credentials");
         }
 
-        if (!await utils.UserManager.projectExists(projectID)) {
+        if (!(await utils.UserManager.projectExists(projectID))) {
             return utils.error(res, 404, "Project not found");
         }
 
@@ -46,26 +46,28 @@ module.exports = (app, utils) => {
                 fields: [
                     {
                         name: "Mod",
-                        value: username
+                        value: username,
                     },
                     {
                         name: "Project ID",
-                        value: projectID
+                        value: projectID,
                     },
                     {
                         name: "URL",
-                        value: `${utils.env.StudioURL}/#${projectID}`
-                    }
-                ]
+                        value: `${utils.env.StudioURL}/#${projectID}`,
+                    },
+                ],
             },
             {
                 name: username,
-                icon_url: String(`${utils.env.ApiURL}/api/v1/users/getpfp?username=${username}`),
-                url: String("https://penguinmod.com/profile?user=" + username)
+                icon_url: String(
+                    `${utils.env.ApiURL}/api/v1/users/getpfp?username=${username}`,
+                ),
+                url: String("https://penguinmod.com/profile?user=" + username),
             },
-            0xc96800
+            0xc96800,
         );
-        
+
         return res.send({ success: true });
     });
-}
+};

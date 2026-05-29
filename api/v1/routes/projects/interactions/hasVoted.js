@@ -6,14 +6,14 @@ const UserManager = require("../../../db/UserManager");
  */
 
 /**
- * 
+ *
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.get('/api/v1/projects/hasVoted', utils.cors(), async (req, res) => {
+    app.get("/api/v1/projects/hasVoted", utils.cors(), async (req, res) => {
         const packet = req.query;
-        
+
         const token = String(packet.token);
 
         const projectID = String(packet.projectID);
@@ -24,12 +24,12 @@ module.exports = (app, utils) => {
 
         const login = await utils.UserManager.loginWithToken(token);
         if (!login.success) {
-            utils.error(res, 401, "Reauthenticate")
+            utils.error(res, 401, "Reauthenticate");
             return;
         }
         const username = login.username;
 
-        if (!await utils.UserManager.projectExists(projectID)) {
+        if (!(await utils.UserManager.projectExists(projectID))) {
             return utils.error(res, 404, "Project not found");
         }
 
@@ -39,4 +39,4 @@ module.exports = (app, utils) => {
 
         return res.send({ hasVoted: has });
     });
-}
+};

@@ -6,12 +6,12 @@ const UserManager = require("../../../db/UserManager");
  */
 
 /**
- * 
+ *
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.get('/api/v1/users/getmessagecount', utils.cors(), async (req, res) => {
+    app.get("/api/v1/users/getmessagecount", utils.cors(), async (req, res) => {
         const packet = req.query;
 
         const token = String(packet.token);
@@ -32,7 +32,7 @@ module.exports = (app, utils) => {
         const count = await utils.UserManager.getMessageCount(id);
 
         res.status(200);
-        res.header('Content-type', "application/json");
+        res.header("Content-type", "application/json");
         res.send({ count: count });
     });
-}
+};

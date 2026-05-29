@@ -1,21 +1,30 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
     <head>
-        <meta property="og:title" content="{project.title}">
-        <meta name="twitter:title" content="{project.title}">
-        <meta name="author" content="{project.author}">
-        <meta name="theme-color" content="#00C3FF">
-        <meta property="og:description" content="{project.instructions}&#10;&#10;{project.notes}">
-        <meta property="og:image" content="{api_url}/api/v1/projects/getproject?projectID={project.id}&requestType=thumbnail">
-        <meta name="description" content="{project.notes}">
-        <meta property="twitter:description" content="{project.notes}">
-        <meta name="twitter:card" content="{api_url}/api/v1/projects/getproject?projectID={project.id}&requestType=thumbnail">
+        <meta property="og:title" content="{project.title}" />
+        <meta name="twitter:title" content="{project.title}" />
+        <meta name="author" content="{project.author}" />
+        <meta name="theme-color" content="#00C3FF" />
+        <meta
+            property="og:description"
+            content="{project.instructions}&#10;&#10;{project.notes}"
+        />
+        <meta
+            property="og:image"
+            content="{api_url}/api/v1/projects/getproject?projectID={project.id}&requestType=thumbnail"
+        />
+        <meta name="description" content="{project.notes}" />
+        <meta property="twitter:description" content="{project.notes}" />
+        <meta
+            name="twitter:card"
+            content="{api_url}/api/v1/projects/getproject?projectID={project.id}&requestType=thumbnail"
+        />
         <title>PenguinMod - {project.title}</title>
     </head>
     <body>
         <p>Please wait...</p>
         <script>
-            location.href = '{studio_url}/#{project.id}'
+            location.href = "{studio_url}/#{project.id}";
         </script>
     </body>
 </html>

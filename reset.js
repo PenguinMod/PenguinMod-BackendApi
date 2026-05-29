@@ -1,4 +1,4 @@
-console.log("----------\n-DISABLED-\n----------")
+console.log("----------\n-DISABLED-\n----------");
 /*
 const um = require('./api/v1/db/UserManager');
 

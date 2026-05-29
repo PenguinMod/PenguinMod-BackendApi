@@ -6,43 +6,51 @@ const UserManager = require("../../../db/UserManager");
  */
 
 /**
- * 
+ *
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.get('/api/v1/projects/hasLovedAdmin', utils.cors(), async (req, res) => {
-        const packet = req.query;
-        
-        const token = String(packet.token);
+    app.get(
+        "/api/v1/projects/hasLovedAdmin",
+        utils.cors(),
+        async (req, res) => {
+            const packet = req.query;
 
-        const target = (String(packet.target)).toLowerCase();
+            const token = String(packet.token);
 
-        const projectID = String(packet.projectID);
+            const target = String(packet.target).toLowerCase();
 
-        if (!token || !projectID || !target) {
-            return utils.error(res, 400, "Missing token, projectID, or target");
-        }
+            const projectID = String(packet.projectID);
 
-        const login = await utils.UserManager.loginWithToken(token);
-        if (!login.success) {
-            utils.error(res, 401, "Reauthenticate")
-            return;
-        }
-        const username = login.username;
+            if (!token || !projectID || !target) {
+                return utils.error(
+                    res,
+                    400,
+                    "Missing token, projectID, or target",
+                );
+            }
 
-        if (!await utils.UserManager.isAdmin(username)) {
-            return utils.error(res, 401, "Invalid credentials");
-        }
+            const login = await utils.UserManager.loginWithToken(token);
+            if (!login.success) {
+                utils.error(res, 401, "Reauthenticate");
+                return;
+            }
+            const username = login.username;
 
-        if (!await utils.UserManager.projectExists(projectID)) {
-            return utils.error(res, 404, "Project not found");
-        }
+            if (!(await utils.UserManager.isAdmin(username))) {
+                return utils.error(res, 401, "Invalid credentials");
+            }
 
-        const id = await utils.UserManager.getIDByUsername(target);
+            if (!(await utils.UserManager.projectExists(projectID))) {
+                return utils.error(res, 404, "Project not found");
+            }
 
-        const has = await utils.UserManager.hasLovedProject(projectID, id);
+            const id = await utils.UserManager.getIDByUsername(target);
 
-        return res.send({ hasLoved: has });
-    });
-}
+            const has = await utils.UserManager.hasLovedProject(projectID, id);
+
+            return res.send({ hasLoved: has });
+        },
+    );
+};

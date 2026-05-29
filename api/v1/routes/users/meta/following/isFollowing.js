@@ -6,7 +6,7 @@ const UserManager = require("../../../../db/UserManager");
  */
 
 /**
- * 
+ *
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
@@ -14,20 +14,20 @@ module.exports = (app, utils) => {
     app.get("/api/v1/users/isfollowing", async function (req, res) {
         const packet = req.query;
 
-        const username = (String(packet.username)).toLowerCase();
-        const target = (String(packet.target)).toLowerCase();
+        const username = String(packet.username).toLowerCase();
+        const target = String(packet.target).toLowerCase();
 
         if (!username || !target) {
             utils.error(res, 400, "Missing username or target");
             return;
         }
 
-        if (!await utils.UserManager.existsByUsername(username)) {
+        if (!(await utils.UserManager.existsByUsername(username))) {
             utils.error(res, 404, "NotFound");
             return;
         }
 
-        if (!await utils.UserManager.existsByUsername(target)) {
+        if (!(await utils.UserManager.existsByUsername(target))) {
             utils.error(res, 404, "NotFound");
             return;
         }
@@ -35,10 +35,13 @@ module.exports = (app, utils) => {
         const usernameID = await utils.UserManager.getIDByUsername(username);
         const targetID = await utils.UserManager.getIDByUsername(target);
 
-        const isFollowing = await utils.UserManager.isFollowing(usernameID, targetID);
+        const isFollowing = await utils.UserManager.isFollowing(
+            usernameID,
+            targetID,
+        );
 
         res.status(200);
         res.header("Content-Type", "application/json");
         res.send({ following: isFollowing });
     });
-}
+};

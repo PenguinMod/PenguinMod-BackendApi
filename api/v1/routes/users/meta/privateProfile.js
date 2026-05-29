@@ -6,36 +6,47 @@ const UserManager = require("../../../db/UserManager");
  */
 
 /**
- * 
+ *
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.post('/api/v1/users/privateProfile', utils.cors(), async function (req, res) {
-        const packet = req.body;
+    app.post(
+        "/api/v1/users/privateProfile",
+        utils.cors(),
+        async function (req, res) {
+            const packet = req.body;
 
-        const token = String(packet.token);
+            const token = String(packet.token);
 
-        const login = await utils.UserManager.loginWithToken(token);
-        if (!login.success) {
-            utils.error(res, 400, "Reauthenticate");
-            return;
-        }
-        const username = login.username;
+            const login = await utils.UserManager.loginWithToken(token);
+            if (!login.success) {
+                utils.error(res, 400, "Reauthenticate");
+                return;
+            }
+            const username = login.username;
 
-        const privateProfile = String(packet.privateProfile) === "true";
-        const privateToFollowing = String(packet.privateToFollowing) === "true";
+            const privateProfile = String(packet.privateProfile) === "true";
+            const privateToFollowing =
+                String(packet.privateToFollowing) === "true";
 
-        if (typeof privateProfile !== "boolean" || typeof privateToFollowing !== "boolean") {
-            utils.error(res, 400, "InvalidBody")
-            return;
-        }
+            if (
+                typeof privateProfile !== "boolean" ||
+                typeof privateToFollowing !== "boolean"
+            ) {
+                utils.error(res, 400, "InvalidBody");
+                return;
+            }
 
-        await utils.UserManager.setPrivateProfile(username, privateProfile);
-        await utils.UserManager.setFollowingSeeProfile(username, privateToFollowing);
+            await utils.UserManager.setPrivateProfile(username, privateProfile);
+            await utils.UserManager.setFollowingSeeProfile(
+                username,
+                privateToFollowing,
+            );
 
-        res.status(200);
-        res.header("Content-Type", "application/json");
-        res.send({ success: true });
-    });
-}
+            res.status(200);
+            res.header("Content-Type", "application/json");
+            res.send({ success: true });
+        },
+    );
+};

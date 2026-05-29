@@ -6,70 +6,78 @@ const UserManager = require("../../../../db/UserManager");
  */
 
 /**
- * 
+ *
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.post('/api/v1/users/banuserip', utils.cors(), async function (req, res) {
-        const packet = req.body;
+    app.post(
+        "/api/v1/users/banuserip",
+        utils.cors(),
+        async function (req, res) {
+            const packet = req.body;
 
-        const token = String(packet.token);
+            const token = String(packet.token);
 
-        const target = (String(packet.target)).toLowerCase();
-        const toggle = String(packet.toggle) === "true";
+            const target = String(packet.target).toLowerCase();
+            const toggle = String(packet.toggle) === "true";
 
-        if (!token || !target || typeof toggle !== "boolean") {
-            utils.error(res, 400, "Missing token, target, or toggle");
-            return;
-        }
+            if (!token || !target || typeof toggle !== "boolean") {
+                utils.error(res, 400, "Missing token, target, or toggle");
+                return;
+            }
 
-        const login = await utils.UserManager.loginWithToken(token);
-        if (!login.success) {
-            utils.error(res, 400, "Reauthenticate");
-            return;
-        }
-        const username = login.username;
+            const login = await utils.UserManager.loginWithToken(token);
+            if (!login.success) {
+                utils.error(res, 400, "Reauthenticate");
+                return;
+            }
+            const username = login.username;
 
-        if (!await utils.UserManager.isAdmin(username)) {
-            utils.error(res, 403, "Unauthorized");
-            return;
-        }
+            if (!(await utils.UserManager.isAdmin(username))) {
+                utils.error(res, 403, "Unauthorized");
+                return;
+            }
 
-        if (!await utils.UserManager.existsByUsername(target, true)) {
-            utils.error(res, 404, "NotFound");
-            return;
-        }
+            if (!(await utils.UserManager.existsByUsername(target, true))) {
+                utils.error(res, 404, "NotFound");
+                return;
+            }
 
-        // dont send a message since they cant access the site anyways :bleh:
+            // dont send a message since they cant access the site anyways :bleh:
 
-        await utils.UserManager.banUserIP(target, toggle);
+            await utils.UserManager.banUserIP(target, toggle);
 
-        utils.logs.sendAdminLog(
-            {
-                action: `${target}'s IPs have been ${toggle ? "" : "un"}banned`,
-                content: `${username} banned the IPs of ${target}`,
-                fields: [
-                    {
-                        name: "Mod",
-                        value: username
-                    },
-                    {
-                        name: "Target",
-                        value: target
-                    },
-                ]
-            },
-            {
-                name: username,
-                icon_url: String(`${utils.env.ApiURL}/api/v1/users/getpfp?username=${username}`),
-                url: String("https://penguinmod.com/profile?user=" + username)
-            },
-            toggle ? 0xc40404 : 0x45efc6
-        );
+            utils.logs.sendAdminLog(
+                {
+                    action: `${target}'s IPs have been ${toggle ? "" : "un"}banned`,
+                    content: `${username} banned the IPs of ${target}`,
+                    fields: [
+                        {
+                            name: "Mod",
+                            value: username,
+                        },
+                        {
+                            name: "Target",
+                            value: target,
+                        },
+                    ],
+                },
+                {
+                    name: username,
+                    icon_url: String(
+                        `${utils.env.ApiURL}/api/v1/users/getpfp?username=${username}`,
+                    ),
+                    url: String(
+                        "https://penguinmod.com/profile?user=" + username,
+                    ),
+                },
+                toggle ? 0xc40404 : 0x45efc6,
+            );
 
-        res.status(200);
-        res.header("Content-Type", "application/json");
-        res.send({ success: true });
-    });
-}
+            res.status(200);
+            res.header("Content-Type", "application/json");
+            res.send({ success: true });
+        },
+    );
+};

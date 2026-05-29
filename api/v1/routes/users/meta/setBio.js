@@ -6,12 +6,12 @@ const UserManager = require("../../../db/UserManager");
  */
 
 /**
- * 
+ *
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.post('/api/v1/users/setBio', utils.cors(), async function (req, res) {
+    app.post("/api/v1/users/setBio", utils.cors(), async function (req, res) {
         const packet = req.body;
 
         const token = String(packet.token);
@@ -26,24 +26,28 @@ module.exports = (app, utils) => {
         const username = login.username;
 
         if (typeof bio !== "string") {
-            utils.error(res, 400, "InvalidBioInput")
+            utils.error(res, 400, "InvalidBioInput");
             return;
         }
 
         if (bio.length > 2048) {
-            utils.error(res, 400, "BioLengthMustBeLessThan2048Chars")
+            utils.error(res, 400, "BioLengthMustBeLessThan2048Chars");
             return;
         }
 
         let trigger = await utils.UserManager.checkForIllegalWording(bio);
         if (trigger) {
-            utils.error(res, 400, "IllegalWordsUsed")
+            utils.error(res, 400, "IllegalWordsUsed");
 
-            const illegalWordIndex = await utils.UserManager.getIndexOfIllegalWording(bio);
+            const illegalWordIndex =
+                await utils.UserManager.getIndexOfIllegalWording(bio);
 
             const before = bio.substring(0, illegalWordIndex[0]);
             const after = bio.substring(illegalWordIndex[1], bio.length);
-            const illegalWord = bio.substring(illegalWordIndex[0], illegalWordIndex[1]);
+            const illegalWord = bio.substring(
+                illegalWordIndex[0],
+                illegalWordIndex[1],
+            );
 
             const userID = await utils.UserManager.getIDByUsername(username);
 
@@ -51,19 +55,26 @@ module.exports = (app, utils) => {
                 before + "\x1b[31;1m" + illegalWord + "\x1b[0m" + after,
                 trigger,
                 "profileBio",
-                [username, userID]
-            )
-            
+                [username, userID],
+            );
+
             return;
         }
 
-        trigger = await utils.UserManager.checkForPotentiallyIllegalWording(bio);
+        trigger =
+            await utils.UserManager.checkForPotentiallyIllegalWording(bio);
         if (trigger) {
-            const illegalWordIndex = await utils.UserManager.getIndexOfPotentiallyIllegalWording(bio);
+            const illegalWordIndex =
+                await utils.UserManager.getIndexOfPotentiallyIllegalWording(
+                    bio,
+                );
 
             const before = bio.substring(0, illegalWordIndex[0]);
             const after = bio.substring(illegalWordIndex[1], bio.length);
-            const illegalWord = bio.substring(illegalWordIndex[0], illegalWordIndex[1]);
+            const illegalWord = bio.substring(
+                illegalWordIndex[0],
+                illegalWordIndex[1],
+            );
 
             const userID = await utils.UserManager.getIDByUsername(username);
 
@@ -73,13 +84,13 @@ module.exports = (app, utils) => {
                 "profileBio",
                 [username, userID],
                 0xffbb00,
-            )
+            );
         }
 
         await utils.UserManager.setBio(username, bio);
-        
+
         res.status(200);
         res.header("Content-Type", "application/json");
-        res.send({ "success": true });
+        res.send({ success: true });
     });
-}
+};

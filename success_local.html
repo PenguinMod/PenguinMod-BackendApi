@@ -1,8 +1,8 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
     <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>PenguinMod - Logging In</title>
     </head>
     <body>
@@ -10,16 +10,13 @@
         <script>
             const opener = window.opener || window.parent;
             if (!opener) {
-                throw new Error('No parents');
+                throw new Error("No parents");
             }
-            
+
             setTimeout(() => {
                 // wrapper to handle errors & be easier
                 function post(data) {
-                    opener.postMessage(
-                        data,
-                        `http://localhost:5173`
-                    );
+                    opener.postMessage(data, `http://localhost:5173`);
                 }
 
                 const searchParams = new URLSearchParams(location.search);
@@ -27,7 +24,7 @@
                 const username = searchParams.get("username");
                 post({
                     token: token,
-                    username: username
+                    username: username,
                 });
                 // close the window
                 window.close();

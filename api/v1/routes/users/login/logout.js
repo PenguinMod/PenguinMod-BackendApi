@@ -6,7 +6,7 @@ const UserManager = require("../../../db/UserManager");
  */
 
 /**
- * 
+ *
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
@@ -34,4 +34,4 @@ module.exports = (app, utils) => {
         res.header("Content-Type", "application/json");
         res.send({ success: true });
     });
-}
+};

@@ -6,12 +6,12 @@ const UserManager = require("../../../db/UserManager");
  */
 
 /**
- * 
+ *
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.get('/api/v1/users/getusername', async function (req, res) {
+    app.get("/api/v1/users/getusername", async function (req, res) {
         const packet = req.query;
 
         const ID = String(packet.ID);
@@ -23,7 +23,7 @@ module.exports = (app, utils) => {
         const username = await utils.UserManager.getUsernameByID(ID);
 
         res.status(200);
-        res.header('Content-type', "text/plain");
+        res.header("Content-type", "text/plain");
         res.send({ username: username });
     });
-}
+};

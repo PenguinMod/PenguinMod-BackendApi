@@ -6,12 +6,12 @@ const UserManager = require("../../../../db/UserManager");
  */
 
 /**
- * 
+ *
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.post('/api/v1/users/banip', utils.cors(), async function (req, res) {
+    app.post("/api/v1/users/banip", utils.cors(), async function (req, res) {
         const packet = req.body;
 
         const token = String(packet.token);
@@ -22,7 +22,7 @@ module.exports = (app, utils) => {
         try {
             targetIP = utils.ipaddr.parse(String(packet.targetIP));
             if (targetIP.kind() === "ipv4") {
-                targetIP = targetIP.toIPv4MappedAddress()
+                targetIP = targetIP.toIPv4MappedAddress();
             }
             targetIP = targetIP.toNormalizedString();
         } catch (e) {
@@ -42,7 +42,7 @@ module.exports = (app, utils) => {
         }
         const username = login.username;
 
-        if (!await utils.UserManager.isAdmin(username)) {
+        if (!(await utils.UserManager.isAdmin(username))) {
             utils.error(res, 403, "Unauthorized");
             return;
         }
@@ -58,24 +58,26 @@ module.exports = (app, utils) => {
                 fields: [
                     {
                         name: "Mod",
-                        value: username
+                        value: username,
                     },
                     {
                         name: "Target IP",
-                        value: `\`${targetIP}\``
+                        value: `\`${targetIP}\``,
                     },
-                ]
+                ],
             },
             {
                 name: username,
-                icon_url: String(`${utils.env.ApiURL}/api/v1/users/getpfp?username=${username}`),
-                url: String("https://penguinmod.com/profile?user=" + username)
+                icon_url: String(
+                    `${utils.env.ApiURL}/api/v1/users/getpfp?username=${username}`,
+                ),
+                url: String("https://penguinmod.com/profile?user=" + username),
             },
-            toggle ? 0xc40404 : 0x45efc6
+            toggle ? 0xc40404 : 0x45efc6,
         );
 
         res.status(200);
         res.header("Content-Type", "application/json");
         res.send({ success: true });
     });
-}
+};
