@@ -25,8 +25,9 @@ module.exports = (app, utils) => {
                 return;
             }
             const username = login.username;
-
-            const email = await utils.UserManager.getEmail(username);
+            const userid = login.id;
+            const email = login.email;
+            const emailVerified = login.emailVerified;
 
             const validateEmail = (email) => {
                 return email.match(
@@ -39,17 +40,15 @@ module.exports = (app, utils) => {
                 return;
             }
 
-            if (!validateEmail(email)) {
-                utils.error(res, 400, "EmailInvalid");
-                return;
-            }
-
-            if (await utils.UserManager.isEmailVerified(username)) {
+            if (emailVerified) {
                 utils.error(res, 400, "EmailAlreadyVerified");
                 return;
             }
 
-            const userid = await utils.UserManager.getIDByUsername(username);
+            if (!validateEmail(email)) {
+                utils.error(res, 400, "EmailInvalid");
+                return;
+            }
 
             const lastEmailSentID =
                 await utils.UserManager.lastEmailSentByID(userid);
@@ -126,6 +125,7 @@ module.exports = (app, utils) => {
             );
 
             if (!success) {
+                console.warn(`Sending email to ${email} failed`);
                 utils.error(res, 500, "EmailFailed");
                 return;
             }

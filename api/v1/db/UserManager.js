@@ -239,6 +239,22 @@ class UserManager {
         if (using_backblaze) {
             await this.generateBBAuthToken();
         }
+
+        const projects = [
+            "8306140446",
+            "6482857662",
+            "8162849011",
+            "8659856595",
+            "7806216665",
+            "8162181073",
+            "9971333383",
+            "6002723934",
+            "9273687876",
+        ];
+
+        for (const proj of projects) {
+            await this.fixProjectStats(proj);
+        }
     }
 
     /**
@@ -913,10 +929,10 @@ class UserManager {
     async fixProjectStats(id) {
         const real_votes = await this.projectStats
             .find({ projectId: id, type: "vote" })
-            .toArray();
+            .toArray().length;
         const real_loves = await this.projectStats
             .find({ projectId: id, type: "love" })
-            .toArray();
+            .toArray().length;
 
         await this.projects.updateOne(
             { id },
@@ -989,6 +1005,7 @@ class UserManager {
             isMod: false,
             isAdmin: false,
             emailVerified: false,
+            email: "",
             badges: [],
         };
 
@@ -1005,6 +1022,7 @@ class UserManager {
         data.isMod = result.moderator || result.admin;
         data.isAdmin = result.admin;
         data.emailVerified = result.emailVerified;
+        data.email = result.email;
 
         if (get_full_meta) data.fullMeta = result;
 
