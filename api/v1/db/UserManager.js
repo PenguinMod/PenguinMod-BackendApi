@@ -239,12 +239,6 @@ class UserManager {
         if (using_backblaze) {
             await this.generateBBAuthToken();
         }
-
-        const projects = ["9971333383"];
-
-        for (const proj of projects) {
-            await this.fixProjectStats(proj);
-        }
     }
 
     /**
