@@ -936,7 +936,6 @@ class UserManager {
             if (await this.users.findOne({ id, permBanned: false })) loves++;
             else await this.projectStats.deleteMany({ userId: id });
         }
-        console.log(real_loves);
 
         await this.projects.updateOne({ id }, { $set: { loves, votes } });
     }
