@@ -939,12 +939,12 @@ class UserManager {
         for (const vote of real_votes) {
             const id = vote.userId;
             if (await this.users.findOne({ id, permBanned: false })) votes++;
-            else await this.projectStats.delete({ userId: id });
+            else await this.projectStats.deleteMany({ userId: id });
         }
         for (const love of real_loves) {
             const id = love.userId;
             if (await this.users.findOne({ id, permBanned: false })) loves++;
-            else await this.projectStats.delete({ userId: id });
+            else await this.projectStats.deleteMany({ userId: id });
         }
         console.log(real_loves);
 
