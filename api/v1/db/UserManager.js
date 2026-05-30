@@ -927,21 +927,27 @@ class UserManager {
     }
 
     async fixProjectStats(id) {
-        const real_votes = (
-            await this.projectStats
-                .find({ projectId: id, type: "vote" })
-                .toArray()
-        ).length;
-        const real_loves = (
-            await this.projectStats
-                .find({ projectId: id, type: "love" })
-                .toArray()
-        ).length;
+        const real_votes = await this.projectStats
+            .find({ projectId: id, type: "vote" })
+            .toArray();
+        const real_loves = await this.projectStats
+            .find({ projectId: id, type: "love" })
+            .toArray();
 
-        await this.projects.updateOne(
-            { id },
-            { $set: { loves: real_loves, votes: real_votes } },
-        );
+        const votes = 0;
+        const loves = 0;
+        for (const vote of real_votes) {
+            const id = vote.userId;
+            if (await this.users.findOne({ id, permBanned: false })) votes++;
+            else await this.projectStats.delete({ userId: id });
+        }
+        for (const love of real_votes) {
+            const id = love.userId;
+            if (await this.users.findOne({ id, permBanned: false })) loves++;
+            else await this.projectStats.delete({ userId: id });
+        }
+
+        await this.projects.updateOne({ id }, { $set: { loves, votes } });
     }
 
     /**
