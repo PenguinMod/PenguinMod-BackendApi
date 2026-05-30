@@ -934,8 +934,8 @@ class UserManager {
             .find({ projectId: id, type: "love" })
             .toArray();
 
-        const votes = 0;
-        const loves = 0;
+        let votes = 0;
+        let loves = 0;
         for (const vote of real_votes) {
             const id = vote.userId;
             if (await this.users.findOne({ id, permBanned: false })) votes++;
