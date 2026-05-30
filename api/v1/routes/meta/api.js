@@ -11,7 +11,7 @@ module.exports = function (app, utils) {
             ),
         );
 
-        metadata.version.git = utils.env.GIT_VERSION ?? "Unknown";
+        metadata.version.git = utils.env.GIT_COMMIT ?? "Unknown";
 
         res.status(200);
         res.header("Content-Type", "application/json");
