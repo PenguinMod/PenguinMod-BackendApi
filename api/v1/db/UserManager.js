@@ -927,12 +927,16 @@ class UserManager {
     }
 
     async fixProjectStats(id) {
-        const real_votes = await this.projectStats
-            .find({ projectId: id, type: "vote" })
-            .toArray().length;
-        const real_loves = await this.projectStats
-            .find({ projectId: id, type: "love" })
-            .toArray().length;
+        const real_votes = (
+            await this.projectStats
+                .find({ projectId: id, type: "vote" })
+                .toArray()
+        ).length;
+        const real_loves = (
+            await this.projectStats
+                .find({ projectId: id, type: "love" })
+                .toArray()
+        ).length;
 
         await this.projects.updateOne(
             { id },
