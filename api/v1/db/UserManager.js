@@ -941,11 +941,12 @@ class UserManager {
             if (await this.users.findOne({ id, permBanned: false })) votes++;
             else await this.projectStats.delete({ userId: id });
         }
-        for (const love of real_votes) {
+        for (const love of real_loves) {
             const id = love.userId;
             if (await this.users.findOne({ id, permBanned: false })) loves++;
             else await this.projectStats.delete({ userId: id });
         }
+        console.log(real_loves);
 
         await this.projects.updateOne({ id }, { $set: { loves, votes } });
     }
