@@ -10,6 +10,7 @@ services:
             - sigma_network
         environment:
             - TERM=xterm-256color
+            - GIT_COMMIT=${GIT_COMMIT}
         restart: always
         tty: true
 
