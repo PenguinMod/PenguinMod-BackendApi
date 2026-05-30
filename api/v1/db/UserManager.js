@@ -3453,9 +3453,9 @@ class UserManager {
         }
 
         for (const item of spacedOutWordsOnly) {
-            const with_spaces = " " + item + " ";
-
-            if (text.includes(with_spaces)) {
+            const regex = new RegExp(`(^| )${item}( |$)`);
+        
+            if (text.match(regex)) {
                 return item;
             }
         }
@@ -3546,8 +3546,9 @@ class UserManager {
         }
 
         for (const item of potentiallyUnsafeWordsSpacedOut) {
-            const with_spaces = " " + item + " ";
-            if (text.includes(with_spaces)) {
+            const regex = new RegExp(`(^| )${item}( |$)`);
+        
+            if (text.match(regex)) {
                 return item;
             }
         }
@@ -3615,8 +3616,9 @@ class UserManager {
         }
 
         for (const item of potentiallyUnsafeWordsSpacedOut) {
-            const with_spaces = " " + item + " ";
-            if (text.includes(with_spaces)) {
+            const regex = new RegExp(`(^| )${item}( |$)`);
+        
+            if (text.match(regex)) {
                 return item;
             }
         }
@@ -3650,10 +3652,11 @@ class UserManager {
         }
 
         for (const item of spacedOutWordsOnly) {
-            const with_spaces = " " + item + " ";
-            const index = text.indexOf(with_spaces);
-            if (index + 1) {
-                return [index, index + item.length];
+            const regex = new RegExp(`(^| )${item}( |$)`);
+            const match = text.match(regex);
+        
+            if (match) {
+                return [match.index, match.index + item.length];
             }
         }
 
@@ -3690,8 +3693,9 @@ class UserManager {
         }
 
         for (const item of potentiallyUnsafeWordsSpacedOut) {
-            const with_spaces = " " + item + " ";
-            if (text.includes(with_spaces)) {
+            const regex = new RegExp(`(^| )${item}( |$)`);
+        
+            if (text.match(regex)) {
                 return item;
             }
         }
