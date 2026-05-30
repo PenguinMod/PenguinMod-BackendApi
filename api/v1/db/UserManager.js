@@ -240,7 +240,7 @@ class UserManager {
             await this.generateBBAuthToken();
         }
 
-        const projects = ["7806216665"];
+        const projects = ["9971333383"];
 
         for (const proj of projects) {
             await this.fixProjectStats(proj);
