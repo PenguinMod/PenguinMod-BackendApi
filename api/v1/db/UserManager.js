@@ -239,6 +239,9 @@ class UserManager {
         if (using_backblaze) {
             await this.generateBBAuthToken();
         }
+
+        await this.fixProjectStats("6482857662");
+        await this.fixProjectStats("8162181073");
     }
 
     /**
