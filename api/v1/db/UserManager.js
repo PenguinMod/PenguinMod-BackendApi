@@ -239,9 +239,6 @@ class UserManager {
         if (using_backblaze) {
             await this.generateBBAuthToken();
         }
-
-        await this.fixProjectStats("6482857662");
-        await this.fixProjectStats("8162181073");
     }
 
     /**
@@ -3457,7 +3454,7 @@ class UserManager {
 
         for (const item of spacedOutWordsOnly) {
             const regex = new RegExp(`(^| )${item}( |$)`);
-        
+
             if (text.match(regex)) {
                 return item;
             }
@@ -3550,7 +3547,7 @@ class UserManager {
 
         for (const item of potentiallyUnsafeWordsSpacedOut) {
             const regex = new RegExp(`(^| )${item}( |$)`);
-        
+
             if (text.match(regex)) {
                 return item;
             }
@@ -3620,7 +3617,7 @@ class UserManager {
 
         for (const item of potentiallyUnsafeWordsSpacedOut) {
             const regex = new RegExp(`(^| )${item}( |$)`);
-        
+
             if (text.match(regex)) {
                 return item;
             }
@@ -3657,7 +3654,7 @@ class UserManager {
         for (const item of spacedOutWordsOnly) {
             const regex = new RegExp(`(^| )${item}( |$)`);
             const match = text.match(regex);
-        
+
             if (match) {
                 return [match.index, match.index + item.length];
             }
@@ -3697,7 +3694,7 @@ class UserManager {
 
         for (const item of potentiallyUnsafeWordsSpacedOut) {
             const regex = new RegExp(`(^| )${item}( |$)`);
-        
+
             if (text.match(regex)) {
                 return item;
             }
