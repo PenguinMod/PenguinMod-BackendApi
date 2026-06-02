@@ -45,14 +45,16 @@ class UserManager {
         await this.loggedIPs.createIndex({ ip: 1 });
         this.passwordResetStates = this.db.collection("passwordResetStates");
         // await this.passwordResetStates.dropIndexes();
+        await this.passwordResetStates.dropIndexes();
         await this.passwordResetStates.createIndex(
-            { expireAt: 1 },
+            { createdAt: 1 },
             { expireAfterSeconds: Number(process.env.LinkExpire) * 60 },
         );
         this.sentEmails = this.db.collection("sentEmails");
         // await this.sentEmails.dropIndexes();
+        await this.sentEmails.dropIndexes();
         await this.sentEmails.createIndex(
-            { expireAt: 1 },
+            { sentAt: 1 },
             { expireAfterSeconds: Number(process.env.LinkExpire) * 60 },
         );
         this.followers = this.db.collection("followers");
@@ -98,13 +100,15 @@ class UserManager {
         this.messages = this.db.collection("messages");
         this.messages.createIndex({ receiver: -1, id: -1 });
         this.oauthStates = this.db.collection("oauthStates");
+        await this.oauthStates.dropIndexes();
         await this.oauthStates.createIndex(
-            { expireAt: 1 },
+            { createdAt: 1 },
             { expireAfterSeconds: 60 * 5 },
         ); // give 5 minutes
         this.userFeed = this.db.collection("userFeed");
+        await this.userFeed.dropIndexes();
         await this.userFeed.createIndex(
-            { expireAt: 1 },
+            { date: 1 },
             { expireAfterSeconds: Number(process.env.FeedExpirationTime) },
         );
         this.illegalList = this.db.collection("illegalList");
@@ -3830,7 +3834,7 @@ class UserManager {
         state = String(state);
         const result = await this.oauthStates.findOne({
             state: state,
-            expireAt: { $gt: Date.now() },
+            createdAt: { $gt: new Date(Date.now() + 1000 * 60 * 5) },
         });
 
         // now get rid of the state cuz uh we dont need it anymore
@@ -3852,7 +3856,7 @@ class UserManager {
 
         await this.oauthStates.insertOne({
             state: state,
-            expireAt: Date.now() + 1000 * 60 * 5,
+            createdAt: new Date(),
         });
 
         return state;
@@ -4695,8 +4699,7 @@ class UserManager {
             userID: userID,
             type: type,
             data: data,
-            date: Date.now(),
-            expireAt: Date.now() + Number(process.env.FeedExpirationTime),
+            date: new Date(),
         });
     }
 
@@ -5171,7 +5174,11 @@ class UserManager {
 
     async getEmailCount() {
         const result = await this.sentEmails.countDocuments({
-            expireAt: { $gt: Date.now() },
+            sentAt: {
+                $lt: new Date(
+                    Date.now() + Number(process.env.LinkExpire) * 60 * 1000,
+                ),
+            },
         });
 
         return result;
@@ -5202,8 +5209,7 @@ class UserManager {
         await this.sentEmails.insertOne({
             userid,
             userip,
-            sentAt: Date.now(),
-            expireAt: Date.now() + Number(process.env.LinkExpire) * 60 * 1000,
+            sentAt: new Date(),
             type,
         });
 
@@ -5300,7 +5306,7 @@ class UserManager {
             state: state,
             email: email,
             id: userid,
-            expireAt: Date.now() + Number(process.env.LinkExpire) * 60 * 1000,
+            createdAt: new Date(),
         });
 
         return state;
@@ -5321,8 +5327,10 @@ class UserManager {
         const result = await this.passwordResetStates.findOne({
             state: state,
             email: email,
-            expireAt: {
-                $gt: Date.now(),
+            createdAt: {
+                $lt: new Date(
+                    Date.now() + Number(process.env.LinkExpire) * 60 * 1000,
+                ),
             },
         });
 

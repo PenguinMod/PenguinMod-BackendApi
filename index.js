@@ -117,6 +117,7 @@ console.error = (...args) => {
 };
 
 (async () => {
+    // TODO: just have UM load from env
     await UserManager.init(MAXVIEWS, VIEWRESETRATE);
 
     // log when starting and what time zone (utc+-x)
