@@ -3836,7 +3836,7 @@ class UserManager {
         state = String(state);
         const result = await this.oauthStates.findOne({
             state: state,
-            createdAt: { $gt: new Date(Date.now() + 1000 * 60 * 5) },
+            createdAt: { $lt: new Date(Date.now() + 1000 * 60 * 5) },
         });
 
         // now get rid of the state cuz uh we dont need it anymore
