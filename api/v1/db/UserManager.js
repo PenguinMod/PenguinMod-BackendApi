@@ -386,10 +386,10 @@ class UserManager {
 
             let url =
                 this.bb_api_url +
-                `/b2api/v4/b2_list_file_names?bucketId=${bucketID}&maxFileCount=${num}&prefix=${prefix}`;
+                `/b2api/v4/b2_list_file_names?bucketId=${bucketID}&maxFileCount=${num}&prefix=${encodeURIComponent(prefix)}`;
 
             if (startFileName) {
-                url += `&startFileName=${startFileName}`;
+                url += `&startFileName=${encodeURIComponent(startFileName)}`;
             }
 
             let res = null;

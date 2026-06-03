@@ -107,7 +107,7 @@ module.exports = (app, utils) => {
                 false,
             );
 
-            const forgotPasswordUrl = `${utils.env.HomeURL}/resetpassword?state=${state}&email=${email}`;
+            const forgotPasswordUrl = `${utils.env.HomeURL}/resetpassword?state=${encodeURIComponent(state)}&email=${encodeURIComponent(email)}`;
 
             const emailHtml = `<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd">
         <html><body>
