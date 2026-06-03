@@ -59,14 +59,13 @@ module.exports = (app, utils) => {
         );
         const username = await utils.UserManager.getUsernameByID(userid);
 
-        await utils.UserManager.changePassword(username, password);
+        const [token] = await Promise.all([
+            utils.UserManager.changePassword(username, password),
+            utils.UserManager.addIPID(userid, req.realIP),
+        ]);
 
-        const token = await utils.UserManager.newTokenGen(username);
-
-        await utils.UserManager.addIPID(userid, req.realIP);
-
-        res.redirect(
-            `/api/v1/users/sendloginsuccess?token=${token}&username=${username}`,
-        );
+        res.status(200);
+        res.header("Content-Type", "application/json");
+        res.json({ token, username });
     });
 };

@@ -68,9 +68,10 @@ module.exports = (app, utils) => {
                 return;
             }
 
-            await utils.UserManager.changePassword(username, new_password);
-
-            const newToken = await utils.UserManager.newTokenGen(username);
+            const newToken = await utils.UserManager.changePassword(
+                username,
+                new_password,
+            );
 
             await utils.UserManager.addIP(username, req.realIP);
 

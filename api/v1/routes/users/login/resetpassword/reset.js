@@ -53,11 +53,14 @@ module.exports = (app, utils) => {
                 return;
             }
 
-            await utils.UserManager.changePassword(username, password);
+            const token = await utils.UserManager.changePassword(
+                username,
+                password,
+            );
 
             res.status(200);
             res.header("Content-Type", "application/json");
-            res.send({ success: true });
+            res.send({ token });
         },
     );
 };

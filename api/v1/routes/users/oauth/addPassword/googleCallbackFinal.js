@@ -11,10 +11,10 @@ const UserManager = require("../../../../db/UserManager");
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.get(
+    app.post(
         "/api/v1/users/googlecallback/addpasswordfinal",
         async function (req, res) {
-            const packet = req.query;
+            const packet = req.body;
 
             const tokens = String(packet.at);
             const password = String(packet.password);
@@ -76,15 +76,14 @@ module.exports = (app, utils) => {
 
             const username = await utils.UserManager.getUsernameByID(userid);
 
-            await utils.UserManager.changePassword(username, password);
+            const [token] = await Promise.all([
+                utils.UserManager.changePassword(username, password),
+                utils.UserManager.addIPID(userid, req.realIP),
+            ]);
 
-            const token = await utils.UserManager.newTokenGen(username);
-
-            await utils.UserManager.addIPID(userid, req.realIP);
-
-            res.redirect(
-                `/api/v1/users/sendloginsuccess?token=${token}&username=${username}`,
-            );
+            res.status(200);
+            res.header("Content-Type", "application/json");
+            res.json({ token, username });
         },
     );
 };

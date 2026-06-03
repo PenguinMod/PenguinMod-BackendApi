@@ -1155,18 +1155,20 @@ class UserManager {
     }
 
     /**
-     * Change the password of a user
+     * Change the password of a user and invalidate their token
      * @param {string} username username of the user
      * @param {string} newPassword new password of the user
+     * @returns {Promise<string>} The users new token
      * @async
      */
     async changePassword(username, newPassword) {
         username = String(username);
-        const hash = await bcrypt.hash(newPassword, 10);
-        await this.users.updateOne(
-            { username: username },
-            { $set: { password: hash, lastLogin: 0 } },
-        ); // sets password and invalidates token
+        const password = await bcrypt.hash(newPassword, 10);
+        const token = randomBytes(32).toString("hex");
+        // sets password and invalidates token
+        await this.users.updateOne({ username }, { $set: { password, token } });
+
+        return token;
     }
 
     /**
