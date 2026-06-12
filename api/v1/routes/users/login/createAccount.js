@@ -135,15 +135,12 @@ module.exports = (app, utils) => {
                 return;
             }
 
-            // only allows ""complex"" passwords (also seperate regexes since regex just needs to go through each letter to find one match)
             const passwordDoesNotMeetLength =
-                packet.password.length < 8 || packet.password.length > 50;
+                password.length < 8 || password.length > 50;
             const passwordMeetsTextInclude =
-                packet.password.match(/[a-z]/) &&
-                packet.password.match(/[A-Z]/);
+                password.match(/[a-z]/) && password.match(/[A-Z]/);
             const passwordMeetsSpecialInclude =
-                packet.password.match(/[0-9]/) &&
-                packet.password.match(/[^a-z0-9]/i);
+                password.match(/[0-9]/) && password.match(/[^a-z0-9]/i);
             if (passwordDoesNotMeetLength) {
                 utils.error(res, 400, "InvalidLengthPassword");
                 return;
