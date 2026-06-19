@@ -5230,6 +5230,7 @@ class UserManager {
             await mailjet.post("send", { version: "v3.1" }).request({
                 Messages: [
                     {
+                        // TODO: don't hardcode email addr, move to env
                         From: {
                             Email: "no-reply@penguinmod.com",
                             Name: "PenguinMod",

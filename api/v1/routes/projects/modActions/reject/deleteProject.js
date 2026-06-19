@@ -93,9 +93,7 @@ module.exports = (app, utils) => {
                         icon_url: String(
                             `${utils.env.ApiURL}/api/v1/users/getpfp?username=${username}`,
                         ),
-                        url: String(
-                            "https://penguinmod.com/profile?user=" + username,
-                        ),
+                        url: `${utils.env.HomeURL}/profile?user=${username}`,
                     },
                     0x912323,
                 );

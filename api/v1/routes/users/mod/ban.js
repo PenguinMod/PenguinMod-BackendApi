@@ -128,7 +128,7 @@ module.exports = (app, utils) => {
             },
             {
                 name: "URL",
-                value: `https://penguinmod.com/profile?userid=${targetID}`,
+                value: `${utils.env.HomeURL}/profile?userid=${targetID}`,
             },
         );
 
@@ -143,7 +143,7 @@ module.exports = (app, utils) => {
                 icon_url: String(
                     `${utils.env.ApiURL}/api/v1/users/getpfp?username=${username}`,
                 ),
-                url: String("https://penguinmod.com/profile?user=" + username),
+                url: `${utils.env.HomeURL}/profile?user=${username}`,
             },
             toggle ? 0xc40404 : 0x45efc6,
         );

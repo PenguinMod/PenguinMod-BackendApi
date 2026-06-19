@@ -69,7 +69,7 @@ function sendRenameLog(old_username, new_username, id) {
                     },
                     {
                         name: "URL",
-                        value: `https://penguinmod.com/profile?user=${new_username}`,
+                        value: `${process.env.HomeURL}/profile?user=${new_username}`,
                     },
                 ],
                 author: {
@@ -77,9 +77,7 @@ function sendRenameLog(old_username, new_username, id) {
                     icon_url: String(
                         `${process.env.ApiURL}/api/v1/users/getpfp?username=${new_username}`,
                     ),
-                    url: String(
-                        "https://penguinmod.com/profile?user=" + new_username,
-                    ),
+                    url: `${process.env.HomeURL}/profile?user=${new_username}`,
                 },
                 timestamp: new Date().toISOString(),
             },
@@ -118,7 +116,7 @@ function sendBioUpdateLog(username, target, oldBio, newBio) {
                     },
                     {
                         name: "URL",
-                        value: `https://penguinmod.com/profile?user=${target}`,
+                        value: `${process.env.HomeURL}/profile?user=${target}`,
                     },
                 ],
                 author: {
@@ -126,9 +124,7 @@ function sendBioUpdateLog(username, target, oldBio, newBio) {
                     icon_url: String(
                         `${process.env.ApiURL}/api/v1/users/getpfp?username=${target}`,
                     ),
-                    url: String(
-                        "https://penguinmod.com/profile?user=" + target,
-                    ),
+                    url: `${process.env.HomeURL}/profile?user=${target}`,
                 },
                 timestamp: new Date().toISOString(),
             },
@@ -175,9 +171,7 @@ function sendReportLog(type, username, targetID, target, reason) {
                     icon_url: String(
                         `${process.env.ApiURL}/api/v1/users/getpfp?username=${target}`,
                     ),
-                    url: String(
-                        "https://penguinmod.com/profile?user=" + target,
-                    ),
+                    url: `${process.env.HomeURL}/profile?user=${target}`,
                 },
                 timestamp: new Date().toISOString(),
             },
@@ -217,7 +211,7 @@ function sendMultiReportLog(username, id, target, targetID, reason) {
                     },
                     {
                         name: "URL",
-                        value: `https://penguinmod.com/profile?user=${username}`,
+                        value: `${process.env.HomeURL}/profile?user=${username}`,
                     },
                 ],
                 author: {
@@ -225,9 +219,7 @@ function sendMultiReportLog(username, id, target, targetID, reason) {
                     icon_url: String(
                         `${process.env.ApiURL}/api/v1/users/getpfp?username=${target}`,
                     ),
-                    url: String(
-                        "https://penguinmod.com/profile?user=" + target,
-                    ),
+                    url: `${process.env.HomeURL}/profile?user=${target}`,
                 },
                 timestamp: new Date().toISOString(),
             },
@@ -268,7 +260,7 @@ function sendAdminUserLog(
                 ...extraFields,
                 {
                     name: "URL",
-                    value: `https://penguinmod.com/profile?user=${target}`,
+                    value: `${process.env.HomeURL}/profile?user=${target}`,
                 },
             ],
         },
@@ -277,7 +269,7 @@ function sendAdminUserLog(
             icon_url: String(
                 `${process.env.ApiURL}/api/v1/users/getpfp?username=${username}`,
             ),
-            url: String("https://penguinmod.com/profile?user=" + username),
+            url: `${process.env.HomeURL}/profile?user=${username}`,
         },
         color,
     );
@@ -352,9 +344,7 @@ function disputeLog(
                     icon_url: String(
                         `${process.env.ApiURL}/api/v1/users/getpfp?username=${username}`,
                     ),
-                    url: String(
-                        "https://penguinmod.com/profile?user=" + username,
-                    ),
+                    url: `${process.env.HomeURL}/profile?user=${username}`,
                 },
                 timestamp: new Date().toISOString(),
             },
@@ -404,9 +394,7 @@ function modResponse(
                     icon_url: String(
                         `${process.env.ApiURL}/api/v1/users/getpfp?username=${approver}`,
                     ),
-                    url: String(
-                        "https://penguinmod.com/profile?user=" + approver,
-                    ),
+                    url: `${process.env.HomeURL}/profile?user=${approver}`,
                 },
                 timestamp: new Date().toISOString(),
             },
@@ -446,9 +434,7 @@ function modMessage(approver, target, messageID, message, color = 0x70066e) {
                     icon_url: String(
                         `${process.env.ApiURL}/api/v1/users/getpfp?username=${approver}`,
                     ),
-                    url: String(
-                        "https://penguinmod.com/profile?user=" + approver,
-                    ),
+                    url: `${process.env.HomeURL}/profile?user=${approver}`,
                 },
                 timestamp: new Date().toISOString(),
             },
@@ -514,23 +500,19 @@ function sendCreationLog(username, id, name, type, color = 0x25da5b) {
                     type === "account"
                         ? {
                               name: "URL",
-                              value: `https://penguinmod.com/profile?user=${username}`,
+                              value: `${process.env.HomeURL}/profile?user=${username}`,
                           }
                         : {
                               name: "URL",
-                              value: `https://studio.penguinmod.com/#${id}`,
+                              value: `${process.env.StudioURL}/#${id}`,
                           },
                 ],
                 author: {
                     name: String(username).substring(0, 50),
                     icon_url: String(
-                        "https://projects.penguinmod.com/api/v1/users/getpfp?username=" +
-                            String(username).substring(0, 50),
+                        `${process.env.ApiURL}/api/v1/users/getpfp?username=${String(username).substring(0, 50)}`,
                     ),
-                    url: String(
-                        "https://penguinmod.com/profile?user=" +
-                            String(username).substring(0, 50),
-                    ),
+                    url: `${process.env.HomeURL}/profile?user=${username}`,
                 },
                 description: type === "account" ? "" : `Project ID: \`${id}\``,
                 timestamp: new Date().toISOString(),
@@ -539,7 +521,7 @@ function sendCreationLog(username, id, name, type, color = 0x25da5b) {
     };
 
     if (type === "upload" || type === "update") {
-        const url = `https://projects.penguinmod.com/api/v1/projects/getproject?requestType=thumbnail&projectID=${id}&rnd=${Math.random()}`;
+        const url = `${process.env.ApiURL}/api/v1/projects/getproject?requestType=thumbnail&projectID=${id}&rnd=${Math.random()}`;
         body_json.embeds[0].image = {
             url,
         };
@@ -560,7 +542,7 @@ function sendCreationLog(username, id, name, type, color = 0x25da5b) {
 
 function sendFeatureLog(id, title, creator, manual = false) {
     const projectImage = String(
-        `https://projects.penguinmod.com/api/v1/projects/getproject?requestType=thumbnail&projectID=${id}`,
+        `${process.env.ApiURL}/api/v1/projects/getproject?requestType=thumbnail&projectID=${id}`,
     );
     const projectTitle = String(title).substring(0, 250);
     const body = JSON.stringify({
@@ -571,17 +553,13 @@ function sendFeatureLog(id, title, creator, manual = false) {
                 description: `Project ID: \`${id}\``,
                 image: { url: projectImage },
                 color: 16771677,
-                url: String("https://studio.penguinmod.com/#" + String(id)),
+                url: `${process.env.StudioURL}/#${id}`,
                 author: {
                     name: String(creator).substring(0, 50),
                     icon_url: String(
-                        "https://projects.penguinmod.com/api/v1/users/getpfp?username=" +
-                            String(creator).substring(0, 50),
+                        `${process.env.ApiURL}/api/v1/users/getpfp?username=${String(creator).substring(0, 50)}`,
                     ),
-                    url: String(
-                        "https://penguinmod.com/profile?user=" +
-                            String(creator).substring(0, 50),
-                    ),
+                    url: `${process.env.HomeURL}/profile?user=${creator}`,
                 },
             },
         ],
@@ -600,7 +578,7 @@ function sendFeatureLog(id, title, creator, manual = false) {
 const watchlist = {
     sendProjectUploadLog(id, title, creator) {
         const projectImage = String(
-            `https://projects.penguinmod.com/api/v1/projects/getproject?requestType=thumbnail&projectID=${id}`,
+            `${process.env.ApiURL}/api/v1/projects/getproject?requestType=thumbnail&projectID=${id}`,
         );
         const projectTitle = String(title).substring(0, 250);
         const body = JSON.stringify({
@@ -611,17 +589,13 @@ const watchlist = {
                     description: `Project ID: \`${id}\``,
                     image: { url: projectImage },
                     color: 0xbf8939,
-                    url: String("https://studio.penguinmod.com/#" + String(id)),
+                    url: `${process.env.StudioURL}/#${id}`,
                     author: {
                         name: String(creator).substring(0, 50),
                         icon_url: String(
-                            "https://projects.penguinmod.com/api/v1/users/getpfp?username=" +
-                                String(creator).substring(0, 50),
+                            `${process.env.ApiURL}/api/v1/users/getpfp?username=${String(creator).substring(0, 50)}`,
                         ),
-                        url: String(
-                            "https://penguinmod.com/profile?user=" +
-                                String(creator).substring(0, 50),
-                        ),
+                        url: `${process.env.HomeURL}/profile?user=${creator}`,
                     },
                 },
             ],
@@ -639,7 +613,7 @@ const watchlist = {
 
     sendProjectUpdateLog(id, title, creator) {
         const projectImage = String(
-            `https://projects.penguinmod.com/api/v1/projects/getproject?requestType=thumbnail&projectID=${id}`,
+            `${process.env.ApiURL}/api/v1/projects/getproject?requestType=thumbnail&projectID=${id}`,
         );
         const projectTitle = String(title).substring(0, 250);
         const body = JSON.stringify({
@@ -650,17 +624,13 @@ const watchlist = {
                     description: `Project ID: \`${id}\``,
                     image: { url: projectImage },
                     color: 0xbf8939,
-                    url: String("https://studio.penguinmod.com/#" + String(id)),
+                    url: `${process.env.StudioURL}/#${id}`,
                     author: {
                         name: String(creator).substring(0, 50),
                         icon_url: String(
-                            "https://projects.penguinmod.com/api/v1/users/getpfp?username=" +
-                                String(creator).substring(0, 50),
+                            `${process.env.ApiURL}/api/v1/users/getpfp?username=${String(creator).substring(0, 50)}`,
                         ),
-                        url: String(
-                            "https://penguinmod.com/profile?user=" +
-                                String(creator).substring(0, 50),
-                        ),
+                        url: `${process.env.HomeURL}/profile?user=${creator}`,
                     },
                 },
             ],
@@ -684,19 +654,13 @@ const watchlist = {
                     title: new_username,
                     description: `User ID: \`${id}\``,
                     color: 0xcecd77,
-                    url: String(
-                        "https://penguinmod.com/profile?user=" + String(id),
-                    ),
+                    url: `${process.env.HomeURL}/profile?id=${id}`,
                     author: {
                         name: String(new_username),
                         icon_url: String(
-                            "https://projects.penguinmod.com/api/v1/users/getpfp?username=" +
-                                String(new_username),
+                            `${process.env.ApiURL}/api/v1/users/getpfp?username=${String(new_username).substring(0, 50)}`,
                         ),
-                        url: String(
-                            "https://penguinmod.com/profile?user=" +
-                                String(new_username),
-                        ),
+                        url: `${process.env.HomeURL}/profile?user=${new_username}`,
                     },
                 },
             ],
@@ -719,17 +683,13 @@ const watchlist = {
                 {
                     title: `${user} is now on the watchlist`,
                     color: 0xdba678,
-                    url: `https://penguinmod.com/profile?user=${user}`,
+                    url: `${process.env.HomeURL}/profile?user=${user}`,
                     author: {
                         name: String(admin).substring(0, 50),
                         icon_url: String(
-                            "https://projects.penguinmod.com/api/v1/users/getpfp?username=" +
-                                String(admin).substring(0, 50),
+                            `${process.env.ApiURL}/api/v1/users/getpfp?username=${String(admin).substring(0, 50)}`,
                         ),
-                        url: String(
-                            "https://penguinmod.com/profile?user=" +
-                                String(admin).substring(0, 50),
-                        ),
+                        url: `${process.env.HomeURL}/profile?user=${String(admin).substring(0, 50)}`,
                     },
                 },
             ],

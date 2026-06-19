@@ -74,7 +74,7 @@ module.exports = (app, utils) => {
                 userid,
                 true,
             );
-            const verifyEmailUrl = `https://projects.penguinmod.com/api/v1/resetpassword/verifyemail?email=${encodeURIComponent(email)}&state=${encodeURIComponent(state)}`;
+            const verifyEmailUrl = `${utils.env.ApiURL}/api/v1/resetpassword/verifyemail?email=${encodeURIComponent(email)}&state=${encodeURIComponent(state)}`;
 
             const emailHtml = `<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd">
         <html><body>
@@ -87,7 +87,7 @@ module.exports = (app, utils) => {
         <p style='font-family: "Helvetica Neue", Arial, sans-serif;'>If you did not request for this to be a PenguinMod account's email, you can delete this email or ignore it.</p>
             <p style='font-family: "Helvetica Neue", Arial, sans-serif;'>Do not forward, share, or reply to this email. Replies will not be seen or answered.</p>
 
-        <img src="https://penguinmod.com/favicon.png" alt="PenguinMod" width="64" height="64" style="width: 64px; height: 64px;">
+        <img src="${utils.env.HomeURL}/favicon.png" alt="PenguinMod" width="64" height="64" style="width: 64px; height: 64px;">
         </body></html>`;
             const emailPlainText = `PenguinMod Email Verification
 
