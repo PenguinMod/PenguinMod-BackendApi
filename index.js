@@ -168,9 +168,10 @@ console.error = (...args) => {
                     await utils.unlinkAsync(req.files.jsonFile[0].path);
                 if (req.files.thumbnail)
                     await utils.unlinkAsync(req.files.thumbnail[0].path);
-                for (let asset of req.files.assets) {
-                    await utils.unlinkAsync(asset.path);
-                }
+                if (req.files.assets)
+                    for (let asset of req.files.assets) {
+                        await utils.unlinkAsync(asset.path);
+                    }
             };
 
             const ud = await utils.UserManager.getUserData(
