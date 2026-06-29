@@ -29,12 +29,6 @@ module.exports = (app, utils) => {
             const email = login.email;
             const emailVerified = login.emailVerified;
 
-            const validateEmail = (email) => {
-                return email.match(
-                    /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
-                );
-            };
-
             if (email === "") {
                 utils.error(res, 400, "EmailInvalid");
                 return;
@@ -45,7 +39,7 @@ module.exports = (app, utils) => {
                 return;
             }
 
-            if (!validateEmail(email)) {
+            if (!(await utils.UserManager.validateEmail(email))) {
                 utils.error(res, 400, "EmailInvalid");
                 return;
             }

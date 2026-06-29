@@ -31,6 +31,7 @@ module.exports = (app, utils) => {
             const username = login.username;
             const id = login.id;
             const user_meta = login.fullMeta;
+            const badges = login.badges;
 
             const rank = user_meta.rank;
 
@@ -47,7 +48,6 @@ module.exports = (app, utils) => {
                 utils.UserManager.getOAuthMethods(username),
             ]);
 
-            const badges = user_meta.badges;
             const isDonator = badges.includes("donator");
             const isBanned = user_meta.permBanned || user_meta > Date.now();
 
@@ -96,6 +96,8 @@ module.exports = (app, utils) => {
 
             if (user_meta.password) loginMethods.push("password");
 
+            const messageCount = await utils.UserManager.getMessageCount(id);
+
             const user = {
                 id,
                 username,
@@ -121,6 +123,7 @@ module.exports = (app, utils) => {
                 birthdayEntered,
                 countryEntered,
                 country: user_meta.country,
+                messageCount,
             };
 
             res.status(200);

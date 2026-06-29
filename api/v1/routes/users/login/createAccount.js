@@ -93,11 +93,6 @@ module.exports = (app, utils) => {
         return;
         */
 
-            const validateEmail = (email) => {
-                return email.match(
-                    /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
-                );
-            };
             const parseBirthday = (birthday) => {
                 if (!birthday) return;
                 if (typeof birthday !== "string") return;
@@ -156,7 +151,7 @@ module.exports = (app, utils) => {
             }
 
             if (email) {
-                if (!validateEmail(email)) {
+                if (!(await utils.UserManager.validateEmail(email))) {
                     utils.error(res, 400, "InvalidEmail");
                     return;
                 }

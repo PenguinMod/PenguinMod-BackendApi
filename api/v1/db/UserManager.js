@@ -983,6 +983,12 @@ class UserManager {
      * @property {string} id The user's id. Blank if unsuccessful
      * @property {boolean} success If the login was successful
      * @property {boolean} exists If the account even exists
+     * @property {boolean} isDonator
+     * @property {boolean} isMod true if has mod OR admin
+     * @property {boolean} isAdmin
+     * @property {boolean} emailVerified
+     * @property {string} email
+     * @property {string[]} badges
      */
 
     /**
@@ -6236,6 +6242,26 @@ class UserManager {
         }
 
         return formatted;
+    }
+
+    /**
+     * Validate whether or not the email is valid. Also check that the domain is not blocked.
+     * @param {string} email Email to be verified
+     * @returns {Promise<boolean>}
+     */
+    async validateEmail(email) {
+        if (
+            email.match(
+                /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
+            )
+        ) {
+            return false;
+        }
+
+        const domain = email.split("@")[1];
+        // TODO: check domain
+
+        return true;
     }
 }
 
