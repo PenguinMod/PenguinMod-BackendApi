@@ -35,6 +35,11 @@ module.exports = (app, utils) => {
             return;
         }
 
+        if (email == login.email) {
+            utils.error(res, 200, "ThatsTheSameEmailDingus");
+            return;
+        }
+
         if (await utils.UserManager.emailInUse(email)) {
             utils.error(res, 400, "EmailAlreadyInUse");
             return;
