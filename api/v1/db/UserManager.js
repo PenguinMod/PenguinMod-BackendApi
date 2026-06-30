@@ -11,6 +11,7 @@ const Mailjet = require("node-mailjet");
 const os = require("os");
 const pmp_protobuf = require("pmp-protobuf");
 const sharp = require("sharp");
+const disposableDomains = require("disposable-email-domains");
 
 const using_backblaze = process.env.UseBackblaze == "true";
 
@@ -6247,9 +6248,9 @@ class UserManager {
     /**
      * Validate whether or not the email is valid. Also check that the domain is not blocked.
      * @param {string} email Email to be verified
-     * @returns {Promise<boolean>}
+     * @returns {boolean}
      */
-    async validateEmail(email) {
+    validateEmail(email) {
         if (
             email.match(
                 /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
@@ -6258,8 +6259,12 @@ class UserManager {
             return false;
         }
 
-        const domain = email.split("@")[1];
-        // TODO: check domain
+        // TODO: emails should be made lowercase. this is kinda a big issue
+
+        const domain = email.split("@").pop().toLowerCase();
+        if (disposableDomains.includes(domain)) {
+            return false;
+        }
 
         return true;
     }

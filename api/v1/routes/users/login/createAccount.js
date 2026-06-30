@@ -151,7 +151,7 @@ module.exports = (app, utils) => {
             }
 
             if (email) {
-                if (!(await utils.UserManager.validateEmail(email))) {
+                if (!utils.UserManager.validateEmail(email)) {
                     utils.error(res, 400, "InvalidEmail");
                     return;
                 }

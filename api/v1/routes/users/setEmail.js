@@ -30,7 +30,7 @@ module.exports = (app, utils) => {
         }
         const username = login.username;
 
-        if (!(await utils.UserManager.validateEmail(email))) {
+        if (!utils.UserManager.validateEmail(email)) {
             utils.error(res, 400, "InvalidEmail");
             return;
         }

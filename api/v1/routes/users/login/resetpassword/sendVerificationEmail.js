@@ -39,7 +39,7 @@ module.exports = (app, utils) => {
                 return;
             }
 
-            if (!(await utils.UserManager.validateEmail(email))) {
+            if (!utils.UserManager.validateEmail(email)) {
                 utils.error(res, 400, "EmailInvalid");
                 return;
             }
