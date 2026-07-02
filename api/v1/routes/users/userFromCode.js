@@ -96,7 +96,7 @@ module.exports = (app, utils) => {
 
             if (user_meta.password) loginMethods.push("password");
 
-            const messageCount = await utils.UserManager.getMessageCount(id);
+            const messageCount = await utils.UserManager.getUnreadMessageCount(id);
 
             const user = {
                 id,
