@@ -46,7 +46,6 @@ class UserManager {
         await this.loggedIPs.createIndex({ ip: 1 });
         this.passwordResetStates = this.db.collection("passwordResetStates");
         // await this.passwordResetStates.dropIndexes();
-        await this.passwordResetStates.dropIndexes();
         await this.passwordResetStates.createIndex(
             { createdAt: 1 },
             { expireAfterSeconds: Number(process.env.LinkExpire) * 60 },
@@ -84,7 +83,7 @@ class UserManager {
             });
 
         this.projects = this.db.collection("projects");
-        //this.projects.dropIndexes();
+        // await this.projects.dropIndexes();
         await this.projects.createIndex({
             title: "text",
             instructions: "text",
@@ -101,13 +100,13 @@ class UserManager {
         this.messages = this.db.collection("messages");
         this.messages.createIndex({ receiver: -1, id: -1 });
         this.oauthStates = this.db.collection("oauthStates");
-        await this.oauthStates.dropIndexes();
+        // await this.oauthStates.dropIndexes();
         await this.oauthStates.createIndex(
             { createdAt: 1 },
             { expireAfterSeconds: 60 * 5 },
         ); // give 5 minutes
         this.userFeed = this.db.collection("userFeed");
-        await this.userFeed.dropIndexes();
+        // await this.userFeed.dropIndexes();
         await this.userFeed.createIndex(
             { date: 1 },
             { expireAfterSeconds: Number(process.env.FeedExpirationTime) },
