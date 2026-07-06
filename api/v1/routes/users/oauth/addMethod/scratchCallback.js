@@ -11,81 +11,136 @@ const UserManager = require("../../../../db/UserManager");
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.get("/api/v1/users/addscratchlogin", async function (req, res) {
-        const packet = req.query;
+    app.post(
+        "/api/v1/users/addoauthmethod/scratch/generate",
+        utils.cors(),
+        async function (req, res) {
+            const packet = req.body || {};
+            const token = packet.token ? String(packet.token) : "";
+            const username = packet.username ? String(packet.username).trim() : "";
 
-        const state = String(packet.state);
-        const code = String(packet.code);
+            if (!token || !username) {
+                utils.error(res, 400, "Missing token or username");
+                return;
+            }
 
-        if (!state || !code) {
-            utils.error(res, 400, "Missing state or code");
-            return;
-        }
+            const login = await utils.UserManager.loginWithToken(token);
+            if (!login.success) {
+                utils.error(res, 400, "Reauthenticate");
+                return;
+            }
 
-        if (!(await utils.UserManager.verifyOAuth2State(state))) {
-            utils.error(res, 400, "InvalidState");
-            return;
-        }
+            const methods = await utils.UserManager.getOAuthMethods(
+                login.username,
+            );
+            if (methods.includes("scratch")) {
+                utils.error(res, 400, "MethodAlreadyAdded");
+                return;
+            }
 
-        const userid = state.split("_")[1]; // get the userid from the state (a little hacky)
+            const code = await utils.UserManager.generateScratchVerifyCode(
+                username,
+            );
 
-        // now make the request
-        const response = await utils.UserManager.makeOAuth2Request(
-            code,
-            "scratch",
-        );
+            res.status(200);
+            res.json({ code });
+        },
+    );
 
-        if (!response) {
-            utils.error(res, 500, "OAuthServerDidNotRespond");
-            return;
-        }
+    app.post(
+        "/api/v1/users/addoauthmethod/scratch/verify",
+        utils.cors(),
+        async function (req, res) {
+            const packet = req.body || {};
+            const token = packet.token ? String(packet.token) : "";
+            const code = packet.code ? String(packet.code) : "";
+            const username = packet.username ? String(packet.username).trim() : "";
 
-        const user = await fetch(
-            "https://oauth2.scratch-wiki.info/w/rest.php/soa2/v0/user",
-            {
-                headers: {
-                    Authorization: `Bearer ${btoa(response.access_token)}`,
-                },
-            },
-        )
-            .then(async (res) => {
-                return { user: await res.json(), status: res.status };
-            })
-            .catch((e) => {
+            if (!token || !code || !username) {
+                utils.error(res, 400, "Missing token, code, or username");
+                return;
+            }
+
+            const login = await utils.UserManager.loginWithToken(token);
+            if (!login.success) {
+                utils.error(res, 400, "Reauthenticate");
+                return;
+            }
+
+            const methods = await utils.UserManager.getOAuthMethods(
+                login.username,
+            );
+            if (methods.includes("scratch")) {
+                utils.error(res, 400, "MethodAlreadyAdded");
+                return;
+            }
+
+            const codeCheck = await utils.UserManager.verifyScratchVerifyCode(
+                code,
+                username,
+            );
+            if (!codeCheck.success) {
+                utils.error(res, 400, codeCheck.error);
+                return;
+            }
+
+            let scratchUser;
+            try {
+                const userResponse = await fetch(
+                    `https://api.scratch.mit.edu/users/${username}`,
+                );
+                if (!userResponse.ok) {
+                    utils.error(res, 404, "ScratchUserNotFound");
+                    return;
+                }
+                scratchUser = await userResponse.json();
+            } catch (e) {
                 utils.error(res, 500, "OAuthServerDidNotRespond");
-                return new Promise((resolve, reject) => resolve());
-            });
+                return;
+            }
 
-        if (!user) {
-            return;
-        }
+            let hasCode;
+            try {
+                hasCode = await utils.UserManager.checkScratchCommentsForCode(
+                    username,
+                    code,
+                );
+            } catch (e) {
+                utils.error(res, 500, "FailedToFetchComments");
+                return;
+            }
 
-        if (user.status !== 200) {
-            console.error(`Error with oauth status: ${JSON.stringify(user)}`);
-            utils.error(res, 500, "InternalError");
-            return;
-        }
+            if (!hasCode) {
+                res.status(400);
+                res.json({
+                    error: "CodeNotFoundInComments",
+                    instructions:
+                        "Please post the code as a comment on your Scratch profile",
+                });
+                return;
+            }
 
-        const username = await utils.UserManager.getUsernameByID(userid);
+            const existingOwner = await utils.UserManager.getUserIDByOAuthID(
+                "scratch",
+                scratchUser.id,
+            );
+            if (existingOwner) {
+                utils.error(res, 400, "ScratchAccountAlreadyLinked");
+                return;
+            }
 
-        const methods = await utils.UserManager.getOAuthMethods(username);
+            await utils.UserManager.addOAuthMethod(
+                login.username,
+                "scratch",
+                scratchUser.id,
+            );
 
-        if (methods.includes("scratch")) {
-            utils.error(res, 400, "Method already added");
-            return;
-        }
+            const newToken = await utils.UserManager.newTokenGen(
+                login.username,
+            );
 
-        await utils.UserManager.addOAuthMethod(
-            username,
-            "scratch",
-            user.user.user_id,
-        );
-
-        const token = await utils.UserManager.newTokenGen(username);
-
-        res.status(200);
-        res.redirect(
-            `/api/v1/users/sendloginsuccess?token=${token}&username=${username}`,
-        );
-    });
+            res.status(200);
+            res.json({ success: true, token: newToken, username: login.username });
+        },
+    );
 };

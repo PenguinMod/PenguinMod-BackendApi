@@ -12,6 +12,7 @@ const os = require("os");
 const pmp_protobuf = require("pmp-protobuf");
 const sharp = require("sharp");
 const disposableDomains = require("disposable-email-domains");
+const ScratchComments = require("../../../utils/Scratch");
 
 const using_backblaze = process.env.UseBackblaze == "true";
 
@@ -106,6 +107,12 @@ class UserManager {
             { createdAt: 1 },
             { expireAfterSeconds: 60 * 5 },
         ); // give 5 minutes
+        this.scratchVerifyCodes = this.db.collection("scratchVerifyCodes");
+        await this.scratchVerifyCodes.dropIndexes();
+        await this.scratchVerifyCodes.createIndex(
+            { createdAt: 1 },
+            { expireAfterSeconds: 60 * 10 },
+        ); // give 10 minutes to post the comment
         this.userFeed = this.db.collection("userFeed");
         await this.userFeed.dropIndexes();
         await this.userFeed.createIndex(
@@ -3872,6 +3879,85 @@ class UserManager {
     }
 
     /**
+     * Generate a one-time code for verifying ownership of a Scratch account via
+     * a profile comment, tied to a specific username.
+     * @param {string} username The Scratch username the code is being generated for
+     * @returns {Promise<string>} The generated code
+     * @async
+     */
+    async generateScratchVerifyCode(username) {
+        const normalized = String(username).toLowerCase();
+        const code = `PM_${randomBytes(16).toString("hex")}`;
+
+        await this.scratchVerifyCodes.insertOne({
+            code: code,
+            username: normalized,
+            used: false,
+            createdAt: new Date(),
+        });
+
+        return code;
+    }
+
+    /**
+     * Verify a Scratch comment-verification code: it must exist, be unused,
+     * not be expired, and match the username it was generated for. Marks the
+     * code as used if it passes.
+     * @param {string} code The code to verify
+     * @param {string} username The username claiming the code
+     * @returns {Promise<{success: boolean, error?: string}>}
+     * @async
+     */
+    async verifyScratchVerifyCode(code, username) {
+        // TODO: find & update should be combined to avoid race conditions
+        const normalized = String(username).toLowerCase();
+        const result = await this.scratchVerifyCodes.findOne({
+            code: String(code),
+        });
+
+        if (!result) {
+            return { success: false, error: "InvalidOrExpiredCode" };
+        }
+
+        if (result.used) {
+            return { success: false, error: "CodeAlreadyUsed" };
+        }
+
+        if (result.username !== normalized) {
+            return { success: false, error: "CodeUsernameMismatch" };
+        }
+
+        await this.scratchVerifyCodes.updateOne(
+            { code: String(code) },
+            { $set: { used: true } },
+        );
+
+        return { success: true };
+    }
+
+    /**
+     * Check whether a Scratch comment-verification code has been posted as a
+     * comment on the given user's profile.
+     * @param {string} username The Scratch username whose profile comments should be checked
+     * @param {string} code The verification code to look for
+     * @returns {Promise<boolean>} Whether the code was found in a comment made by that user
+     * @async
+     */
+    async checkScratchCommentsForCode(username, code) {
+        let comments;
+        try {
+            comments = await ScratchComments.getUserComments(username);
+        } catch (e) {
+            throw new Error("FailedToFetchComments");
+        }
+
+        return comments.some(
+            (comment) =>
+                comment.content.includes(code) && comment.user === username,
+        );
+    }
+
+    /**
      * Make an OAuth2 request
      * @param {string} code The from the original OAuth2 request
      * @param {string} method The method of OAuth2 request
@@ -3881,6 +3967,7 @@ class UserManager {
         let response;
         try {
             switch (method) {
+                // DEPRECATED
                 case "scratch":
                     response = await fetch(
                         `https://oauth2.scratch-wiki.info/w/rest.php/soa2/v0/tokens`,

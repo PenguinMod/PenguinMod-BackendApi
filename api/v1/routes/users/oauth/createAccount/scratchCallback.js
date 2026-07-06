@@ -11,115 +11,147 @@ const UserManager = require("../../../../db/UserManager");
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.get("/api/v1/users/scratchoauthcreate", async function (req, res) {
-        const packet = req.query;
+    app.post(
+        "/api/v1/users/createoauthaccount/scratch/generate",
+        utils.cors(),
+        async function (req, res) {
+            if (!(await utils.UserManager.canCreateAccount())) {
+                utils.error(res, 403, "Account creation is not enabled");
+                return;
+            }
 
-        const state = String(packet.state);
-        const code = String(packet.code);
+            const packet = req.body || {};
+            const username = packet.username ? String(packet.username).trim() : "";
 
-        if (!state || !code) {
-            utils.error(res, 400, "Missing state or code");
-            return;
-        }
+            if (!username) {
+                utils.error(res, 400, "Missing username");
+                return;
+            }
 
-        if (!(await utils.UserManager.verifyOAuth2State(state))) {
-            utils.error(res, 400, "Invalid state");
-            return;
-        }
+            const code = await utils.UserManager.generateScratchVerifyCode(
+                username,
+            );
 
-        // now make the request
-        const response = await utils.UserManager.makeOAuth2Request(
-            code,
-            "scratch",
-        );
+            res.status(200);
+            res.json({ code });
+        },
+    );
 
-        if (!response) {
-            utils.error(res, 500, "OAuthServerDidNotRespond");
-            return;
-        }
+    app.post(
+        "/api/v1/users/createoauthaccount/scratch/verify",
+        utils.cors(),
+        async function (req, res) {
+            if (!(await utils.UserManager.canCreateAccount())) {
+                utils.error(res, 403, "Account creation is not enabled");
+                return;
+            }
 
-        const username = await fetch(
-            "https://oauth2.scratch-wiki.info/w/rest.php/soa2/v0/user",
-            {
-                headers: {
-                    Authorization: `Bearer ${btoa(response.access_token)}`,
-                },
-            },
-        )
-            .then(async (res) => {
-                return { user: await res.json(), status: res.status };
-            })
-            .catch((e) => {
+            const packet = req.body || {};
+            const code = packet.code ? String(packet.code) : "";
+            const username = packet.username ? String(packet.username).trim() : "";
+
+            if (!code || !username) {
+                utils.error(res, 400, "Missing code or username");
+                return;
+            }
+
+            const codeCheck = await utils.UserManager.verifyScratchVerifyCode(
+                code,
+                username,
+            );
+            if (!codeCheck.success) {
+                utils.error(res, 400, codeCheck.error);
+                return;
+            }
+
+            let scratchUser;
+            try {
+                const userResponse = await fetch(
+                    `https://api.scratch.mit.edu/users/${username}`,
+                );
+                if (!userResponse.ok) {
+                    utils.error(res, 404, "ScratchUserNotFound");
+                    return;
+                }
+                scratchUser = await userResponse.json();
+            } catch (e) {
                 utils.error(res, 500, "OAuthServerDidNotRespond");
-                return new Promise((resolve, reject) => resolve());
-            });
+                return;
+            }
 
-        if (!username) {
-            return;
-        }
+            let hasCode;
+            try {
+                hasCode = await utils.UserManager.checkScratchCommentsForCode(
+                    username,
+                    code,
+                );
+            } catch (e) {
+                utils.error(res, 500, "FailedToFetchComments");
+                return;
+            }
 
-        if (username.status !== 200) {
-            utils.error(res, 500, "InternalError");
-            return;
-        }
+            if (!hasCode) {
+                res.status(400);
+                res.json({
+                    error: "CodeNotFoundInComments",
+                    instructions:
+                        "Please post the code as a comment on your Scratch profile",
+                });
+                return;
+            }
 
-        if (
-            await utils.UserManager.getUserIDByOAuthID(
+            if (
+                await utils.UserManager.getUserIDByOAuthID(
+                    "scratch",
+                    scratchUser.id,
+                )
+            ) {
+                utils.error(res, 400, "AccountExists");
+                return;
+            }
+
+            const userdata = await utils.UserManager.makeOAuth2Account(
                 "scratch",
-                username.user.user_id,
-            )
-        ) {
-            utils.error(res, 400, "AccountExists");
-            return;
-        }
+                { user_name: scratchUser.username, user_id: scratchUser.id },
+                utils,
+                res,
+            );
 
-        // create the user
-        const userdata = await utils.UserManager.makeOAuth2Account(
-            "scratch",
-            username.user,
-            utils,
-            res,
-        );
+            if (!userdata) {
+                utils.error(res, 400, "UnknownError");
+                return;
+            }
 
-        if (!userdata) {
-            utils.error(res, 400, "UnknownError");
-            return;
-        }
+            // best shot at getting the pfp
+            try {
+                const profilePicture = await fetch(
+                    `https://trampoline.turbowarp.org/avatars/by-username/${scratchUser.username.toLowerCase()}`,
+                ).then((r) => r.arrayBuffer());
 
-        const profilePicture = await fetch(
-            `https://trampoline.turbowarp.org/avatars/by-username/${username.user.user_name.toLowerCase()}`,
-        )
-            .then((res) => res.arrayBuffer())
-            .catch((e) => {
-                utils.error(res, 500, "InternalError");
-                return new Promise((resolve, reject) => resolve());
+                await utils.UserManager.setProfilePicture(
+                    userdata.username,
+                    Buffer.from(profilePicture),
+                );
+            } catch (e) {
+                console.warn(
+                    `Failed to import scratch pfp for ${userdata.username}: ${e}`,
+                );
+            }
+
+            await utils.UserManager.addIPID(userdata.id, req.realIP);
+            await utils.logs.sendCreationLog(
+                userdata.username,
+                userdata.id,
+                "",
+                "account",
+            );
+
+            res.status(200);
+            res.json({
+                success: true,
+                token: userdata.token,
+                username: userdata.username,
             });
-
-        if (!profilePicture) {
-            return;
-        }
-
-        const pfp_buffer = Buffer.from(profilePicture);
-
-        await utils.UserManager.setProfilePicture(
-            userdata.username,
-            pfp_buffer,
-        );
-
-        const accountUsername = userdata.username;
-        const token = userdata.token;
-
-        await utils.UserManager.addIPID(userdata.id, req.realIP);
-        await utils.logs.sendCreationLog(
-            accountUsername,
-            userdata.id,
-            "",
-            "account",
-        );
-
-        res.status(200);
-        res.redirect(
-            `/api/v1/users/sendloginsuccess?token=${token}&username=${accountUsername}`,
-        );
-    });
+        },
+    );
 };

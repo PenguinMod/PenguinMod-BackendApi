@@ -50,8 +50,11 @@ module.exports = (app, utils) => {
             );
             switch (method) {
                 case "scratch":
+                    // Scratch no longer supports a standard OAuth2 redirect
+                    // flow, so send the user to the comment-verification page
+                    // in "addmethod" mode, carrying their session token along.
                     res.redirect(
-                        `https://oauth2.scratch-wiki.info/wiki/Special:ScratchOAuth2/authorize?client_id=${utils.env.ScratchOAuthClientID}&redirect_uri=${utils.env.ApiURL}/api/v1/users/addscratchlogin&scopes=identify&state=${state}`,
+                        `/scratch?mode=addmethod&token=${encodeURIComponent(token)}`,
                     );
                     break;
                 case "github":

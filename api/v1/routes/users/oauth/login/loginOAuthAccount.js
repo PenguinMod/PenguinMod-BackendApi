@@ -26,9 +26,7 @@ module.exports = (app, utils) => {
         const state = await utils.UserManager.generateOAuth2State();
         switch (method) {
             case "scratch":
-                res.redirect(
-                    `https://oauth2.scratch-wiki.info/wiki/Special:ScratchOAuth2/authorize?client_id=${utils.env.ScratchOAuthClientID}&redirect_uri=${utils.env.ApiURL}/api/v1/users/scratchoauthlogin&scopes=identify&state=${state}`,
-                );
+                res.redirect(`/scratch`);
                 break;
             case "github":
                 res.redirect(

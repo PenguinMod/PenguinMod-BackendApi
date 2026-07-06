@@ -161,6 +161,12 @@ console.error = (...args) => {
         res.sendFile(path.join(__dirname, "robots.txt"));
     });
 
+    app.get("/scratch", async function (req, res) {
+        res.status(200);
+        res.header("Content-Type", "text/html");
+        res.sendFile(path.join(__dirname, "scratch-auth.html"));
+    });
+
     function file_size_limit(utils, username) {
         return async function (req, res, next) {
             const unlink = async () => {

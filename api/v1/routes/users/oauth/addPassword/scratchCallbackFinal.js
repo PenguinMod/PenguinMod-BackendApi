@@ -37,16 +37,7 @@ module.exports = (app, utils) => {
             return;
         }
 
-        const user = await fetch(
-            "https://oauth2.scratch-wiki.info/w/rest.php/soa2/v0/user",
-            {
-                headers: {
-                    Authorization: `Bearer ${btoa(access_token)}`,
-                },
-            },
-        ).then(async (res) => {
-            return { user: await res.json(), status: res.status };
-        });
+        const user = await utils.UserManager.getScratchOAuth2User(access_token);
 
         if (user.status !== 200) {
             utils.error(res, 500, "InternalError");

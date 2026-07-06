@@ -1,0 +1,283 @@
+<!-- From AuthPenguin's extension -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scratch Auth</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --pm-cyan: #29ade0;
+            --pm-border: #e2e2e2;
+        }
+        body { background: #ffffff; }
+
+        .pm-progress-fill { background: var(--pm-cyan); transition: width 0.3s ease; }
+
+        .pm-btn-primary {
+            background: var(--pm-cyan);
+            color: #ffffff;
+        }
+        .pm-btn-primary:hover:not(:disabled) { background: #1c95c4; }
+        .pm-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .pm-btn-secondary {
+            background: #ffffff;
+            border: 1px solid var(--pm-border);
+            color: #111111;
+        }
+        .pm-btn-secondary:hover { border-color: #b5b5b5; }
+
+        .pm-input {
+            border: 1px solid var(--pm-border);
+        }
+        .pm-input:focus {
+            outline: none;
+            border-color: var(--pm-cyan);
+        }
+
+        .pm-code {
+            letter-spacing: 0.1em;
+            color: #111111;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-6">
+    <div class="w-full max-w-sm">
+        <div class="mb-8">
+            <h1 id="pageHeading" class="text-2xl font-semibold text-gray-900 mb-1">Scratch Authentication</h1>
+            <p id="pageSub" class="text-gray-500 text-sm">Verify your Scratch account with PenguinMod</p>
+        </div>
+
+        <div class="w-full h-1 bg-gray-100 rounded-full mb-8 overflow-hidden">
+            <div id="progressFill" class="pm-progress-fill h-full rounded-full" style="width: 33%;"></div>
+        </div>
+
+        <div id="step1">
+            <p id="stepLabel1" class="text-xs uppercase tracking-wide text-gray-400 mb-2">Step 1 of 3</p>
+            <label for="usernameInput" class="block text-sm font-medium text-gray-700 mb-2">Scratch username</label>
+            <input type="text" id="usernameInput" placeholder="Enter your Scratch username"
+                   class="pm-input w-full rounded-lg px-3 py-2 mb-3 text-gray-900">
+
+            <div id="step1Error" class="hidden text-sm text-red-600 mb-3"></div>
+
+            <button id="getCodeBtn" class="pm-btn-primary w-full font-medium py-2.5 rounded-lg">
+                Get verification code
+            </button>
+        </div>
+
+        <div id="step2" class="hidden">
+            <p class="text-xs uppercase tracking-wide text-gray-400 mb-2">Step 2 of 3</p>
+            <p class="text-sm text-gray-600 mb-3">Copy this code — you'll post it in the next step.</p>
+
+            <div class="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2 mb-4">
+                <code id="verificationCode" class="pm-code font-mono text-base"></code>
+                <button id="copyBtn" class="text-sm text-gray-500 hover:text-gray-900">Copy</button>
+            </div>
+
+            <button id="nextToCommentBtn" class="pm-btn-primary w-full font-medium py-2.5 rounded-lg">
+                Continue
+            </button>
+        </div>
+
+        <div id="step3" class="hidden">
+            <p class="text-xs uppercase tracking-wide text-gray-400 mb-2">Step 3 of 3</p>
+            <p class="text-sm text-gray-600 mb-3">Post your code as a comment on your Scratch profile, then verify.</p>
+
+            <div class="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2 mb-4">
+                <code id="displayCode" class="pm-code font-mono text-base"></code>
+            </div>
+
+            <ol class="text-sm text-gray-600 list-decimal list-inside space-y-1 mb-4">
+                <li>Go to your Scratch profile page</li>
+                <li>Scroll to the comments section</li>
+                <li>Post the code above as a comment</li>
+                <li>Click verify below</li>
+            </ol>
+
+            <div id="step3Error" class="hidden text-sm text-red-600 mb-3"></div>
+
+            <div class="flex gap-2">
+                <a href="#" id="scratchProfileLink" target="_blank" class="pm-btn-secondary flex-1 text-center font-medium py-2.5 rounded-lg">
+                    Open profile
+                </a>
+                <button id="verifyBtn" class="pm-btn-primary flex-1 font-medium py-2.5 rounded-lg">
+                    Verify
+                </button>
+            </div>
+        </div>
+
+        <div id="success" class="hidden text-center">
+            <p class="text-lg font-semibold text-gray-900 mb-1">You're verified</p>
+            <p class="text-sm text-gray-500">This window will close automatically...</p>
+        </div>
+    </div>
+
+    <script>
+        let currentCode = '';
+        let currentUsername = '';
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const mode = ['login', 'addmethod', 'createaccount'].includes(urlParams.get('mode'))
+            ? urlParams.get('mode')
+            : 'login';
+        const sessionToken = urlParams.get('token') || '';
+
+        const ENDPOINTS = {
+            login: {
+                generate: '/api/v1/users/scratchoauthlogin/generate',
+                verify: '/api/v1/users/scratchoauthlogin/verify',
+            },
+            addmethod: {
+                generate: '/api/v1/users/addoauthmethod/scratch/generate',
+                verify: '/api/v1/users/addoauthmethod/scratch/verify',
+            },
+            createaccount: {
+                generate: '/api/v1/users/createoauthaccount/scratch/generate',
+                verify: '/api/v1/users/createoauthaccount/scratch/verify',
+            },
+        };
+        const endpoints = ENDPOINTS[mode];
+
+        const MODE_COPY = {
+            login: {
+                heading: 'Scratch Authentication',
+                sub: 'Verify your Scratch account to log in with PenguinMod',
+            },
+            addmethod: {
+                heading: 'Link Your Scratch Account',
+                sub: 'Verify ownership to link Scratch to your existing account',
+            },
+            createaccount: {
+                heading: 'Sign Up with Scratch',
+                sub: 'Verify your Scratch account to create a new PenguinMod account',
+            },
+        };
+
+        (function applyModeCopy() {
+            const copy = MODE_COPY[mode];
+            document.getElementById('pageHeading').textContent = copy.heading;
+            document.getElementById('pageSub').textContent = copy.sub;
+
+            if (mode === 'addmethod' && !sessionToken) {
+                const errorDiv = document.getElementById('step1Error');
+                errorDiv.textContent = 'Missing session token. Please try linking your account again from your settings.';
+                errorDiv.classList.remove('hidden');
+                document.getElementById('getCodeBtn').disabled = true;
+            }
+        })();
+
+        function showStep(stepNumber) {
+            document.getElementById('step1').classList.add('hidden');
+            document.getElementById('step2').classList.add('hidden');
+            document.getElementById('step3').classList.add('hidden');
+            document.getElementById(`step${stepNumber}`).classList.remove('hidden');
+            document.getElementById('progressFill').style.width = `${stepNumber * 33.33}%`;
+        }
+
+        document.getElementById('getCodeBtn').addEventListener('click', async () => {
+            const username = document.getElementById('usernameInput').value.trim();
+            const errorDiv = document.getElementById('step1Error');
+
+            if (!username) {
+                errorDiv.textContent = 'Please enter your Scratch username.';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            if (mode === 'addmethod' && !sessionToken) {
+                errorDiv.textContent = 'Missing session token. Please try linking your account again from your settings.';
+                errorDiv.classList.remove('hidden');
+                return;
+            }
+
+            errorDiv.classList.add('hidden');
+            currentUsername = username;
+
+            const body = { username };
+            if (mode === 'addmethod') body.token = sessionToken;
+
+            try {
+                const response = await fetch(endpoints.generate, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                const data = await response.json();
+
+                if (response.ok && data.code) {
+                    currentCode = data.code;
+                    document.getElementById('verificationCode').textContent = data.code;
+                    document.getElementById('displayCode').textContent = data.code;
+                    document.getElementById('scratchProfileLink').href = `https://scratch.mit.edu/users/${username}/`;
+                    showStep(2);
+                } else {
+                    errorDiv.textContent = data.error || 'Failed to generate code. Please try again.';
+                    errorDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Failed to generate code. Please try again.';
+                errorDiv.classList.remove('hidden');
+            }
+        });
+
+        document.getElementById('copyBtn').addEventListener('click', () => {
+            navigator.clipboard.writeText(currentCode);
+            const btn = document.getElementById('copyBtn');
+            const originalText = btn.textContent;
+            btn.textContent = 'Copied';
+            setTimeout(() => { btn.textContent = originalText; }, 2000);
+        });
+
+        document.getElementById('nextToCommentBtn').addEventListener('click', () => showStep(3));
+
+        document.getElementById('verifyBtn').addEventListener('click', async () => {
+            const errorDiv = document.getElementById('step3Error');
+            errorDiv.classList.add('hidden');
+
+            const body = { code: currentCode, username: currentUsername };
+            if (mode === 'addmethod') body.token = sessionToken;
+
+            try {
+                const response = await fetch(endpoints.verify, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+
+                const data = await response.json();
+
+                if (data.success && data.token) {
+                    document.getElementById('step3').classList.add('hidden');
+                    document.getElementById('success').classList.remove('hidden');
+                    document.getElementById('progressFill').style.width = '100%';
+
+                    const resolvedUsername = data.username || currentUsername;
+
+                    if (window.opener) {
+                        window.opener.postMessage({ type: 'AUTH_SUCCESS', token: data.token, username: resolvedUsername }, '*');
+                        setTimeout(() => window.close(), 2000);
+                    } else {
+                        setTimeout(() => {
+                            window.location.href = `/api/v1/users/sendloginsuccess?token=${encodeURIComponent(data.token)}&username=${encodeURIComponent(resolvedUsername)}`;
+                        }, 1500);
+                    }
+                } else {
+                    errorDiv.textContent = data.error || 'Verification failed. Make sure you posted the code in your profile comments.';
+                    errorDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Network error. Please check your connection and try again.';
+                errorDiv.classList.remove('hidden');
+            }
+        });
+
+        document.getElementById('usernameInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('getCodeBtn').click();
+            }
+        });
+    </script>
+</body>
+</html>

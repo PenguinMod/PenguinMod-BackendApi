@@ -11,92 +11,116 @@ const UserManager = require("../../../../db/UserManager");
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.get("/api/v1/users/scratchoauthlogin", async function (req, res) {
-        const packet = req.query;
+    app.post(
+        "/api/v1/users/scratchoauthlogin/generate",
+        utils.cors(),
+        async function (req, res) {
+            const packet = req.body || {};
+            const username = packet.username ? String(packet.username).trim() : "";
 
-        const state = String(packet.state);
-        const code = String(packet.code);
+            if (!username) {
+                utils.error(res, 400, "Missing username");
+                return;
+            }
 
-        if (!state || !code) {
-            utils.error(res, 400, "Missing state or code");
-            return;
-        }
+            const code = await utils.UserManager.generateScratchVerifyCode(username);
 
-        if (!(await utils.UserManager.verifyOAuth2State(state))) {
-            utils.error(res, 400, "Invalid state");
-            return;
-        }
+            res.status(200);
+            res.json({ code });
+        },
+    );
 
-        // now make the request
-        const response = await utils.UserManager.makeOAuth2Request(
-            code,
-            "scratch",
-        );
+    app.post(
+        "/api/v1/users/scratchoauthlogin/verify",
+        utils.cors(),
+        async function (req, res) {
+            const packet = req.body || {};
+            const code = packet.code ? String(packet.code) : "";
+            const username = packet.username ? String(packet.username).trim() : "";
 
-        if (!response) {
-            utils.error(res, 500, "OAuthServerDidNotRespond");
-            return;
-        }
+            if (!code || !username) {
+                utils.error(res, 400, "Missing code or username");
+                return;
+            }
 
-        const user = await fetch(
-            "https://oauth2.scratch-wiki.info/w/rest.php/soa2/v0/user",
-            {
-                headers: {
-                    Authorization: `Bearer ${btoa(response.access_token)}`,
-                },
-            },
-        )
-            .then(async (res) => {
-                return { user: await res.json(), status: res.status };
-            })
-            .catch((e) => {
-                utils.error(res, 500, "OAuthServerDidNotRespond");
-                return new Promise((resolve, reject) => resolve());
-            });
-
-        if (!user) {
-            return;
-        }
-
-        if (user.status !== 200) {
-            utils.error(res, 500, "InternalError");
-            return;
-        }
-
-        const userid = await utils.UserManager.getUserIDByOAuthID(
-            "scratch",
-            user.user.user_id,
-        );
-
-        if (!userid) {
-            // the method is not connected with an account
-            utils.error(res, 400, "MethodNotConnected");
-            return;
-        }
-
-        let username;
-        try {
-            username = await utils.UserManager.getUsernameByID(userid);
-        } catch (e) {
-            utils.error(
-                res,
-                500,
-                "This is an error. Please report this stuff: " +
-                    JSON.stringify({
-                        scratch_id: user.user.user_id,
-                        userid: userid,
-                    }),
+            const codeCheck = await utils.UserManager.verifyScratchVerifyCode(
+                code,
+                username,
             );
-            return;
-        }
 
-        const token = await utils.UserManager.newTokenGen(username);
+            if (!codeCheck.success) {
+                utils.error(res, 400, codeCheck.error);
+                return;
+            }
 
-        await utils.UserManager.addIPID(userid, req.realIP);
+            let scratchUser;
+            try {
+                const userResponse = await fetch(
+                    `https://api.scratch.mit.edu/users/${username}`,
+                );
+                if (!userResponse.ok) {
+                    utils.error(res, 404, "ScratchUserNotFound");
+                    return;
+                }
+                scratchUser = await userResponse.json();
+            } catch (e) {
+                utils.error(res, 500, "OAuthServerDidNotRespond");
+                return;
+            }
 
-        res.status(200);
-        res.redirect(
-            `/api/v1/users/sendloginsuccess?token=${token}&username=${username}`,
-        );
-    });
+            let hasCode;
+            try {
+                hasCode = await utils.UserManager.checkScratchCommentsForCode(
+                    username,
+                    code,
+                );
+            } catch (e) {
+                utils.error(res, 500, "FailedToFetchComments");
+                return;
+            }
+
+            if (!hasCode) {
+                res.status(400);
+                res.json({
+                    error: "CodeNotFoundInComments",
+                    instructions:
+                        "Please post the code as a comment on your Scratch profile",
+                });
+                return;
+            }
+
+            const userid = await utils.UserManager.getUserIDByOAuthID(
+                "scratch",
+                scratchUser.id,
+            );
+
+            if (!userid) {
+                utils.error(res, 400, "MethodNotConnected");
+                return;
+            }
+
+            let username_;
+            try {
+                username_ = await utils.UserManager.getUsernameByID(userid);
+            } catch (e) {
+                utils.error(
+                    res,
+                    500,
+                    "This is an error. Please report this stuff: " +
+                        JSON.stringify({
+                            scratch_id: scratchUser.id,
+                            userid: userid,
+                        }),
+                );
+                return;
+            }
+
+            const token = await utils.UserManager.newTokenGen(username_);
+
+            await utils.UserManager.addIPID(userid, req.realIP);
+
+            res.status(200);
+            res.json({ success: true, token, username: username_ });
+        },
+    );
 };
