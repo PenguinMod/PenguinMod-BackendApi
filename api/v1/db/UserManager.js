@@ -12,6 +12,7 @@ const os = require("os");
 const pmp_protobuf = require("pmp-protobuf");
 const sharp = require("sharp");
 const disposableDomains = require("disposable-email-domains");
+const cheerio = require("cheerio");
 
 const using_backblaze = process.env.UseBackblaze == "true";
 
@@ -3854,20 +3855,37 @@ class UserManager {
 
     /**
      * Generate a new OAuth2 state and save it for verification
+     * @param {any?} data Any extra data to store with the state
      * @returns {Promise<string>} The state
      */
-    async generateOAuth2State(extra = "") {
-        const state = (randomBytes(32).toString("base64") + extra).replaceAll(
-            "+",
-            "-",
-        );
+    async generateOAuth2State(data = null) {
+        const state = this.makeASuperAwesomeState();
 
         await this.oauthStates.insertOne({
-            state: state,
+            state,
+            data,
             createdAt: new Date(),
         });
 
         return state;
+    }
+
+    /**
+     * Register an OAuth2 state
+     * @param {string} state The state to save
+     * @param {any?} data Any extra data to store with the state
+     * @returns {Promise<null>}
+     */
+    async registerOAuth2CustomState(state, data = null) {
+        await this.oauthStates.insertOne({
+            state: state,
+            data,
+            createdAt: new Date(),
+        });
+    }
+
+    makeASuperAwesomeState() {
+        return randomBytes(32).toString("base64").replaceAll("+", "-");
     }
 
     /**
@@ -3929,9 +3947,9 @@ class UserManager {
         let check_username = true;
         switch (method) {
             case "scratch":
-                username = data.user_name.toLowerCase();
-                real_username = data.user_name;
-                id = data.user_id;
+                username = data.username;
+                real_username = data.real_username;
+                id = data.id;
                 break;
             case "google":
                 id = data.id;
@@ -6266,6 +6284,83 @@ class UserManager {
         }
 
         return true;
+    }
+
+    /**
+     * Get the comments on a scratch account
+     * @param {string} username The user's scratch username
+     * @returns {Promise<{author: string, message: string, id: number}[]>}
+     */
+    async getScratchComments(username) {
+        const url = `https://scratch.mit.edu/site-api/comments/user/${username}`;
+
+        const page = cheerio.load(await fetch(url).then((res) => res.text()));
+
+        console.log(username);
+
+        return page(".comment")
+            .map((_, comment) => {
+                const el = page(comment);
+
+                const author = el.find(".name").first().text().trim();
+
+                const message = el.find(".content").first().text().trim();
+
+                // user id, not message id
+                // i am sorry for my crimes
+                const id = Number(
+                    el
+                        .find(".avatar")
+                        .first()
+                        .attr("src")
+                        .split("/user/")[1]
+                        .split("_")[0],
+                );
+
+                return {
+                    author,
+                    message,
+                    id,
+                };
+            })
+            .toArray();
+    }
+
+    /**
+     * Check if a scratch code is valid (i.e. was posted by the user in their comments)
+     * @param {string} username The user's SCRATCH username
+     * @param {string} code The code provided to the user by the server
+     */
+    async isValidScratchCode(username, code) {
+        const comments = await this.getScratchComments(username);
+
+        console.log(JSON.stringify(comments));
+
+        const comment = comments.find(
+            (c) => c.author == username && c.message.trim() == code,
+        );
+
+        return comment ? { valid: true, id: comment.id } : { valid: false };
+    }
+
+    isValidScratchUsername(username) {
+        // only letters, numbers, -, and _
+        return /^[A-Za-z0-9_-]+$/.test(username);
+    }
+
+    async scratchUserExists(username) {
+        const url = `https://api.scratch.mit.edu/users/${username}`;
+
+        const data = await fetch(url)
+            .then((res) => res.json())
+            .catch(() => ({
+                code: "FailedToConnect",
+            }));
+
+        // if data.code is there, the user does not exist (error message is NotFound)
+        const exists = !data.code;
+
+        return exists;
     }
 }
 

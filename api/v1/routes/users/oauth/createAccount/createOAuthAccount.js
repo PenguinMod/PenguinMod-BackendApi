@@ -5,6 +5,8 @@ const UserManager = require("../../../../db/UserManager");
  * @property {UserManager} UserManager
  */
 
+// TODO: this should be a post
+
 /**
  *
  * @param {any} app Express app
@@ -26,26 +28,23 @@ module.exports = (app, utils) => {
             return;
         }
 
-        // using switch case cuz erm i like it
-        const state = await utils.UserManager.generateOAuth2State();
         switch (method) {
             case "scratch":
+                // we no longer use scratch oauth but we're gonna pretend we do
+                // redirect to homepage scratch thing.
                 res.redirect(
-                    `https://oauth2.scratch-wiki.info/wiki/Special:ScratchOAuth2/authorize?client_id=${utils.env.ScratchOAuthClientID}&redirect_uri=${utils.env.ApiURL}/api/v1/users/scratchoauthcreate&scopes=identify&state=${state}`,
+                    `${utils.env.HomeURL}/scratchaccount?method=create`,
                 );
                 break;
-            case "github":
+            case "github": {
+                const state = await utils.UserManager.generateOAuth2State();
                 res.redirect(
                     `https://github.com/login/oauth/authorize?client_id=${utils.env.GithubOAuthClientID}&redirect_uri=${utils.env.ApiURL}/api/v1/users/githubcallback/createaccount&state=${state}&scope=read:user`,
                 );
                 break;
-            case "google":
-                /*
-                // __DISABLE
-                utils.error(res, 400, "Google OAuth Disabled");
-                return;
-                */
-
+            }
+            case "google": {
+                const state = await utils.UserManager.generateOAuth2State();
                 const oauth2Client = new utils.googleOAuth2Client(
                     utils.env.GoogleOAuthClientID,
                     utils.env.GoogleOAuthClientSecret,
@@ -59,6 +58,7 @@ module.exports = (app, utils) => {
                 });
                 res.redirect(authorizeUrl);
                 break;
+            }
             default:
                 utils.error(res, 400, "Invalid method");
                 return;

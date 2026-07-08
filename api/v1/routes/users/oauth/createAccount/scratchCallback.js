@@ -11,115 +11,87 @@ const UserManager = require("../../../../db/UserManager");
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.get("/api/v1/users/scratchoauthcreate", async function (req, res) {
-        const packet = req.query;
+    app.get(
+        "/api/v1/users/scratchcallback/createaccount",
+        async function (req, res) {
+            const packet = req.query;
 
-        const state = String(packet.state);
-        const code = String(packet.code);
+            const real_username = String(packet.username).trim();
+            const username = real_username.toLowerCase();
+            const code = String(packet.code);
 
-        if (!state || !code) {
-            utils.error(res, 400, "Missing state or code");
-            return;
-        }
+            if (!code) {
+                utils.error(res, 400, "Missing state or code");
+                return;
+            }
 
-        if (!(await utils.UserManager.verifyOAuth2State(state))) {
-            utils.error(res, 400, "Invalid state");
-            return;
-        }
+            const data = await utils.UserManager.isValidScratchCode(
+                username,
+                code,
+            );
 
-        // now make the request
-        const response = await utils.UserManager.makeOAuth2Request(
-            code,
-            "scratch",
-        );
+            if (!data.valid) {
+                // TODO: we should maybe redir back to the original page, or we should rework how this works
+                // (instead of rediring to backend, we send a request then if it succeeds just write the
+                // username/token)
+                return utils.error(res, 400, "Invalid code");
+            }
 
-        if (!response) {
-            utils.error(res, 500, "OAuthServerDidNotRespond");
-            return;
-        }
+            if (
+                await utils.UserManager.getUserIDByOAuthID("scratch", data.id)
+            ) {
+                utils.error(res, 400, "AccountExists");
+                return;
+            }
 
-        const username = await fetch(
-            "https://oauth2.scratch-wiki.info/w/rest.php/soa2/v0/user",
-            {
-                headers: {
-                    Authorization: `Bearer ${btoa(response.access_token)}`,
-                },
-            },
-        )
-            .then(async (res) => {
-                return { user: await res.json(), status: res.status };
-            })
-            .catch((e) => {
-                utils.error(res, 500, "OAuthServerDidNotRespond");
-                return new Promise((resolve, reject) => resolve());
-            });
-
-        if (!username) {
-            return;
-        }
-
-        if (username.status !== 200) {
-            utils.error(res, 500, "InternalError");
-            return;
-        }
-
-        if (
-            await utils.UserManager.getUserIDByOAuthID(
+            // create the user
+            const userdata = await utils.UserManager.makeOAuth2Account(
                 "scratch",
-                username.user.user_id,
+                { id: data.id, username, real_username },
+                utils,
+                res,
+            );
+
+            if (!userdata) {
+                utils.error(res, 400, "UnknownError");
+                return;
+            }
+
+            const profilePicture = await fetch(
+                `https://trampoline.turbowarp.org/avatars/by-username/${username}`,
             )
-        ) {
-            utils.error(res, 400, "AccountExists");
-            return;
-        }
+                .then((res) => res.arrayBuffer())
+                .catch((e) => {
+                    utils.error(res, 500, "InternalError");
+                    return new Promise((resolve, reject) => resolve());
+                });
 
-        // create the user
-        const userdata = await utils.UserManager.makeOAuth2Account(
-            "scratch",
-            username.user,
-            utils,
-            res,
-        );
+            if (!profilePicture) {
+                return;
+            }
 
-        if (!userdata) {
-            utils.error(res, 400, "UnknownError");
-            return;
-        }
+            const pfp_buffer = Buffer.from(profilePicture);
 
-        const profilePicture = await fetch(
-            `https://trampoline.turbowarp.org/avatars/by-username/${username.user.user_name.toLowerCase()}`,
-        )
-            .then((res) => res.arrayBuffer())
-            .catch((e) => {
-                utils.error(res, 500, "InternalError");
-                return new Promise((resolve, reject) => resolve());
-            });
+            await utils.UserManager.setProfilePicture(
+                userdata.username,
+                pfp_buffer,
+            );
 
-        if (!profilePicture) {
-            return;
-        }
+            const accountUsername = userdata.username;
+            const token = userdata.token;
 
-        const pfp_buffer = Buffer.from(profilePicture);
+            await utils.UserManager.addIPID(userdata.id, req.realIP);
+            await utils.logs.sendCreationLog(
+                accountUsername,
+                userdata.id,
+                "",
+                "account",
+            );
 
-        await utils.UserManager.setProfilePicture(
-            userdata.username,
-            pfp_buffer,
-        );
-
-        const accountUsername = userdata.username;
-        const token = userdata.token;
-
-        await utils.UserManager.addIPID(userdata.id, req.realIP);
-        await utils.logs.sendCreationLog(
-            accountUsername,
-            userdata.id,
-            "",
-            "account",
-        );
-
-        res.status(200);
-        res.redirect(
-            `/api/v1/users/sendloginsuccess?token=${token}&username=${accountUsername}`,
-        );
-    });
+            res.status(200);
+            res.redirect(
+                `/api/v1/users/sendloginsuccess?token=${token}&username=${accountUsername}`,
+            );
+        },
+    );
 };
