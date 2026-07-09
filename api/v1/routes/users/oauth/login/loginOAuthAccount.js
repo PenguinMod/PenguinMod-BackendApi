@@ -22,26 +22,29 @@ module.exports = (app, utils) => {
             return;
         }
 
-        // using switch case cuz erm i like it
-        const state = await utils.UserManager.generateOAuth2State();
+        // TODO: perhaps we should give scratchaccount a code now, instead of getting it actively on the page
+        // after entering username
         switch (method) {
             case "scratch":
                 res.redirect(
-                    `https://oauth2.scratch-wiki.info/wiki/Special:ScratchOAuth2/authorize?client_id=${utils.env.ScratchOAuthClientID}&redirect_uri=${utils.env.ApiURL}/api/v1/users/scratchoauthlogin&scopes=identify&state=${state}`,
+                    `${utils.env.HomeURL}/scratchaccount?method=login`,
                 );
                 break;
-            case "github":
+            case "github": {
+                const state = await utils.UserManager.generateOAuth2State();
                 res.redirect(
                     `https://github.com/login/oauth/authorize?client_id=${utils.env.GithubOAuthClientID}&redirect_uri=${utils.env.ApiURL}/api/v1/users/githubcallback/login&state=${state}&scope=read:user`,
                 );
                 break;
-            case "google":
+            }
+            case "google": {
                 /*
                 // __DISABLE
                 utils.error(res, 400, "Google OAuth Disabled");
                 return;
                 */
 
+                const state = await utils.UserManager.generateOAuth2State();
                 const oauth2Client = new utils.googleOAuth2Client(
                     utils.env.GoogleOAuthClientID,
                     utils.env.GoogleOAuthClientSecret,
@@ -56,6 +59,7 @@ module.exports = (app, utils) => {
 
                 res.redirect(authorizeUrl);
                 break;
+            }
             default:
                 utils.error(res, 400, "Invalid method");
                 return;
