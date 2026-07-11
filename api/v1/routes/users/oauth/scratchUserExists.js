@@ -1,4 +1,4 @@
-const UserManager = require("../../../../db/UserManager");
+const UserManager = require("../../../db/UserManager");
 
 /**
  * @typedef {Object} Utils
@@ -11,7 +11,7 @@ const UserManager = require("../../../../db/UserManager");
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.get("/api/v1/users/scratchusergetcode", async function (req, res) {
+    app.get("/api/v1/users/scratchuserexists", async function (req, res) {
         const packet = req.query;
 
         const username = String(packet.username).toLowerCase();
@@ -21,13 +21,8 @@ module.exports = (app, utils) => {
             : false;
 
         const code = exists
-            ? // "inspiration" taken from ScratchOAuth2
-              `Copy this paragraph (including both the code and this message). Only post this code if it came from ${utils.env.HomeURL} | ${utils.UserManager.makeASuperAwesomeState()}`
+            ? await utils.UserManager.generateScratchCode()
             : null;
-
-        if (exists) {
-            await utils.UserManager.registerOAuth2CustomState(code);
-        }
 
         res.status(200);
         res.header("Content-Type", "application/json");

@@ -22,14 +22,15 @@ module.exports = (app, utils) => {
             return;
         }
 
-        // TODO: perhaps we should give scratchaccount a code now, instead of getting it actively on the page
-        // after entering username
         switch (method) {
-            case "scratch":
+            case "scratch": {
+                const state =
+                    await utils.UserManager.generateScratchCode();
                 res.redirect(
-                    `${utils.env.HomeURL}/scratchaccount?method=login`,
+                    `${utils.env.HomeURL}/scratchaccount?method=login&code=${encodeURIComponent(state)}`,
                 );
                 break;
+            }
             case "github": {
                 const state = await utils.UserManager.generateOAuth2State();
                 res.redirect(

@@ -3846,11 +3846,9 @@ class UserManager {
             createdAt: { $lt: new Date(Date.now() + 1000 * 60 * 5) },
         });
 
-        // now get rid of the state cuz uh we dont need it anymore
-
         if (result) await this.oauthStates.deleteOne({ state: state });
 
-        return result ? true : false;
+        return result ? result.data || true : false;
     }
 
     /**
@@ -3861,11 +3859,7 @@ class UserManager {
     async generateOAuth2State(data = null) {
         const state = this.makeASuperAwesomeState();
 
-        await this.oauthStates.insertOne({
-            state,
-            data,
-            createdAt: new Date(),
-        });
+        await this.registerOAuth2CustomState(state, data);
 
         return state;
     }
@@ -3886,6 +3880,14 @@ class UserManager {
 
     makeASuperAwesomeState() {
         return randomBytes(32).toString("base64").replaceAll("+", "-");
+    }
+
+    async generateScratchCode(data = null) {
+        const code = `Copy this paragraph (including both the code and this message). Only post this code if it came from ${process.env.HomeURL} | ${this.makeASuperAwesomeState()}`;
+
+        await this.registerOAuth2CustomState(code, data);
+
+        return code;
     }
 
     /**
@@ -6296,8 +6298,6 @@ class UserManager {
 
         const page = cheerio.load(await fetch(url).then((res) => res.text()));
 
-        console.log(username);
-
         return page(".comment")
             .map((_, comment) => {
                 const el = page(comment);
@@ -6333,8 +6333,6 @@ class UserManager {
      */
     async isValidScratchCode(username, code) {
         const comments = await this.getScratchComments(username);
-
-        console.log(JSON.stringify(comments));
 
         const comment = comments.find(
             (c) => c.author == username && c.message.trim() == code,

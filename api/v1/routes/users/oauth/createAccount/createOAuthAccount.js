@@ -29,13 +29,14 @@ module.exports = (app, utils) => {
         }
 
         switch (method) {
-            case "scratch":
-                // we no longer use scratch oauth but we're gonna pretend we do
-                // redirect to homepage scratch thing.
+            case "scratch": {
+                const state =
+                    await utils.UserManager.generateScratchCode();
                 res.redirect(
-                    `${utils.env.HomeURL}/scratchaccount?method=create`,
+                    `${utils.env.HomeURL}/scratchaccount?method=create&code=${encodeURIComponent(state)}`,
                 );
                 break;
+            }
             case "github": {
                 const state = await utils.UserManager.generateOAuth2State();
                 res.redirect(

@@ -42,30 +42,26 @@ module.exports = (app, utils) => {
 
             const userid = await utils.UserManager.getIDByUsername(username);
 
-            // using switch case cuz erm i like it
-            // TODO: we should not store the user id in the state. it exposes the user id to the methods.
-            // which isnt terrible but still. Instead, we should store the user id with the state in the DB.
-            let state = await utils.UserManager.generateOAuth2State(
-                `_${userid}`,
-            );
             switch (method) {
-                case "scratch":
+                case "scratch": {
+                    const state =
+                        await utils.UserManager.generateScratchCode(userid);
                     res.redirect(
-                        `https://oauth2.scratch-wiki.info/wiki/Special:ScratchOAuth2/authorize?client_id=${utils.env.ScratchOAuthClientID}&redirect_uri=${utils.env.ApiURL}/api/v1/users/addscratchlogin&scopes=identify&state=${state}`,
+                        `${utils.env.HomeURL}/scratchaccount?method=addmethod&code=${encodeURIComponent(state)}`,
                     );
                     break;
-                case "github":
+                }
+                case "github": {
+                    const state =
+                        await utils.UserManager.generateOAuth2State(userid);
                     res.redirect(
                         `https://github.com/login/oauth/authorize?client_id=${utils.env.GithubOAuthClientID}&redirect_uri=${utils.env.ApiURL}/api/v1/users/githubcallback/addmethod&state=${state}&scope=read:user`,
                     );
                     break;
-                case "google":
-                    /*
-                // __DISABLE
-                utils.error(res, 400, "Google OAuth Disabled");
-                return;
-                */
-
+                }
+                case "google": {
+                    const state =
+                        await utils.UserManager.generateOAuth2State(userid);
                     const oauth2Client = new utils.googleOAuth2Client(
                         utils.env.GoogleOAuthClientID,
                         utils.env.GoogleOAuthClientSecret,
@@ -79,6 +75,7 @@ module.exports = (app, utils) => {
                     });
                     res.redirect(authorizeUrl);
                     break;
+                }
                 default:
                     utils.error(res, 400, "Invalid method");
                     return;
