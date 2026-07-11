@@ -24,12 +24,11 @@ module.exports = (app, utils) => {
                 return;
             }
 
-            if (!(await utils.UserManager.verifyOAuth2State(state))) {
+            const userid = await utils.UserManager.verifyOAuth2State(state);
+            if (!userid) {
                 utils.error(res, 400, "InvalidState");
                 return;
             }
-
-            const userid = state.split("_")[1]; // get the userid from the state (a little hacky)
 
             const response = await utils.UserManager.makeOAuth2Request(
                 code,
@@ -63,6 +62,13 @@ module.exports = (app, utils) => {
                 return;
             }
 
+            const github_id = user.user.id;
+
+            if (await utils.UserManager.OAuthMethodInUse(github_id, "github")) {
+                utils.error(res, 400, "AccountAlreadyInUse");
+                return;
+            }
+
             const username = await utils.UserManager.getUsernameByID(userid);
 
             const methods = await utils.UserManager.getOAuthMethods(username);
@@ -75,7 +81,7 @@ module.exports = (app, utils) => {
             await utils.UserManager.addOAuthMethod(
                 username,
                 "github",
-                user.user.id,
+                github_id,
             );
 
             const token = await utils.UserManager.newTokenGen(username);

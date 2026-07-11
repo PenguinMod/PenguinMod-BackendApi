@@ -6360,6 +6360,10 @@ class UserManager {
 
         return exists;
     }
+
+    async OAuthMethodInUse(code, method) {
+        return !!(await this.oauthIDs.findOne({code, method}));
+    }
 }
 
 module.exports = UserManager;

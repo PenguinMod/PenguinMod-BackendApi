@@ -14,55 +14,30 @@ module.exports = (app, utils) => {
     app.get("/api/v1/users/addscratchlogin", async function (req, res) {
         const packet = req.query;
 
-        const state = String(packet.state);
+        const scratch_username = String(packet.username).toLowerCase();
         const code = String(packet.code);
 
-        if (!state || !code) {
+        if (!scratch_username || !code) {
             utils.error(res, 400, "Missing state or code");
             return;
         }
 
-        if (!(await utils.UserManager.verifyOAuth2State(state))) {
+        const userid = await utils.UserManager.verifyOAuth2State(state);
+        if (!userid) {
             utils.error(res, 400, "InvalidState");
             return;
         }
 
-        const userid = state.split("_")[1]; // get the userid from the state (a little hacky)
+        const data = await utils.UserManager.isValidScratchCode(scratch_username, code);
 
-        // now make the request
-        const response = await utils.UserManager.makeOAuth2Request(
-            code,
-            "scratch",
-        );
-
-        if (!response) {
-            utils.error(res, 500, "OAuthServerDidNotRespond");
-            return;
+        if (!data.valid) {
+            return utils.error(res, 400, "Invalid code");
         }
 
-        const user = await fetch(
-            "https://oauth2.scratch-wiki.info/w/rest.php/soa2/v0/user",
-            {
-                headers: {
-                    Authorization: `Bearer ${btoa(response.access_token)}`,
-                },
-            },
-        )
-            .then(async (res) => {
-                return { user: await res.json(), status: res.status };
-            })
-            .catch((e) => {
-                utils.error(res, 500, "OAuthServerDidNotRespond");
-                return new Promise((resolve, reject) => resolve());
-            });
+        const scratch_id = data.id;
 
-        if (!user) {
-            return;
-        }
-
-        if (user.status !== 200) {
-            console.error(`Error with oauth status: ${JSON.stringify(user)}`);
-            utils.error(res, 500, "InternalError");
+        if (await utils.UserManager.OAuthMethodInUse(scratch_id, "scratch")) {
+            utils.error(res, 400, "AccountAlreadyInUse");
             return;
         }
 
@@ -78,7 +53,7 @@ module.exports = (app, utils) => {
         await utils.UserManager.addOAuthMethod(
             username,
             "scratch",
-            user.user.user_id,
+            scratch_id,
         );
 
         const token = await utils.UserManager.newTokenGen(username);

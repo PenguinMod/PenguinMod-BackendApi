@@ -22,12 +22,11 @@ module.exports = (app, utils) => {
             return;
         }
 
-        if (!(await utils.UserManager.verifyOAuth2State(state))) {
+        const userid = await utils.UserManager.verifyOAuth2State(state);
+        if (!userid) {
             utils.error(res, 400, "InvalidState");
             return;
         }
-
-        const userid = state.split("_")[1]; // get the userid from the state (a little hacky)
 
         const oauth2Client = new utils.googleOAuth2Client(
             utils.env.GoogleOAuthClientID,
@@ -50,7 +49,12 @@ module.exports = (app, utils) => {
             "https://people.googleapis.com/v1/people/me?personFields=names";
         const user = await oauth2Client.request({ url });
 
-        const id = user.data.resourceName.split("/")[1];
+        const google_id = user.data.resourceName.split("/")[1];
+
+        if (await utils.UserManager.OAuthMethodInUse(google_id, "google")) {
+            utils.error(res, 400, "AccountAlreadyInUse");
+            return;
+        }
 
         const username = await utils.UserManager.getUsernameByID(userid);
 
@@ -61,7 +65,7 @@ module.exports = (app, utils) => {
             return;
         }
 
-        await utils.UserManager.addOAuthMethod(username, "google", id);
+        await utils.UserManager.addOAuthMethod(username, "google", google_id);
 
         const token = await utils.UserManager.newTokenGen(username);
 
