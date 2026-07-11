@@ -83,7 +83,7 @@ module.exports = (app, utils) => {
 
         res.status(200);
         res.redirect(
-            `/api/v1/users/sendloginsuccess?token=${token}&username=${accountUsername}`,
+            `${utils.env.HomeURL}/loginsuccess?token=${token}&username=${username}`,
         );
     });
 };
