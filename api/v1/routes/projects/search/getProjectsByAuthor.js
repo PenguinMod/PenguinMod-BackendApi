@@ -82,6 +82,6 @@ module.exports = (app, utils) => {
             await utils.UserManager.addImpression(project.id);
         }
 
-        return res.send(projects);
+        res.send(projects);
     });
 };

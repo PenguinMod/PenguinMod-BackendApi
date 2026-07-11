@@ -53,6 +53,6 @@ module.exports = (app, utils) => {
         }
         // TODO: have the getWhoLoved method do this. because this is slow.
 
-        return res.send({ loves: usernames });
+        res.send({ loves: usernames });
     });
 };

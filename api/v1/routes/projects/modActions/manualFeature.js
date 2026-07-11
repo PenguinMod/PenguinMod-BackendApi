@@ -142,7 +142,7 @@ module.exports = (app, utils) => {
                 0xe5df18,
             );
 
-            return res.send({ success: true });
+            res.send({ success: true });
         },
     );
 };

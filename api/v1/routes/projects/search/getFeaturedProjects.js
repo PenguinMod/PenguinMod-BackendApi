@@ -21,6 +21,6 @@ module.exports = (app, utils) => {
             Number(utils.env.PageSize),
         );
 
-        return res.send(projects);
+        res.send(projects);
     });
 };

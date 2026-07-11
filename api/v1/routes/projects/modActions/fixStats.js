@@ -41,7 +41,7 @@ module.exports = (app, utils) => {
 
             await utils.UserManager.fixProjectStats(projectID);
 
-            return res.send({ success: true });
+            res.send({ success: true });
         },
     );
 };

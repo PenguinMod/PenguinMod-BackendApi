@@ -47,7 +47,7 @@ module.exports = (app, utils) => {
                 id,
             );
 
-            return res.send({ hasLoved, hasVoted });
+            res.send({ hasLoved, hasVoted });
         },
     );
 };

@@ -52,7 +52,7 @@ module.exports = (app, utils) => {
 
             await utils.UserManager.collectAndLess(id, concatted);
 
-            return res.send({ success: true });
+            res.send({ success: true });
         },
     );
 };

@@ -35,6 +35,6 @@ module.exports = (app, utils) => {
         }
 
         res.header("Cache-Control", "public, max-age=999999999");
-        return res.send(asset);
+        res.send(asset);
     });
 };

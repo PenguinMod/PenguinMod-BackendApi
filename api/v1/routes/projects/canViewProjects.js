@@ -17,6 +17,6 @@ module.exports = (app, utils) => {
 
         res.status(200);
         res.header("Content-Type", "application/json");
-        return res.send({ viewing: viewing });
+        res.send({ viewing: viewing });
     });
 };

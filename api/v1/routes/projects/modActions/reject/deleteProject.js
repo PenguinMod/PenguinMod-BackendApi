@@ -110,7 +110,7 @@ module.exports = (app, utils) => {
 
             await utils.UserManager.deleteProject(projectID);
 
-            return res.send({ success: true });
+            res.send({ success: true });
         },
     );
 };

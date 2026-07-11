@@ -68,6 +68,6 @@ module.exports = (app, utils) => {
             0xc96800,
         );
 
-        return res.send({ success: true });
+        res.send({ success: true });
     });
 };

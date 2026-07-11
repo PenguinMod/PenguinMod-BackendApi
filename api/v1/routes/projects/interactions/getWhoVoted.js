@@ -54,6 +54,6 @@ module.exports = (app, utils) => {
             usernames.push(username);
         }
 
-        return res.send({ votes: usernames });
+        res.send({ votes: usernames });
     });
 };

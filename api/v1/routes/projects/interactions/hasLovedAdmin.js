@@ -50,7 +50,7 @@ module.exports = (app, utils) => {
 
             const has = await utils.UserManager.hasLovedProject(projectID, id);
 
-            return res.send({ hasLoved: has });
+            res.send({ hasLoved: has });
         },
     );
 };

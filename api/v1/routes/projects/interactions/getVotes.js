@@ -26,6 +26,6 @@ module.exports = (app, utils) => {
 
         const votes = await utils.UserManager.getProjectVotes(projectID);
 
-        return res.send({ votes: votes });
+        res.send({ votes: votes });
     });
 };

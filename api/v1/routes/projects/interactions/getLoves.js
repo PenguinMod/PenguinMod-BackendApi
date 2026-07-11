@@ -26,6 +26,6 @@ module.exports = (app, utils) => {
 
         const loves = await utils.UserManager.getProjectLoves(projectID);
 
-        return res.send({ loves: loves });
+        res.send({ loves: loves });
     });
 };

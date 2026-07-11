@@ -77,6 +77,6 @@ module.exports = (app, utils) => {
             assets = await utils.UserManager.getProjectAssets(projectId);
         }
 
-        return res.send({ project, assets });
+        res.send({ project, assets });
     });
 };

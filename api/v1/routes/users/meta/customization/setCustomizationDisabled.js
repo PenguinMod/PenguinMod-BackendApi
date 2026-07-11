@@ -57,7 +57,7 @@ module.exports = (app, utils) => {
 
             res.status(200);
             res.header("Content-Type", "application/json");
-            return res.send({ success: true });
+            res.send({ success: true });
         },
     );
 };
