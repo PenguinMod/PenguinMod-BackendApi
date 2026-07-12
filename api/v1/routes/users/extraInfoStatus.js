@@ -32,11 +32,12 @@ module.exports = (app, utils) => {
 
             const birthdayEntered = user_meta.birthdayEntered;
             const countryEntered = user_meta.countryEntered;
+            const isEmailVerified = user_meta.emailVerified;
 
             const user = {
                 birthdayEntered,
                 countryEntered,
-                emailIsVerified,
+                isEmailVerified,
             };
 
             res.status(200);

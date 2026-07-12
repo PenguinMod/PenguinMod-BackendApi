@@ -88,7 +88,7 @@ module.exports = (app, utils) => {
             // TODO: 1 is limited, not yet implemented
 
             const email = user_meta.email;
-            const emailIsVerified = user_meta.emailVerified;
+            const isEmailVerified = user_meta.emailVerified;
 
             // there doesnt seem to be a particular reason to return the user's birthday at the moment
             const birthdayEntered = user_meta.birthdayEntered;
@@ -120,7 +120,7 @@ module.exports = (app, utils) => {
                 canFollowingSeeProfile,
                 standing,
                 email,
-                isEmailVerified: emailIsVerified,
+                isEmailVerified,
                 birthdayEntered,
                 countryEntered,
                 country: user_meta.country,
