@@ -259,7 +259,7 @@ module.exports = (app, utils) => {
                 return utils.error(res, 400, "Invalid image");
             }
 
-            // ATODO: use mmmagic to verify this is a valid image
+            // TODO: use mmmagic to verify this is a valid image
 
             const userid = await utils.UserManager.getIDByUsername(username);
 

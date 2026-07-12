@@ -1973,7 +1973,7 @@ class UserManager {
         rating,
     ) {
         let id;
-        // ATODO: replace this with a ulid somehow
+        // TODO: replace this with a ulid somehow
         // i love being whimsical ^^
         do {
             id = randomInt(0, 9999999999).toString();
@@ -2172,7 +2172,7 @@ class UserManager {
             } else {
                 await this.deleteMultipleObjects("project-assets", id);
             }
-            // ATODO: instead of doing this just replace the ones that were edited
+            // TODO: instead of doing this just replace the ones that were edited
             // potentially we could just see which ones are new/not in use, since asset ids are meant to be the hash of the file?
             // we'll need to start verifying that the name IS the hash but we need to do that anyways to save on storage space.
 
@@ -4980,7 +4980,7 @@ class UserManager {
 
         if (result.unbanTime > Date.now()) return 2;
         if (result.permBanned) return 3;
-        // ATODO: 2 is limited, not yet implemented
+        // TODO: 1 is limited, not yet implemented
         return 0;
     }
 

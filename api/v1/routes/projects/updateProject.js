@@ -216,7 +216,7 @@ module.exports = (app, utils) => {
                 return utils.error(res, 400, "Missing assets");
             }
 
-            // ATODO: make this only update, yk, the things that were updated
+            // TODO: make this only update, yk, the things that were updated
 
             // the jsonfile is in protobuf format so convert it to json
 
@@ -266,7 +266,7 @@ module.exports = (app, utils) => {
                 ? await sharp(unsized_thumbnail).resize(240, 180).toBuffer()
                 : null;
 
-            // ATODO: use mmmagic to verify this is a valid image
+            // TODO: use mmmagic to verify this is a valid image
 
             // get the assets and their ids
             let assets = null;

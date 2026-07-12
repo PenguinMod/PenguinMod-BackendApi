@@ -85,7 +85,7 @@ module.exports = (app, utils) => {
                     : user_meta.permBanned
                       ? 3
                       : 0;
-            // ATODO: 2 is limited, not yet implemented
+            // TODO: 1 is limited, not yet implemented
 
             const email = user_meta.email;
             const emailIsVerified = user_meta.emailVerified;
@@ -96,7 +96,8 @@ module.exports = (app, utils) => {
 
             if (user_meta.password) loginMethods.push("password");
 
-            const messageCount = await utils.UserManager.getUnreadMessageCount(id);
+            const messageCount =
+                await utils.UserManager.getUnreadMessageCount(id);
 
             const user = {
                 id,
