@@ -5328,7 +5328,8 @@ class UserManager {
             console.warn(
                 (state.endsWith("_VE")
                     ? "says ve but not ve"
-                    : "ve but says not ve") + ` - ${state.slice(-4)}`,
+                    : "ve but says not ve") +
+                    ` - ${state.slice(-4)} ({${email}})`,
             );
             return false;
         }
