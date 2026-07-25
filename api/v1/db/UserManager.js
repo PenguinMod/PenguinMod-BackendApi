@@ -5322,6 +5322,10 @@ class UserManager {
     }
 
     async verifyPasswordResetState(state, email, is_verify_email = false) {
+        if (!state || !email) {
+            return false;
+        }
+
         state = String(state);
         email = String(email);
         if (!state || state.endsWith("_VE") != is_verify_email) {
@@ -5329,7 +5333,7 @@ class UserManager {
                 (state.endsWith("_VE")
                     ? "says ve but not ve"
                     : "ve but says not ve") +
-                    ` - ${state.slice(-4)} ({${email}})`,
+                    ` - ${state.slice(-4)} (${email})`,
             );
             return false;
         }
