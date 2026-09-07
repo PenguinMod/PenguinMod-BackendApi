@@ -3817,7 +3817,7 @@ class UserManager {
                 this.illegalList.findOne({ id: "potentiallyUnsafeUsernames" }),
                 this.getLegalExtensions(),
             ])
-        ).map((t) => t.items);
+        ).map((t) => t.items ? t.items : t);
 
         return {
             illegalWords,
