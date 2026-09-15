@@ -6,6 +6,11 @@ const UserManager = require("../../../db/UserManager");
  * @property {UserManager} UserManager
  */
 
+let global_creation_counter = {
+    count: 0,
+    end: 0,
+};
+
 /**
  *
  * @param {any} app Express app
@@ -27,6 +32,21 @@ module.exports = (app, utils) => {
         }),
         async function (req, res) {
             const packet = req.body;
+
+            const limit_timer =
+                Number(utils.env.GlobalAccountCreationTimer) || 60;
+            const limit_amount =
+                Number(utils.env.GlobalAccountCreationLimit) || 5;
+
+            const now = Date.now();
+            if (global_creation_counter.end < now) {
+                global_creation_counter.end = now + limit_timer * 1000;
+                global_creation_counter.count = 0;
+            } else if (global_creation_counter.count >= limit_amount) {
+                return utils.error(res, 503, "Please try again later.");
+            }
+
+            global_creation_counter.count++;
 
             if (!(await utils.UserManager.canCreateAccount())) {
                 return utils.error(res, 403, "Account creation is not enabled");

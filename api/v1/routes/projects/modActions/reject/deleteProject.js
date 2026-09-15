@@ -84,7 +84,7 @@ module.exports = (app, utils) => {
                             // send url because eventually we'll have the objects expire instead of just deleting them striaight away
                             {
                                 name: "URL",
-                                value: `${utils.env.StudioURL}.com/#${projectID}`,
+                                value: `${utils.env.StudioURL}/#${projectID}`,
                             },
                         ],
                     },

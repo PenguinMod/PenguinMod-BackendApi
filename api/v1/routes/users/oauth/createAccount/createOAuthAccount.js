@@ -52,9 +52,13 @@ module.exports = (app, utils) => {
                     `${utils.env.ApiURL}/api/v1/users/googlecallback/createaccount`,
                 );
 
+                // TODO: we don't need the access_type offline. but i don't want to mess with it without testing right now.
                 const authorizeUrl = oauth2Client.generateAuthUrl({
                     access_type: "offline",
-                    scope: "https://www.googleapis.com/auth/userinfo.profile",
+                    scope: [
+                        "https://www.googleapis.com/auth/userinfo.profile",
+                        "https://www.googleapis.com/auth/userinfo.email",
+                    ],
                     state: state,
                 });
                 res.redirect(authorizeUrl);

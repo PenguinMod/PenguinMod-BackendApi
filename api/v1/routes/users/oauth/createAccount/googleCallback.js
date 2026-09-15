@@ -45,8 +45,11 @@ module.exports = (app, utils) => {
         oauth2Client.setCredentials(tokens);
 
         const url =
-            "https://people.googleapis.com/v1/people/me?personFields=names";
+            "https://people.googleapis.com/v1/people/me?personFields=names,emailAddresses";
         const user = await oauth2Client.request({ url });
+
+        // temporary
+        console.log(JSON.stringify(user, undefined, 2));
 
         const id = user.data.resourceName.split("/")[1];
 
