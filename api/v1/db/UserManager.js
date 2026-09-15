@@ -717,7 +717,7 @@ class UserManager {
      * Create an account
      * @param {string} username new username of the user
      * @param {string?} password new password of the user
-     * @param {string?} email_data email of the user, if provided
+     * @param {string|{email:string, valid: bool}|null} email_data email of the user
      * @param {string?} birthday birth date of the user formatted as an ISO string "1990-01-01T00:00:00.000Z", if provided
      * @param {string?} country country code if the user as defined by ISO 3166-1 Alpha-2, if provided
      * @param {boolean} is_studio whether or not the account being created is a studio or not

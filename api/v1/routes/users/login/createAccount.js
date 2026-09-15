@@ -9,6 +9,7 @@ const UserManager = require("../../../db/UserManager");
 let global_creation_counter = {
     count: 0,
     end: 0,
+    ping: false,
 };
 
 /**
@@ -42,7 +43,30 @@ module.exports = (app, utils) => {
             if (global_creation_counter.end < now) {
                 global_creation_counter.end = now + limit_timer * 1000;
                 global_creation_counter.count = 0;
+                // is this a good idea? idk
+                global_creation_counter.ping = false;
             } else if (global_creation_counter.count >= limit_amount) {
+                if (!global_creation_counter.ping) {
+                    // TODO: don't hardcode my discord ID
+                    logs.sendAdminLog(
+                        {
+                            action: "actoin",
+                            content: `<@790782926785609728> evil doer is doing evil maybe`,
+                            fields: [],
+                        },
+                        {
+                            name: "System",
+                            icon_url: String(
+                                `${utils.env.ApiURL}/api/v1/users/getpfp?username=system`,
+                            ),
+                            url: `${utils.env.HomeURL}/profile?user=system`,
+                        },
+                        0xcc0000,
+                    );
+
+                    global_creation_counter.ping = true;
+                }
+
                 return utils.error(res, 503, "Please try again later.");
             }
 
