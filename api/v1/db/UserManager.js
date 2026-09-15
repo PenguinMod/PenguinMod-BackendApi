@@ -805,7 +805,7 @@ class UserManager {
 
         let email = email_data;
         let emailVerified = false;
-        if (typeof email_data === "object") {
+        if (email_data && typeof email_data === "object") {
             email = email_data.email;
             emailVerified = email_data.verify;
         }
