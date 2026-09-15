@@ -48,10 +48,8 @@ module.exports = (app, utils) => {
             "https://people.googleapis.com/v1/people/me?personFields=names,emailAddresses";
         const user = await oauth2Client.request({ url });
 
-        // temporary
-        console.log(JSON.stringify(user, undefined, 2));
-
         const id = user.data.resourceName.split("/")[1];
+        const email = user.data.emailAddresses[0].value;
 
         if (await utils.UserManager.getUserIDByOAuthID("google", id)) {
             utils.error(res, 400, "AccountExists");
@@ -108,7 +106,7 @@ module.exports = (app, utils) => {
 
         const userdata = await utils.UserManager.makeOAuth2Account(
             "google",
-            { id, username },
+            { id, username, email },
             utils,
             res,
         );

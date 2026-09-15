@@ -717,7 +717,7 @@ class UserManager {
      * Create an account
      * @param {string} username new username of the user
      * @param {string?} password new password of the user
-     * @param {string?} email email of the user, if provided
+     * @param {string?} email_data email of the user, if provided
      * @param {string?} birthday birth date of the user formatted as an ISO string "1990-01-01T00:00:00.000Z", if provided
      * @param {string?} country country code if the user as defined by ISO 3166-1 Alpha-2, if provided
      * @param {boolean} is_studio whether or not the account being created is a studio or not
@@ -729,7 +729,7 @@ class UserManager {
         username,
         real_username,
         password,
-        email,
+        email_data,
         birthday,
         country,
         is_studio,
@@ -803,6 +803,13 @@ class UserManager {
 
         await potentiallyIllegalWordingError(username, "username");
 
+        let email = email_data;
+        let emailVerified = false;
+        if (typeof email_data === "object") {
+            email = email_data.email;
+            emailVerified = email_data.verify;
+        }
+
         const hash = password ? await bcrypt.hash(password, 10) : "";
         const id = ULID.ulid();
         const token = randomBytes(32).toString("hex");
@@ -830,7 +837,7 @@ class UserManager {
             lastLogin: current_time,
             lastUpload: 0,
             email,
-            emailVerified: false,
+            emailVerified,
             birthdayEntered: !!birthday,
             countryEntered: !!country,
             birthday,
@@ -3817,7 +3824,7 @@ class UserManager {
                 this.illegalList.findOne({ id: "potentiallyUnsafeUsernames" }),
                 this.getLegalExtensions(),
             ])
-        ).map((t) => t.items ? t.items : t);
+        ).map((t) => (t.items ? t.items : t));
 
         return {
             illegalWords,
@@ -3926,6 +3933,7 @@ class UserManager {
 
     async makeOAuth2Account(method, data, utils, res) {
         let username, id, real_username;
+        let email = null;
         let check_username = true;
         switch (method) {
             case "scratch":
@@ -3937,6 +3945,7 @@ class UserManager {
                 id = data.id;
                 username = data.username.toLowerCase();
                 real_username = data.username;
+                email = data.email;
                 check_username = false;
                 break;
             case "github":
@@ -3962,7 +3971,7 @@ class UserManager {
         const info = await this.createAccount(
             username,
             real_username,
-            null,
+            { email, verify: true },
             null,
             null,
             null,
