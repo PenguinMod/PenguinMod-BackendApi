@@ -3971,8 +3971,8 @@ class UserManager {
         const info = await this.createAccount(
             username,
             real_username,
-            { email, verify: true },
             null,
+            { email, verify: true },
             null,
             null,
             false,
