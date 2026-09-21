@@ -245,6 +245,18 @@ class UserManager {
         }
 
         await this.fixProjectStats("6002723934");
+
+        await this.backfillProjectInfo();
+    }
+
+    async backfillProjectInfo() {
+        const cursor = this.users.find({}, { projection: { id: 1, rank: 1 } });
+        for await (const user of cursor) {
+            await this.projects.updateMany(
+                { author: user.id },
+                { $set: { authorRank: user.rank } },
+            );
+        }
     }
 
     /**
@@ -717,7 +729,7 @@ class UserManager {
      * Create an account
      * @param {string} username new username of the user
      * @param {string?} password new password of the user
-     * @param {string|{email:string, valid: bool}|null} email_data email of the user
+     * @param {string|{email:string, valid: boolean}|null} email_data email of the user
      * @param {string?} birthday birth date of the user formatted as an ISO string "1990-01-01T00:00:00.000Z", if provided
      * @param {string?} country country code if the user as defined by ISO 3166-1 Alpha-2, if provided
      * @param {boolean} is_studio whether or not the account being created is a studio or not
@@ -1109,7 +1121,7 @@ class UserManager {
     /**
      * Get the ID of a user by username
      * @param {string} username username of the user
-     * @returns {Promise<string>} id of the user
+     * @returns {Promise<string|boolean>} id of the user
      * @async
      */
     async getIDByUsername(username, throw_err = true) {
@@ -1365,6 +1377,19 @@ class UserManager {
     }
 
     /**
+     * Get the rank of a user by ID
+     * @param {string} id ID of the user
+     * @returns {Promise<number>} rank of the user
+     * @async
+     */
+    async getRankByID(id) {
+        id = String(id);
+        const result = await this.users.findOne({ id });
+
+        return result.rank;
+    }
+
+    /**
      * Set the rank of a user
      * @param {string} username username of the user
      * @param {number} rank new rank of the user
@@ -1375,6 +1400,11 @@ class UserManager {
         await this.users.updateOne(
             { username: username },
             { $set: { rank: rank } },
+        );
+        const id = await this.getIDByUsername(username);
+        await this.projects.updateMany(
+            { author: id },
+            { $set: { authorRank: rank } },
         );
     }
 
@@ -2004,6 +2034,8 @@ class UserManager {
             }
         }
 
+        const author_rank = this.getRankByID(author);
+
         await this.projects.insertOne({
             id: id,
             author: author,
@@ -2022,6 +2054,7 @@ class UserManager {
             hardRejectTime: 0,
             impressions: 0,
             noFeature: false,
+            authorRank: author_rank,
         });
 
         await this.addToFeed(
@@ -4120,6 +4153,171 @@ class UserManager {
     }
 
     /**
+     *
+     * @param {string} query Query to search for. Searches for *exact matches*
+     * @param {"newest" | "views" | "votes" | "loves"} sort What to sort the projects by
+     * @param {boolean} reverse Reverse the sorting
+     * @param {Date?} before Only search for projects before this
+     * @param {Date?} after Only search for projects after this
+     * @param {string?} remix The id of the project to search for the remixes of, if provided
+     * @param {boolean?} featured Whether to search for only featured projects. True for only featured, false for only unfeatured, null/undefined for both
+     * @param {string?} author The id of a user, if you'd like to search for only their projects
+     * @param {"all" | "all-allowed" | "ranked" | "unranked" | "rejected"} include What types (standing) of projects to show
+     * @param {number} page The page to get
+     * @param {number} page_size The size of each page
+     */
+    async searchProjectsNew(
+        query,
+        sort,
+        reverse,
+        before,
+        after,
+        remix,
+        featured,
+        author,
+        include,
+        page,
+        page_size,
+    ) {
+        function escapeRegex(input) {
+            return String(input).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        }
+
+        const rev = reverse ? 1 : -1;
+
+        let expect = { softRejected: false, public: true };
+        switch (include) {
+            case "all":
+                expect = {};
+                break;
+
+            case "all-allowed":
+                break;
+            case "unranked":
+                expect["authorRank"] = 0;
+                break;
+            case "ranked":
+                expect["authorRank"] = 1;
+                break;
+
+            case "rejected":
+                expect = { softRejected: true };
+                break;
+        }
+
+        if (typeof featured === "boolean") {
+            expect["featured"] = featured;
+        }
+
+        if (author) {
+            expect["author"] = author;
+        }
+
+        if (remix) {
+            expect["remix"] = remix;
+        }
+
+        if (before || after) {
+            expect["date"] = {};
+            if (before) expect["date"]["$lt"] = before.getTime();
+            if (after) expect["date"]["$gt"] = after.getTime();
+        }
+
+        const pipeline = [
+            {
+                $match: {
+                    hardReject: false,
+                    ...expect,
+                    $or: [
+                        {
+                            title: {
+                                $regex: `.*${escapeRegex(query)}.*`,
+                                $options: "i",
+                            },
+                        },
+                        {
+                            instructions: {
+                                $regex: `.*${escapeRegex(query)}.*`,
+                                $options: "i",
+                            },
+                        },
+                        {
+                            notes: {
+                                $regex: `.*${escapeRegex(query)}.*`,
+                                $options: "i",
+                            },
+                        },
+                    ],
+                },
+            },
+        ];
+
+        switch (sort) {
+            case "newest-update":
+                pipeline.push({
+                    $sort: { lastUpdate: -1 * rev },
+                });
+                break;
+            case "newest-upload":
+                pipeline.push({
+                    $sort: { date: -1 * rev },
+                });
+                break;
+            case "views":
+                pipeline.push({
+                    $sort: { views: -1 * rev },
+                });
+                break;
+            case "loves":
+                pipeline.push({
+                    $sort: { loves: -1 * rev },
+                });
+                break;
+            case "votes":
+                pipeline.push({
+                    $sort: { votes: -1 * rev },
+                });
+                break;
+        }
+
+        pipeline.push(
+            {
+                $skip: page * page_size,
+            },
+            {
+                $limit: page_size,
+            },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "author",
+                    foreignField: "id",
+                    as: "authorInfo",
+                },
+            },
+            {
+                // set author to { id: old_.author, username: authorInfo.username }
+                $addFields: {
+                    author: {
+                        id: "$author",
+                        username: { $arrayElemAt: ["$authorInfo.username", 0] },
+                    },
+                    fromDonator: {
+                        $in: ["donator", "$authorInfo.badges"],
+                    },
+                },
+            },
+            {
+                $unset: ["_id", "authorInfo"],
+            },
+        );
+
+        const result = await this.projects.aggregate(pipeline).toArray();
+
+        return result;
+    }
+
+    /**
      * Search project names/instructions/notes by query
      * @param {boolean} show_unranked Show unranked users
      * @param {string} query Query to search for
@@ -4210,44 +4408,25 @@ class UserManager {
                 });
                 break;
             case "loves":
-                // collect likes
-                aggregateList.push(
-                    // top ones are gonna have most views, so lets just get top of those first
-                    {
-                        $sort: { views: -1 * rev },
-                    },
-                    {
-                        $skip: page * pageSize,
-                    },
-                    {
-                        $limit: maxPageSize,
-                    },
-                    {
-                        $sort: { loves: -1 * rev },
-                    },
-                );
+                aggregateList.push({
+                    $sort: { loves: -1 * rev },
+                });
                 break;
             case "votes":
-                aggregateList.push(
-                    {
-                        $sort: { views: -1 * rev },
-                    },
-                    {
-                        $skip: page * pageSize,
-                    },
-                    {
-                        $limit: maxPageSize,
-                    },
-                    {
-                        $sort: { votes: -1 * rev },
-                    },
-                );
+                aggregateList.push({
+                    $sort: { votes: -1 * rev },
+                });
                 break;
         }
 
-        aggregateList.push({
-            $limit: maxPageSize,
-        });
+        aggregateList.push(
+            {
+                $skip: page * pageSize,
+            },
+            {
+                $limit: maxPageSize,
+            },
+        );
 
         if (!show_unranked) {
             aggregateList.push(
@@ -4266,14 +4445,9 @@ class UserManager {
             );
         }
 
-        aggregateList.push(
-            {
-                $skip: page * pageSize,
-            },
-            {
-                $limit: pageSize,
-            },
-        );
+        aggregateList.push({
+            $limit: pageSize,
+        });
 
         if (show_unranked) {
             aggregateList.push({
