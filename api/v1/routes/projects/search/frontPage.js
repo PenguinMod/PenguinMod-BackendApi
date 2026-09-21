@@ -90,7 +90,6 @@ module.exports = (app, utils) => {
                         is_mod,
                         0,
                         Number(utils.env.PageSize) * 2,
-                        Number(utils.env.MaxPageSize),
                         user_id,
                         false,
                         false,
@@ -103,19 +102,6 @@ module.exports = (app, utils) => {
                 tagged: fitsTags,
                 latest: latest,
             };
-
-            /*
-                    if (user_and_logged_in) {
-                        const is_donator = await utils.UserManager.isDonator(username);
-                        if (is_donator) {
-                            console.log("-------TIMING SUGGESTED-------");
-                            console.time("suggested");
-                            const fyp = await utils.UserManager.getFYP(username, 0, Number(utils.env.PageSize), Number(utils.env.MaxPageSize));
-                            page.suggested = fyp;
-                            console.timeEnd("suggested");
-                        }
-                    }
-                    */
 
             page.selectedTag = tag;
 

@@ -31,7 +31,6 @@ module.exports = (app, utils) => {
             is_mod,
             page,
             Number(utils.env.PageSize),
-            Number(utils.env.MaxPageSize),
             null,
             reverse,
         );

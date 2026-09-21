@@ -245,10 +245,9 @@ class UserManager {
         }
 
         await this.fixProjectStats("6002723934");
-
-        await this.backfillProjectInfo();
     }
 
+    /*
     async backfillProjectInfo() {
         await this.projects.updateMany({}, { $set: { authorRank: 0 } });
 
@@ -263,6 +262,7 @@ class UserManager {
             );
         }
     }
+    */
 
     /**
      * Generate an auth token
@@ -2253,7 +2253,6 @@ class UserManager {
         show_nonranked,
         page,
         pageSize,
-        maxLookup,
         user_id,
         reverse = false,
         remove_blocked = false,
@@ -2266,6 +2265,13 @@ class UserManager {
                     public: true,
                 },
             },
+        ];
+
+        if (!show_nonranked) {
+            pipeline.push({ $match: { authorRank: { $gt: 0 } } });
+        }
+
+        pipeline.push(
             {
                 $sort: { lastUpdate: reverse ? 1 : -1 },
             },
@@ -2273,9 +2279,9 @@ class UserManager {
                 $skip: page * pageSize,
             },
             {
-                $limit: maxLookup,
+                $limit: pageSize,
             },
-        ];
+        );
 
         pipeline.push({
             $lookup: {
@@ -2285,10 +2291,6 @@ class UserManager {
                 as: "authorInfo",
             },
         });
-
-        if (!show_nonranked) {
-            pipeline.push({ $match: { "authorInfo.rank": { $gt: 0 } } });
-        }
 
         if (user_id && remove_blocked) {
             pipeline.push(
@@ -2324,17 +2326,14 @@ class UserManager {
             },
         );
 
-        if (show_nonranked) {
-            pipeline.push({
-                // collect author data
-                $lookup: {
-                    from: "users",
-                    localField: "author",
-                    foreignField: "id",
-                    as: "authorInfo",
-                },
-            });
-        }
+        pipeline.push({
+            $lookup: {
+                from: "users",
+                localField: "author",
+                foreignField: "id",
+                as: "authorInfo",
+            },
+        });
 
         pipeline.push(
             {
@@ -2355,19 +2354,6 @@ class UserManager {
 
         const aggResult = await this.projects.aggregate(pipeline).toArray();
 
-        /*
-        const final = []
-        for (const project of aggResult[0].data) {
-            delete project._id;
-            project.author = {
-                id: project.author,
-                username: project.authorInfo[0].username
-            }
-            delete project.authorInfo; // dont include sensitive info!!!
-            final.push(project);
-        }
-
-        return final;*/
         return aggResult;
     }
 
@@ -4383,6 +4369,14 @@ class UserManager {
             },
         ];
 
+        if (!show_unranked) {
+            aggregateList.push({
+                $match: {
+                    authorRank: { $gt: 0 },
+                },
+            });
+        }
+
         const rev = reverse ? -1 : 1;
 
         switch (type) {
@@ -4429,41 +4423,18 @@ class UserManager {
                 $skip: page * pageSize,
             },
             {
-                $limit: maxPageSize,
+                $limit: pageSize,
             },
         );
 
-        if (!show_unranked) {
-            aggregateList.push(
-                {
-                    $lookup: {
-                        from: "users",
-                        localField: "author",
-                        foreignField: "id",
-                        as: "authorInfo",
-                    },
-                },
-                {
-                    // only allow ranked users to show up
-                    $match: { "authorInfo.rank": { $gt: 0 } },
-                },
-            );
-        }
-
         aggregateList.push({
-            $limit: pageSize,
+            $lookup: {
+                from: "users",
+                localField: "author",
+                foreignField: "id",
+                as: "authorInfo",
+            },
         });
-
-        if (show_unranked) {
-            aggregateList.push({
-                $lookup: {
-                    from: "users",
-                    localField: "author",
-                    foreignField: "id",
-                    as: "authorInfo",
-                },
-            });
-        }
 
         aggregateList.push(
             {
@@ -4484,38 +4455,6 @@ class UserManager {
         );
 
         const result = await this.projects.aggregate(aggregateList).toArray();
-
-        /*
-        const final = [];
-        for (const project of result[0].data) {
-            delete project._id;
-            project.author = {
-                id: project.author,
-                username: await this.getUsernameByID(project.author)
-            }
-
-            if (project.projectStatsData) {
-                delete project.projectStatsData;
-            }
-
-            final.push(project);
-        }
-            */
-
-        /*
-        if (result.length < 20 && !notes_and_instructions) {
-            return await this.searchProjects(
-                show_unranked,
-                query,
-                type,
-                page,
-                pageSize,
-                maxPageSize,
-                reverse,
-                true,
-            );
-        }
-        */
 
         return result;
     }
@@ -4563,74 +4502,7 @@ class UserManager {
             ])
             .toArray();
 
-        /*
-        const cleaned = result[0].data.map(x => {let v = x;delete v._id;return v;})
-
-        const final = cleaned.map((user) => ({username: user.username, id: user.id}))
-        */
-
         return result;
-    }
-
-    /**
-     * Specialized search for a query, like { author: abc } or another metadata item, (you can also use cool mongodb stuff!!)
-     * @param {Array<Object>} query Query to search for, will be expanded with ...
-     * @param {number} page Page of projects to get
-     * @param {number} pageSize Amount of projects to get
-     * @returns {Promise<Array<Object>>} Array of projects
-     */
-    async specializedSearch(query, page, pageSize, maxPageSize) {
-        let pipeline = [
-            {
-                $sort: { lastUpdate: -1 },
-            },
-            {
-                $skip: page * pageSize,
-            },
-            {
-                $limit: maxPageSize,
-            },
-            ...query,
-            {
-                $limit: pageSize,
-            },
-            {
-                $lookup: {
-                    from: "users",
-                    localField: "author",
-                    foreignField: "id",
-                    as: "authorInfo",
-                },
-            },
-            {
-                $addFields: {
-                    author: {
-                        id: "$author",
-                        username: { $arrayElemAt: ["$authorInfo.username", 0] },
-                    },
-                },
-            },
-            {
-                $unset: ["authorInfo", "_id"],
-            },
-        ];
-
-        const aggResult = await this.projects.aggregate(pipeline).toArray();
-
-        /*
-        const final = []
-        for (const project of aggResult[0].data) {
-            delete project._id;
-            project.author = {
-                id: project.author,
-                username: project.authorInfo[0].username
-            }
-            delete project.authorInfo; // dont send sensitive info
-            final.push(project);
-        }
-            */
-
-        return aggResult;
     }
 
     async almostFeatured(page, pageSize, maxPageSize) {
@@ -4679,69 +4551,6 @@ class UserManager {
                         },
                         fromDonator: {
                             $in: ["donator", "$authorInfo.badges"],
-                        },
-                    },
-                },
-                {
-                    $unset: ["_id", "authorInfo"],
-                },
-            ])
-            .toArray();
-
-        return result;
-    }
-
-    async mostLiked(page, pageSize, maxPageSize) {
-        const time_after = Date.now() - 1000 * 60 * 60 * 24 * 14;
-        const result = await this.projects
-            .aggregate([
-                {
-                    $match: {
-                        softRejected: false,
-                        hardReject: false,
-                        public: true,
-                        featured: false,
-                        date: { $gt: time_after },
-                    },
-                },
-                {
-                    $sort: { views: -1 },
-                },
-                {
-                    $skip: page * pageSize,
-                },
-                {
-                    $limit: maxPageSize * 3,
-                },
-                {
-                    $sort: { loves: -1 },
-                },
-                {
-                    $lookup: {
-                        from: "users",
-                        localField: "author",
-                        foreignField: "id",
-                        as: "authorInfo",
-                    },
-                },
-                {
-                    // only allow ranked users to show up
-                    $match: { "authorInfo.rank": { $gt: 0 } },
-                },
-                {
-                    $skip: page * pageSize,
-                },
-                {
-                    $limit: pageSize,
-                },
-                {
-                    // set author to { id: old_.author, username: authorInfo.username }
-                    $addFields: {
-                        author: {
-                            id: "$author",
-                            username: {
-                                $arrayElemAt: ["$authorInfo.username", 0],
-                            },
                         },
                     },
                 },

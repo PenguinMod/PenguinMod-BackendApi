@@ -126,12 +126,6 @@ console.error = (...args) => {
             .green,
     );
 
-    /*
-    app.get("/test", (req, res) => {
-        res.sendFile(path.join(__dirname, 'test.html'));
-    });
-    */
-
     app.use((req, res, next) => {
         // get the actuall ip
         req.realIP = ipaddr.process(
