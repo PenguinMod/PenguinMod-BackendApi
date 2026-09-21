@@ -109,6 +109,7 @@ module.exports = (app, utils) => {
 
         res.status(200);
         res.header({ "Content-Type": "application/json" });
+        res.header("Cache-Control", "public, max-age=90");
         return res.send({ projects, total });
     });
 };
