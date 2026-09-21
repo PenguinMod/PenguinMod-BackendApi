@@ -67,6 +67,8 @@ module.exports = (app, utils) => {
             return utils.error(res, 400, "InvalidPageOrPageSize");
         }
 
+        const include_total = String(packet.includeTotal) === "true";
+
         const token = String(packet.token);
         const login = await utils.UserManager.loginWithToken(token);
         const is_mod = login.success && login.isMod;
@@ -86,7 +88,7 @@ module.exports = (app, utils) => {
             }
         }
 
-        const projects = await utils.UserManager.searchProjectsNew(
+        const { projects, total } = await utils.UserManager.searchProjectsNew(
             query,
             sort,
             reverse,
@@ -98,6 +100,7 @@ module.exports = (app, utils) => {
             include,
             page,
             page_size,
+            include_total,
         );
 
         for (const project of projects) {
@@ -106,6 +109,6 @@ module.exports = (app, utils) => {
 
         res.status(200);
         res.header({ "Content-Type": "application/json" });
-        return res.send(projects);
+        return res.send({ projects, total });
     });
 };

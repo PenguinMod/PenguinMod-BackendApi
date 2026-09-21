@@ -4156,6 +4156,8 @@ class UserManager {
      * @param {"all" | "all-allowed" | "ranked" | "unranked" | "rejected"} include What types (standing) of projects to show
      * @param {number} page The page to get
      * @param {number} page_size The size of each page
+     * @param {boolean?} withTotal If true, also return the total number of matching projects (uncapped by pagination). Returns { projects, total } instead of just an array.
+     * @returns {Promise<Array|{projects: Array, total: number}>}
      */
     async searchProjectsNew(
         query,
@@ -4169,6 +4171,7 @@ class UserManager {
         include,
         page,
         page_size,
+        include_total = false,
     ) {
         function escapeRegex(input) {
             return String(input).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -4271,7 +4274,7 @@ class UserManager {
                 break;
         }
 
-        pipeline.push(
+        const projectPipeline = [
             {
                 $skip: page * page_size,
             },
@@ -4301,11 +4304,29 @@ class UserManager {
             {
                 $unset: ["_id", "authorInfo"],
             },
-        );
+        ];
 
-        const result = await this.projects.aggregate(pipeline).toArray();
+        if (!include_total) {
+            pipeline.push(...projectPipeline);
+            return {
+                projects: await this.projects.aggregate(pipeline).toArray(),
+                total: 0,
+            };
+        }
 
-        return result;
+        pipeline.push({
+            $facet: {
+                projects: projectPipeline,
+                totalCount: [{ $count: "count" }],
+            },
+        });
+
+        const [result] = await this.projects.aggregate(pipeline).toArray();
+
+        return {
+            projects: result?.projects ?? [],
+            total: result?.totalCount?.[0]?.count ?? 0,
+        };
     }
 
     /**
