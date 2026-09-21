@@ -250,8 +250,13 @@ class UserManager {
     }
 
     async backfillProjectInfo() {
-        const cursor = this.users.find({}, { projection: { id: 1, rank: 1 } });
-        for await (const user of cursor) {
+        await this.projects.updateMany({}, { $set: { authorRank: 0 } });
+
+        const rankedUsers = await this.users
+            .find({ rank: { $gt: 0 } }, { projection: { id: 1, rank: 1 } })
+            .toArray();
+
+        for (const user of rankedUsers) {
             await this.projects.updateMany(
                 { author: user.id },
                 { $set: { authorRank: user.rank } },
