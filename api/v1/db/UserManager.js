@@ -4177,7 +4177,7 @@ class UserManager {
             return String(input).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         }
 
-        const rev = reverse ? 1 : -1;
+        const rev = reverse ? -1 : 1;
 
         let expect = { softRejected: false, public: true };
         switch (include) {
