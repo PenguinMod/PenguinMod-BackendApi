@@ -283,6 +283,7 @@ module.exports = (app, utils) => {
                 notes,
                 remix,
                 packet.rating,
+                priv,
             );
 
             await potentiallyIllegalWordingError(
