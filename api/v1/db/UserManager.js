@@ -2040,7 +2040,7 @@ class UserManager {
             }
         }
 
-        const author_rank = this.getRankByID(author);
+        const author_rank = await this.getRankByID(author);
 
         await this.projects.insertOne({
             id: id,
