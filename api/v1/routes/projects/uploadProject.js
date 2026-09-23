@@ -55,8 +55,11 @@ module.exports = (app, utils) => {
                 return utils.error(res, 401, "Invalid credentials");
             }
             const username = login.username;
+            const userid = login.id;
             const isDonator = login.isDonator;
             const hasModPerms = login.isMod;
+
+            const priv = String(packet.private) === "true" && hasModPerms;
 
             const lastUpload = await utils.UserManager.getLastUpload(username);
             const now = Date.now();
@@ -261,9 +264,6 @@ module.exports = (app, utils) => {
 
             // TODO: use mmmagic to verify this is a valid image
 
-            const userid = await utils.UserManager.getIDByUsername(username);
-
-            // get the assets and their ids
             const assets = [];
 
             for (let i = 0; i < req.files.assets.length; i++) {
@@ -319,7 +319,7 @@ module.exports = (app, utils) => {
 
             await utils.UserManager.setLastUpload(username, Date.now());
 
-            if (remix !== "0") {
+            if (remix !== "0" && !priv) {
                 // get original creator
 
                 const originalProject =

@@ -2013,6 +2013,7 @@ class UserManager {
         notes,
         remix,
         rating,
+        priv = false,
     ) {
         let id;
         // TODO: replace this with a ulid somehow
@@ -2053,7 +2054,7 @@ class UserManager {
             date: Date.now(),
             lastUpdate: Date.now(),
             rating: rating,
-            public: true,
+            public: !priv,
             softRejected: false,
             hardReject: false,
             hardRejectTime: 0,
@@ -2062,11 +2063,13 @@ class UserManager {
             authorRank: author_rank,
         });
 
-        await this.addToFeed(
-            author,
-            remix !== "0" ? "remix" : "upload",
-            remix !== "0" ? remix : id,
-        );
+        if (!priv) {
+            await this.addToFeed(
+                author,
+                remix !== "0" ? "remix" : "upload",
+                remix !== "0" ? remix : id,
+            );
+        }
 
         return id;
     }
