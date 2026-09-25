@@ -410,6 +410,7 @@ class UserManager {
             }
 
             let res = null;
+            // TODO: maybe just ask for a retry function. we're copy-pasting utils.retryIfFailure rn
             const f = async (curRetries, finalRetries, delay) => {
                 try {
                     // we don't url encode prefix since it *should* just be a number and maybe an underscore and also im lazy
@@ -508,7 +509,7 @@ class UserManager {
             this.removeBBUrl(url_data);
             setTimeout(async () => {
                 await this.saveToBackblaze(name, file, trying_again + 1);
-            }, 250);
+            }, 250); // TODO: we should NOT hardcode 250. that is so bad!!!
             return;
         }
 

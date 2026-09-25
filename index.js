@@ -308,7 +308,7 @@ console.error = (...args) => {
                                 delay,
                                 onFail,
                             ).then(resolve);
-                        }, delay);
+                        }, delay); // TODO: add some randomization to delay
                     });
                 }
             };
