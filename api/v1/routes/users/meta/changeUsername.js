@@ -61,7 +61,7 @@ module.exports = (app, utils) => {
                     before + "\x1b[31;1m" + illegalWord + "\x1b[0m" + after,
                     trigger,
                     type,
-                    username,
+                    [login.id, username],
                 );
 
                 return true;
@@ -89,7 +89,7 @@ module.exports = (app, utils) => {
                     before + "\x1b[33;1m" + illegalWord + "\x1b[0m" + after,
                     trigger,
                     type,
-                    username,
+                    [login.id, username],
                     0xffbb00,
                 );
                 return true;
