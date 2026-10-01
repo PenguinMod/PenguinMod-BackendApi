@@ -286,6 +286,12 @@ module.exports = (app, utils) => {
                 priv,
             );
 
+            // failure
+            if (!projectID) {
+                await unlink();
+                return utils.error(res, 503);
+            }
+
             await potentiallyIllegalWordingError(
                 title,
                 "projectTitle",

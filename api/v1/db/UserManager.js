@@ -314,24 +314,29 @@ class UserManager {
         const day = hour * 24;
         const need_new = Date.now() + day - hour;
 
-        const results = await fetch(
-            `${this.bb_api_url}/b2api/v4/b2_get_upload_url?bucketId=${process.env.BackblazeBucketID}`,
-            {
-                headers,
-            },
-        ).then((res) => res.json());
+        try {
+            const results = await fetch(
+                `${this.bb_api_url}/b2api/v4/b2_get_upload_url?bucketId=${process.env.BackblazeBucketID}`,
+                {
+                    headers,
+                },
+            ).then((res) => res.json());
 
-        const index = ULID.ulid();
+            const index = ULID.ulid();
 
-        this.bb_upload_urls[index] = {
-            url: results.uploadUrl,
-            token: results.authorizationToken,
-            expires: need_new,
-            in_use: false,
-            index,
-        };
+            this.bb_upload_urls[index] = {
+                url: results.uploadUrl,
+                token: results.authorizationToken,
+                expires: need_new,
+                in_use: false,
+                index,
+            };
 
-        return this.bb_upload_urls[index];
+            return this.bb_upload_urls[index];
+        } catch (e) {
+            console.error(`failed to get BB upload url: ${e}`);
+            return false;
+        }
     }
 
     /**
@@ -348,7 +353,7 @@ class UserManager {
 
     /**
      * Gets the Backblaze upload url or fetches it if its expired
-     * @returns {Promise<object>}
+     * @returns {Promise<object|false>}
      */
     async getBBUploadUrl() {
         for (const key in this.bb_upload_urls) {
@@ -367,6 +372,11 @@ class UserManager {
         }
 
         const data = await this.generateBBUploadURL();
+
+        if (!data) {
+            return false;
+        }
+
         this.bb_upload_urls[data.index].in_use = true;
         return data;
     }
@@ -467,15 +477,22 @@ class UserManager {
      * Save a file to Backblaze.
      * @param {string} name The name of the file
      * @param {Buffer} file The buffer of the file
+     * @returns {Promise<boolean>} whether the saving succeeded
      */
     async saveToBackblaze(name, file, trying_again = 0) {
         if (trying_again > 2) {
             // TODO: log to webhook and ping either ian or devs
             console.error("Backblaze IS NOT SAVING!!!!!");
-            throw "bb aint working"; // so we dont send a 200
+            return false;
         }
 
         const url_data = await this.getBBUploadUrl();
+
+        if (!url_data) {
+            console.error("can't find bb upload url");
+            return false;
+        }
+
         const upload_url = url_data.url;
         const auth_token = url_data.token;
 
@@ -507,13 +524,22 @@ class UserManager {
         if (!result.ok) {
             // PROBABLY just saying its full - try again
             this.removeBBUrl(url_data);
-            setTimeout(async () => {
-                await this.saveToBackblaze(name, file, trying_again + 1);
-            }, 250); // TODO: we should NOT hardcode 250. that is so bad!!!
-            return;
+            return new Promise((resolve, _) => {
+                setTimeout(async () => {
+                    resolve(
+                        await this.saveToBackblaze(
+                            name,
+                            file,
+                            trying_again + 1,
+                        ),
+                    );
+                }, 250); // TODO: we should NOT hardcode 250. that is a bad!!!
+            });
         }
 
         this.doneWithBBUpload(url_data);
+
+        return true;
     }
 
     /**
@@ -2002,6 +2028,7 @@ class UserManager {
      * @param {string} notes The notes for the project
      * @param {string} remix ID of the project this is a remix of. Undefined if not a remix.
      * @param {string} rating Rating of the project.
+     * @returns {Promise<string|false>} if false, it failed. else it returns the id
      * @async
      */
     async publishProject(
@@ -2018,7 +2045,6 @@ class UserManager {
     ) {
         let id;
         // TODO: replace this with a ulid somehow
-        // i love being whimsical ^^
         do {
             id = randomInt(0, 9999999999).toString();
             id = "0".repeat(10 - id.length) + id;
@@ -2031,8 +2057,13 @@ class UserManager {
             const name = `${id}_${asset.id}`;
 
             if (using_backblaze) {
-                await this.saveToBackblaze(name, asset.buffer);
+                const success = await this.saveToBackblaze(name, asset.buffer);
+                if (!success) {
+                    // TODO: delete the stuff we put in maybe?
+                    return false;
+                }
             } else {
+                // TODO: figure out if theres a way to see if this succeeded
                 await this.minioClient.putObject(
                     "project-assets",
                     name,
@@ -2229,7 +2260,10 @@ class UserManager {
                 const name = `${id}_${asset.id}`;
 
                 if (using_backblaze) {
-                    await this.saveToBackblaze(name, asset.buffer);
+                    // TODO: handle when this fails better
+                    if (!(await this.saveToBackblaze(name, asset.buffer))) {
+                        throw "death";
+                    }
                 } else {
                     await this.minioClient.putObject(
                         "project-assets",
@@ -4543,16 +4577,10 @@ class UserManager {
                     },
                 },
                 {
-                    $sort: { views: -1 },
+                    $sort: { votes: -1 },
                 },
                 {
                     $skip: page * pageSize,
-                },
-                {
-                    $limit: Math.min(maxPageSize, pageSize * 2),
-                },
-                {
-                    $sort: { votes: -1 },
                 },
                 {
                     $limit: pageSize,
