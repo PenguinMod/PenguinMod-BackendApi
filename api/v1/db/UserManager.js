@@ -3058,7 +3058,7 @@ class UserManager {
         await this.minioClient.removeObject("projects", id);
         await this.minioClient.removeObject("project-thumbnails", id);
 
-        await utils.UserManager.removeEvilProjectReferences(project);
+        await this.removeEvilProjectReferences(project);
 
         if (using_backblaze) this.deleteMultipleObjectsBackblaze(id);
         else this.deleteMultipleObjects("project-assets", id);
