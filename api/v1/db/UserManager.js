@@ -2099,7 +2099,7 @@ class UserManager {
             await this.addToFeed(
                 author,
                 remix !== "0" ? "remix" : "upload",
-                remix !== "0" ? remix : id,
+                id,
             );
         }
 
@@ -3057,6 +3057,8 @@ class UserManager {
         // remove the project file
         await this.minioClient.removeObject("projects", id);
         await this.minioClient.removeObject("project-thumbnails", id);
+
+        await utils.UserManager.removeEvilProjectReferences(project);
 
         if (using_backblaze) this.deleteMultipleObjectsBackblaze(id);
         else this.deleteMultipleObjects("project-assets", id);
@@ -6321,6 +6323,16 @@ class UserManager {
         }
 
         return true;
+    }
+
+    /**
+     * This function will remove references to the project from the feed and remix messages from people's inboxes
+     * @param {string} projectID ID of the evil project
+     */
+    async removeEvilProjectReferences(projectID) {
+        // only one remix "parent" will get the notification
+        await this.messages.deleteOne({ projectID, "message.type": "remix" });
+        await this.userFeed.deleteMany({ data: projectID }); // right now, user feed is just project uploads. so the data field will always be a project id.
     }
 }
 

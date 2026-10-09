@@ -46,6 +46,8 @@ module.exports = (app, utils) => {
 
         const projectData = await utils.UserManager.getProjectMetadata(project);
 
+        await utils.UserManager.removeEvilProjectReferences(project);
+
         await utils.UserManager.sendMessage(
             projectData.author.id,
             {
