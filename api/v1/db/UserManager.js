@@ -6338,8 +6338,8 @@ class UserManager {
     /**
      * Get some projects. Order is "implementation defined", i.e. mongo's ordering so upload date basically
      * @param {number} pageSize Page size
-     * @param {undefined|*} after Internal mongo ID
-     * @returns {Promise<{projects:string[],next:*}>} projects is an array of project IDs
+     * @param {undefined|string} after Internal mongo ID
+     * @returns {Promise<{projects:string[],next:string}>} projects is an array of project IDs
      */
     async getProjectsUnordered(pageSize, after) {
         const filter = {};

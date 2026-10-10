@@ -30,7 +30,7 @@ module.exports = (app, utils) => {
 
             const { projects, next } =
                 await utils.UserManager.getProjectsUnordered(
-                    Number(utils.env.PageSize),
+                    Number(utils.env.MaxPageSize),
                     after,
                 );
 
