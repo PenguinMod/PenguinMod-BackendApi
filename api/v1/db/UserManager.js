@@ -6344,7 +6344,7 @@ class UserManager {
     async getProjectsUnordered(pageSize, after) {
         const filter = {};
 
-        if (req.query.after) {
+        if (after) {
             filter._id = { $gt: new ObjectId(after) };
         }
 
