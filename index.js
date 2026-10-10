@@ -4,7 +4,6 @@ const rateLimit = require("express-rate-limit");
 const express = require("express");
 const endpointLoader = require("./api/endpointLoader");
 const um = require("./api/v1/db/UserManager");
-const cast = require("./utils/Cast");
 const logs = require("./utils/Logs");
 const path = require("path");
 const multer = require("multer");
@@ -85,7 +84,6 @@ app.use(
 );
 app.use(requestIp.mw());
 
-const Cast = new cast();
 const UserManager = new um();
 
 console.real_log = console.log;
@@ -233,7 +231,6 @@ console.error = (...args) => {
     const utils = {
         UserManager: UserManager,
         homeDir: path.join(__dirname, "./"),
-        Cast: Cast,
         escapeXML: escapeXML,
         error: error,
         env: process.env,

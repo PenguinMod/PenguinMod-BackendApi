@@ -6334,6 +6334,34 @@ class UserManager {
         await this.messages.deleteOne({ projectID, "message.type": "remix" });
         await this.userFeed.deleteMany({ data: projectID }); // right now, user feed is just project uploads. so the data field will always be a project id.
     }
+
+    /**
+     * Get some projects. Order is "implementation defined", i.e. mongo's ordering so upload date basically
+     * @param {number} pageSize Page size
+     * @param {undefined|*} after Internal mongo ID
+     * @returns {Promise<{projects:string[],next:*}>} projects is an array of project IDs
+     */
+    async getProjectsUnordered(pageSize, after) {
+        const filter = {};
+
+        if (req.query.after) {
+            filter._id = { $gt: new ObjectId(after) };
+        }
+
+        const projects = await this.projects
+            .find(filter, { projection: { _id: 1, id: 1 } })
+            .sort({ _id: 1 })
+            .limit(pageSize)
+            .toArray();
+
+        return {
+            projects: projects.map((d) => d.id),
+            next:
+                projects.length === pageSize
+                    ? projects[projects.length - 1]._id
+                    : null,
+        };
+    }
 }
 
 module.exports = UserManager;
