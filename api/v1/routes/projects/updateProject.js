@@ -262,9 +262,15 @@ module.exports = (app, utils) => {
                 : null;
 
             // resize
-            const thumbnail = !!unsized_thumbnail
-                ? await sharp(unsized_thumbnail).resize(240, 180).toBuffer()
-                : null;
+            let thumbnail;
+            try {
+                thumbnail = !!unsized_thumbnail
+                    ? await sharp(unsized_thumbnail).resize(240, 180).toBuffer()
+                    : null;
+            } catch (e) {
+                await unlink();
+                return utils.error(res, 400, "Invalid thumbnail image");
+            }
 
             // TODO: use mmmagic to verify this is a valid image
 
