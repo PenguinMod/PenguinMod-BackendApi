@@ -26,14 +26,17 @@ module.exports = (app, utils) => {
         utils.file_size_limit(utils, (req) => req.body.username),
         async (req, res) => {
             const unlink = async () => {
-                if (req.files.jsonFile)
+                if (req.files.jsonFile) {
                     await utils.unlinkAsync(req.files.jsonFile[0].path);
-                if (req.files.thumbnail)
+                }
+                if (req.files.thumbnail) {
                     await utils.unlinkAsync(req.files.thumbnail[0].path);
-                if (req.files.assets)
-                    for (let asset of req.files.assets) {
+                }
+                if (req.files.assets) {
+                    for (const asset of req.files.assets) {
                         await utils.unlinkAsync(asset.path);
                     }
+                }
             };
 
             if (
@@ -257,6 +260,7 @@ module.exports = (app, utils) => {
             try {
                 thumbnail = await sharp(unsized_thumbnail)
                     .resize(240, 180)
+                    .webp()
                     .toBuffer();
             } catch (e) {
                 return utils.error(res, 400, "Invalid image");

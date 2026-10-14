@@ -54,7 +54,8 @@ module.exports = (app, utils) => {
             const final = [];
 
             for (const report of reports) {
-                let pushing = {
+                // TODO: getting of the username should be done in the DB query
+                const pushing = {
                     reporter: await utils.UserManager.getUsernameByID(
                         report.reporter,
                     ),

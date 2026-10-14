@@ -32,7 +32,7 @@ module.exports = (app, utils) => {
                 utils.error(res, 400, "Reauthenticate");
                 return;
             }
-            const username = login.username;
+            const id = login.id;
 
             if (!pictureName) {
                 return utils.error(res, 400, "No picture was provided");
@@ -49,9 +49,10 @@ module.exports = (app, utils) => {
                 path.join(utils.homeDir, pictureName.path),
             );
 
-            const allowedTypes = ["image/png", "image/jpeg"];
+            const allowedImages = ["image/png", "image/jpeg"];
+            const allowedAnimated = ["image/gif", "image/webp"];
 
-            // TODO: make sure the pfp isnt too big
+            const allowedTypes = allowedImages.concat(allowedAnimated);
 
             magic.detect(picture, async (err, result) => {
                 if (err) {
@@ -65,18 +66,20 @@ module.exports = (app, utils) => {
                 let resized_picture;
 
                 try {
-                    resized_picture = await sharp(picture)
+                    const animated = allowedAnimated.includes(result);
+
+                    resized_picture = await sharp(picture, {
+                        animated,
+                    })
                         .resize(100, 100)
+                        .webp()
                         .toBuffer();
                 } catch (e) {
                     console.warn(`Sharp error: ${e}`);
                     return utils.error(res, 400, "Invalid image");
                 }
 
-                await utils.UserManager.setProfilePicture(
-                    username,
-                    resized_picture,
-                );
+                await utils.UserManager.setProfilePicture(id, resized_picture);
 
                 res.status(200);
                 res.header("Content-Type", "application/json");

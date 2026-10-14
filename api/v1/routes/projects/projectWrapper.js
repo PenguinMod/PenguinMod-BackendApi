@@ -24,7 +24,7 @@ module.exports = (app, utils) => {
 
         const projectId = String(packet.projectId);
         const get_assets = String(packet.assets) !== "false";
-        const force_intervention = String(packet.loadAssetsLocally) == "true";
+        const force_intervention = String(packet.loadAssetsLocally) === "true";
 
         if (!projectId) {
             return utils.error(res, 400, "Missing projectId");

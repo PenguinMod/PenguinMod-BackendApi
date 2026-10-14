@@ -16,7 +16,7 @@ module.exports = (app, utils) => {
 
         const username = String(packet.username).toLowerCase();
 
-        if (typeof username != "string") {
+        if (typeof username !== "string") {
             utils.error(res, 400, "InvalidRequest");
             return;
         }

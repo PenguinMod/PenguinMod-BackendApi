@@ -63,7 +63,7 @@ module.exports = (app, utils) => {
             if (
                 await utils.UserManager.hasAlreadyReported("Server", reporterID)
             )
-                return;
+                {return;}
 
             await utils.UserManager.report(
                 "MultiReport",

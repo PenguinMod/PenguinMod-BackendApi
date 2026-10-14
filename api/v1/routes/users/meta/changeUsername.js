@@ -70,7 +70,7 @@ module.exports = (app, utils) => {
         };
 
         const potentiallyIllegalWordingError = async (text, type) => {
-            let trigger =
+            const trigger =
                 await utils.UserManager.checkForPotentiallyUnsafeUsername(text);
             if (trigger) {
                 const illegalWordIndex =

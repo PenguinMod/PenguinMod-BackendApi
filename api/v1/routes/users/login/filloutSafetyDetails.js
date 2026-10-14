@@ -38,8 +38,8 @@ module.exports = (app, utils) => {
             const user_meta = await utils.UserManager.getUserData(username);
 
             const parseBirthday = (birthday) => {
-                if (!birthday) return;
-                if (typeof birthday !== "string") return;
+                if (!birthday) {return;}
+                if (typeof birthday !== "string") {return;}
                 try {
                     const date = new Date(birthday);
                     if (isNaN(date.getTime())) {

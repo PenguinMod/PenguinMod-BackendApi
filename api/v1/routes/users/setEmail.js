@@ -35,7 +35,7 @@ module.exports = (app, utils) => {
             return;
         }
 
-        if (email == login.email) {
+        if (email === login.email) {
             utils.error(res, 200, "ThatsTheSameEmailDingus");
             return;
         }

@@ -45,7 +45,7 @@ module.exports = (app, utils) => {
             await utils.UserManager.setAdmin(target, admin);
             await utils.UserManager.setModerator(target, approver);
 
-            let fields = [];
+            const fields = [];
 
             if (isAdmin !== admin) {
                 fields.push({

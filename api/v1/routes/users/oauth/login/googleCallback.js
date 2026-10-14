@@ -47,7 +47,7 @@ module.exports = (app, utils) => {
         const url =
             "https://people.googleapis.com/v1/people/me?personFields=names";
         let user;
-        try_user = async (tries) => {
+        const try_user = async (tries) => {
             if (tries > 3) {
                 utils.error(res, 500, "Google api failed to respond");
                 return false;

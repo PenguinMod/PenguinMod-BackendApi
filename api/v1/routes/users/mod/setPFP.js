@@ -40,7 +40,8 @@ module.exports = (app, utils) => {
                 return utils.error(res, 403, "FeatureDisabledForThisAccount");
             }
 
-            if (!(await utils.UserManager.existsByUsername(target))) {
+            const targetID = await utils.UserManager.getUsernameByID(target);
+            if (!targetID) {
                 return utils.error(res, 400, "TargetNotFound");
             }
 
@@ -59,29 +60,38 @@ module.exports = (app, utils) => {
                 path.join(utils.homeDir, pictureName.path),
             );
 
-            const allowedTypes = ["image/png", "image/jpeg", "image/gif"];
+            const allowedImages = ["image/png", "image/jpeg"];
+            const allowedAnimated = ["image/gif", "image/webp"];
+
+            const allowedTypes = allowedImages.concat(allowedAnimated);
 
             magic.detect(picture, async (err, result) => {
                 if (err) {
-                    console.error(`Magic error: ${err}`);
                     return utils.error(res, 400, "Invalid file type");
                 }
 
                 if (!allowedTypes.includes(result)) {
-                    return utils.error(
-                        res,
-                        400,
-                        `Invalid file type, ${result}`,
-                    );
+                    return utils.error(res, 400, "Invalid file type");
                 }
 
-                const resized_picture =
-                    result == "image/gif"
-                        ? picture
-                        : await sharp(picture).resize(100, 100).toBuffer();
+                let resized_picture;
+
+                try {
+                    const animated = allowedAnimated.includes(result);
+
+                    resized_picture = await sharp(picture, {
+                        animated,
+                    })
+                        .resize(100, 100)
+                        .webp()
+                        .toBuffer();
+                } catch (e) {
+                    console.warn(`Sharp error: ${e}`);
+                    return utils.error(res, 400, "Invalid image");
+                }
 
                 await utils.UserManager.setProfilePicture(
-                    target,
+                    targetID,
                     resized_picture,
                 );
 

@@ -73,7 +73,7 @@ module.exports = (app, utils) => {
                 return;
             }
 
-            let token = await utils.UserManager.loginWithPassword(
+            const token = await utils.UserManager.loginWithPassword(
                 username,
                 password,
                 true,

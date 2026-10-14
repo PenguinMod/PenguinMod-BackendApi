@@ -157,13 +157,13 @@ console.error = (...args) => {
         return async function (req, res, next) {
             const unlink = async () => {
                 if (req.files.jsonFile)
-                    await utils.unlinkAsync(req.files.jsonFile[0].path);
+                    {await utils.unlinkAsync(req.files.jsonFile[0].path);}
                 if (req.files.thumbnail)
-                    await utils.unlinkAsync(req.files.thumbnail[0].path);
+                    {await utils.unlinkAsync(req.files.thumbnail[0].path);}
                 if (req.files.assets)
-                    for (let asset of req.files.assets) {
+                    {for (const asset of req.files.assets) {
                         await utils.unlinkAsync(asset.path);
-                    }
+                    }}
             };
 
             const ud = await utils.UserManager.getUserData(
@@ -179,8 +179,9 @@ console.error = (...args) => {
                 return utils.error(res, 400, "What??");
             }
 
-            for (let file_key in req.files) {
-                let file = req.files[file_key];
+            for (const file_key in req.files) {
+                // TODO: i don't feel like testing rn whether the for in loop is necessary over a for of loop
+                const file = req.files[file_key];
                 if (file.size > maxSingleSize) {
                     await unlink();
                     return utils.error(res, 400, "Asset too big");
@@ -193,11 +194,12 @@ console.error = (...args) => {
                 ) || 32) * 1000000;
             let combinedSize = 0;
 
-            if (req.files.jsonFile) combinedSize += req.files.jsonFile[0].size;
+            if (req.files.jsonFile) {combinedSize += req.files.jsonFile[0].size;}
             //if (req.files.thumbnail) combinedSize += req.files.thumbnail[0].size;
 
             if (req.files.assets)
-                for (let asset of req.files.assets) combinedSize += asset.size;
+                {for (const asset of req.files.assets)
+                    {combinedSize += asset.size;}}
 
             if (combinedSize > maxCombinedSize) {
                 await unlink();
@@ -288,7 +290,7 @@ console.error = (...args) => {
                 try {
                     return await todo();
                 } catch (e) {
-                    if (onFail) onFail(e);
+                    if (onFail) {onFail(e);}
                     if (curRetries > finalRetries) {
                         console.error("exceeded max retry count");
                         throw e;

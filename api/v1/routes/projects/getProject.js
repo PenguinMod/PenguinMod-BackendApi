@@ -1,7 +1,3 @@
-const path = require("path");
-const fs = require("fs");
-const jszip = require("jszip");
-
 const UserManager = require("../../db/UserManager");
 
 /**
@@ -53,7 +49,7 @@ module.exports = (app, utils) => {
         }
 
         switch (requestType) {
-            case "protobuf":
+            case "protobuf": {
                 // views get checked here because projects have to be gotten from here
                 // or projectwrapper but we don't use that rn
                 const has_seen = await utils.UserManager.hasSeenProject(
@@ -74,13 +70,15 @@ module.exports = (app, utils) => {
                 res.status(200);
                 res.header("Content-Type", "application/json");
                 return res.send(project);
-            case "assets":
+            }
+            case "assets": {
                 const assets =
                     await utils.UserManager.getProjectAssets(projectID);
 
                 res.header("Cache-Control", "public, max-age=90");
                 return res.send(assets);
-            case "thumbnail":
+            }
+            case "thumbnail": {
                 const thumbnail =
                     await utils.UserManager.getProjectImage(projectID);
 
@@ -92,6 +90,7 @@ module.exports = (app, utils) => {
                 res.header("Content-Type", "image/png");
                 res.header("Cache-Control", "public, max-age=90");
                 return res.send(thumbnail);
+            }
             case "metadata":
                 return res.send(metadata);
             default:

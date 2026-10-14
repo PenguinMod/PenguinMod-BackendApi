@@ -6,20 +6,22 @@ const ULID = require("ulid");
 const Minio = require("minio");
 const fs = require("fs");
 const path = require("path");
-var prompt = require("prompt-sync")();
 const Mailjet = require("node-mailjet");
 const os = require("os");
 const pmp_protobuf = require("pmp-protobuf");
 const sharp = require("sharp");
 const disposableDomains = require("disposable-email-domains");
 
-const using_backblaze = process.env.UseBackblaze == "true";
+const using_backblaze = String(process.env.UseBackblaze) === "true";
 
 const basePFP = fs.readFileSync(path.join(__dirname, "./penguin.png"));
 const deleted_thumb = fs.readFileSync(
     path.join(__dirname, "../../../deletedThumbnail.png"),
 );
-const deleted_thumb_buffer = sharp(deleted_thumb).resize(240, 180).toBuffer();
+const deleted_thumb_buffer = sharp(deleted_thumb)
+    .resize(240, 180)
+    .webp()
+    .toBuffer();
 
 const REMOVE_SYMBOLS_REGEX = /[\s._*!-+/]+/g;
 
@@ -62,25 +64,28 @@ class UserManager {
         this.reports = this.db.collection("reports");
         this.runtimeConfig = this.db.collection("runtimeConfig");
         //this.runtimeConfig.deleteMany({});
-        if (!(await this.runtimeConfig.findOne({ id: "viewingEnabled" })))
+        if (!(await this.runtimeConfig.findOne({ id: "viewingEnabled" }))) {
             this.runtimeConfig.insertOne({
                 id: "viewingEnabled",
-                value: process.env.ViewingEnabled == "true",
+                value: String(process.env.ViewingEnabled) === "true",
             });
-        if (!(await this.runtimeConfig.findOne({ id: "uploadingEnabled" })))
+        }
+        if (!(await this.runtimeConfig.findOne({ id: "uploadingEnabled" }))) {
             this.runtimeConfig.insertOne({
                 id: "uploadingEnabled",
-                value: process.env.UploadingEnabled == "true",
+                value: String(process.env.UploadingEnabled) === "true",
             });
+        }
         if (
             !(await this.runtimeConfig.findOne({
                 id: "accountCreationEnabled",
             }))
-        )
+        ) {
             this.runtimeConfig.insertOne({
                 id: "accountCreationEnabled",
-                value: process.env.AccountCreationEnabled == "true",
+                value: String(process.env.AccountCreationEnabled) === "true",
             });
+        }
 
         this.projects = this.db.collection("projects");
         // await this.projects.dropIndexes();
@@ -294,7 +299,7 @@ class UserManager {
         const sa = results.apiInfo.storageApi;
         this.bb_api_url = sa.apiUrl;
         this.bb_download_url =
-            process.env.UseCustomBackblazeDownloadUrl == "true"
+            String(process.env.UseCustomBackblazeDownloadUrl) === "true"
                 ? process.env.BackblazeDownloadUrl
                 : sa.downloadUrl;
 
@@ -408,7 +413,7 @@ class UserManager {
         const results = [];
         let startFileName = null;
 
-        while (n != 0) {
+        while (n !== 0) {
             const num = n > 10000 ? 10000 : n;
 
             let url =
@@ -447,7 +452,7 @@ class UserManager {
             };
             await f(0, 3, 500);
 
-            if (res == null) {
+            if (res === null) {
                 throw "idk man";
             }
 
@@ -507,7 +512,7 @@ class UserManager {
         hash.update(file);
         headers.set("X-Bz-Content-Sha1", hash.digest("hex"));
 
-        let result = { ok: false };
+        let result;
         try {
             result = await fetch(upload_url, {
                 method: "POST",
@@ -612,7 +617,7 @@ class UserManager {
 
         if (!result.ok) {
             console.error(
-                `FAILED TO COPY!!!! VERY BAD!!! ${JSON.stringify(await res.json())}`,
+                `FAILED TO COPY!!!! VERY BAD!!! ${JSON.stringify(await result.json())}`,
             );
         }
     }
@@ -715,44 +720,6 @@ class UserManager {
         this.deleteMultipleObjects(bucketName, "");
     }
 
-    /**
-     * Reset the database
-     * @param {boolean} understands skip the prompt if true
-     * @async
-     */
-    async reset(understands = false) {
-        throw new Error("Resetting is disabled");
-
-        if (!understands) {
-            let unde = prompt("This deletes ALL DATA. Are you sure? (Y/n) ");
-            if (typeof unde !== "string") {
-                return;
-            }
-        }
-
-        await this.users.deleteMany({});
-        await this.loggedIPs.deleteMany({});
-        await this.passwordResetStates.deleteMany({});
-        await this.sentEmails.deleteMany({});
-        await this.followers.deleteMany({});
-        await this.oauthIDs.deleteMany({});
-        await this.reports.deleteMany({});
-        await this.runtimeConfig.deleteMany({});
-        await this.projects.deleteMany({});
-        await this.projectStats.deleteMany({});
-        await this.messages.deleteMany({});
-        await this.oauthStates.deleteMany({});
-        await this.userFeed.deleteMany({});
-        await this.illegalList.deleteMany({});
-        // dont reset policy stuff, we need that :normal:
-
-        // reset minio buckets
-        await this.resetBucket("projects");
-        await this.resetBucket("project-thumbnails");
-        await this.resetBucket("project-assets");
-        await this.resetBucket("profile-pictures");
-    }
-
     async setLifecyclePolicy(bucketName, policy) {
         await this.minioClient.setBucketLifecycle(bucketName, policy);
     }
@@ -814,7 +781,7 @@ class UserManager {
         };
 
         const potentiallyIllegalWordingError = async (text, type) => {
-            let trigger = await this.checkForPotentiallyUnsafeUsername(text);
+            const trigger = await this.checkForPotentiallyUnsafeUsername(text);
             if (trigger) {
                 const illegalWordIndex =
                     await this.getIndexOfPotentiallyUnsafeUsername(text);
@@ -915,7 +882,9 @@ class UserManager {
     async deleteAccount(username) {
         const result = await this.users.findOne({ username: username });
 
-        if (!result) return false;
+        if (!result) {
+            return false;
+        }
 
         const deletionSuccess =
             (
@@ -924,7 +893,9 @@ class UserManager {
                 })
             ).deletedCount > 0;
 
-        if (!deletionSuccess) return false;
+        if (!deletionSuccess) {
+            return false;
+        }
 
         await this.minioClient.removeObject("profile-pictures", result.id);
 
@@ -979,13 +950,19 @@ class UserManager {
         let loves = 0;
         for (const vote of real_votes) {
             const id = vote.userId;
-            if (await this.users.findOne({ id, permBanned: false })) votes++;
-            else await this.projectStats.deleteMany({ userId: id });
+            if (await this.users.findOne({ id, permBanned: false })) {
+                votes++;
+            } else {
+                await this.projectStats.deleteMany({ userId: id });
+            }
         }
         for (const love of real_loves) {
             const id = love.userId;
-            if (await this.users.findOne({ id, permBanned: false })) loves++;
-            else await this.projectStats.deleteMany({ userId: id });
+            if (await this.users.findOne({ id, permBanned: false })) {
+                loves++;
+            } else {
+                await this.projectStats.deleteMany({ userId: id });
+            }
         }
 
         await this.projects.updateOne({ id }, { $set: { loves, votes } });
@@ -1012,7 +989,9 @@ class UserManager {
         username = String(username);
         const result = await this.users.findOne({ username: username });
 
-        if (!result) return false;
+        if (!result) {
+            return false;
+        }
 
         if (
             (result.permBanned || result.unbanTime > Date.now()) &&
@@ -1066,11 +1045,15 @@ class UserManager {
             badges: [],
         };
 
-        if (token === "undefined") return data;
+        if (token === "undefined") {
+            return data;
+        }
 
         const result = await this.users.findOne({ token });
 
-        if (!result) return data;
+        if (!result) {
+            return data;
+        }
 
         data.username = result.username;
         data.id = result.id;
@@ -1081,7 +1064,9 @@ class UserManager {
         data.emailVerified = result.emailVerified;
         data.email = result.email;
 
-        if (get_full_meta) data.fullMeta = result;
+        if (get_full_meta) {
+            data.fullMeta = result;
+        }
 
         if (
             ((result.permBanned || result.unbanTime > Date.now()) &&
@@ -1133,7 +1118,9 @@ class UserManager {
             };
         }
         const result = await this.users.findOne(query);
-        if (result) return true;
+        if (result) {
+            return true;
+        }
         return false;
     }
 
@@ -1146,7 +1133,9 @@ class UserManager {
     async existsByID(id) {
         id = String(id);
         const result = await this.users.findOne({ id: id });
-        if (result) return true;
+        if (result) {
+            return true;
+        }
         return false;
     }
 
@@ -1182,7 +1171,9 @@ class UserManager {
         id = String(id);
         const result = await this.users.findOne({ id: id });
 
-        if (!result) return false; // prevent crashes
+        if (!result) {
+            return false;
+        } // prevent crashes
 
         return result.username;
     }
@@ -1297,7 +1288,9 @@ class UserManager {
             code: id,
         });
 
-        if (!result) return false;
+        if (!result) {
+            return false;
+        }
 
         return result.id;
     }
@@ -1477,7 +1470,9 @@ class UserManager {
         username = String(username);
         const result = await this.users.findOne({ username: username });
 
-        if (!result) return false;
+        if (!result) {
+            return false;
+        }
 
         return result.badges;
     }
@@ -1678,7 +1673,9 @@ class UserManager {
         username = String(username);
         const result = await this.users.findOne({ username: username });
 
-        if (!result) return false;
+        if (!result) {
+            return false;
+        }
 
         return result.moderator || result.admin;
     }
@@ -1796,7 +1793,9 @@ class UserManager {
         username = String(username);
         const result = await this.users.findOne({ username: username });
 
-        if (!result) return false;
+        if (!result) {
+            return false;
+        }
 
         return result.email;
     }
@@ -1809,7 +1808,9 @@ class UserManager {
      */
     async setEmail(username, email, verify = false) {
         username = String(username);
-        if (await this.emailInUse(email)) return;
+        if (await this.emailInUse(email)) {
+            return;
+        }
 
         await this.users.updateOne(
             { username: username },
@@ -2295,7 +2296,7 @@ class UserManager {
         reverse = false,
         remove_blocked = false,
     ) {
-        let pipeline = [
+        const pipeline = [
             {
                 $match: {
                     softRejected: false,
@@ -2432,8 +2433,12 @@ class UserManager {
     ) {
         author = String(author);
         const match = { author: author, hardReject: false };
-        if (!getPrivate) match.public = true;
-        if (!getSoftRejected) match.softRejected = false;
+        if (!getPrivate) {
+            match.public = true;
+        }
+        if (!getSoftRejected) {
+            match.softRejected = false;
+        }
         const _result = await this.projects
             .aggregate([
                 {
@@ -2507,7 +2512,9 @@ class UserManager {
                 */
             });
 
-        if (!stream) return;
+        if (!stream) {
+            return;
+        }
 
         const chunks = [];
 
@@ -2610,7 +2617,9 @@ class UserManager {
                 ? await this.downloadFromBackblaze(item)
                 : await this.readObjectFromBucket("project-assets", item);
 
-            if (!file) return false;
+            if (!file) {
+                return false;
+            }
 
             result.push({ id: item.split("_")[1], buffer: file });
         }
@@ -3060,8 +3069,11 @@ class UserManager {
 
         await this.removeEvilProjectReferences(id);
 
-        if (using_backblaze) this.deleteMultipleObjectsBackblaze(id);
-        else this.deleteMultipleObjects("project-assets", id);
+        if (using_backblaze) {
+            this.deleteMultipleObjectsBackblaze(id);
+        } else {
+            this.deleteMultipleObjects("project-assets", id);
+        }
     }
 
     async hardRejectProject(id) {
@@ -3556,7 +3568,9 @@ class UserManager {
      */
     async checkForUnsafeUsername(username) {
         const basicTrigger = await this.checkForIllegalWording(username);
-        if (basicTrigger) return basicTrigger;
+        if (basicTrigger) {
+            return basicTrigger;
+        }
 
         let unsafeUsernames = (
             await this.illegalList.findOne({ id: "unsafeUsernames" })
@@ -3583,7 +3597,9 @@ class UserManager {
     async getIndexOfUnsafeUsername(username) {
         // TODO! make this work better
         const normalWording = await this.getIndexOfIllegalWording(username);
-        if (normalWording[0] != -1) return normalWording;
+        if (normalWording[0] !== -1) {
+            return normalWording;
+        }
 
         const unsafeUsernames = (
             await this.illegalList.findOne({ id: "unsafeUsernames" })
@@ -3648,7 +3664,7 @@ class UserManager {
      */
     async getIndexOfPotentiallyUnsafeUsername(username) {
         // TODO: make this work better/correctly
-        let [potentiallyUnsafeWords, potentiallyUnsafeWordsSpacedOut] = (
+        const [potentiallyUnsafeWords, potentiallyUnsafeWordsSpacedOut] = (
             await Promise.all([
                 this.illegalList.findOne({ id: "potentiallyUnsafeWords" }),
                 this.illegalList.findOne({
@@ -3672,53 +3688,13 @@ class UserManager {
     }
 
     /**
-     * Check for potentially illegal wording on text
-     * @param {string} text The text to check for slightly illegal wording
-     * @returns {Promise<string>} same as normal illegal
-     * @async
-     */
-    async checkForPotentiallyIllegalWording(text) {
-        let [potentiallyUnsafeWords, potentiallyUnsafeWordsSpacedOut] = (
-            await Promise.all([
-                this.illegalList.findOne({ id: "potentiallyUnsafeWords" }),
-                this.illegalList.findOne({
-                    id: "potentiallyUnsafeWordsSpacedOut",
-                }),
-            ])
-        ).map((t) => t.items);
-
-        potentiallyUnsafeWords = potentiallyUnsafeWords
-            ? potentiallyUnsafeWords
-            : [];
-        potentiallyUnsafeWordsSpacedOut = potentiallyUnsafeWordsSpacedOut
-            ? potentiallyUnsafeWordsSpacedOut
-            : [];
-
-        for (const item of potentiallyUnsafeWords) {
-            if (text.includes(item)) {
-                return item;
-            }
-        }
-
-        for (const item of potentiallyUnsafeWordsSpacedOut) {
-            const regex = new RegExp(`(^| )${item}( |$)`);
-
-            if (text.match(regex)) {
-                return item;
-            }
-        }
-
-        return "";
-    }
-
-    /**
      * Get the index of illegal wording
      * @param {string} text Text to get the index from
      * @returns {Promise<number>} Index of the illegal wording
      */
     async getIndexOfIllegalWording(text) {
         // TODO! make this work better
-        let [illegalWords, illegalWebsites, spacedOutWordsOnly] = (
+        const [illegalWords, illegalWebsites, spacedOutWordsOnly] = (
             await Promise.all([
                 this.illegalList.findOne({ id: "illegalWords" }),
                 this.illegalList.findOne({ id: "illegalWebsites" }),
@@ -3796,7 +3772,7 @@ class UserManager {
     async getIndexOfPotentiallyIllegalWording(text) {
         // TODO: make this work better/correctly
 
-        let [potentiallyUnsafeWords, potentiallyUnsafeWordsSpacedOut] = (
+        const [potentiallyUnsafeWords, potentiallyUnsafeWordsSpacedOut] = (
             await Promise.all([
                 this.illegalList.findOne({ id: "potentiallyUnsafeWords" }),
                 this.illegalList.findOne({
@@ -3866,7 +3842,7 @@ class UserManager {
      * @async
      */
     async getIllegalWords() {
-        let [
+        const [
             illegalWords,
             illegalWebsites,
             spacedOutWordsOnly,
@@ -3918,7 +3894,9 @@ class UserManager {
 
         // now get rid of the state cuz uh we dont need it anymore
 
-        if (result) await this.oauthStates.deleteOne({ state: state });
+        if (result) {
+            await this.oauthStates.deleteOne({ state: state });
+        }
 
         return result ? true : false;
     }
@@ -4025,7 +4003,7 @@ class UserManager {
         }
 
         let n = 0;
-        let orig_username = username;
+        const orig_username = username;
         while (await this.existsByUsername(username)) {
             username = `${orig_username}${n}`;
             real_username = `${real_username}${n}`;
@@ -4106,7 +4084,9 @@ class UserManager {
      * @returns {Promise<boolean>} True if the extension is allowed, false if not
      */
     async checkExtensionIsAllowed(extension) {
-        if (!extension) return true;
+        if (!extension) {
+            return true;
+        }
         extension = String(extension);
 
         const extensionsConfig = await this.illegalList.findOne({
@@ -4133,18 +4113,22 @@ class UserManager {
 
         if (userRank < 1 && !isAdmin && !isModerator) {
             const isUrlExtension = (extId) => {
-                if (!extensionURLs) return false;
+                if (!extensionURLs) {
+                    return false;
+                }
                 return extId in extensionURLs;
             };
 
             if (extensions && !isAdmin && !isModerator) {
-                for (let extension of extensions) {
+                for (const extension of extensions) {
                     if (isUrlExtension(extension)) {
                         // url extension names can be faked (if not trusted source)
                         let found = false;
-                        for (let source of extensionsConfig.items) {
+                        for (const source of extensionsConfig.items) {
                             // http and localhost urls shouldnt be allowed anyway, and :// means no extension ID should ever collide with this
-                            if (!source.startsWith("https://")) continue;
+                            if (!source.startsWith("https://")) {
+                                continue;
+                            }
                             // Still using startsWith since it allows for an entire URL to be whitelisted if neccessary.
                             if (extensionURLs[extension].startsWith(source)) {
                                 found = true;
@@ -4253,8 +4237,12 @@ class UserManager {
 
         if (before || after) {
             expect["date"] = {};
-            if (before) expect["date"]["$lt"] = before.getTime();
-            if (after) expect["date"]["$gt"] = after.getTime();
+            if (before) {
+                expect["date"]["$lt"] = before.getTime();
+            }
+            if (after) {
+                expect["date"]["$gt"] = after.getTime();
+            }
         }
 
         const pipeline = [
@@ -4392,7 +4380,7 @@ class UserManager {
             return String(input).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         }
 
-        let text_search = [
+        const text_search = [
             {
                 title: {
                     $regex: `.*${escapeRegex(query)}.*`,
@@ -4416,9 +4404,8 @@ class UserManager {
                 },
             },
         );
-        //}
 
-        let aggregateList = [
+        const aggregateList = [
             {
                 $match: {
                     softRejected: false,
@@ -4765,14 +4752,11 @@ class UserManager {
 
     /**
      * Set a users pfp
-     * @param {string} username Username of the user
+     * @param {string} id ID of the user
      * @param {Buffer} buffer Buffer of the pfp
+     * @returns {Promise<>}
      */
-    async setProfilePicture(username, buffer) {
-        username = String(username);
-        // TODO: not just a here issue, but in a load of places we take username then convert to id. we should just take id
-        const id = await this.getIDByUsername(username);
-
+    async setProfilePicture(id, buffer) {
         await this.minioClient.putObject("profile-pictures", id, buffer);
     }
 
@@ -4787,7 +4771,9 @@ class UserManager {
 
         const buffer = await this.readObjectFromBucket("profile-pictures", id);
 
-        if (!buffer) return false;
+        if (!buffer) {
+            return false;
+        }
 
         return buffer;
     }
@@ -5030,8 +5016,12 @@ class UserManager {
         username = String(username);
         const result = await this.users.findOne({ username: username });
 
-        if (result.unbanTime > Date.now()) return 2;
-        if (result.permBanned) return 3;
+        if (result.unbanTime > Date.now()) {
+            return 2;
+        }
+        if (result.permBanned) {
+            return 3;
+        }
         // TODO: 1 is limited, not yet implemented
         return 0;
     }
@@ -5116,7 +5106,9 @@ class UserManager {
         ip = String(ip);
         const result = await this.loggedIPs.findOne({ ip: ip });
 
-        if (!result) return false;
+        if (!result) {
+            return false;
+        }
 
         return result.banned;
     }
@@ -5215,7 +5207,9 @@ class UserManager {
         email = String(email);
         const result = await this.users.findOne({ email: email });
 
-        if (!result) return false;
+        if (!result) {
+            return false;
+        }
 
         return result.username;
     }
@@ -5264,7 +5258,9 @@ class UserManager {
         message,
         messageHtml,
     ) {
-        if ((await this.getEmailCount()) > process.env.EmailLimit) return false;
+        if ((await this.getEmailCount()) > process.env.EmailLimit) {
+            return false;
+        }
 
         await this.sentEmails.insertOne({
             userid,
@@ -5331,7 +5327,9 @@ class UserManager {
                 .toArray()
         )[0];
 
-        if (!result) return 0;
+        if (!result) {
+            return 0;
+        }
 
         return result.sentAt;
     }
@@ -5354,7 +5352,9 @@ class UserManager {
                 .toArray()
         )[0];
 
-        if (!result) return 0;
+        if (!result) {
+            return 0;
+        }
 
         return result.sentAt;
     }
@@ -5380,7 +5380,7 @@ class UserManager {
 
         state = String(state);
         email = String(email);
-        if (!state || state.endsWith("_VE") != is_verify_email) {
+        if (!state || state.endsWith("_VE") !== is_verify_email) {
             console.warn(
                 (state.endsWith("_VE")
                     ? "says ve but not ve"
@@ -5402,8 +5402,9 @@ class UserManager {
 
         const is_valid = !!result;
 
-        if (is_valid)
+        if (is_valid) {
             await this.passwordResetStates.deleteOne({ state: state });
+        }
 
         return is_valid;
     }
@@ -5418,7 +5419,9 @@ class UserManager {
         const result = await this.accountCustomization.findOne({
             username: username,
         });
-        if (!result) return "{}";
+        if (!result) {
+            return "{}";
+        }
         return result.customJson || "{}";
     }
     async getUserCustomizationDisabled(username) {
@@ -5426,7 +5429,9 @@ class UserManager {
         const result = await this.accountCustomization.findOne({
             username: username,
         });
-        if (!result) return false;
+        if (!result) {
+            return false;
+        }
         return result.disabled === true;
     }
 
@@ -5438,13 +5443,19 @@ class UserManager {
      * @returns {null|string} `null` if the customJson is valid, and a string containing the error reason if the customJson is invalid.
      */
     verifyCustomizationJson(customJson) {
-        if (typeof customJson !== "string") return "JSONNotString";
+        if (typeof customJson !== "string") {
+            return "JSONNotString";
+        }
         // NOTE: 2kb for now, can increase later if we somehow need more
-        if (customJson.length > 2 * 1024) return "DataTooLarge";
+        if (customJson.length > 2 * 1024) {
+            return "DataTooLarge";
+        }
         // NOTE: why parse if {} will always be valid customization JSON
-        if (customJson === "{}") return null;
+        if (customJson === "{}") {
+            return null;
+        }
 
-        let customData = {};
+        let customData;
         try {
             customData = JSON.parse(customJson);
         } catch (err) {
@@ -5452,8 +5463,9 @@ class UserManager {
         }
 
         // verify the object itself
-        if (typeof customData !== "object" || Array.isArray(customData))
+        if (typeof customData !== "object" || Array.isArray(customData)) {
             return "DataNotObject";
+        }
         return null;
     }
 
@@ -5468,7 +5480,9 @@ class UserManager {
         customJson = String(customJson);
 
         const errorReason = this.verifyCustomizationJson(customJson);
-        if (errorReason) throw new Error(errorReason);
+        if (errorReason) {
+            throw new Error(errorReason);
+        }
         await this.accountCustomization.updateOne(
             { username: username },
             { $set: { customJson: customJson } },
@@ -5717,7 +5731,9 @@ class UserManager {
      * @returns {Promise<>}
      */
     async _getAltsRec(user_id, current_ids) {
-        if (current_ids.has(user_id)) return;
+        if (current_ids.has(user_id)) {
+            return;
+        }
         current_ids.add(user_id);
         const current_data = await this.getIpsByID(user_id);
         for (const item of current_data) {
@@ -5767,6 +5783,7 @@ class UserManager {
                 break;
             case "more":
                 weight = 25;
+                break;
             default:
                 weight = 0;
                 break;
@@ -6073,7 +6090,9 @@ class UserManager {
     }
 
     async addImpressionsMany(project_ids) {
-        if (!Array.isArray(project_ids)) return;
+        if (!Array.isArray(project_ids)) {
+            return;
+        }
         const sanitized_ids = project_ids.map((id) => String(id));
         await this.projects.updateMany(
             {
@@ -6293,7 +6312,7 @@ class UserManager {
         };
 
         for (const r of result) {
-            if (formatted.hasOwnProperty(r.range)) {
+            if (formatted.hasOwn(r.range)) {
                 formatted[r.range] = r.count;
             }
         }
@@ -6309,7 +6328,7 @@ class UserManager {
     validateEmail(email) {
         if (
             !email.match(
-                /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
+                /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
             )
         ) {
             return false;

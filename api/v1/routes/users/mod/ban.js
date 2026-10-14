@@ -103,7 +103,7 @@ module.exports = (app, utils) => {
             );
         }
 
-        let fields = [
+        const fields = [
             {
                 name: "Mod",
                 value: username,

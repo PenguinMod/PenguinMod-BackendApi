@@ -6,7 +6,7 @@ const UserManager = require("../../../db/UserManager");
  * @property {UserManager} UserManager
  */
 
-let global_creation_counter = {
+const global_creation_counter = {
     count: 0,
     end: 0,
     ping: false,
@@ -48,7 +48,7 @@ module.exports = (app, utils) => {
             } else if (global_creation_counter.count >= limit_amount) {
                 if (!global_creation_counter.ping) {
                     // TODO: don't hardcode my discord ID
-                    logs.sendAdminLog(
+                    utils.logs.sendAdminLog(
                         {
                             action: "actoin",
                             content: `<@790782926785609728> evil doer is doing evil maybe`,
@@ -138,8 +138,12 @@ module.exports = (app, utils) => {
         */
 
             const parseBirthday = (birthday) => {
-                if (!birthday) return;
-                if (typeof birthday !== "string") return;
+                if (!birthday) {
+                    return;
+                }
+                if (typeof birthday !== "string") {
+                    return;
+                }
                 try {
                     const date = new Date(birthday);
                     if (isNaN(date.getTime())) {

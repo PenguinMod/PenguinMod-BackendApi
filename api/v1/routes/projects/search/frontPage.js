@@ -119,7 +119,7 @@ module.exports = (app, utils) => {
 
         const pids = Object.values(page)
             .flat()
-            .filter((i) => typeof i != "string")
+            .filter((i) => typeof i !== "string")
             .map((i) => i.id);
 
         utils.UserManager.addImpressionsMany(pids).catch((e) => {

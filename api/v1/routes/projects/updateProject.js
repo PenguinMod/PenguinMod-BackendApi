@@ -26,15 +26,18 @@ module.exports = (app, utils) => {
         utils.file_size_limit(utils, (req) => req.body.username),
         async (req, res) => {
             const unlink = async () => {
-                if (req.files.jsonFile)
+                if (req.files.jsonFile) {
                     await utils.unlinkAsync(req.files.jsonFile[0].path);
-                if (req.files.thumbnail)
+                }
+                if (req.files.thumbnail) {
                     await utils.unlinkAsync(req.files.thumbnail[0].path);
+                }
 
-                if (req.files.assets)
-                    for (let asset of req.files.assets) {
+                if (req.files.assets) {
+                    for (const asset of req.files.assets) {
                         await utils.unlinkAsync(asset.path);
                     }
+                }
             };
 
             if (
@@ -99,7 +102,7 @@ module.exports = (app, utils) => {
             }
 
             const illegalWordingError = async (text, type) => {
-                let illegal =
+                const illegal =
                     await utils.UserManager.checkForIllegalWording(text);
                 if (illegal) {
                     utils.error(res, 400, "IllegalWordsUsed");
@@ -127,7 +130,7 @@ module.exports = (app, utils) => {
             };
 
             const potentiallyIllegalWordingError = async (text, type) => {
-                let trigger =
+                const trigger =
                     await utils.UserManager.checkForPotentiallyIllegalWording(
                         text,
                     );
@@ -257,15 +260,18 @@ module.exports = (app, utils) => {
                 packet.rating = "";
             }
 
-            const unsized_thumbnail = !!req.files.thumbnail
+            const unsized_thumbnail = req.files.thumbnail
                 ? fs.readFileSync(req.files.thumbnail[0].path)
                 : null;
 
             // resize
             let thumbnail;
             try {
-                thumbnail = !!unsized_thumbnail
-                    ? await sharp(unsized_thumbnail).resize(240, 180).toBuffer()
+                thumbnail = unsized_thumbnail
+                    ? await sharp(unsized_thumbnail)
+                          .resize(240, 180)
+                          .webp()
+                          .toBuffer()
                     : null;
             } catch (e) {
                 await unlink();

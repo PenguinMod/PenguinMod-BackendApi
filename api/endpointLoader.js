@@ -2,9 +2,11 @@ const path = require("path");
 const fs = require("fs");
 require("colors");
 
+// TODO: This is a mess and i hate it. is there really no better way that won't make me rip my hair out?
+
 function readFiles(path) {
-    let flat = [];
-    let all = fs
+    const flat = [];
+    const all = fs
         .readdirSync(path, { withFileTypes: true })
         .map((item) => item.name)
         .filter(
@@ -16,8 +18,7 @@ function readFiles(path) {
 
     all.forEach((item) => {
         if (fs.lstatSync(`${path}/${item}`).isDirectory()) {
-            // recurse
-            let sub = readFiles(`${path}/${item}`);
+            const sub = readFiles(`${path}/${item}`);
             sub.forEach((subItem) => {
                 flat.push(`${item}/${subItem}`);
             });
@@ -29,7 +30,7 @@ function readFiles(path) {
 }
 
 function loadEndpoints(app, dir, utils = {}) {
-    let endpointDir = path.join(__dirname, dir);
+    const endpointDir = path.join(__dirname, dir);
 
     readFiles(endpointDir).forEach((file) => {
         const endpointPath = path.join(endpointDir, file);

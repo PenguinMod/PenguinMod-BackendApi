@@ -51,8 +51,7 @@ module.exports = (app, utils) => {
 
             const success = await utils.UserManager.deleteAccount(target);
 
-            // ---- LOGGING ----
-            let fields = [
+            const fields = [
                 {
                     name: "Mod",
                     value: username,

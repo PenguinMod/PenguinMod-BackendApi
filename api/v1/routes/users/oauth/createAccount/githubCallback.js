@@ -98,10 +98,7 @@ module.exports = (app, utils) => {
 
             const pfp_buffer = Buffer.from(profilePicture);
 
-            await utils.UserManager.setProfilePicture(
-                userdata.username,
-                pfp_buffer,
-            );
+            await utils.UserManager.setProfilePicture(userdata.id, pfp_buffer);
 
             const accountUsername = userdata.username;
             const token = userdata.token;

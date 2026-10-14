@@ -29,7 +29,7 @@ module.exports = (app, utils) => {
             const target = String(packet.target);
 
             if (!target || !(await utils.UserManager.existsByUsername(target)))
-                return utils.error(res, 404, "Target not found");
+                {return utils.error(res, 404, "Target not found");}
 
             const target_id = await utils.UserManager.getIDByUsername(target);
 
