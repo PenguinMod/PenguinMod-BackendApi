@@ -34,7 +34,7 @@ module.exports = (app, utils) => {
             }
             const username = login.username;
 
-            if (!(await utils.UserManager.isAdmin(username))) {
+            if (!login.isAdmin) {
                 return utils.error(res, 401, "Invalid credentials");
             }
 

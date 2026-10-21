@@ -1008,7 +1008,7 @@ class UserManager {
     }
 
     /**
-     * @typedef {Object} loginResult
+     * @typedef {Object} LoginResult
      * @property {string} username The user's username. Blank if unsuccessful
      * @property {string} id The user's id. Blank if unsuccessful
      * @property {boolean} success If the login was successful
@@ -1026,7 +1026,7 @@ class UserManager {
      * @param {string?} username username of the user. Optional
      * @param {string} token token of the user
      * @param {boolean} allowBanned allow banned users to login
-     * @returns {Promise<loginResult>} Result of the login attempt
+     * @returns {Promise<LoginResult>} Result of the login attempt
      * @async
      */
     async loginWithToken(token, allowBanned, get_full_meta = false) {

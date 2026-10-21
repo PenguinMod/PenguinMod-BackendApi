@@ -33,9 +33,7 @@ module.exports = (app, utils) => {
                 utils.error(res, 400, "Reauthenticate");
                 return;
             }
-            const username = login.username;
-
-            if (!(await utils.UserManager.isAdmin(username))) {
+            if (!login.isAdmin) {
                 return utils.error(res, 401, "Unauthorized");
             }
 

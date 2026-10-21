@@ -29,7 +29,7 @@ module.exports = (app, utils) => {
                 return;
             }
             const username = login.username;
-            if (!(await utils.UserManager.isAdmin(username))) {
+            if (!login.isAdmin) {
                 utils.error(res, 403, "FeatureDisabledForThisAccount");
                 return;
             }

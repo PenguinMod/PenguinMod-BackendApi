@@ -21,9 +21,7 @@ module.exports = (app, utils) => {
             utils.error(res, 401, "Reauthenticate");
             return;
         }
-        const username = login.username;
-
-        if (!(await utils.UserManager.hasModPerms(username))) {
+        if (!login.isMod) {
             return utils.error(res, 403, "Unauthorized");
         }
 

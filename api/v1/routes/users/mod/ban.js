@@ -46,20 +46,18 @@ module.exports = (app, utils) => {
         }
         const username = login.username;
 
-        if (!(await utils.UserManager.hasModPerms(username))) {
+        if (!login.isMod) {
             utils.error(res, 403, "Unauthorized");
             return;
         }
 
+        // TODO: we're making 4 separate db requests that really all get the same info. combine to one
         if (!(await utils.UserManager.existsByUsername(target, true))) {
             utils.error(res, 404, "NotFound");
             return;
         }
 
-        if (
-            !(await utils.UserManager.isAdmin(username)) &&
-            (await utils.UserManager.isAdmin(target))
-        ) {
+        if (!login.isAdmin && (await utils.UserManager.hasModPerms(target))) {
             utils.error(res, 403, "Unauthorized");
             return;
         }
