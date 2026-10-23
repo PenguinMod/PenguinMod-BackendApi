@@ -23,7 +23,7 @@ module.exports = (app, utils) => {
             // assets
             { name: "assets" },
         ]),
-        utils.file_size_limit(utils)
+        utils.file_size_limit(utils),
         async (req, res) => {
             const unlink = async () => {
                 if (req.files.jsonFile) {
