@@ -153,7 +153,7 @@ console.error = (...args) => {
         res.sendFile(path.join(__dirname, "robots.txt"));
     });
 
-    function file_size_limit(utils, username) {
+    function file_size_limit(utils) {
         return async function (req, res, next) {
             const unlink = async () => {
                 if (req.files.jsonFile)
@@ -166,11 +166,17 @@ console.error = (...args) => {
                     }}
             };
 
-            const ud = await utils.UserManager.getUserData(
-                String(username(req)) || "",
+            const login = await utils.UserManager.loginWithToken(
+                String(req.body?.token ?? ""),
             );
-            const is_donator =
-                username(req) && ud && ud.badges.includes("donator");
+            
+            if (!login?.success) {
+                await unlink();
+                return utils.error(res, 401, "Invalid credentials");
+            }
+            
+            const ud = await utils.UserManager.getUserData(login.username);
+            const is_donator = Boolean(ud?.badges?.includes("donator"));
             const maxSingleSize =
                 (Number(process.env.UploadSize) * (is_donator ? 1.75 : 1) ||
                     5) * 1000000;
