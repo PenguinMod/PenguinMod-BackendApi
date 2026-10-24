@@ -1,8 +1,6 @@
-const UserManager = require("../../db/UserManager");
-
 /**
  * @typedef {Object} Utils
- * @property {UserManager} UserManager
+ * @property {import("../../db/UserManager")} UserManager
  */
 
 /**
@@ -28,8 +26,12 @@ module.exports = (app, utils) => {
 
             const target = String(packet.target).toLowerCase();
 
-            if (!target || !(await utils.UserManager.existsByUsername(target)))
-                {return utils.error(res, 404, "Target not found");}
+            if (
+                !target ||
+                !(await utils.UserManager.existsByUsername(target))
+            ) {
+                return utils.error(res, 404, "Target not found");
+            }
 
             const user_id = await utils.UserManager.getIDByUsername(username);
             const target_id = await utils.UserManager.getIDByUsername(target);

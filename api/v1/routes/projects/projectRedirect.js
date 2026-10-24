@@ -1,11 +1,9 @@
 const fs = require("fs");
 const path = require("path");
 
-const UserManager = require("../../db/UserManager");
-
 /**
  * @typedef {Object} Utils
- * @property {UserManager} UserManager
+ * @property {import("../../db/UserManager")} UserManager
  */
 
 /**

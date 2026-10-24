@@ -1,8 +1,6 @@
-const UserManager = require("../../db/UserManager");
-
 /**
  * @typedef {Object} Utils
- * @property {UserManager} UserManager
+ * @property {import("../../db/UserManager")} UserManager
  */
 
 /**
@@ -94,7 +92,9 @@ module.exports = (app, utils) => {
             const birthdayEntered = user_meta.birthdayEntered;
             const countryEntered = user_meta.countryEntered;
 
-            if (user_meta.password) {loginMethods.push("password");}
+            if (user_meta.password) {
+                loginMethods.push("password");
+            }
 
             const messageCount =
                 await utils.UserManager.getUnreadMessageCount(id);

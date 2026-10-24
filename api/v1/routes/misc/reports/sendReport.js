@@ -1,8 +1,6 @@
-const UserManager = require("../../../db/UserManager");
-
 /**
  * @typedef {Object} Utils
- * @property {UserManager} UserManager
+ * @property {import("../../../db/UserManager")} UserManager
  */
 
 /**
@@ -62,8 +60,9 @@ module.exports = (app, utils) => {
 
             if (
                 await utils.UserManager.hasAlreadyReported("Server", reporterID)
-            )
-                {return;}
+            ) {
+                return;
+            }
 
             await utils.UserManager.report(
                 "MultiReport",

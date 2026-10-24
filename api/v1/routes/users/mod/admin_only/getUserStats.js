@@ -1,5 +1,3 @@
-const UserManager = require("../../../../db/UserManager");
-
 const cached = {
     item: null,
     time: 0,
@@ -7,7 +5,7 @@ const cached = {
 
 /**
  * @typedef {Object} Utils
- * @property {UserManager} UserManager
+ * @property {import("../../../../db/UserManager")} UserManager
  */
 
 /**

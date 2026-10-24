@@ -1,8 +1,6 @@
-const UserManager = require("../../../../db/UserManager");
-
 /**
  * @typedef {Object} Utils
- * @property {UserManager} UserManager
+ * @property {import("../../../../db/UserManager")} UserManager
  */
 
 /**
@@ -35,7 +33,7 @@ module.exports = (app, utils) => {
             const user = String(packet.user);
             const value = String(packet.value) !== "false";
 
-            if (!await utils.UserManager.existsByUsername(user)) {
+            if (!(await utils.UserManager.existsByUsername(user))) {
                 return utils.error(res, 400, "Thats not a real user buddy");
             }
 

@@ -1,9 +1,7 @@
 const countryLookup = require("../../../db/country-lookup.json");
-const UserManager = require("../../../db/UserManager");
-
 /**
  * @typedef {Object} Utils
- * @property {UserManager} UserManager
+ * @property {import("../../../db/UserManager")} UserManager
  */
 
 const global_creation_counter = {

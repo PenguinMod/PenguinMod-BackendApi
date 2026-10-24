@@ -1,8 +1,6 @@
-const UserManager = require("../../../db/UserManager");
-
 /**
  * @typedef {Object} Utils
- * @property {UserManager} UserManager
+ * @property {import("../../../db/UserManager")} UserManager
  */
 
 /**
@@ -31,7 +29,11 @@ module.exports = (app, utils) => {
             const password = String(packet.password);
             const captcha_token = String(packet.captcha_token);
 
-            if (utils.env.CFCaptchaEnabled !== "false") {
+            if (utils.env.CFCaptchaEnabled === "false") {
+                console.warn(
+                    "passwordLogin ran with CFCaptchaEnabled set to false",
+                );
+            } else {
                 if (!captcha_token) {
                     utils.error(res, 400, "MissingCaptchaToken");
                     return;
@@ -57,19 +59,10 @@ module.exports = (app, utils) => {
                     utils.error(res, 400, "InvalidCaptcha");
                     return;
                 }
-            } else {
-                console.warn(
-                    "passwordLogin ran with CFCaptchaEnabled set to false",
-                );
             }
 
             if (!username || !password) {
                 utils.error(res, 400, "Missing username or password");
-                return;
-            }
-
-            if (!(await utils.UserManager.existsByUsername(username, true))) {
-                utils.error(res, 401, "InvalidCredentials");
                 return;
             }
 

@@ -1,10 +1,8 @@
-const UserManager = require("../../../../db/UserManager");
-
 /* eslint-disable */
 
 /**
  * @typedef {Object} Utils
- * @property {UserManager} UserManager
+ * @property {import("../../../../db/UserManager")} UserManager
  */
 
 /**

@@ -1,8 +1,6 @@
-const UserManager = require("../../../../db/UserManager");
-
 /**
  * @typedef {Object} Utils
- * @property {UserManager} UserManager
+ * @property {import("../../../../db/UserManager")} UserManager
  */
 
 /**
@@ -27,7 +25,6 @@ module.exports = (app, utils) => {
             utils.error(res, 400, "Reauthenticate");
             return;
         }
-        const username = login.username;
 
         if (!login.isAdmin) {
             return utils.error(res, 401, "Unauthorized");
