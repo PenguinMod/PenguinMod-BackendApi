@@ -3201,7 +3201,7 @@ class UserManager {
                 {
                     $match: {
                         "follower.banned": false,
-                        "follower.profileHideFollowing": { $ne: true }
+                        "follower.profileHideFollowing": { $ne: true },
                     },
                 },
                 {
@@ -3260,6 +3260,7 @@ class UserManager {
                 {
                     $match: {
                         "target.banned": false,
+                        "$targetInfo.profileHideFollowers": { $ne: true },
                     },
                 },
                 {

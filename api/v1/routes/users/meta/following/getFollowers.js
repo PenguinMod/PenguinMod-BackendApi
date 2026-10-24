@@ -20,6 +20,7 @@ module.exports = (app, utils) => {
             utils.error(res, 400, "Missing username");
             return;
         }
+
         if (!(await utils.UserManager.existsByUsername(target))) {
             utils.error(res, 404, "User not found");
             return;
@@ -67,7 +68,7 @@ module.exports = (app, utils) => {
         const followers = await utils.UserManager.getFollowers(
             target,
             page,
-            Number(utils.env.PageSize)
+            Number(utils.env.PageSize),
         );
 
         res.status(200);

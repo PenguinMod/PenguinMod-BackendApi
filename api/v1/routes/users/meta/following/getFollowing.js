@@ -1,8 +1,6 @@
-const UserManager = require("../../../../db/UserManager");
-
 /**
  * @typedef {Object} Utils
- * @property {UserManager} UserManager
+ * @property {import("../../../../db/UserManager")} UserManager
  */
 
 /**
@@ -15,7 +13,7 @@ module.exports = (app, utils) => {
         const packet = req.query;
 
         // meant for getting the data
-        const target = (String(packet.target)).toLowerCase();
+        const target = String(packet.target).toLowerCase();
         const page = utils.handle_page(packet.page);
 
         if (!target) {
@@ -66,7 +64,11 @@ module.exports = (app, utils) => {
             }
         }
 
-        const following = await utils.UserManager.getFollowing(target, page, Number(utils.env.PageSize));
+        const following = await utils.UserManager.getFollowing(
+            target,
+            page,
+            Number(utils.env.PageSize),
+        );
 
         res.status(200);
         res.header("Content-Type", 'application/json');
