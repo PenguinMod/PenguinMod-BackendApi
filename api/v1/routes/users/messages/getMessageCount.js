@@ -20,14 +20,12 @@ module.exports = (app, utils) => {
             return utils.error(res, 400, "Missing token");
         }
 
-        const login = await utils.UserManager.loginWithToken(token);
+        const login = await utils.UserManager.loginWithToken(token, true);
         if (!login.success) {
             utils.error(res, 400, "Reauthenticate");
             return;
         }
-        const username = login.username;
-
-        const id = await utils.UserManager.getIDByUsername(username);
+        const id = login.id;
 
         const count = await utils.UserManager.getMessageCount(id);
 
