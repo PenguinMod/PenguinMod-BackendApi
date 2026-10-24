@@ -1,29 +1,27 @@
-const UserManager = require("../../../db/UserManager");
-
 /**
  * @typedef {Object} Utils
- * @property {UserManager} UserManager
+ * @property {import("../../../db/UserManager")} UserManager
  */
 
 /**
- * 
+ *
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.get('/api/v1/users/getusername', async function (req, res) {
+    app.get("/api/v1/users/getusername", async function (req, res) {
         const packet = req.query;
 
-        const ID = packet.ID;
+        const id = String(packet.ID);
 
-        if (!ID) {
+        if (!id) {
             return utils.error(res, 400, "Missing ID");
         }
 
-        const username = await utils.UserManager.getUsernameByID(ID);
+        const username = await utils.UserManager.getUsernameByID(id);
 
         res.status(200);
-        res.header('Content-type', "text/plain");
+        res.header("Content-type", "text/plain");
         res.send({ username: username });
     });
-}
+};

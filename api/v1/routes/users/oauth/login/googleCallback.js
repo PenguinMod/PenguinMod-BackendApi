@@ -1,12 +1,10 @@
-const UserManager = require("../../../../db/UserManager");
-
 /**
  * @typedef {Object} Utils
- * @property {UserManager} UserManager
+ * @property {import("../../../../db/UserManager)} UserManager
  */
 
 /**
- * 
+ *
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
@@ -14,15 +12,15 @@ module.exports = (app, utils) => {
     app.get("/api/v1/users/googlecallback/login", async (req, res) => {
         const packet = req.query;
 
-        const code = packet.code;
-        const state = packet.state;
+        const code = String(packet.code);
+        const state = String(packet.state);
 
         if (!code || !state) {
             utils.error(res, 400, "Missing code or state");
             return;
         }
 
-        if (!await utils.UserManager.verifyOAuth2State(state)) {
+        if (!(await utils.UserManager.verifyOAuth2State(state))) {
             utils.error(res, 400, "Invalid state");
             return;
         }
@@ -30,14 +28,13 @@ module.exports = (app, utils) => {
         const oauth2Client = new utils.googleOAuth2Client(
             utils.env.GoogleOAuthClientID,
             utils.env.GoogleOAuthClientSecret,
-            `${utils.env.ApiURL}/api/v1/users/googlecallback/login`
+            `${utils.env.ApiURL}/api/v1/users/googlecallback/login`,
         );
 
         let r;
         try {
             r = await oauth2Client.getToken(code);
-        }
-        catch (e) {
+        } catch (e) {
             utils.error(res, 400, "Failed to get token");
             return;
         }
@@ -45,11 +42,36 @@ module.exports = (app, utils) => {
 
         oauth2Client.setCredentials(tokens);
 
-        const url = 'https://people.googleapis.com/v1/people/me?personFields=names';
-        const user = await oauth2Client.request({url});
-        
-        const id = user.data.resourceName.split('/')[1];
-        
+        const url =
+            "https://people.googleapis.com/v1/people/me?personFields=names";
+        let user;
+        const try_user = async (tries) => {
+            if (tries > 3) {
+                utils.error(res, 500, "Google api failed to respond");
+                return false;
+            }
+
+            try {
+                user = await oauth2Client.request({ url });
+            } catch (e) {
+                console.warn("Google api failed to respond: " + e);
+                return await new Promise(
+                    (resolve) =>
+                        setTimeout(
+                            () => try_user(tries + 1).then(resolve),
+                            300,
+                        ), // TODO: don't hardcode 300
+                );
+            }
+
+            return true;
+        };
+        if (!(await try_user(0))) {
+            return;
+        }
+
+        const id = user.data.resourceName.split("/")[1];
+
         const userid = await utils.UserManager.getUserIDByOAuthID("google", id);
 
         if (!userid) {
@@ -64,6 +86,8 @@ module.exports = (app, utils) => {
         await utils.UserManager.addIPID(userid, req.realIP);
 
         res.status(200);
-        res.redirect(`/api/v1/users/sendloginsuccess?token=${token}&username=${username}`);
+        res.redirect(
+            `/api/v1/users/sendloginsuccess?token=${token}&username=${username}`,
+        );
     });
-}
+};

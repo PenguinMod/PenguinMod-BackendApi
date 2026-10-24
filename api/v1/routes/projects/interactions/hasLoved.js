@@ -1,35 +1,37 @@
-const UserManager = require("../../../db/UserManager");
-
 /**
  * @typedef {Object} Utils
- * @property {UserManager} UserManager
+ * @property {import("../../../db/UserManager")} UserManager
  */
 
 /**
- * 
+ *
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.get('/api/v1/projects/hasLoved', utils.cors(), async (req, res) => {
+    app.get("/api/v1/projects/hasLoved", utils.cors(), async (req, res) => {
         const packet = req.query;
 
-        const token = packet.token;
+        const token = String(packet.token);
 
-        const projectID = packet.projectID;
+        const projectID = String(packet.projectID);
 
         if (!token || !projectID) {
-            return utils.error(res, 400, "Missing username, token, or projectID");
+            return utils.error(
+                res,
+                400,
+                "Missing username, token, or projectID",
+            );
         }
 
         const login = await utils.UserManager.loginWithToken(token);
         if (!login.success) {
-            utils.error(res, 401, "Reauthenticate")
+            utils.error(res, 401, "Reauthenticate");
             return;
         }
         const username = login.username;
 
-        if (!await utils.UserManager.projectExists(projectID)) {
+        if (!(await utils.UserManager.projectExists(projectID))) {
             return utils.error(res, 404, "Project not found");
         }
 
@@ -39,4 +41,4 @@ module.exports = (app, utils) => {
 
         return res.send({ hasLoved: has });
     });
-}
+};

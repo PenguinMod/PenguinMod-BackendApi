@@ -1,39 +1,58 @@
 {
-  "dependencies": {
-    "bcrypt": "^5.1.1",
-    "body-parser": "^1.20.3",
-    "colors": "^1.4.0",
-    "cors": "^2.8.5",
-    "crypto-js": "^4.2.0",
-    "dotenv": "^16.3.1",
-    "express": "^4.21.2",
-    "express-rate-limit": "^7.1.3",
-    "glob": "^10.3.10",
-    "google-auth-library": "^9.9.0",
-    "ipaddr.js": "^2.2.0",
-    "jszip": "^3.10.1",
-    "memory-cache": "^0.2.0",
-    "minio": "^7.1.3",
-    "mmmagic": "^0.5.3",
-    "mongodb": "^6.2.0",
-    "multer": "^2.0.2",
-    "node-mailjet": "^6.0.6",
-    "path": "^0.12.7",
-    "pmp-protobuf": "^1.5.1",
-    "prompt-sync": "^4.2.0",
-    "protobufjs": "^7.2.6",
-    "request-ip": "^3.3.0",
-    "sharp": "^0.33.5",
-    "ulid": "^2.3.0"
-  },
-  "scripts": {
-    "dev": "nodemon index.js",
-    "reset": "node reset.js",
-    "test": "node api/v1/db/UMTests.js",
-    "start": "node index.js"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.3",
-    "protobufjs-cli": "^1.1.3"
-  }
+    "name": "penguinmod-backendapi",
+    "version": "1.0.0",
+    "description": "![PenguinMod Logo](icon.png \"PenguinMod Logo\")",
+    "homepage": "https://github.com/PenguinMod/PenguinMod-BackendApi#readme",
+    "bugs": {
+        "url": "https://github.com/PenguinMod/PenguinMod-BackendApi/issues"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/PenguinMod/PenguinMod-BackendApi.git"
+    },
+    "license": "MIT",
+    "author": "",
+    "type": "commonjs",
+    "main": "index.js",
+    "scripts": {
+        "dev": "nodemon index.js",
+        "start": "node index.js",
+        "lint": "eslint",
+        "lint-fix": "eslint --fix"
+    },
+    "dependencies": {
+        "bcrypt": "^6.0.0",
+        "body-parser": "^1.20.4",
+        "colors": "^1.4.0",
+        "cors": "^2.8.5",
+        "crypto-js": "^4.2.0",
+        "disposable-email-domains": "^1.0.62",
+        "dotenv": "^16.3.1",
+        "express": "^4.22.1",
+        "express-rate-limit": "^7.1.3",
+        "fast-xml-parser": "^5.5.8",
+        "glob": "^10.3.10",
+        "google-auth-library": "^9.9.0",
+        "ipaddr.js": "^2.2.0",
+        "jszip": "^3.10.1",
+        "memory-cache": "^0.2.0",
+        "minio": "^8.0.7",
+        "mmmagic": "^0.5.3",
+        "mongodb": "^6.2.0",
+        "multer": "^2.3.0",
+        "node-mailjet": "^6.0.6",
+        "path": "^0.12.7",
+        "pmp-protobuf": "^1.8.8",
+        "protobufjs": "^7.2.6",
+        "request-ip": "^3.3.0",
+        "sharp": "^0.35.5",
+        "ulid": "^2.3.0"
+    },
+    "devDependencies": {
+        "@eslint/js": "^10.0.1",
+        "eslint": "^10.12.0",
+        "globals": "^17.13.0",
+        "nodemon": "^3.1.3",
+        "protobufjs-cli": "^1.1.3"
+    }
 }

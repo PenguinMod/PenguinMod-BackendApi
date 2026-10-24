@@ -1,12 +1,10 @@
-const UserManager = require("../../../../db/UserManager");
-
 /**
  * @typedef {Object} Utils
- * @property {UserManager} UserManager
+ * @property {import("../../../../db/UserManager")} UserManager
  */
 
 /**
- * 
+ *
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
@@ -14,39 +12,42 @@ module.exports = (app, utils) => {
     app.get("/api/v1/users/githubcallback/login", async function (req, res) {
         const packet = req.query;
 
-        const state = packet.state;
-        const code = packet.code;
+        const state = String(packet.state);
+        const code = String(packet.code);
 
         if (!state || !code) {
             utils.error(res, 400, "Missing state or code");
             return;
         }
 
-        if (!await utils.UserManager.verifyOAuth2State(state)) {
+        if (!(await utils.UserManager.verifyOAuth2State(state))) {
             utils.error(res, 400, "Invalid state");
             return;
         }
 
         // now make the request
-        const response = await utils.UserManager.makeOAuth2Request(code, "github");
+        const response = await utils.UserManager.makeOAuth2Request(
+            code,
+            "github",
+        );
 
         if (!response) {
-            utils.error(res, 500, "OAuthServerDidNotRespond")
+            utils.error(res, 500, "OAuthServerDidNotRespond");
             return;
         }
 
         const user = await fetch("https://api.github.com/user", {
             headers: {
-                Authorization: `Bearer ${response.access_token}`
-            }
+                Authorization: `Bearer ${response.access_token}`,
+            },
         })
-        .then(async res => {
-            return {"user": await res.json(), "status": res.status};
-        })
-        .catch(e => {
-            utils.error(res, 500, "OAuthServerDidNotRespond");
-            return new Promise((resolve, reject) => resolve());
-        })
+            .then(async (res) => {
+                return { user: await res.json(), status: res.status };
+            })
+            .catch((e) => {
+                utils.error(res, 500, "OAuthServerDidNotRespond");
+                return new Promise((resolve, reject) => resolve());
+            });
 
         if (!user) {
             return;
@@ -57,7 +58,10 @@ module.exports = (app, utils) => {
             return;
         }
 
-        const userid = await utils.UserManager.getUserIDByOAuthID("github", user.user.id);
+        const userid = await utils.UserManager.getUserIDByOAuthID(
+            "github",
+            user.user.id,
+        );
 
         if (!userid) {
             // the method is not connected with an account
@@ -72,6 +76,8 @@ module.exports = (app, utils) => {
         await utils.UserManager.addIPID(userid, req.realIP);
 
         res.status(200);
-        res.redirect(`/api/v1/users/sendloginsuccess?token=${token}&username=${username}`);
+        res.redirect(
+            `/api/v1/users/sendloginsuccess?token=${token}&username=${username}`,
+        );
     });
-}
+};

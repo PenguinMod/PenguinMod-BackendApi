@@ -1,12 +1,10 @@
-const UserManager = require("../../../../db/UserManager");
-
 /**
  * @typedef {Object} Utils
- * @property {UserManager} UserManager
+ * @property {import("../../../../db/UserManager")} UserManager
  */
 
 /**
- * 
+ *
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
@@ -14,8 +12,8 @@ module.exports = (app, utils) => {
     app.get("/api/v1/users/isfollowing", async function (req, res) {
         const packet = req.query;
 
-        const username = (String(packet.username)).toLowerCase();
-        const target = (String(packet.target)).toLowerCase();
+        const username = String(packet.username).toLowerCase();
+        const target = String(packet.target).toLowerCase();
 
         // check that these accs exist
         if (!username || !target) {
@@ -23,11 +21,12 @@ module.exports = (app, utils) => {
             return;
         }
 
-        if (!await utils.UserManager.existsByUsername(username)) {
+        if (!(await utils.UserManager.existsByUsername(username))) {
             utils.error(res, 404, "NotFound");
             return;
         }
-        if (!await utils.UserManager.existsByUsername(target)) {
+
+        if (!(await utils.UserManager.existsByUsername(target))) {
             utils.error(res, 404, "NotFound");
             return;
         }
@@ -104,9 +103,12 @@ module.exports = (app, utils) => {
         }
 
         // user doesnt hide who they follow, and target doesnt hide their followers
-        const isFollowing = await utils.UserManager.isFollowing(usernameID, targetID);
+        const isFollowing = await utils.UserManager.isFollowing(
+            usernameID,
+            targetID,
+        );
         res.status(200);
-        res.header("Content-Type", 'application/json');
+        res.header("Content-Type", "application/json");
         res.send({ following: isFollowing });
     });
-}
+};

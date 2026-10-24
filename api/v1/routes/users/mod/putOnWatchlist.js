@@ -1,0 +1,44 @@
+/**
+ * @typedef {Object} Utils
+ * @property {import("../../../../db/UserManager")} UserManager
+ */
+
+/**
+ *
+ * @param {any} app Express app
+ * @param {Utils} utils Utils
+ */
+module.exports = (app, utils) => {
+    app.post(
+        "/api/v1/users/putonwatchlist",
+        utils.cors(),
+        async function (req, res) {
+            const packet = req.body;
+
+            const token = String(packet.token);
+
+            const target = String(packet.target).toLowerCase();
+            const enabled = String(packet.enabled) === "true";
+
+            const login = await utils.UserManager.loginWithToken(token);
+            if (!login.success) {
+                utils.error(res, 400, "Reauthenticate");
+                return;
+            }
+            const username = login.username;
+
+            if (!login.isMod) {
+                utils.error(res, 403, "FeatureDisabledForThisAccount");
+                return;
+            }
+
+            await utils.UserManager.toggleWatchlist(target, enabled);
+
+            utils.logs.watchlist.putOnWatchlist(target, username);
+
+            res.status(200);
+            res.header("Content-Type", "application/json");
+            res.json({ success: true });
+        },
+    );
+};

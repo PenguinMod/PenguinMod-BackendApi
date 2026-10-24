@@ -1,12 +1,10 @@
-const UserManager = require("../../db/UserManager");
-
 /**
  * @typedef {Object} Utils
- * @property {UserManager} UserManager
+ * @property {import("../../db/UserManager")} UserManager
  */
 
 /**
- * 
+ *
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
@@ -14,15 +12,9 @@ module.exports = (app, utils) => {
     app.post("/api/v1/users/setEmail", utils.cors(), async (req, res) => {
         const packet = req.body;
 
-        const token = packet.token;
+        const token = String(packet.token);
 
-        const email = packet.email;
-
-        const validateEmail = (email) => {
-            return email.match(
-                /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-            );
-        };
+        const email = String(packet.email);
 
         if (!token || typeof email !== "string") {
             utils.error(res, 400, "Missing token or email");
@@ -36,8 +28,13 @@ module.exports = (app, utils) => {
         }
         const username = login.username;
 
-        if (!validateEmail(email)) {
+        if (!utils.UserManager.validateEmail(email)) {
             utils.error(res, 400, "InvalidEmail");
+            return;
+        }
+
+        if (email === login.email) {
+            utils.error(res, 200, "ThatsTheSameEmailDingus");
             return;
         }
 
@@ -49,7 +46,7 @@ module.exports = (app, utils) => {
         await utils.UserManager.setEmail(username, email);
 
         res.status(200);
-        res.header("Content-Type", 'application/json');
-        res.send({ "success": true });
+        res.header("Content-Type", "application/json");
+        res.send({ success: true });
     });
-}
+};

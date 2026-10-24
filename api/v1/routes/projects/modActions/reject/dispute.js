@@ -1,31 +1,37 @@
-const UserManager = require("../../../../db/UserManager");
-
 /**
  * @typedef {Object} Utils
- * @property {UserManager} UserManager
+ * @property {import("../../../../db/UserManager")} UserManager
  */
 
 /**
- * 
+ *
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.post('/api/v1/projects/dispute', utils.cors(), async (req, res) => {
+    app.post("/api/v1/projects/dispute", utils.cors(), async (req, res) => {
         const packet = req.body;
 
-        const token = packet.token;
+        const token = String(packet.token);
 
-        const messageID = packet.messageID;
-        const dispute = packet.dispute;
+        const messageID = String(packet.messageID);
+        const dispute = String(packet.dispute);
 
-        if (!token || typeof messageID !== "string" || typeof dispute !== "string") {
-            return utils.error(res, 400, "Missing token, messageID, or dispute");
+        if (
+            !token ||
+            typeof messageID !== "string" ||
+            typeof dispute !== "string"
+        ) {
+            return utils.error(
+                res,
+                400,
+                "Missing token, messageID, or dispute",
+            );
         }
 
         const login = await utils.UserManager.loginWithToken(token);
         if (!login.success) {
-            utils.error(res, 401, "Reauthenticate")
+            utils.error(res, 401, "Reauthenticate");
             return;
         }
         const username = login.username;
@@ -41,11 +47,17 @@ module.exports = (app, utils) => {
         }
 
         await utils.UserManager.dispute(messageID, dispute);
-        
-        utils.logs.disputeLog(username, messageID, message.message, dispute, message.projectID);
+
+        utils.logs.disputeLog(
+            username,
+            messageID,
+            message.message,
+            dispute,
+            message.projectID,
+        );
 
         res.status(200);
-        res.header("Content-Type", 'application/json');
+        res.header("Content-Type", "application/json");
         res.send({ success: true });
     });
-}
+};

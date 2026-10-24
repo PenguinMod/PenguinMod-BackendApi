@@ -1,20 +1,18 @@
-const UserManager = require("../../../db/UserManager");
-
 /**
  * @typedef {Object} Utils
- * @property {UserManager} UserManager
+ * @property {import("../../../db/UserManager")} UserManager
  */
 
 /**
- * 
+ *
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.get('/api/v1/users/getmessages', utils.cors(), async (req, res) => {
+    app.get("/api/v1/users/getmessages", utils.cors(), async (req, res) => {
         const packet = req.query;
 
-        const token = packet.token;
+        const token = String(packet.token);
 
         const page = utils.handle_page(packet.page);
 
@@ -22,27 +20,32 @@ module.exports = (app, utils) => {
             return utils.error(res, 400, "Missing token");
         }
 
-        const login = await utils.UserManager.loginWithToken(token);
+        const login = await utils.UserManager.loginWithToken(token, true);
         if (!login.success) {
             utils.error(res, 400, "Reauthenticate");
             return;
         }
-        const username = login.username;
         const id = login.id;
 
-        const messages = await utils.UserManager.getMessages(id, page, Number(utils.env.PageSize));
+        const messages = await utils.UserManager.getMessages(
+            id,
+            page,
+            Number(utils.env.PageSize),
+        );
 
-        const final = []
+        const final = [];
         for (const item of messages) {
             switch (item.message.type) {
                 case "followerAdded":
                     item.message = {
                         user: {
                             id: item.message.user,
-                            username: await utils.UserManager.getUsernameByID(item.message.user)
+                            username: await utils.UserManager.getUsernameByID(
+                                item.message.user,
+                            ),
                         },
-                        type: item.message.type
-                    }
+                        type: item.message.type,
+                    };
 
                     final.push(item);
                     break;
@@ -50,11 +53,14 @@ module.exports = (app, utils) => {
                     item.message = {
                         project: {
                             id: item.projectID,
-                            title: (await utils.UserManager.getProjectMetadata(item.projectID)).title
+                            title: (
+                                await utils.UserManager.getProjectMetadata(
+                                    item.projectID,
+                                )
+                            ).title,
                         },
-                        type: item.message.type
-                    
-                    }
+                        type: item.message.type,
+                    };
                     final.push(item);
                     break;
                 case "reject":
@@ -62,15 +68,19 @@ module.exports = (app, utils) => {
                         item.message = {
                             project: {
                                 id: item.projectID,
-                                title: (await utils.UserManager.getProjectMetadata(item.projectID)).title
+                                title: (
+                                    await utils.UserManager.getProjectMetadata(
+                                        item.projectID,
+                                    )
+                                ).title,
                             },
-                            ...item.message
-                        }
+                            ...item.message,
+                        };
                     } else {
                         item.message.project = {
                             id: item.projectID,
-                            title: item.message.title
-                        }
+                            title: item.message.title,
+                        };
                     }
                     final.push(item);
                     break;
@@ -78,24 +88,36 @@ module.exports = (app, utils) => {
                     item.message = {
                         oldProject: {
                             id: item.message.projectID,
-                            title: (await utils.UserManager.getProjectMetadata(String(item.message.projectID))).title
+                            title: (
+                                await utils.UserManager.getProjectMetadata(
+                                    String(item.message.projectID),
+                                )
+                            ).title,
                         },
                         newProject: {
                             id: item.projectID,
-                            title: (await utils.UserManager.getProjectMetadata(String(item.projectID))).title
+                            title: (
+                                await utils.UserManager.getProjectMetadata(
+                                    String(item.projectID),
+                                )
+                            ).title,
                         },
-                        type: item.message.type
-                    }
+                        type: item.message.type,
+                    };
                     final.push(item);
                     break;
                 case "restored":
                     item.message = {
                         project: {
                             id: item.projectID,
-                            title: (await utils.UserManager.getProjectMetadata(item.projectID)).title
+                            title: (
+                                await utils.UserManager.getProjectMetadata(
+                                    item.projectID,
+                                )
+                            ).title,
                         },
-                        type: item.message.type
-                    }
+                        type: item.message.type,
+                    };
                     final.push(item);
                     break;
                 default:
@@ -104,7 +126,7 @@ module.exports = (app, utils) => {
             }
         }
 
-        res.header('Content-type', "application/json");
+        res.header("Content-type", "application/json");
         res.send({ messages: final });
     });
-}
+};

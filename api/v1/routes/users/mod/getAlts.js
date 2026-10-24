@@ -1,22 +1,20 @@
-const UserManager = require("../../../db/UserManager");
-
 /**
  * @typedef {Object} Utils
- * @property {UserManager} UserManager
+ * @property {import("../../../../db/UserManager")} UserManager
  */
 
 /**
- * 
+ *
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.get('/api/v1/users/getAlts', utils.cors(), async function (req, res) {
+    app.get("/api/v1/users/getAlts", utils.cors(), async function (req, res) {
         const packet = req.query;
 
-        const token = packet.token;
+        const token = String(packet.token);
 
-        const target = (String(packet.target)).toLowerCase();
+        const target = String(packet.target).toLowerCase();
 
         if (!token || !target) {
             utils.error(res, 400, "Missing token or target");
@@ -28,14 +26,12 @@ module.exports = (app, utils) => {
             utils.error(res, 400, "Reauthenticate");
             return;
         }
-        const username = login.username;
-
-        if (!await utils.UserManager.hasModPerms(username)) {
+        if (!login.isMod) {
             utils.error(res, 403, "Unauthorized");
             return;
         }
 
-        if (!await utils.UserManager.existsByUsername(target, true)) {
+        if (!(await utils.UserManager.existsByUsername(target, true))) {
             utils.error(res, 404, "NotFound");
             return;
         }
@@ -46,7 +42,7 @@ module.exports = (app, utils) => {
         const usernames = await utils.UserManager.idListToUsernames(alts);
 
         res.status(200);
-        res.header("Content-Type", 'application/json');
+        res.header("Content-Type", "application/json");
         res.send({ alts: usernames });
     });
-}
+};

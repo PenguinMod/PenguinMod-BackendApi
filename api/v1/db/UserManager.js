@@ -1,20 +1,29 @@
-require('dotenv').config();
-const { randomInt, randomBytes } = require('node:crypto');
-const bcrypt = require('bcrypt');
-const { MongoClient } = require('mongodb');
-const ULID = require('ulid');
-const Minio = require('minio');
-const fs = require('fs');
-const path = require('path');
-var prompt = require('prompt-sync')();
-const Mailjet = require('node-mailjet');
-const os = require('os');
-const pmp_protobuf = require('pmp-protobuf');
-const sharp = require('sharp');
+require("dotenv").config();
+const { randomInt, randomBytes, createHash } = require("node:crypto");
+const bcrypt = require("bcrypt");
+const { MongoClient, ObjectId } = require("mongodb");
+const ULID = require("ulid");
+const Minio = require("minio");
+const fs = require("fs");
+const path = require("path");
+const Mailjet = require("node-mailjet");
+const os = require("os");
+const pmp_protobuf = require("pmp-protobuf");
+const sharp = require("sharp");
+const disposableDomains = require("disposable-email-domains");
+
+const using_backblaze = String(process.env.UseBackblaze) === "true";
 
 const basePFP = fs.readFileSync(path.join(__dirname, "./penguin.png"));
-const deleted_thumb = fs.readFileSync(path.join(__dirname, "../../../deletedThumbnail.png"));
-const deleted_thumb_buffer = sharp(deleted_thumb).resize(240, 180).toBuffer();
+const deleted_thumb = fs.readFileSync(
+    path.join(__dirname, "../../../deletedThumbnail.png"),
+);
+const deleted_thumb_buffer = sharp(deleted_thumb)
+    .resize(240, 180)
+    .webp()
+    .toBuffer();
+
+const REMOVE_SYMBOLS_REGEX = /[\s._*!-+/]+/g;
 
 class UserManager {
     /**
@@ -24,64 +33,189 @@ class UserManager {
      * @async
      */
     async init(maxviews, viewresetrate) {
-        this.client = new MongoClient(process.env.MongoUri || 'mongodb://localhost:27017');
+        this.client = new MongoClient(
+            process.env.MongoUri || "mongodb://localhost:27017",
+        );
         await this.client.connect();
-        this.db = this.client.db('pm_apidata');
-        this.users = this.db.collection('users');
+        this.db = this.client.db("pm_apidata");
+        this.users = this.db.collection("users");
         await this.users.createIndex({ username: 1 }, { unique: true });
         await this.users.createIndex({ id: 1 }, { unique: true });
         await this.users.createIndex({ token: 1 }, { unique: true });
-        this.accountCustomization = this.db.collection('accountCustomization');
-        this.loggedIPs = this.db.collection('loggedIPs');
+        this.accountCustomization = this.db.collection("accountCustomization");
+        this.loggedIPs = this.db.collection("loggedIPs");
         await this.loggedIPs.createIndex({ id: 1 });
         await this.loggedIPs.createIndex({ ip: 1 });
-        this.passwordResetStates = this.db.collection('passwordResetStates');
-        await this.passwordResetStates.createIndex({ 'expireAt': 1 }, { expireAfterSeconds: 60 * 60 * 2 }); // give 2 hours
-        this.sentEmails = this.db.collection('sentEmails');
-        await this.sentEmails.createIndex({ 'expireAt': 1 }, { expireAfterSeconds: 60 * 60 * 24 });
+        this.passwordResetStates = this.db.collection("passwordResetStates");
+        // await this.passwordResetStates.dropIndexes();
+        await this.passwordResetStates.createIndex(
+            { createdAt: 1 },
+            { expireAfterSeconds: Number(process.env.LinkExpire) * 60 },
+        );
+        this.sentEmails = this.db.collection("sentEmails");
+        // await this.sentEmails.dropIndexes();
+        await this.sentEmails.dropIndexes();
+        await this.sentEmails.createIndex(
+            { sentAt: 1 },
+            { expireAfterSeconds: Number(process.env.LinkExpire) * 60 },
+        );
         this.followers = this.db.collection("followers");
-        this.oauthIDs = this.db.collection('oauthIDs');
-        this.reports = this.db.collection('reports');
-        this.runtimeConfig = this.db.collection('runtimeConfig');
+        this.oauthIDs = this.db.collection("oauthIDs");
+        this.reports = this.db.collection("reports");
+        this.runtimeConfig = this.db.collection("runtimeConfig");
         //this.runtimeConfig.deleteMany({});
-        if (!await this.runtimeConfig.findOne({ id: "viewingEnabled" }))
-            this.runtimeConfig.insertOne({ id: "viewingEnabled", value: process.env.ViewingEnabled=="true" });
-        if (!await this.runtimeConfig.findOne({ id: "uploadingEnabled" }))
-            this.runtimeConfig.insertOne({ id: "uploadingEnabled", value: process.env.UploadingEnabled=="true" });
-        if (!await this.runtimeConfig.findOne({ id: "accountCreationEnabled" }))
-        this.runtimeConfig.insertOne({ id: "accountCreationEnabled", value: process.env.AccountCreationEnabled=="true" });
-        
-        this.projects = this.db.collection('projects');
-        //this.projects.dropIndexes();
-        await this.projects.createIndex({ title: "text", instructions: "text", notes: "text"});
-        // index for front page, sort by newest
-        await this.projects.createIndex({ lastUpdate: -1 });
+        if (!(await this.runtimeConfig.findOne({ id: "viewingEnabled" }))) {
+            this.runtimeConfig.insertOne({
+                id: "viewingEnabled",
+                value: String(process.env.ViewingEnabled) === "true",
+            });
+        }
+        if (!(await this.runtimeConfig.findOne({ id: "uploadingEnabled" }))) {
+            this.runtimeConfig.insertOne({
+                id: "uploadingEnabled",
+                value: String(process.env.UploadingEnabled) === "true",
+            });
+        }
+        if (
+            !(await this.runtimeConfig.findOne({
+                id: "accountCreationEnabled",
+            }))
+        ) {
+            this.runtimeConfig.insertOne({
+                id: "accountCreationEnabled",
+                value: String(process.env.AccountCreationEnabled) === "true",
+            });
+        }
+
+        this.projects = this.db.collection("projects");
+        // await this.projects.dropIndexes();
+        await this.projects.createIndex({
+            title: "text",
+            instructions: "text",
+            notes: "text",
+        });
         await this.projects.createIndex({ id: 1 }, { unique: true });
-        this.projectStats = this.db.collection('projectStats');
-        this.messages = this.db.collection('messages');
-        this.oauthStates = this.db.collection('oauthStates');
-        await this.oauthStates.createIndex({ 'expireAt': 1 }, { expireAfterSeconds: 60 * 5 }); // give 5 minutes
-        this.userFeed = this.db.collection('userFeed');
-        await this.userFeed.createIndex({ 'expireAt': 1 }, { expireAfterSeconds: Number(process.env.FeedExpirationTime) });
-        this.illegalList = this.db.collection('illegalList');
-        this.lastPolicyUpdates = this.db.collection('lastPolicyUpdates');
-        if (!await this.lastPolicyUpdates.findOne({ id: "privacyPolicy" })) {
-            this.lastPolicyUpdates.insertOne({ id: "privacyPolicy", lastUpdate: Date.now() });
-            this.lastPolicyUpdates.insertOne({ id: "TOS", lastUpdate: Date.now() });
-            this.lastPolicyUpdates.insertOne({ id: "guidelines", lastUpdate: Date.now() });
+        await this.projects.createIndex({
+            lastUpdate: -1,
+            views: -1,
+            date: -1,
+        });
+        this.projectStats = this.db.collection("projectStats");
+        this.projectStats.createIndex({ projectId: -1, type: -1 });
+        this.messages = this.db.collection("messages");
+        this.messages.createIndex({ receiver: -1, id: -1 });
+        this.oauthStates = this.db.collection("oauthStates");
+        // await this.oauthStates.dropIndexes();
+        await this.oauthStates.createIndex(
+            { createdAt: 1 },
+            { expireAfterSeconds: 60 * 5 },
+        ); // give 5 minutes
+        this.userFeed = this.db.collection("userFeed");
+        // await this.userFeed.dropIndexes();
+        await this.userFeed.createIndex(
+            { date: 1 },
+            { expireAfterSeconds: Number(process.env.FeedExpirationTime) },
+        );
+        this.illegalList = this.db.collection("illegalList");
+        this.lastPolicyUpdates = this.db.collection("lastPolicyUpdates");
+        if (!(await this.lastPolicyUpdates.findOne({ id: "privacyPolicy" }))) {
+            this.lastPolicyUpdates.insertOne({
+                id: "privacyPolicy",
+                lastUpdate: Date.now(),
+            });
+            this.lastPolicyUpdates.insertOne({
+                id: "TOS",
+                lastUpdate: Date.now(),
+            });
+            this.lastPolicyUpdates.insertOne({
+                id: "guidelines",
+                lastUpdate: Date.now(),
+            });
         }
-        if (!await this.illegalList.findOne({ id: "illegalWords" })) {
-            this.illegalList.insertMany([
-                { id: "illegalWords", items: [] },
-                { id: "illegalWebsites", items: [] },
-                { id: "spacedOutWordsOnly", items: [] },
-                { id: "potentiallyUnsafeWords", items: [] },
-                { id: "potentiallyUnsafeWordsSpacedOut", items: [] },
-                { id: "legalExtensions", items: []}
-            ]);
+
+        {
+            if (
+                !(await this.illegalList.countDocuments({ id: "illegalWords" }))
+            ) {
+                this.illegalList.insertOne({ id: "illegalWords", items: [] });
+            }
+            if (
+                !(await this.illegalList.countDocuments({
+                    id: "illegalWebsites",
+                }))
+            ) {
+                this.illegalList.insertOne({
+                    id: "illegalWebsites",
+                    items: [],
+                });
+            }
+            if (
+                !(await this.illegalList.countDocuments({
+                    id: "spacedOutWordsOnly",
+                }))
+            ) {
+                this.illegalList.insertOne({
+                    id: "spacedOutWordsOnly",
+                    items: [],
+                });
+            }
+            if (
+                !(await this.illegalList.countDocuments({
+                    id: "potentiallyUnsafeWords",
+                }))
+            ) {
+                this.illegalList.insertOne({
+                    id: "potentiallyUnsafeWords",
+                    items: [],
+                });
+            }
+            if (
+                !(await this.illegalList.countDocuments({
+                    id: "potentiallyUnsafeWordsSpacedOut",
+                }))
+            ) {
+                this.illegalList.insertOne({
+                    id: "potentiallyUnsafeWordsSpacedOut",
+                    items: [],
+                });
+            }
+
+            if (
+                !(await this.illegalList.countDocuments({
+                    id: "legalExtensions",
+                }))
+            ) {
+                this.illegalList.insertOne({
+                    id: "legalExtensions",
+                    items: [],
+                });
+            }
+
+            if (
+                !(await this.illegalList.countDocuments({
+                    id: "unsafeUsernames",
+                }))
+            ) {
+                this.illegalList.insertOne({
+                    id: "unsafeUsernames",
+                    items: [],
+                });
+            }
+            if (
+                !(await this.illegalList.countDocuments({
+                    id: "potentiallyUnsafeUsernames",
+                }))
+            ) {
+                this.illegalList.insertOne({
+                    id: "potentiallyUnsafeUsernames",
+                    items: [],
+                });
+            }
         }
+
         this.blocking = this.db.collection("blocking");
         this.prevReset = Date.now();
+        // TODO: use a set - gotta worry about JS equality BS
         this.views = [];
 
         this.maxviews = maxviews ? maxviews : 10000;
@@ -97,7 +231,10 @@ class UserManager {
             port: Number(process.env.MinioPort),
             useSSL: false,
             accessKey: process.env.MinioClientID,
-            secretKey: process.env.MinioClientSecret
+            secretKey: process.env.MinioClientSecret,
+            retryOptions: {
+                maximumRetryCount: 0,
+            },
         });
         // project bucket
         await this._makeBucket("projects");
@@ -107,20 +244,464 @@ class UserManager {
         await this._makeBucket("project-assets");
         // pfp bucket
         await this._makeBucket("profile-pictures");
+
+        if (using_backblaze) {
+            await this.generateBBAuthToken();
+        }
+
+        await this.fixProjectStats("6002723934");
+    }
+
+    /*
+    async backfillProjectInfo() {
+        await this.projects.updateMany({}, { $set: { authorRank: 0 } });
+
+        const rankedUsers = await this.users
+            .find({ rank: { $gt: 0 } }, { projection: { id: 1, rank: 1 } })
+            .toArray();
+
+        for (const user of rankedUsers) {
+            await this.projects.updateMany(
+                { author: user.id },
+                { $set: { authorRank: user.rank } },
+            );
+        }
+    }
+    */
+
+    /**
+     * Generate an auth token
+     * @returns {Promise<void>}
+     */
+    async generateBBAuthToken() {
+        const key_id = process.env.BackblazeKeyID;
+        const key = process.env.BackblazeKey;
+
+        const auth_header =
+            "Basic" + Buffer.from(key_id + ":" + key).toString("base64");
+
+        const headers = new Headers();
+        headers.set("Authorization", auth_header);
+
+        const results = await fetch(
+            "https://api.backblazeb2.com/b2api/v4/b2_authorize_account",
+            {
+                headers,
+            },
+        ).then((res) => res.json());
+
+        this.bb_auth_token = results.authorizationToken;
+
+        const hour = 1000 * 60 * 60;
+        const day = hour * 24;
+        this.need_new_bb_auth_token = Date.now() + day - hour;
+
+        const sa = results.apiInfo.storageApi;
+        this.bb_api_url = sa.apiUrl;
+        this.bb_download_url =
+            String(process.env.UseCustomBackblazeDownloadUrl) === "true"
+                ? process.env.BackblazeDownloadUrl
+                : sa.downloadUrl;
+
+        this.bb_upload_urls = {};
+        await this.generateBBUploadURL();
+    }
+
+    /**
+     * Generates an upload url
+     * @returns {Promise<object>}
+     */
+    async generateBBUploadURL() {
+        const headers = new Headers();
+        headers.set("Authorization", await this.getBBAuthToken());
+
+        const hour = 1000 * 60 * 60;
+        const day = hour * 24;
+        const need_new = Date.now() + day - hour;
+
+        try {
+            const results = await fetch(
+                `${this.bb_api_url}/b2api/v4/b2_get_upload_url?bucketId=${process.env.BackblazeBucketID}`,
+                {
+                    headers,
+                },
+            ).then((res) => res.json());
+
+            const index = ULID.ulid();
+
+            this.bb_upload_urls[index] = {
+                url: results.uploadUrl,
+                token: results.authorizationToken,
+                expires: need_new,
+                in_use: false,
+                index,
+            };
+
+            return this.bb_upload_urls[index];
+        } catch (e) {
+            console.error(`failed to get BB upload url: ${e}`);
+            return false;
+        }
+    }
+
+    /**
+     * Gets the Backblaze auth token or fetches it if its expired
+     * @returns {Promise<string>}
+     */
+    async getBBAuthToken() {
+        if (this.need_new_bb_auth_token <= Date.now()) {
+            await this.generateBBAuthToken();
+        }
+
+        return this.bb_auth_token;
+    }
+
+    /**
+     * Gets the Backblaze upload url or fetches it if its expired
+     * @returns {Promise<object|false>}
+     */
+    async getBBUploadUrl() {
+        for (const key in this.bb_upload_urls) {
+            const url_data = this.bb_upload_urls[key];
+            if (Date.now() > url_data.expires) {
+                this.removeBBUrl(url_data);
+                continue;
+            }
+
+            if (!url_data.in_use) {
+                // i dont trust JS object shenanigans... its probably a reference,
+                // but better safe than sorry
+                this.bb_upload_urls[key].in_use = true;
+                return url_data;
+            }
+        }
+
+        const data = await this.generateBBUploadURL();
+
+        if (!data) {
+            return false;
+        }
+
+        this.bb_upload_urls[data.index].in_use = true;
+        return data;
+    }
+
+    async doneWithBBUpload(url_data) {
+        this.bb_upload_urls[url_data.index].in_use = false;
+    }
+
+    async removeBBUrl(url_data) {
+        delete this.bb_upload_urls[url_data.index];
+    }
+
+    /**
+     * List the raw data returned by Backblaze's search.
+     * @param {string} prefix The prefix to search for
+     * @param {number} n The amount of items to return. Cannot exceed 10000.
+     * @returns {Promise<Array<Object>>}
+     */
+    async listDataWithPrefixBackblaze(prefix, n = 1000) {
+        // n is default 1k because max per class c is 1k, so we don't wanna go above that.
+        // if we do, it charges us for 2 instead of 1.
+        // we shouldn't have that many assets anyways.
+
+        const headers = new Headers();
+        headers.set("Authorization", await this.getBBAuthToken());
+
+        const bucketID = process.env.BackblazeBucketID;
+
+        const results = [];
+        let startFileName = null;
+
+        while (n !== 0) {
+            const num = n > 10000 ? 10000 : n;
+
+            let url =
+                this.bb_api_url +
+                `/b2api/v4/b2_list_file_names?bucketId=${bucketID}&maxFileCount=${num}&prefix=${encodeURIComponent(prefix)}`;
+
+            if (startFileName) {
+                url += `&startFileName=${encodeURIComponent(startFileName)}`;
+            }
+
+            let res = null;
+            // TODO: maybe just ask for a retry function. we're copy-pasting utils.retryIfFailure rn
+            const f = async (curRetries, finalRetries, delay) => {
+                try {
+                    // we don't url encode prefix since it *should* just be a number and maybe an underscore and also im lazy
+                    res = await fetch(url, {
+                        headers,
+                    }).then((res) => res.json());
+                } catch (e) {
+                    console.warn(`Failed to list data from backblaze: ${e}`);
+                    if (curRetries > finalRetries) {
+                        console.error("exceeded max retry count");
+                        throw e;
+                    }
+                    console.warn(
+                        `Try if failed has failed (${curRetries}/${finalRetries})`,
+                    );
+                    return await new Promise((resolve) => {
+                        setTimeout(() => {
+                            f(curRetries + 1, finalRetries, delay).then(
+                                resolve,
+                            );
+                        }, delay);
+                    });
+                }
+            };
+            await f(0, 3, 500);
+
+            if (res === null) {
+                throw "idk man";
+            }
+
+            results.push(...res.files);
+
+            n -= num;
+
+            startFileName = res.nextFileName;
+        }
+
+        return results;
+    }
+
+    /**
+     * List the names of files with a given prefix from Backblaze.
+     * @param {string} prefix The prefix to search for
+     * @param {number} n The number of results to get. Cannot exceed 10000.
+     * @returns {Promise<Array<string>>}
+     */
+    async listWithPrefixBackblaze(prefix, n = 1000) {
+        return (await this.listDataWithPrefixBackblaze(prefix, n)).map(
+            (file) => file.fileName,
+        );
+    }
+
+    /**
+     * Save a file to Backblaze.
+     * @param {string} name The name of the file
+     * @param {Buffer} file The buffer of the file
+     * @returns {Promise<boolean>} whether the saving succeeded
+     */
+    async saveToBackblaze(name, file, trying_again = 0) {
+        if (trying_again > 2) {
+            // TODO: log to webhook and ping either ian or devs
+            console.error("Backblaze IS NOT SAVING!!!!!");
+            return false;
+        }
+
+        const url_data = await this.getBBUploadUrl();
+
+        if (!url_data) {
+            console.error("can't find bb upload url");
+            return false;
+        }
+
+        const upload_url = url_data.url;
+        const auth_token = url_data.token;
+
+        const len = file.length;
+
+        const headers = new Headers();
+        headers.set("Authorization", auth_token);
+        headers.set("X-Bz-File-Name", encodeURIComponent(name));
+        headers.set("Content-Type", "b2/x-auto");
+        headers.set("Content-Length", len);
+        const hash = createHash("sha1");
+        hash.update(file);
+        headers.set("X-Bz-Content-Sha1", hash.digest("hex"));
+
+        let result;
+        try {
+            result = await fetch(upload_url, {
+                method: "POST",
+                headers,
+                body: file,
+            });
+        } catch (e) {
+            console.warn(`Got error after fetching. trying again: ${e}`);
+            // result.ok is already false
+            // but just in case
+            result = { ok: false };
+        }
+
+        if (!result.ok) {
+            // PROBABLY just saying its full - try again
+            this.removeBBUrl(url_data);
+            return new Promise((resolve, _) => {
+                setTimeout(async () => {
+                    resolve(
+                        await this.saveToBackblaze(
+                            name,
+                            file,
+                            trying_again + 1,
+                        ),
+                    );
+                }, 250); // TODO: we should NOT hardcode 250. that is a bad!!!
+            });
+        }
+
+        this.doneWithBBUpload(url_data);
+
+        return true;
+    }
+
+    /**
+     * Download a file from the backblaze asset storage
+     * @param {string} name The name of the requested file
+     * @returns {Promise<Buffer>}
+     */
+    async downloadFromBackblaze(name) {
+        const url = `${this.bb_download_url}/file/${process.env.BackblazeBucketName}/${name}`;
+
+        const buffer = Buffer.from(
+            await fetch(url).then((res) => res.arrayBuffer()),
+        );
+
+        return buffer;
+    }
+
+    /**
+     * Rename an object in Backblaze.
+     * @param {string} old_name The old name
+     * @param {string} new_name The new name
+     * @returns {Promise<void>}
+     */
+    async renameObjectBackblaze(old_name, new_name) {
+        const id = await this.getBBFileID(old_name);
+
+        await this.copyObjectBackblazeID(id, new_name);
+        await this.deleteFileBackblazeID(old_name, id);
+    }
+
+    /**
+     * Copy an object in Backblaze
+     * @param {string} old_name The old name
+     * @param {string} new_name The new name
+     * @returns {Promise<void>}
+     */
+    async copyObjectBackblaze(old_name, new_name) {
+        const file_id = await this.getBBFileID(old_name);
+
+        return await this.copyObjectBackblazeID(file_id, new_name);
+    }
+
+    /**
+     * Copy an object in Backblaze given it's ID, in order to avoid multiple ID lookups.
+     * @param {string} file_id The ID of the file
+     * @param {string} new_name The new name
+     * @returns {Promise<void>}
+     */
+    async copyObjectBackblazeID(file_id, new_name) {
+        const auth_token = await this.getBBAuthToken();
+        const api_url = this.bb_api_url;
+
+        const headers = new Headers();
+        headers.set("Authorization", auth_token);
+
+        const body = JSON.stringify({
+            sourceFileId: file_id,
+            destinationBucketId: process.env.BackblazeBucketID,
+            fileName: new_name,
+            metadataDirective: "COPY",
+        });
+
+        const url = api_url + "/b2api/v4/b2_copy_file";
+
+        const result = await fetch(url, {
+            method: "POST",
+            headers,
+            body,
+        });
+
+        if (!result.ok) {
+            console.error(
+                `FAILED TO COPY!!!! VERY BAD!!! ${JSON.stringify(await result.json())}`,
+            );
+        }
+    }
+
+    /**
+     * Delete a file from Backblaze
+     * @param {string} fileName The name of the file
+     * @returns {Promise<void>}
+     */
+    async deleteFileBackblaze(fileName) {
+        const id = await this.getBBFileID(fileName);
+
+        return await this.deleteFileBackblazeID(fileName, id);
+    }
+
+    /**
+     * Delete a file from Backblaze given it's ID, in order to avoid multiple ID lookups.
+     * @param {string} fileName The name of the file
+     * @param {string} fileId the ID of the file
+     * @returns {Promise<void>}
+     */
+    async deleteFileBackblazeID(fileName, fileId) {
+        const auth_token = await this.getBBAuthToken();
+        const api_url = this.bb_api_url;
+
+        const headers = new Headers();
+        headers.set("Authorization", auth_token);
+
+        const body = JSON.stringify({
+            fileName,
+            fileId,
+            bypassGovernance: false,
+        });
+
+        const url = api_url + "/b2api/v4/b2_delete_file_version";
+
+        const result = await fetch(url, {
+            method: "POST",
+            headers,
+            body,
+        });
+
+        if (!result.ok) {
+            console.error(
+                `FAILED TO DELETE FILE!!!! BIG BAD!!!! ${JSON.stringify(await result.json())}`,
+            );
+        }
+    }
+
+    /**
+     * Get the ID of a file from Backblaze
+     * @param {string} name The name of the file
+     * @returns {Promise<string>}
+     */
+    async getBBFileID(name) {
+        // boy do i hate backblaze
+        return await this.listWithPrefixBackblaze(name, 1)[0];
+    }
+
+    /**
+     * Delete multiple objects from Backblaze given a prefix
+     * @param {string} prefix The prefix to search for
+     * @param {number} n The number of objects to search for. Cannot exceed 10000.
+     */
+    async deleteMultipleObjectsBackblaze(prefix, n = 1000) {
+        const objects = await this.listDataWithPrefixBackblaze(prefix, n);
+
+        for (const obj of objects) {
+            await this.deleteFileBackblazeID(obj.fileName, obj.fileId);
+        }
     }
 
     _makeBucket(bucketName) {
         return new Promise((resolve, reject) => {
             this.minioClient.bucketExists(bucketName, (err, exists) => {
                 if (err) {
-                    console.log("Error checking if bucket exists:", err);
+                    console.error(`Error checking if bucket exists: ${err}`);
                     reject("error making bucket: " + err);
                     return;
                 }
                 if (!exists) {
                     this.minioClient.makeBucket(bucketName, (err) => {
                         if (err) {
-                            console.log("Error making bucket:", err);
+                            console.error(`Error making bucket: ${err}`);
                             reject("error making bucket: " + err);
                         }
                     });
@@ -139,44 +720,6 @@ class UserManager {
         this.deleteMultipleObjects(bucketName, "");
     }
 
-    /**
-     * Reset the database
-     * @param {boolean} understands skip the prompt if true
-     * @async
-     */
-    async reset(understands = false) {
-        throw new Error("Resseting is disabled");
-
-        if (!understands) {
-            let unde = prompt("This deletes ALL DATA. Are you sure? (Y/n) ")
-            if (typeof unde !== "string") {
-                return;
-            }
-        }
-
-        await this.users.deleteMany({});
-        await this.loggedIPs.deleteMany({});
-        await this.passwordResetStates.deleteMany({});
-        await this.sentEmails.deleteMany({});
-        await this.followers.deleteMany({});
-        await this.oauthIDs.deleteMany({});
-        await this.reports.deleteMany({});
-        await this.runtimeConfig.deleteMany({});
-        await this.projects.deleteMany({});
-        await this.projectStats.deleteMany({});
-        await this.messages.deleteMany({});
-        await this.oauthStates.deleteMany({});
-        await this.userFeed.deleteMany({});
-        await this.illegalList.deleteMany({});
-        // dont reset policy stuff, we need that :normal:
-
-        // reset minio buckets
-        await this.resetBucket("projects");
-        await this.resetBucket("project-thumbnails");
-        await this.resetBucket("project-assets");
-        await this.resetBucket("profile-pictures");
-    }
-
     async setLifecyclePolicy(bucketName, policy) {
         await this.minioClient.setBucketLifecycle(bucketName, policy);
     }
@@ -185,72 +728,102 @@ class UserManager {
      * Create an account
      * @param {string} username new username of the user
      * @param {string?} password new password of the user
-     * @param {string?} email email of the user, if provided
+     * @param {string|{email:string, valid: boolean}|null} email_data email of the user
      * @param {string?} birthday birth date of the user formatted as an ISO string "1990-01-01T00:00:00.000Z", if provided
      * @param {string?} country country code if the user as defined by ISO 3166-1 Alpha-2, if provided
      * @param {boolean} is_studio whether or not the account being created is a studio or not
+     * @param {boolean?} check_username check if the username breaks illegal wording rules
      * @returns {Promise<[string, string]|boolean>} token & id if successful, false if not
      * @async
      */
-    async createAccount(username, real_username, password, email, birthday, country, is_studio, utils, res) {
+    async createAccount(
+        username,
+        real_username,
+        password,
+        email_data,
+        birthday,
+        country,
+        is_studio,
+        utils,
+        res,
+        check_username = false,
+    ) {
         const result = await this.users.findOne({ username: username });
         if (result) {
             return false;
         }
 
         const illegalWordingError = async (text, type) => {
-            const trigger = await this.checkForIllegalWording(text);
+            const trigger = await this.checkForUnsafeUsername(text);
             if (trigger) {
                 utils.error(res, 400, "IllegalWordsUsed");
-    
-                const illegalWordIndex = await this.getIndexOfIllegalWording(text);
+
+                const illegalWordIndex =
+                    await this.getIndexOfUnsafeUsername(text);
 
                 const before = text.substring(0, illegalWordIndex[0]);
                 const after = text.substring(illegalWordIndex[1]);
-                const illegalWord = text.substring(illegalWordIndex[0], illegalWordIndex[1]);
-    
+                const illegalWord = text.substring(
+                    illegalWordIndex[0],
+                    illegalWordIndex[1],
+                );
+
                 utils.logs.sendHeatLog(
                     before + "\x1b[31;1m" + illegalWord + "\x1b[0m" + after,
                     trigger,
                     type,
-                    username
-                )
-                
+                    username,
+                );
+
                 return true;
             }
             return false;
-        }
+        };
 
-        const slightlyIllegalWordingError = async (text, type) => {
-            let trigger = await this.checkForSlightlyIllegalWording(text);
+        const potentiallyIllegalWordingError = async (text, type) => {
+            const trigger = await this.checkForPotentiallyUnsafeUsername(text);
             if (trigger) {
-                const illegalWordIndex = await this.getIndexOfSlightlyIllegalWording(text);
-    
+                const illegalWordIndex =
+                    await this.getIndexOfPotentiallyUnsafeUsername(text);
+
                 const before = text.substring(0, illegalWordIndex[0]);
                 const after = text.substring(illegalWordIndex[1]);
-                const illegalWord = text.substring(illegalWordIndex[0], illegalWordIndex[1]);
-    
+                const illegalWord = text.substring(
+                    illegalWordIndex[0],
+                    illegalWordIndex[1],
+                );
+
                 utils.logs.sendHeatLog(
                     before + "\x1b[33;1m" + illegalWord + "\x1b[0m" + after,
                     trigger,
                     type,
                     username,
                     0xffbb00,
-                )
+                );
                 return true;
             }
             return false;
-        }
+        };
 
-        if (await illegalWordingError(username, "username")) {
+        if (
+            check_username &&
+            (await illegalWordingError(username, "username"))
+        ) {
             return false;
         }
 
-        await slightlyIllegalWordingError(username, "username");
+        await potentiallyIllegalWordingError(username, "username");
+
+        let email = email_data;
+        let emailVerified = false;
+        if (email_data && typeof email_data === "object") {
+            email = email_data.email;
+            emailVerified = email_data.verify;
+        }
 
         const hash = password ? await bcrypt.hash(password, 10) : "";
         const id = ULID.ulid();
-        const token = randomBytes(32).toString('hex');
+        const token = randomBytes(32).toString("hex");
         const current_time = Date.now();
         await this.users.insertOne({
             id,
@@ -275,7 +848,7 @@ class UserManager {
             lastLogin: current_time,
             lastUpload: 0,
             email,
-            emailVerified: false,
+            emailVerified,
             birthdayEntered: !!birthday,
             countryEntered: !!country,
             birthday,
@@ -288,6 +861,7 @@ class UserManager {
             profileHideFollowing: false,
             profileHideFollowers: false,
             is_studio,
+            onWatchlist: false,
         });
 
         await this.minioClient.putObject("profile-pictures", id, basePFP);
@@ -296,7 +870,9 @@ class UserManager {
     }
 
     async canCreateAccount() {
-        return (await this.runtimeConfig.findOne({id: "accountCreationEnabled"})).value;
+        return (
+            await this.runtimeConfig.findOne({ id: "accountCreationEnabled" })
+        ).value;
     }
 
     /**
@@ -308,20 +884,29 @@ class UserManager {
     async deleteAccount(username) {
         const result = await this.users.findOne({ username: username });
 
-        if (!result) return false;
+        if (!result) {
+            return false;
+        }
 
-        const deletionSuccess = (await this.users.deleteOne({
-            username: username
-        })).deletedCount > 0;
+        const deletionSuccess =
+            (
+                await this.users.deleteOne({
+                    username: username,
+                })
+            ).deletedCount > 0;
 
-        if (!deletionSuccess) return false;
+        if (!deletionSuccess) {
+            return false;
+        }
 
         await this.minioClient.removeObject("profile-pictures", result.id);
 
         // search for all projects by the user and delete them
         const user_id = result.id;
 
-        const projects = await this.projects.find({ author: user_id }).toArray();
+        const projects = await this.projects
+            .find({ author: user_id })
+            .toArray();
 
         for (const project of projects) {
             await this.deleteProject(project.id);
@@ -329,12 +914,17 @@ class UserManager {
 
         // delete all references to the user in the followers collection
         await this.followers.deleteMany({ target: user_id });
-        const target_deletes = await this.followers.find({ follower: user_id }).toArray();
+        const target_deletes = await this.followers
+            .find({ follower: user_id })
+            .toArray();
 
         for (const target of target_deletes) {
             await this.followers.deleteOne({ _id: target._id });
             // decrement the follower count of the target
-            await this.users.updateOne({ id: target.target }, { $inc: { followers: -1 } });
+            await this.users.updateOne(
+                { id: target.target },
+                { $inc: { followers: -1 } },
+            );
         }
 
         // remove all reports by the user
@@ -343,20 +933,51 @@ class UserManager {
 
         // remove all oauth methods
         await this.oauthIDs.deleteMany({ id: user_id });
-        
+
         // remove logged IPs
         await this.loggedIPs.deleteMany({ id: user_id });
 
         return true;
     }
 
+    async fixProjectStats(id) {
+        const real_votes = await this.projectStats
+            .find({ projectId: id, type: "vote" })
+            .toArray();
+        const real_loves = await this.projectStats
+            .find({ projectId: id, type: "love" })
+            .toArray();
+
+        let votes = 0;
+        let loves = 0;
+        for (const vote of real_votes) {
+            const id = vote.userId;
+            if (await this.users.findOne({ id, permBanned: false })) {
+                votes++;
+            } else {
+                await this.projectStats.deleteMany({ userId: id });
+            }
+        }
+        for (const love of real_loves) {
+            const id = love.userId;
+            if (await this.users.findOne({ id, permBanned: false })) {
+                loves++;
+            } else {
+                await this.projectStats.deleteMany({ userId: id });
+            }
+        }
+
+        await this.projects.updateOne({ id }, { $set: { loves, votes } });
+    }
+
     /**
      * BE CAREFUL WITH THIS. DO NOT SEND IT IN ITS ENTIRETY. gets the entire user metadata.
-     * @param {string} username username of the user 
+     * @param {string} username username of the user
      * @returns {Promise<object>}
      */
     async getUserData(username) {
-        return await this.users.findOne({username: username});
+        username = String(username);
+        return await this.users.findOne({ username: username });
     }
 
     /**
@@ -367,11 +988,17 @@ class UserManager {
      * @async
      */
     async loginWithPassword(username, password, allowBanned) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
-        if (!result) return false;
+        if (!result) {
+            return false;
+        }
 
-        if ((result.permBanned || result.unbanTime > Date.now()) && !allowBanned) {
+        if (
+            (result.permBanned || result.unbanTime > Date.now()) &&
+            !allowBanned
+        ) {
             return false;
         }
 
@@ -383,11 +1010,17 @@ class UserManager {
     }
 
     /**
-     * @typedef {Object} loginResult
+     * @typedef {Object} LoginResult
      * @property {string} username The user's username. Blank if unsuccessful
      * @property {string} id The user's id. Blank if unsuccessful
      * @property {boolean} success If the login was successful
      * @property {boolean} exists If the account even exists
+     * @property {boolean} isDonator
+     * @property {boolean} isMod true if has mod OR admin
+     * @property {boolean} isAdmin
+     * @property {boolean} emailVerified
+     * @property {string} email
+     * @property {string[]} badges
      */
 
     /**
@@ -395,44 +1028,101 @@ class UserManager {
      * @param {string?} username username of the user. Optional
      * @param {string} token token of the user
      * @param {boolean} allowBanned allow banned users to login
-     * @returns {Promise<loginResult>} Result of the login attempt
+     * @returns {Promise<LoginResult>} Result of the login attempt
      * @async
      */
-    async loginWithToken(token, allowBanned) {
+    async loginWithToken(token, allowBanned, get_full_meta = false) {
+        token = String(token);
+
+        const data = {
+            success: false,
+            username: "",
+            id: "",
+            exists: false,
+            isDonator: false,
+            isMod: false,
+            isAdmin: false,
+            emailVerified: false,
+            email: "",
+            badges: [],
+        };
+
+        if (token === "undefined") {
+            return data;
+        }
+
         const result = await this.users.findOne({ token });
 
-        if (!result) return { success: false, username: "", id: "", exists: false };
-
-        if ((result.permBanned || result.unbanTime > Date.now()) && !allowBanned) {
-            return { success: false, username: result.username, id: result.id, exists: true };
+        if (!result) {
+            return data;
         }
 
-        // login invalid if more than the time
-        if (result.lastLogin + (Number(process.env.LoginInvalidationTime) || 259200000) < Date.now()) {
-            return { success: false, username: result.username, id: result.id, exists: true };
+        data.username = result.username;
+        data.id = result.id;
+        data.exists = true;
+        data.isDonator = result.badges.includes("donator");
+        data.isMod = result.moderator || result.admin;
+        data.isAdmin = result.admin;
+        data.emailVerified = result.emailVerified;
+        data.email = result.email;
+
+        if (get_full_meta) {
+            data.fullMeta = result;
         }
+
+        if (
+            ((result.permBanned || result.unbanTime > Date.now()) &&
+                !allowBanned) ||
+            result.lastLogin +
+                (Number(process.env.LoginInvalidationTime) || 259200000) <
+                Date.now()
+        ) {
+            return data;
+        }
+
+        data.success = true;
 
         this.users.updateOne({ token }, { $set: { lastLogin: Date.now() } });
-        return { success: true, username: result.username, id: result.id, exists: true };
+        return data;
     }
 
     async getRealUsername(username) {
-        return (await this.users.findOne({username: username})).real_username;
+        username = String(username);
+        return (await this.users.findOne({ username: username })).real_username;
+    }
+
+    async quickProjectCountCheck(author_id, at_least) {
+        // TODO: this is shitty. is there any better way?
+        author_id = String(author_id);
+        return (
+            await this.projects
+                .find({ author: author_id, hardReject: false })
+                .limit(at_least)
+                .toArray()
+        ).length;
     }
 
     /**
      * Check if a user exists by username
-     * @param {string} username username of the user 
+     * @param {string} username username of the user
      * @returns {Promise<boolean>} true if the user exists, false if not
      * @async
      */
-    async existsByUsername(username, showBanned=false) {
+    async existsByUsername(username, showBanned = false) {
+        username = String(username);
         let query = { username: username };
         if (!showBanned) {
-            query = { $and: [ query, { permBanned: false, unbanTime: { $lt: Date.now() } } ] };
+            query = {
+                $and: [
+                    query,
+                    { permBanned: false, unbanTime: { $lt: Date.now() } },
+                ],
+            };
         }
         const result = await this.users.findOne(query);
-        if (result) return true;
+        if (result) {
+            return true;
+        }
         return false;
     }
 
@@ -443,23 +1133,28 @@ class UserManager {
      * @async
      */
     async existsByID(id) {
+        id = String(id);
         const result = await this.users.findOne({ id: id });
-        if (result) return true;
+        if (result) {
+            return true;
+        }
         return false;
     }
 
     /**
      * Get the ID of a user by username
      * @param {string} username username of the user
-     * @returns {Promise<string>} id of the user
+     * @returns {Promise<string|boolean>} id of the user
      * @async
      */
-    async getIDByUsername(username, throw_err=true) {
-        const result = await this.users.findOne({ username: username });
+    async getIDByUsername(username, throw_err = true) {
+        username = String(username);
+        const result = await this.users.findOne({ username });
         if (!result) {
             if (throw_err) {
-                const error = `----------\nCould not get ${username}'s id\n----------`
-                console.log(error);
+                const error = `Could not get ${username}'s id`;
+                console.error(error);
+                console.trace();
                 throw error;
             } else {
                 return false;
@@ -475,9 +1170,12 @@ class UserManager {
      * @async
      */
     async getUsernameByID(id) {
+        id = String(id);
         const result = await this.users.findOne({ id: id });
 
-        if (!result) return false; // prevent crashes
+        if (!result) {
+            return false;
+        } // prevent crashes
 
         return result.username;
     }
@@ -489,22 +1187,38 @@ class UserManager {
      * @async
      */
     async changeUsernameByID(id, newUsername, real_username) {
-        await this.users.updateOne({ id: id }, { $set: { username: newUsername, real_username } });
+        id = String(id);
+        newUsername = String(newUsername);
+        await this.users.updateOne(
+            { id: id },
+            { $set: { username: newUsername, real_username } },
+        );
     }
 
     async changeUsername(username, newUsername, real_username) {
-        await this.users.updateOne({ username: username }, { $set: { username: newUsername, real_username } });
+        username = String(username);
+        newUsername = String(newUsername);
+        await this.users.updateOne(
+            { username: username },
+            { $set: { username: newUsername, real_username } },
+        );
     }
 
     /**
-     * Change the password of a user
+     * Change the password of a user and invalidate their token
      * @param {string} username username of the user
      * @param {string} newPassword new password of the user
+     * @returns {Promise<string>} The users new token
      * @async
      */
     async changePassword(username, newPassword) {
-        const hash = await bcrypt.hash(newPassword, 10);
-        await this.users.updateOne({ username: username }, { $set: { password: hash, lastLogin: 0 } }); // sets password and invalidates token
+        username = String(username);
+        const password = await bcrypt.hash(newPassword, 10);
+        const token = randomBytes(32).toString("hex");
+        // sets password and invalidates token
+        await this.users.updateOne({ username }, { $set: { password, token } });
+
+        return token;
     }
 
     /**
@@ -513,6 +1227,7 @@ class UserManager {
      * @returns {Promise<boolean>} Whether the user can login with a password
      */
     async canPasswordLogin(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
         return result.password ? true : false;
@@ -526,9 +1241,9 @@ class UserManager {
     async getOAuthMethods(username) {
         const id = await this.getIDByUsername(username);
 
-        const result = (await this.oauthIDs.find({ id: id })
-        .toArray())
-        .map(x => x.method);
+        const result = (await this.oauthIDs.find({ id: id }).toArray()).map(
+            (x) => x.method,
+        );
 
         return result;
     }
@@ -549,12 +1264,12 @@ class UserManager {
     async addOAuthMethod(username, method, code) {
         const id = await this.getIDByUsername(username);
 
-        await this.oauthIDs.insertOne({ id: id, method: method, code: code })
+        await this.oauthIDs.insertOne({ id: id, method: method, code: code });
     }
 
     /**
      * Remove an oauth login method from a user
-     * @param {string} username Username of the user 
+     * @param {string} username Username of the user
      * @param {string} method Method to remove
      */
     async removeOAuthMethod(username, method) {
@@ -570,9 +1285,14 @@ class UserManager {
      * @returns {Promise<string>} The id of the user
      */
     async getUserIDByOAuthID(method, id) {
-        const result = await this.oauthIDs.findOne({ method: method, code: id });
+        const result = await this.oauthIDs.findOne({
+            method: method,
+            code: id,
+        });
 
-        if (!result) return false;
+        if (!result) {
+            return false;
+        }
 
         return result.id;
     }
@@ -584,6 +1304,7 @@ class UserManager {
      * @async
      */
     async getBio(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
         return result.bio;
     }
@@ -595,7 +1316,11 @@ class UserManager {
      * @async
      */
     async setBio(username, newBio) {
-        await this.users.updateOne({ username: username }, { $set: { bio: newBio } });
+        username = String(username);
+        await this.users.updateOne(
+            { username: username },
+            { $set: { bio: newBio } },
+        );
     }
 
     /**
@@ -606,7 +1331,11 @@ class UserManager {
      * @async
      */
     async changeFavoriteProject(username, type, id) {
-        await this.users.updateOne({ username: username }, { $set: { favoriteProjectType: type, favoriteProjectID: id } });
+        username = String(username);
+        await this.users.updateOne(
+            { username: username },
+            { $set: { favoriteProjectType: type, favoriteProjectID: id } },
+        );
     }
 
     /**
@@ -615,6 +1344,7 @@ class UserManager {
      * @returns {Promise<number>} When the user first logged in Unix time
      */
     async getFirstLogin(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
         return result.firstLogin;
@@ -627,11 +1357,12 @@ class UserManager {
      * @async
      */
     async getLastLogin(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
         return result.lastLogin;
     }
-    
+
     /**
      * Get the amount of cubes a user has
      * @param {string} username username of the user
@@ -639,6 +1370,7 @@ class UserManager {
      * @async
      */
     async getCubes(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
         return result.cubes;
@@ -651,7 +1383,11 @@ class UserManager {
      * @async
      */
     async setCubes(username, amount) {
-        await this.users.updateOne({ username: username }, { $set: { cubes: amount } });
+        username = String(username);
+        await this.users.updateOne(
+            { username: username },
+            { $set: { cubes: amount } },
+        );
     }
 
     /**
@@ -661,7 +1397,21 @@ class UserManager {
      * @async
      */
     async getRank(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
+
+        return result.rank;
+    }
+
+    /**
+     * Get the rank of a user by ID
+     * @param {string} id ID of the user
+     * @returns {Promise<number>} rank of the user
+     * @async
+     */
+    async getRankByID(id) {
+        id = String(id);
+        const result = await this.users.findOne({ id });
 
         return result.rank;
     }
@@ -673,7 +1423,16 @@ class UserManager {
      * @async
      */
     async setRank(username, rank) {
-        await this.users.updateOne({ username: username }, { $set: { rank: rank } });
+        username = String(username);
+        await this.users.updateOne(
+            { username: username },
+            { $set: { rank: rank } },
+        );
+        const id = await this.getIDByUsername(username);
+        await this.projects.updateMany(
+            { author: id },
+            { $set: { authorRank: rank } },
+        );
     }
 
     /**
@@ -683,6 +1442,7 @@ class UserManager {
      * @async
      */
     async getLastUpload(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
         return result.lastUpload;
@@ -695,19 +1455,26 @@ class UserManager {
      * @async
      */
     async setLastUpload(username, lastUpload) {
-        await this.users.updateOne({ username: username }, { $set: { lastUpload: lastUpload } });
+        username = String(username);
+        await this.users.updateOne(
+            { username: username },
+            { $set: { lastUpload: lastUpload } },
+        );
     }
 
     /**
      * Get the badges of a user
-     * @param {string} username username of the user 
+     * @param {string} username username of the user
      * @returns {Promise<Array<string>>} array of badges the user has
      * @async
      */
     async getBadges(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
-        if (!result) return false;
+        if (!result) {
+            return false;
+        }
 
         return result.badges;
     }
@@ -718,32 +1485,42 @@ class UserManager {
      * @returns {Promise<boolean>} if the user is a donator or not
      */
     async isDonator(username) {
-        const result = await this.users.findOne({username: username});
+        username = String(username);
+        const result = await this.users.findOne({ username: username });
 
         return result.badges.indexOf("donator") > -1;
     }
 
     /**
      * Add a badge to a user
-     * @param {string} username username of the user 
+     * @param {string} username username of the user
      * @param {string} badge the badge to add
      * @async
      */
     async addBadge(username, badge) {
-        await this.users.updateOne({ username: username }, { $push: { badges: badge } });
+        username = String(username);
+        await this.users.updateOne(
+            { username: username },
+            { $push: { badges: badge } },
+        );
     }
 
     async setBadges(username, badges) {
-        await this.users.updateOne({ username: username }, { $set: { badges: badges } });
+        username = String(username);
+        await this.users.updateOne(
+            { username: username },
+            { $set: { badges: badges } },
+        );
     }
 
     /**
      * Check if a user has a badge
-     * @param {string} username username of the user 
-     * @param {string} badge badge to check for 
+     * @param {string} username username of the user
+     * @param {string} badge badge to check for
      * @returns {Promise<boolean>} true if the user has the badge, false if not
      */
     async hasBadge(username, badge) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
         return result.badges.includes(badge);
@@ -751,12 +1528,16 @@ class UserManager {
 
     /**
      * Remove a badge from a user
-     * @param {string} username username of the user 
-     * @param {string} badge the badge to remove 
+     * @param {string} username username of the user
+     * @param {string} badge the badge to remove
      * @async
      */
     async removeBadge(username, badge) {
-        await this.users.updateOne({ username: username }, { $pull: { badges: badge } });
+        username = String(username);
+        await this.users.updateOne(
+            { username: username },
+            { $pull: { badges: badge } },
+        );
     }
 
     /**
@@ -765,23 +1546,36 @@ class UserManager {
      * @returns {Promise<number>} ID of the user's favorite project
      */
     async getFeaturedProject(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
-        return result.featuredProject;
+        let res;
+        try {
+            res = result.featuredProject;
+        } catch (e) {
+            console.warn(`couldn't find fp??? ${username}`);
+            res = "0";
+        }
+
+        return res;
     }
 
     /**
      * Set a user's featured project
-     * @param {string} username Username of the user 
+     * @param {string} username Username of the user
      * @param {number} id ID of the project
      * @async
      */
     async setFeaturedProject(username, id) {
-        await this.users.updateOne({
-            username: username
-        }, {
-            $set: { featuredProject: id }
-        });
+        username = String(username);
+        await this.users.updateOne(
+            {
+                username: username,
+            },
+            {
+                $set: { featuredProject: id },
+            },
+        );
     }
 
     /**
@@ -791,32 +1585,46 @@ class UserManager {
      * @async
      */
     async getFeaturedProjectTitle(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
-        return result.featuredProjectTitle;
+        let res;
+        try {
+            res = result.featuredProjectTitle;
+        } catch (e) {
+            console.warn(`couldn't find fp title??? ${username}`);
+            res = -1;
+        }
+
+        return res;
     }
 
     /**
      * Set a user's featured project title
-     * @param {string} username Username of the user 
+     * @param {string} username Username of the user
      * @param {number} title Index of the title in the array of titles
      * @async
      */
     async setFeaturedProjectTitle(username, title) {
-        await this.users.updateOne({
-            username: username
-        }, {
-            $set: { featuredProjectTitle: title }
-        });
+        username = String(username);
+        await this.users.updateOne(
+            {
+                username: username,
+            },
+            {
+                $set: { featuredProjectTitle: title },
+            },
+        );
     }
 
     /**
      * Check if a user is an admin
-     * @param {string} username 
+     * @param {string} username
      * @returns {Promise<boolean>} true if the user is an admin, false if not
      * @async
      */
     async isAdmin(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
         return result.admin;
@@ -824,12 +1632,16 @@ class UserManager {
 
     /**
      * Set a user as an admin
-     * @param {string} username username of the user 
-     * @param {boolean} admin true if setting to admin, false if not 
+     * @param {string} username username of the user
+     * @param {boolean} admin true if setting to admin, false if not
      * @async
      */
     async setAdmin(username, admin) {
-        await this.users.updateOne({ username: username }, { $set: { admin: admin } });
+        username = String(username);
+        await this.users.updateOne(
+            { username: username },
+            { $set: { admin: admin } },
+        );
     }
 
     /**
@@ -839,6 +1651,7 @@ class UserManager {
      * @async
      */
     async isModerator(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
         return result.moderator;
@@ -851,13 +1664,20 @@ class UserManager {
      * @async
      */
     async setModerator(username, moderator) {
-        await this.users.updateOne({ username: username }, { $set: { moderator: moderator } });
+        username = String(username);
+        await this.users.updateOne(
+            { username: username },
+            { $set: { moderator: moderator } },
+        );
     }
 
     async isModeratorOrAdmin(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
-        if (!result) return false;
+        if (!result) {
+            return false;
+        }
 
         return result.moderator || result.admin;
     }
@@ -868,10 +1688,11 @@ class UserManager {
      * @async
      */
     async getAllAdmins() {
-        const result = (await this.users.find({ admin: true }).toArray())
-        .map(admin => {
-            return {id: admin.id, username: admin.username};
-        })
+        const result = (await this.users.find({ admin: true }).toArray()).map(
+            (admin) => {
+                return { id: admin.id, username: admin.username };
+            },
+        );
 
         return result;
     }
@@ -882,9 +1703,10 @@ class UserManager {
      * @async
      */
     async getAllModerators() {
-        const result = (await this.users.find({ moderator: true }).toArray())
-        .map(admin => {
-            return {id: admin.id, username: admin.username};
+        const result = (
+            await this.users.find({ moderator: true }).toArray()
+        ).map((admin) => {
+            return { id: admin.id, username: admin.username };
         });
 
         return result;
@@ -897,9 +1719,10 @@ class UserManager {
      * @async
      */
     async isBanned(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
-        return result.permBanned || result.unbanTime > Date.now();
+        return result && (result.permBanned || result.unbanTime > Date.now());
     }
 
     /**
@@ -908,9 +1731,13 @@ class UserManager {
      * @param {boolean} banned true if banning, false if unbanning
      * @async
      */
-    async setPermBanned(username, banned, reason, remove_follows=false) {
-        await this.users.updateOne({ username: username }, { $set: { permBanned: banned, banReason: reason } });
-        
+    async setPermBanned(username, banned, reason, remove_follows = true) {
+        username = String(username);
+        await this.users.updateOne(
+            { username: username },
+            { $set: { permBanned: banned, banReason: reason } },
+        );
+
         const user_id = await this.getIDByUsername(username);
         await this.privateAllProjects(user_id, banned);
 
@@ -923,12 +1750,17 @@ class UserManager {
         if (remove_follows) {
             // get all references to the user in the followers collection
 
-            const following = await this.followers.find({ follower: user_id }).toArray();
+            const following = await this.followers
+                .find({ follower: user_id })
+                .toArray();
 
             for (const follow of following) {
                 await this.followers.deleteOne({ _id: follow._id });
                 // decrement the following count of the follower
-                await this.users.updateOne({ id: follow.follower }, { $inc: { following: -1 } });
+                await this.users.updateOne(
+                    { id: follow.follower },
+                    { $inc: { following: -1 } },
+                );
             }
 
             await this.followers.deleteMany({ target: user_id });
@@ -941,15 +1773,16 @@ class UserManager {
      * @param {boolean} toggle toggle for the privatization. true if you want them to be hidden, false if otherwise.
      */
     async privateAllProjects(user_id, toggle) {
-        await this.projects.updateMany({
-            author: user_id
-        }, {
-            $set: {
-            
-            public: !toggle
-
-            }
-        });
+        await this.projects.updateMany(
+            {
+                author: user_id,
+            },
+            {
+                $set: {
+                    public: !toggle,
+                },
+            },
+        );
     }
 
     /**
@@ -959,9 +1792,12 @@ class UserManager {
      * @async
      */
     async getEmail(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
-        if (!result) return false;
+        if (!result) {
+            return false;
+        }
 
         return result.email;
     }
@@ -972,8 +1808,16 @@ class UserManager {
      * @param {string} email email of the user
      * @async
      */
-    async setEmail(username, email, verify=false) {
-        await this.users.updateOne({ username: username }, { $set: { email: email, emailVerified: verify } });
+    async setEmail(username, email, verify = false) {
+        username = String(username);
+        if (await this.emailInUse(email)) {
+            return;
+        }
+
+        await this.users.updateOne(
+            { username: username },
+            { $set: { email: email, emailVerified: verify } },
+        );
     }
 
     /**
@@ -982,15 +1826,19 @@ class UserManager {
      * @async
      */
     async logout(username) {
-        await this.users.updateOne({ username: username }, { $set: { lastLogin: 0 } }); // makes the token invalid
+        username = String(username);
+        await this.users.updateOne(
+            { username: username },
+            { $set: { lastLogin: 0 } },
+        ); // makes the token invalid
     }
 
     /**
      * Report something
-     * @param {number} type Type of report. 0 = user, 1 = project 
-     * @param {string} reportee ID of the person/project being reported 
-     * @param {string} reason Reason for the report 
-     * @param {string} reporter ID of the person reporting 
+     * @param {number} type Type of report. 0 = user, 1 = project
+     * @param {string} reportee ID of the person/project being reported
+     * @param {string} reason Reason for the report
+     * @param {string} reporter ID of the person reporting
      * @async
      */
     async report(type, reportee, reason, reporter) {
@@ -1000,8 +1848,8 @@ class UserManager {
             reason: reason,
             reporter: reporter,
             date: Date.now(),
-            id: ULID.ulid()
-        })
+            id: ULID.ulid(),
+        });
     }
 
     /**
@@ -1010,6 +1858,7 @@ class UserManager {
      * @returns {Promise<boolean>} true if the report exists, false if not
      */
     async reportExists(id) {
+        id = String(id);
         const result = await this.reports.findOne({ id: id });
 
         return result ? true : false;
@@ -1017,31 +1866,32 @@ class UserManager {
 
     /**
      * Get reports by type
-     * @param {number} type The type of reports to get 
+     * @param {number} type The type of reports to get
      * @param {number} page The page of reports to get
      * @param {number} pageSize The amount of reports to get
      * @returns {Promise<Array<object>>} Array of reports of the specified type
      * @async
      */
     async getReportsByType(type, page, pageSize) {
-        const result = await this.reports.aggregate([
-            {
-                $match: { type: type }
-            },
-            {
-                $sort: { date: -1 }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: pageSize
-            },
-            {
-                $unset: "_id",
-            }
-        ])
-        .toArray();
+        const result = await this.reports
+            .aggregate([
+                {
+                    $match: { type: type },
+                },
+                {
+                    $sort: { date: -1 },
+                },
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: pageSize,
+                },
+                {
+                    $unset: "_id",
+                },
+            ])
+            .toArray();
 
         return result;
     }
@@ -1055,26 +1905,32 @@ class UserManager {
      * @async
      */
     async getReportsByReportee(reportee, page, pageSize) {
-        const result = await this.reports.aggregate([
-            {
-                $match: { reportee: reportee }
-            },
-            {
-                $sort: { date: -1 }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: pageSize
-            },
-            {
-                $unset: "_id",
-            }
-        ])
-        .toArray();
+        const result = await this.reports
+            .aggregate([
+                {
+                    $match: { reportee: reportee },
+                },
+                {
+                    $sort: { date: -1 },
+                },
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: pageSize,
+                },
+                {
+                    $unset: "_id",
+                },
+            ])
+            .toArray();
 
         return result;
+    }
+
+    async deleteReports(type, id) {
+        id = String(id);
+        await this.reports.deleteMany({ id: id, type: type });
     }
 
     /**
@@ -1083,27 +1939,28 @@ class UserManager {
      * @param {number} page The page of reports to get
      * @param {number} pageSize The amount of reports to get
      * @returns {Promise<Array<object>>} Array of reports by the specified reporter
-     * @async 
+     * @async
      */
     async getReportsByReporter(reporter, page, pageSize) {
-        const result = await this.reports.aggregate([
-            {
-                $match: { reporter: reporter }
-            },
-            {
-                $sort: { date: -1 }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: pageSize
-            },
-            {
-                $unset: "_id",
-            }
-        ])
-        .toArray();
+        const result = await this.reports
+            .aggregate([
+                {
+                    $match: { reporter: reporter },
+                },
+                {
+                    $sort: { date: -1 },
+                },
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: pageSize,
+                },
+                {
+                    $unset: "_id",
+                },
+            ])
+            .toArray();
 
         return result;
     }
@@ -1115,7 +1972,12 @@ class UserManager {
      * @returns {Promise<boolean>} true if the user has already reported the person/project, false if not
      */
     async hasAlreadyReported(reporter, reportee) {
-        const result = await this.reports.findOne({ reporter: reporter, reportee: reportee });
+        reporter = String(reporter);
+        reportee = String(reportee);
+        const result = await this.reports.findOne({
+            reporter: reporter,
+            reportee: reportee,
+        });
 
         return result ? true : false;
     }
@@ -1128,21 +1990,22 @@ class UserManager {
      * @async
      */
     async getReports(page, pageSize) {
-        const result = await this.reports.aggregate([
-            {
-                $sort: { date: -1 }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: pageSize
-            },
-            {
-                $unset: "_id"
-            }
-        ])
-        .toArray();
+        const result = await this.reports
+            .aggregate([
+                {
+                    $sort: { date: -1 },
+                },
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: pageSize,
+                },
+                {
+                    $unset: "_id",
+                },
+            ])
+            .toArray();
 
         return result;
     }
@@ -1153,6 +2016,7 @@ class UserManager {
      * @async
      */
     async deleteReport(id) {
+        id = String(id);
         await this.reports.deleteOne({ id: id });
     }
 
@@ -1165,19 +2029,54 @@ class UserManager {
      * @param {Buffer} imageBuffer The file buffer for the thumbnail.
      * @param {string} instructions The instructions for the project.
      * @param {string} notes The notes for the project
-     * @param {String} remix ID of the project this is a remix of. Undefined if not a remix.
+     * @param {string} remix ID of the project this is a remix of. Undefined if not a remix.
      * @param {string} rating Rating of the project.
+     * @returns {Promise<string|false>} if false, it failed. else it returns the id
      * @async
      */
-    async publishProject(projectBuffer, assetBuffers, author, title, imageBuffer, instructions, notes, remix, rating) {
+    async publishProject(
+        projectBuffer,
+        assetBuffers,
+        author,
+        title,
+        imageBuffer,
+        instructions,
+        notes,
+        remix,
+        rating,
+        priv = false,
+    ) {
         let id;
-        // ATODO: replace this with a ulid somehow
-        // i love being whimsical ^^
+        // TODO: replace this with a ulid somehow
         do {
             id = randomInt(0, 9999999999).toString();
             id = "0".repeat(10 - id.length) + id;
-        } while (id !== 0 && await this.projects.findOne({id: id}));
-        
+        } while (id !== 0 && (await this.projects.findOne({ id: id })));
+
+        // we do this first so if something errors, we dont save an invalid project
+        await this.minioClient.putObject("projects", id, projectBuffer);
+        await this.minioClient.putObject("project-thumbnails", id, imageBuffer);
+        for (const asset of assetBuffers) {
+            const name = `${id}_${asset.id}`;
+
+            if (using_backblaze) {
+                const success = await this.saveToBackblaze(name, asset.buffer);
+                if (!success) {
+                    // TODO: delete the stuff we put in maybe?
+                    return false;
+                }
+            } else {
+                // TODO: figure out if theres a way to see if this succeeded
+                await this.minioClient.putObject(
+                    "project-assets",
+                    name,
+                    asset.buffer,
+                );
+            }
+        }
+
+        const author_rank = await this.getRankByID(author);
+
         await this.projects.insertOne({
             id: id,
             author: author,
@@ -1190,125 +2089,191 @@ class UserManager {
             date: Date.now(),
             lastUpdate: Date.now(),
             rating: rating,
-            public: true,
+            public: !priv,
             softRejected: false,
             hardReject: false,
             hardRejectTime: 0,
             impressions: 0,
+            noFeature: false,
+            authorRank: author_rank,
         });
 
-        // minio bucket stuff
-        await this.minioClient.putObject("projects", id, projectBuffer);
-        await this.minioClient.putObject("project-thumbnails", id, imageBuffer);
-        for (const asset of assetBuffers) {
-            await this.minioClient.putObject("project-assets", `${id}_${asset.id}`, asset.buffer);
+        if (!priv) {
+            await this.addToFeed(
+                author,
+                remix !== "0" ? "remix" : "upload",
+                id,
+            );
         }
-
-        await this.addToFeed(author, remix !== "0" ? "remix" : "upload", remix !== "0" ? remix : id);
 
         return id;
     }
 
     async isFeatured(projectId) {
-        const result = await this.projects.findOne({id: projectId, featured: true});
+        projectId = String(projectId);
+        const result = await this.projects.findOne({
+            id: projectId,
+            featured: true,
+        });
 
         return !!result;
     }
 
     /**
+     * Check if a project can be featured
+     * @param {string} projectID ID of the project
+     * @returns {Promise<boolean>}
+     */
+    async canBeFeatured(projectID) {
+        projectID = String(projectID);
+        const result = await this.projects.findOne({ id: projectID });
+
+        return !result.noFeature;
+    }
+
+    /**
+     * Disable/enable if a project can be featured
+     * @param {string} projectID ID of the project
+     * @param {boolean} canBeFeatured true if can be, false if cannot be
+     * @returns {Promise<>}
+     */
+    async setCanBeFeatured(projectID, canBeFeatured) {
+        projectID = String(projectID);
+        await this.projects.updateOne(
+            { id: projectID },
+            { $set: { noFeature: !canBeFeatured } },
+        );
+    }
+
+    /**
      * Get remixes of a project
-     * @param {number} id 
+     * @param {number} id
      * @returns {Promise<Array<Object>>} Array of remixes of the specified project
      * @async
      */
     async getRemixes(id, page, pageSize) {
-        const aggResult = await this.projects.aggregate([
-            {
-                $match: { remix: id, public: true, softRejected: false }
-            },
-            {
-                $sort: { lastUpdate: -1 }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: pageSize
-            },
-            {
-                // collect author data
-                $lookup: {
-                    from: "users",
-                    localField: "author",
-                    foreignField: "id",
-                    as: "authorInfo"
-                }
-            },
-            {
-                $addFields: {
-                    "author": {
-                        id: "$author",
-                        username: { $arrayElemAt: ["$authorInfo.username", 0] }
-                    }
-                }
-            },
-            {
-                $unset: [
-                    "_id",
-                    "authorInfo"
-                ]
-            }
-        ])
-        .toArray();
+        id = String(id);
+        const aggResult = await this.projects
+            .aggregate([
+                {
+                    $match: { remix: id, public: true, softRejected: false },
+                },
+                {
+                    $sort: { lastUpdate: -1 },
+                },
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: pageSize,
+                },
+                {
+                    // collect author data
+                    $lookup: {
+                        from: "users",
+                        localField: "author",
+                        foreignField: "id",
+                        as: "authorInfo",
+                    },
+                },
+                {
+                    $addFields: {
+                        author: {
+                            id: "$author",
+                            username: {
+                                $arrayElemAt: ["$authorInfo.username", 0],
+                            },
+                        },
+                    },
+                },
+                {
+                    $unset: ["_id", "authorInfo"],
+                },
+            ])
+            .toArray();
 
         return aggResult;
     }
 
     /**
      * Update a project
-     * @param {number} id ID of the project 
+     * @param {number} id ID of the project
      * @param {Buffer|null} projectBuffer The file buffer for the project. This is a zip.
      * @param {Array<Object>|null} assetBuffers asset buffers
      * @param {string} title Title of the project.
      * @param {Buffer|null} imageBuffer The file buffer for the thumbnail.
      * @param {string} instructions The instructions for the project.
-     * @param {string} notes The notes for the project 
-     * @param {string} rating Rating of the project. 
+     * @param {string} notes The notes for the project
+     * @param {string} rating Rating of the project.
      * @async
      */
-    async updateProject(id, projectBuffer, assetBuffers, title, imageBuffer, instructions, notes, rating) {
+    async updateProject(
+        id,
+        projectBuffer,
+        assetBuffers,
+        title,
+        imageBuffer,
+        instructions,
+        notes,
+        rating,
+    ) {
+        id = String(id);
         if (
-            (projectBuffer === null && assetBuffers !== null)
-            ||
+            (projectBuffer === null && assetBuffers !== null) ||
             (projectBuffer !== null && assetBuffers === null)
         ) {
             return false;
         }
 
-        await this.projects.updateOne({id: id},
-            {$set: {
-                title: title,
-                instructions: instructions,
-                notes: notes,
-                rating: rating,
-                lastUpdate: Date.now()
-            }}
+        await this.projects.updateOne(
+            { id: id },
+            {
+                $set: {
+                    title: title,
+                    instructions: instructions,
+                    notes: notes,
+                    rating: rating,
+                    lastUpdate: Date.now(),
+                },
+            },
         );
 
         // minio bucket stuff
         if (imageBuffer !== null) {
-            await this.minioClient.putObject("project-thumbnails", id, imageBuffer);
+            await this.minioClient.putObject(
+                "project-thumbnails",
+                id,
+                imageBuffer,
+            );
         }
 
         if (projectBuffer !== null) {
             await this.minioClient.putObject("projects", id, projectBuffer);
 
-            await this.deleteMultipleObjects("project-assets", id); // delete all the old assets
-            // ATODO: instead of doing this just replace the ones that were edited
+            if (using_backblaze) {
+                await this.deleteMultipleObjectsBackblaze(id);
+            } else {
+                await this.deleteMultipleObjects("project-assets", id);
+            }
+            // TODO: instead of doing this just replace the ones that were edited
             // potentially we could just see which ones are new/not in use, since asset ids are meant to be the hash of the file?
+            // we'll need to start verifying that the name IS the hash but we need to do that anyways to save on storage space.
 
             for (const asset of assetBuffers) {
-                await this.minioClient.putObject("project-assets", `${id}_${asset.id}`, asset.buffer);
+                const name = `${id}_${asset.id}`;
+
+                if (using_backblaze) {
+                    // TODO: handle when this fails better
+                    if (!(await this.saveToBackblaze(name, asset.buffer))) {
+                        throw "death";
+                    }
+                } else {
+                    await this.minioClient.putObject(
+                        "project-assets",
+                        name,
+                        asset.buffer,
+                    );
+                }
             }
         }
 
@@ -1325,38 +2290,50 @@ class UserManager {
      * @returns {Promise<Array<Object>>} Projects in the specified amount
      * @async
      */
-    async getProjects(show_nonranked, page, pageSize, maxLookup, user_id, reverse = false) {
-        let pipeline = [
+    async getProjects(
+        show_nonranked,
+        page,
+        pageSize,
+        user_id,
+        reverse = false,
+        remove_blocked = false,
+    ) {
+        const pipeline = [
             {
-                $match: { softRejected: false, hardReject: false, public: true }
+                $match: {
+                    softRejected: false,
+                    hardReject: false,
+                    public: true,
+                },
             },
-            {
-                $sort: { lastUpdate: reverse ? 1 : -1 }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: maxLookup,
-            }
         ];
+
+        if (!show_nonranked) {
+            pipeline.push({ $match: { authorRank: { $gt: 0 } } });
+        }
 
         pipeline.push(
             {
-                $lookup: {
-                    from: "users",
-                    localField: "author",
-                    foreignField: "id",
-                    as: "authorInfo"
-                },
+                $sort: { lastUpdate: reverse ? 1 : -1 },
+            },
+            {
+                $skip: page * pageSize,
+            },
+            {
+                $limit: pageSize,
             },
         );
 
-        if (!show_nonranked) {
-            pipeline.push({ $match: { "authorInfo.rank": { $gt: 0 } } });
-        }
+        pipeline.push({
+            $lookup: {
+                from: "users",
+                localField: "author",
+                foreignField: "id",
+                as: "authorInfo",
+            },
+        });
 
-        if (user_id) {
+        if (user_id && remove_blocked) {
             pipeline.push(
                 {
                     $lookup: {
@@ -1368,93 +2345,77 @@ class UserManager {
                 },
                 {
                     $match: {
-                        "block_info": {
+                        block_info: {
                             $not: {
-                                $elemMatch: { blocker: user_id, active: true},
-                            }
-                        }
-                    }
+                                $elemMatch: { blocker: user_id, active: true },
+                            },
+                        },
+                    },
                 },
                 {
-                    $unset: "block_info"
+                    $unset: "block_info",
                 },
             );
         }
 
         pipeline.push(
             {
-                $skip: page * pageSize
+                $skip: page * pageSize,
             },
             {
-                $limit: pageSize
+                $limit: pageSize,
             },
         );
 
-        if (show_nonranked) {
-            pipeline.push(
-                {
-                    // collect author data
-                    $lookup: {
-                        from: "users",
-                        localField: "author",
-                        foreignField: "id",
-                        as: "authorInfo"
-                    }
-                }
-            );
-        }
+        pipeline.push({
+            $lookup: {
+                from: "users",
+                localField: "author",
+                foreignField: "id",
+                as: "authorInfo",
+            },
+        });
 
         pipeline.push(
             {
                 $addFields: {
-                    "author": {
+                    author: {
                         id: "$author",
-                        username: { $arrayElemAt: ["$authorInfo.username", 0] }
+                        username: { $arrayElemAt: ["$authorInfo.username", 0] },
                     },
-                    "fromDonator": {
-                        $in: ["donator", "$authorInfo.badges"]
-                    }
-                }
+                    fromDonator: {
+                        $in: ["donator", "$authorInfo.badges"],
+                    },
+                },
             },
             {
-                $unset: [
-                    "_id",
-                    "authorInfo"
-                ]
-            }
+                $unset: ["_id", "authorInfo"],
+            },
         );
 
-        const aggResult = await this.projects.aggregate(pipeline)
-        .toArray()
+        const aggResult = await this.projects.aggregate(pipeline).toArray();
 
-        /*
-        const final = []
-        for (const project of aggResult[0].data) {
-            delete project._id;
-            project.author = {
-                id: project.author,
-                username: project.authorInfo[0].username
-            }
-            delete project.authorInfo; // dont include sensitive info!!!
-            final.push(project);
-        }
-
-        return final;*/
         return aggResult;
     }
 
     async getRandomProjects(size) {
-        const result = await this.projects.aggregate([
-            {
-                $match: { softRejected: false, hardReject: false, public: true }
-            },
-            {
-                $sample: { size }
-            },
-            {
-                $unset: "_id"
-            }
-        ]).toArray();
+        const result = await this.projects
+            .aggregate([
+                {
+                    $match: {
+                        softRejected: false,
+                        hardReject: false,
+                        public: true,
+                    },
+                },
+                {
+                    $sample: { size },
+                },
+                {
+                    $unset: "_id",
+                },
+            ])
+            .toArray();
 
         return result;
     }
@@ -1465,28 +2426,40 @@ class UserManager {
      * @returns {Promise<Array<Object>>} Array of projects by the specified author
      * @async
      */
-    async getProjectsByAuthor(author, page, pageSize, getPrivate=false, getSoftRejected=false) {
-        const match = { author: author, hardReject: false }
-        if (!getPrivate) match.public = true;
-        if (!getSoftRejected) match.softRejected = false;
-        const _result = await this.projects.aggregate([
-            {
-                $match: match
-            },
-            {
-                $sort: { lastUpdate: -1 }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: pageSize
-            },
-            {
-                $unset: "_id"
-            }
-        ])
-        .toArray();
+    async getProjectsByAuthor(
+        author,
+        page,
+        pageSize,
+        getPrivate = false,
+        getSoftRejected = false,
+    ) {
+        author = String(author);
+        const match = { author: author, hardReject: false };
+        if (!getPrivate) {
+            match.public = true;
+        }
+        if (!getSoftRejected) {
+            match.softRejected = false;
+        }
+        const _result = await this.projects
+            .aggregate([
+                {
+                    $match: match,
+                },
+                {
+                    $sort: { lastUpdate: -1 },
+                },
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: pageSize,
+                },
+                {
+                    $unset: "_id",
+                },
+            ])
+            .toArray();
         // you dont need to give it the user's username as... well... you prob already know it....
 
         return _result;
@@ -1494,17 +2467,25 @@ class UserManager {
 
     objectExists(bucketName, objectName) {
         return new Promise((resolve, reject) => {
-            this.minioClient.statObject(bucketName, objectName, function (err, stat) {
-                if (err) {
-                    if (err.code === "NotFound") {
-                        resolve(false);
+            this.minioClient.statObject(
+                bucketName,
+                objectName,
+                function (err, stat) {
+                    if (err) {
+                        if (err.code === "NotFound") {
+                            resolve(false);
+                        } else {
+                            console.error(
+                                "Error checking if object exists: ",
+                                err,
+                            );
+                            reject(err);
+                        }
                     } else {
-                        console.error("Error checking if object exists: ", err);
+                        resolve(true);
                     }
-                } else {
-                    resolve(true);
-                }
-            })
+                },
+            );
         });
     }
 
@@ -1521,14 +2502,31 @@ class UserManager {
             throw new Error("Tried to get project that doesn't exist: " + objectName);
         }
         */
-        const stream = await this.minioClient.getObject(bucketName, objectName);
+        const stream = await this.minioClient
+            .getObject(bucketName, objectName)
+            .catch((err) => {
+                /*
+                // temporarily disable: this is spamming logs rn
+                console.error(
+                    `ERROR READING OBJECT "${objectName}" from bucket ${bucketName}: ` +
+                        err,
+                );
+                */
+            });
+
+        if (!stream) {
+            return;
+        }
 
         const chunks = [];
 
         return new Promise((resolve, reject) => {
             stream.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
             stream.on("end", () => resolve(Buffer.concat(chunks)));
-            stream.on("error", (err) => {console.log("ERROR" + err);reject(err)});
+            stream.on("error", (err) => {
+                console.error(`Error reading from bucket: ${err}`);
+                reject(err);
+            });
         });
     }
 
@@ -1539,6 +2537,7 @@ class UserManager {
      * @async
      */
     async getProjectFile(id) {
+        id = String(id);
         const file = await this.readObjectFromBucket("projects", id);
 
         return file;
@@ -1546,12 +2545,13 @@ class UserManager {
 
     /**
      * Get a project image
-     * @param {number} id ID of the project image wanted. 
+     * @param {number} id ID of the project image wanted.
      * @returns {Promise<Buffer>} The project image file.
      */
     async getProjectImage(id) {
+        id = String(id);
         // check if the file exists
-        if (!await this.minioClient.bucketExists("project-thumbnails")) {
+        if (!(await this.minioClient.bucketExists("project-thumbnails"))) {
             return false;
         }
 
@@ -1559,6 +2559,9 @@ class UserManager {
 
         try {
             file = await this.readObjectFromBucket("project-thumbnails", id);
+            if (!file) {
+                return false;
+            }
         } catch (e) {
             return false;
         }
@@ -1568,23 +2571,30 @@ class UserManager {
 
     /**
      * Delete objects from a bucket with a specified prefix
-     * @param {string} bucketName Name of the bucket 
+     * @param {string} bucketName Name of the bucket
      * @param {*} prefix Prefix to search
      */
     async deleteMultipleObjects(bucketName, prefix) {
-        const stream = this.minioClient.listObjects(bucketName, prefix);
+        // TODO: this still errors because currently the minio sdk
+        // has an "outdated" version of fast-xml-parser
+        // basically its paging has the wrong limit
+        // so its like "no this is too long"
+        // and then it doesnt page because the JS ecosystem sucks
+        const stream = this.minioClient.listObjectsV2(bucketName, prefix, true);
 
         const chunks = [];
 
         stream.on("data", (chunk) => chunks.push(chunk.name));
-        stream.on("error", (err) => console.log("Error listing objects:", err));
+        stream.on("error", (err) =>
+            console.error(`Error listing objects: ${err}`),
+        );
         stream.on("end", () => {
             const names = chunks.map((chunk) => {
                 return chunk.split("_")[1];
-            })
+            });
             this.minioClient.removeObjects(bucketName, names, (err) => {
                 if (err) {
-                    console.log("Error removing objects:", err);
+                    console.error(`Error removing objects: ${err}`);
                 }
             });
         });
@@ -1596,24 +2606,24 @@ class UserManager {
      * @returns {Promise<Array<Object>>} Array of project assets
      */
     async getProjectAssets(id) {
-        const stream = this.minioClient.listObjects("project-assets", id);
-
-        // deal with the object stream :sob:
-
-        const chunks = [];
-
-        // :canny:
-        const items = await new Promise((resolve, reject) => {
-            stream.on("data", (chunk) => chunks.push(chunk.name));
-            stream.on("end", () => resolve(chunks));
-            stream.on("error", (err) => reject(err));
-        });
+        id = String(id);
+        const search_term = `${id}_`;
+        const items = using_backblaze
+            ? await this.listWithPrefixBackblaze(search_term)
+            : await this.listWithPrefix("project-assets", search_term);
 
         const result = [];
 
         for (const item of items) {
-            const file = await this.readObjectFromBucket("project-assets", item);
-            result.push({id: item.split("_")[1], buffer: file});
+            const file = using_backblaze
+                ? await this.downloadFromBackblaze(item)
+                : await this.readObjectFromBucket("project-assets", item);
+
+            if (!file) {
+                return false;
+            }
+
+            result.push({ id: item.split("_")[1], buffer: file });
         }
 
         return result;
@@ -1621,45 +2631,97 @@ class UserManager {
 
     /**
      * Get project metadata for a specified project
-     * @param {String} id ID of the project wanted.
+     * @param {string} id ID of the project wanted.
      * @returns {Promise<Object>} The project data.
      * @async
      */
     async getProjectMetadata(id) {
-        const p_id = String(id);
+        id = String(id);
+        const [result] = await this.projects
+            .aggregate([
+                {
+                    $match: { id },
+                },
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "author",
+                        foreignField: "id",
+                        as: "authorInfo",
+                    },
+                },
+                {
+                    $addFields: {
+                        author: {
+                            id: "$author",
+                            username: {
+                                $arrayElemAt: ["$authorInfo.username", 0],
+                            },
+                        },
+                        impressions: { $ifNull: ["$impressions", 0] },
+                    },
+                },
+                { $unset: ["_id", "authorInfo"] },
+            ])
+            .toArray();
 
-        const tempresult = await this.projects.findOne({id: p_id});
+        return result ?? false;
+    }
 
-        if (!tempresult) return false;
+    /**
+     * Get metadata for multiple projects.
+     * @param {Array<string>} ids IDs of the projects wanted.
+     * @returns {Promise<Array<Object>>} The project data.
+     * @async
+     */
+    async getProjectsMetadata(ids) {
+        // TODO: use this
+        ids = ids.map((id) => String(id));
+        const results = await this.projects
+            .aggregate([
+                {
+                    $match: { id: { $in: ids } },
+                },
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "author",
+                        foreignField: "id",
+                        as: "authorInfo",
+                    },
+                },
+                {
+                    $addFields: {
+                        author: {
+                            id: "$author",
+                            username: {
+                                $arrayElemAt: ["$authorInfo.username", 0],
+                            },
+                        },
+                        impressions: { $ifNull: ["$impressions", 0] },
+                    },
+                },
+                {
+                    $unset: ["_id", "authorInfo"],
+                },
+            ])
+            .toArray();
 
-        tempresult.author = {
-            id: tempresult.author,
-            username: await this.getUsernameByID(tempresult.author)
-        }
-
-        // add the views, loves, and votes
-        const result = {
-            ...tempresult,
-            loves: await this.getProjectLoves(p_id),
-            votes: await this.getProjectVotes(p_id),
-        };
-
-        if (!result.impressions) {
-            result.impressions = 0;
-        }
-
-        return result;
+        return results;
     }
 
     /**
      * Check if a user has seen a project
-     * @param {number} id ID of the project. 
+     * @param {number} id ID of the project.
      * @param {string} ip IP we are checking
-     * @returns {Promise<boolean>} True if they have seen the project, false if not. 
+     * @returns {Promise<boolean>} True if they have seen the project, false if not.
      * @async
      */
     async hasSeenProject(id, ip) {
-        const result = this.views.find((view) => view.id === id && view.ip === ip);
+        id = String(id);
+        const result = this.views.find(
+            (view) => view.id === id && view.ip === ip,
+        );
 
         return result ? true : false;
     }
@@ -1671,15 +2733,17 @@ class UserManager {
      * @async
      */
     async projectView(id, ip) {
-        if (this.views.length >= this.maxviews ||
+        id = String(id);
+        if (
+            this.views.length >= this.maxviews ||
             Date.now() - this.prevReset >= this.viewresetrate
         ) {
             this.views = [];
             this.prevReset = Date.now();
         }
 
-        this.views.push({id: id, ip: ip});
-        await this.projects.updateOne({id: id}, {$inc: {views: 1}});
+        this.views.push({ id: id, ip: ip });
+        await this.projects.updateOne({ id: id }, { $inc: { views: 1 } });
     }
 
     /**
@@ -1688,6 +2752,7 @@ class UserManager {
      * @returns {Promise<number>} The number of views the project has
      */
     async getProjectViews(id) {
+        id = String(id);
         const result = this.projects.findOne({ id: id });
 
         return result.views;
@@ -1701,13 +2766,15 @@ class UserManager {
      * @async
      */
     async hasLovedProject(id, userId) {
+        id = String(id);
+        userId = String(userId);
         const result = await this.projectStats.findOne({
             projectId: id,
             userId: userId,
-            type: "love"
+            type: "love",
         });
 
-        return result ? true : false
+        return result ? true : false;
     }
 
     /**
@@ -1718,19 +2785,23 @@ class UserManager {
      * @async
      */
     async loveProject(id, userId, love) {
+        id = String(id);
+        userId = String(userId);
         if (love) {
             await this.projectStats.insertOne({
                 projectId: id,
                 userId: userId,
-                type: "love"
+                type: "love",
             });
-            return;
+            await this.projects.updateOne({ id }, { $inc: { loves: 1 } });
+        } else {
+            await this.projectStats.deleteOne({
+                projectId: id,
+                userId: userId,
+                type: "love",
+            });
+            await this.projects.updateOne({ id }, { $inc: { loves: -1 } });
         }
-        await this.projectStats.deleteOne({
-            projectId: id,
-            userId: userId,
-            type: "love"
-        });
     }
 
     /**
@@ -1739,9 +2810,8 @@ class UserManager {
      * @returns {Promise<number>} Amount of loves the project has
      */
     async getProjectLoves(id) {
-        const result = await this.projectStats.find({projectId: id, type: "love"}).toArray();
-
-        return result.length;
+        id = String(id);
+        return (await this.projects.findOne({ id })).loves;
     }
 
     /**
@@ -1752,21 +2822,25 @@ class UserManager {
      * @returns {Promise<Array<string>>} Array of user ids
      */
     async getWhoLoved(projectID, page, pageSize) {
-        const result = await this.projectStats.aggregate([
-            {
-                $match: { projectId: projectID, type: "love" }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: pageSize
-            },
-            {
-                $unset: "_id"
-            }
-        ])
-        .toArray();
+        projectID = String(projectID);
+        const result = (
+            await this.projectStats
+                .aggregate([
+                    {
+                        $match: { projectId: projectID, type: "love" },
+                    },
+                    {
+                        $skip: page * pageSize,
+                    },
+                    {
+                        $limit: pageSize,
+                    },
+                    {
+                        $unset: "_id",
+                    },
+                ])
+                .toArray()
+        ).map((data) => data.userId);
 
         return result;
     }
@@ -1779,21 +2853,23 @@ class UserManager {
      * @returns {Promise<Array<string>>} Array of user ids
      */
     async getWhoVoted(projectID, page, pageSize) {
-        const result = await this.projectStats.aggregate([
-            {
-                $match: { projectId: projectID, type: "vote" }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: pageSize
-            },
-            {
-                $unset: "_id"
-            }
-        ])
-        .toArray();
+        projectID = String(projectID);
+        const result = await this.projectStats
+            .aggregate([
+                {
+                    $match: { projectId: projectID, type: "vote" },
+                },
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: pageSize,
+                },
+                {
+                    $unset: "_id",
+                },
+            ])
+            .toArray();
 
         return result;
     }
@@ -1806,10 +2882,12 @@ class UserManager {
      * @async
      */
     async hasVotedProject(id, userId) {
+        id = String(id);
+        userId = String(userId);
         const result = await this.projectStats.findOne({
             projectId: id,
             userId: userId,
-            type: "vote"
+            type: "vote",
         });
 
         return result ? true : false;
@@ -1823,19 +2901,23 @@ class UserManager {
      * @async
      */
     async voteProject(id, userId, vote) {
+        id = String(id);
+        userId = String(userId);
         if (vote) {
             await this.projectStats.insertOne({
                 projectId: id,
                 userId: userId,
-                type: "vote"
+                type: "vote",
             });
-            return;
+            await this.projects.updateOne({ id }, { $inc: { votes: 1 } });
+        } else {
+            await this.projectStats.deleteOne({
+                projectId: id,
+                userId: userId,
+                type: "vote",
+            });
+            await this.projects.updateOne({ id }, { $inc: { votes: -1 } });
         }
-        await this.projectStats.deleteOne({
-            projectId: id,
-            userId: userId,
-            type: "vote"
-        });
     }
 
     /**
@@ -1845,9 +2927,8 @@ class UserManager {
      * @async
      */
     async getProjectVotes(id) {
-        const result = await this.projectStats.find({projectId: id, type: "vote"}).toArray();
-
-        return result.length;
+        id = String(id);
+        return (await this.projects.findOne({ id })).votes;
     }
 
     /**
@@ -1858,54 +2939,59 @@ class UserManager {
      * @async
      */
     async getFeaturedProjects(page, pageSize) {
-        const aggResult = await this.projects.aggregate([
-            {
-                $match: { featured: true, public: true, softRejected: false, hardReject: false }
-            },
-            {
-                $addFields: {
-                    featureSortDate: { $ifNull: ["$featureDate","$date"] }
-                }
-            },
-            {
-                $sort: {
-                    featureSortDate: -1
-                }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: pageSize
-            },
-            {
-                // collect author data
-                $lookup: {
-                    from: "users",
-                    localField: "author",
-                    foreignField: "id",
-                    as: "authorInfo"
-                }
-            },
-            {
-                $addFields: {
-                    "author": {
-                        id: "$author",
-                        username: { $arrayElemAt: ["$authorInfo.username", 0] }
+        const aggResult = await this.projects
+            .aggregate([
+                {
+                    $match: {
+                        featured: true,
+                        public: true,
+                        softRejected: false,
+                        hardReject: false,
                     },
-                    "fromDonator": {
-                        $in: ["donator", "$authorInfo.badges"]
-                    }
-                }
-            },
-            {
-                $unset: [
-                    "_id",
-                    "authorInfo"
-                ]
-            }
-        ])
-        .toArray();
+                },
+                {
+                    $addFields: {
+                        featureSortDate: { $ifNull: ["$featureDate", "$date"] },
+                    },
+                },
+                {
+                    $sort: {
+                        featureSortDate: -1,
+                    },
+                },
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: pageSize,
+                },
+                {
+                    // collect author data
+                    $lookup: {
+                        from: "users",
+                        localField: "author",
+                        foreignField: "id",
+                        as: "authorInfo",
+                    },
+                },
+                {
+                    $addFields: {
+                        author: {
+                            id: "$author",
+                            username: {
+                                $arrayElemAt: ["$authorInfo.username", 0],
+                            },
+                        },
+                        fromDonator: {
+                            $in: ["donator", "$authorInfo.badges"],
+                        },
+                    },
+                },
+                {
+                    $unset: ["_id", "authorInfo"],
+                },
+            ])
+            .toArray();
 
         return aggResult;
     }
@@ -1914,10 +3000,21 @@ class UserManager {
      * Feature/unfeature a project
      * @param {number} id ID of the project.
      * @param {boolean} feature True if featuring, false if unfeaturing.
+     * @param {boolean} manuallyFeatured True if it was featured manually
      * @async
      */
-    async featureProject(id, feature) {
-        await this.projects.updateOne({id: id}, {$set: {featured: feature, featureDate: Date.now()}});
+    async featureProject(id, feature, manuallyFeatured) {
+        id = String(id);
+        await this.projects.updateOne(
+            { id: id },
+            {
+                $set: {
+                    featured: feature,
+                    featureDate: Date.now(),
+                    manuallyFeatured,
+                },
+            },
+        );
     }
 
     /**
@@ -1926,7 +3023,8 @@ class UserManager {
      * @param {Object} data Data to set
      */
     async setProjectMetadata(id, data) {
-        await this.projects.updateOne({id: id}, {$set: data});
+        id = String(id);
+        await this.projects.updateOne({ id: id }, { $set: data });
     }
 
     /**
@@ -1947,7 +3045,8 @@ class UserManager {
      * @async
      */
     async getProjectCountOfUser(user_id) {
-        const result = await this.projects.countDocuments({author:user_id});
+        user_id = String(user_id);
+        const result = await this.projects.countDocuments({ author: user_id });
 
         return result;
     }
@@ -1958,54 +3057,82 @@ class UserManager {
      * @async
      */
     async deleteProject(id) {
-        await this.projects.deleteOne({id: id});
+        id = String(id);
+        await this.projects.deleteOne({ id: id });
+
+        // TODO: remove mentions of the project from feed
 
         // remove the loves and votes
-        await this.projectStats.deleteMany({projectId: id});
+        await this.projectStats.deleteMany({ projectId: id });
 
         // remove the project file
         await this.minioClient.removeObject("projects", id);
         await this.minioClient.removeObject("project-thumbnails", id);
-        this.deleteMultipleObjects("project-assets", id);
+
+        await this.removeEvilProjectReferences(id);
+
+        if (using_backblaze) {
+            this.deleteMultipleObjectsBackblaze(id);
+        } else {
+            this.deleteMultipleObjects("project-assets", id);
+        }
     }
 
     async hardRejectProject(id) {
-        // ATODO: test this
-
-        // just mark as hard rejected, mongodb will do the rest
-        // have to separate so the index doesnt delete prematurely
-        await this.projects.updateOne({id: id}, { $set: { hardRejectTime: new Date() } });
-        await this.projects.updateOne({id: id}, { $set: { hardReject: true           } });
+        id = String(id);
+        await this.projects.updateOne(
+            { id: id },
+            { $set: { hardReject: true, hardRejectTime: new Date() } }, // doesn't need to be separate any more - we don't delete hard reject
+        );
     }
 
     async isHardRejected(id) {
-        const result = await this.projects.findOne({id: id});
+        id = String(id);
+        const result = await this.projects.findOne({ id: id });
 
         return result.hardReject;
     }
 
     /**
      * Follow/unfollow a user
-     * @param {string} follower ID of the person following 
+     * @param {string} follower ID of the person following
      * @param {string} followee ID of the person being followed
      * @param {boolean} follow True if following, false if unfollowing
      * @async
      */
     async followUser(follower, followee, follow) {
-        const existing = await this.followers.findOne({ follower, target: followee })
+        follower = String(follower);
+        followee = String(followee);
+        const existing = await this.followers.findOne({
+            follower,
+            target: followee,
+        });
 
         if (existing) {
             if (existing.active === follow) {
-                return
+                return;
             }
 
-            await this.followers.updateOne({ follower, target: followee }, { $set: { active: follow } });
+            await this.followers.updateOne(
+                { follower, target: followee },
+                { $set: { active: follow } },
+            );
         } else {
-            await this.followers.insertOne({ follower, target: followee, active: follow})
+            await this.followers.insertOne({
+                follower,
+                target: followee,
+                active: follow,
+            });
         }
 
-        await this.users.updateOne({ id: follower }, { $inc: { following: follow ? 1 : -1 } });
-        await this.users.updateOne({ id: followee }, { $inc: { followers: follow ? 1 : -1 } });
+        await this.users.updateOne(
+            { id: follower },
+            { $inc: { following: follow ? 1 : -1 } },
+        );
+        await this.users.updateOne(
+            { id: followee },
+            { $inc: { followers: follow ? 1 : -1 } },
+        );
     }
 
     /**
@@ -2016,7 +3143,13 @@ class UserManager {
      * @async
      */
     async isFollowing(follower, followee) {
-        const result = await this.followers.findOne({ follower, target: followee, active: true });
+        follower = String(follower);
+        followee = String(followee);
+        const result = await this.followers.findOne({
+            follower,
+            target: followee,
+            active: true,
+        });
 
         return result ? true : false;
     }
@@ -2030,49 +3163,54 @@ class UserManager {
      * @async
      */
     async getFollowers(username, page, pageSize) {
+        username = String(username);
         const id = await this.getIDByUsername(username);
-        const result = await this.followers.aggregate([
-            {
-                $match: { target: id, active: true }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: pageSize
-            },
-            {
-                // collect author data
-                $lookup: {
-                    from: "users",
-                    localField: "follower",
-                    foreignField: "id",
-                    as: "followerInfo"
-                }
-            },
-            {
-                $addFields: {
-                    "follower": {
-                        id: "$follower",
-                        username: { $arrayElemAt: ["$followerInfo.username", 0] },
-                        banned: { $arrayElemAt: ["$followerInfo.permBanned", 0] }
-                    }
-                }
-            },
-            {
-                $match: {
-                    "follower.banned": false,
-                    "follower.profileHideFollowing": { $ne: true }
-                }
-            },
-            {
-                // only leave the follower field
-                $replaceRoot: { newRoot: "$follower" }
-            }
-            // get the usernames of the followers
-            
-        ])
-        .toArray();
+        const result = await this.followers
+            .aggregate([
+                {
+                    $match: { target: id, active: true },
+                },
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: pageSize,
+                },
+                {
+                    // collect author data
+                    $lookup: {
+                        from: "users",
+                        localField: "follower",
+                        foreignField: "id",
+                        as: "followerInfo",
+                    },
+                },
+                {
+                    $addFields: {
+                        follower: {
+                            id: "$follower",
+                            username: {
+                                $arrayElemAt: ["$followerInfo.username", 0],
+                            },
+                            banned: {
+                                $arrayElemAt: ["$followerInfo.permBanned", 0],
+                            },
+                        },
+                    },
+                },
+                {
+                    $match: {
+                        "follower.banned": false,
+                        "follower.profileHideFollowing": { $ne: true }
+                    },
+                },
+                {
+                    // only leave the follower field
+                    $replaceRoot: { newRoot: "$follower" },
+                },
+                // get the usernames of the followers
+            ])
+            .toArray();
 
         return result;
     }
@@ -2084,49 +3222,55 @@ class UserManager {
      * @async
      */
     async getFollowing(username, page, pageSize) {
+        username = String(username);
         const id = await this.getIDByUsername(username);
-        const result = await this.followers.aggregate([
-            {
-                $match: { follower: id, active: true }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: pageSize
-            },
-            {
-                // collect author data
-                $lookup: {
-                    from: "users",
-                    localField: "target",
-                    foreignField: "id",
-                    as: "targetInfo"
-                }
-            },
-            {
-                $addFields: {
-                    "target": {
-                        id: "$target",
-                        username: { $arrayElemAt: ["$targetInfo.username", 0] },
-                        banned: { $arrayElemAt: ["$targetInfo.permBanned", 0] }
-                    }
-                }
-            },
-            {
-                $match: {
-                    "target.banned": false
-                }
-            },
-            {
-                // only leave the follower field
-                $replaceRoot: { newRoot: "$target" }
-            },
-            {
-                $unset: "banned"
-            }
-        ])
-        .toArray();
+        const result = await this.followers
+            .aggregate([
+                {
+                    $match: { follower: id, active: true },
+                },
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: pageSize,
+                },
+                {
+                    // collect author data
+                    $lookup: {
+                        from: "users",
+                        localField: "target",
+                        foreignField: "id",
+                        as: "targetInfo",
+                    },
+                },
+                {
+                    $addFields: {
+                        target: {
+                            id: "$target",
+                            username: {
+                                $arrayElemAt: ["$targetInfo.username", 0],
+                            },
+                            banned: {
+                                $arrayElemAt: ["$targetInfo.permBanned", 0],
+                            },
+                        },
+                    },
+                },
+                {
+                    $match: {
+                        "target.banned": false,
+                    },
+                },
+                {
+                    // only leave the follower field
+                    $replaceRoot: { newRoot: "$target" },
+                },
+                {
+                    $unset: "banned",
+                },
+            ])
+            .toArray();
 
         return result;
     }
@@ -2138,20 +3282,26 @@ class UserManager {
      * @returns {Promise<boolean>} True if the person has followed/is following the other person, false if not
      */
     async hasFollowed(follower, followee) {
-        const result = await this.followers.findOne({ follower, target: followee });
+        follower = String(follower);
+        followee = String(followee);
+        const result = await this.followers.findOne({
+            follower,
+            target: followee,
+        });
 
-        return result ? true : false
+        return result ? true : false;
     }
 
     /**
      * Get the amount of people following a user
      * @param {string} username Username of the user
-     * @returns {Promise<number>} Amount of people following the user
+     * @returns {Promise<number|undefined>} Amount of people following the user
      */
     async getFollowerCount(username) {
-        const result = await this.users.findOne({username: username});
-        
-        return result.followers;
+        username = String(username);
+        const result = await this.users.findOne({ username: username });
+
+        return result ? result.followers : undefined;
     }
 
     /**
@@ -2160,9 +3310,10 @@ class UserManager {
      * @returns {Promise<number>} Amount of people the user is following
      */
     async getFollowingCount(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
-        return result.following;
+        return result ? result.following : undefined;
     }
 
     /**
@@ -2173,7 +3324,8 @@ class UserManager {
      * @returns {Promise<string>} ID of the message
      * @async
      */
-    async sendMessage(receiver, message, disputable, projectID=0) {
+    async sendMessage(receiver, message, disputable, projectID = 0) {
+        receiver = String(receiver);
         const id = ULID.ulid();
 
         await this.messages.insertOne({
@@ -2183,7 +3335,7 @@ class UserManager {
             date: Date.now(),
             read: false,
             id: id,
-            projectID: projectID
+            projectID: projectID,
         });
 
         return id;
@@ -2198,35 +3350,40 @@ class UserManager {
      * @async
      */
     async getMessages(receiver, page, pageSize) {
-        const result = await this.messages.aggregate([
-            {
-                $match: { receiver: receiver }
-            },
-            {
-                $sort: { date: -1 }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: pageSize
-            },
-            {
-                $unset: "_id"
-            }
-        ])
-        .toArray();
+        receiver = String(receiver);
+        const result = await this.messages
+            .aggregate([
+                {
+                    $match: { receiver: receiver },
+                },
+                {
+                    $sort: { date: -1 },
+                },
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: pageSize,
+                },
+                {
+                    $unset: "_id",
+                },
+            ])
+            .toArray();
 
         return result;
     }
 
     /**
      * Get the amount of messages sent to a person
-     * @param {string} receiver ID of the person who received the messages 
+     * @param {string} receiver ID of the person who received the messages
      * @returns {Promise<number>} Amount of messages sent to the person
      */
     async getMessageCount(receiver) {
-        const result = await this.messages.countDocuments({receiver: receiver});
+        receiver = String(receiver);
+        const result = await this.messages.countDocuments({
+            receiver: receiver,
+        });
 
         return result;
     }
@@ -2237,6 +3394,7 @@ class UserManager {
      * @returns {Promise<Object>} The message
      */
     async getMessage(messageID) {
+        messageID = String(messageID);
         const result = await this.messages.findOne({ id: messageID });
 
         return result;
@@ -2249,30 +3407,36 @@ class UserManager {
      * @async
      */
     async getUnreadMessages(receiver, page, pageSize) {
-        const result = await this.messages.aggregate([
-            {
-                $match: { receiver: receiver, read: false }
-            },
-            {
-                $sort: { date: -1 }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: pageSize
-            },
-            {
-                $unset: "_id"
-            }
-        ])
-        .toArray();
+        receiver = String(receiver);
+        const result = await this.messages
+            .aggregate([
+                {
+                    $match: { receiver: receiver, read: false },
+                },
+                {
+                    $sort: { date: -1 },
+                },
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: pageSize,
+                },
+                {
+                    $unset: "_id",
+                },
+            ])
+            .toArray();
 
         return result;
     }
 
     async getUnreadMessageCount(receiver) {
-        const result = await this.messages.countDocuments({receiver: receiver, read: false});
+        receiver = String(receiver);
+        const result = await this.messages.countDocuments({
+            receiver: receiver,
+            read: false,
+        });
 
         return result;
     }
@@ -2284,9 +3448,10 @@ class UserManager {
      * @async
      */
     async modifyMessage(id, modifierFunction) {
-        const result = await this.messages.findOne({id: id});
+        id = String(id);
+        const result = await this.messages.findOne({ id: id });
 
-        await this.messages.updateOne({id: id}, modifierFunction(result));
+        await this.messages.updateOne({ id: id }, modifierFunction(result));
     }
 
     /**
@@ -2295,11 +3460,13 @@ class UserManager {
      * @param {boolean} read Toggle between read and not read
      */
     async markMessageAsRead(id, read) {
-        await this.messages.updateOne({id: id}, {$set: {read: read}});
+        id = String(id);
+        await this.messages.updateOne({ id: id }, { $set: { read: read } });
     }
 
     async messageExists(id) {
-        const result = await this.messages.findOne({id: id});
+        id = String(id);
+        const result = await this.messages.findOne({ id: id });
 
         return result ? true : false;
     }
@@ -2309,7 +3476,11 @@ class UserManager {
      * @param {string} receiver ID of the person receiving the messages
      */
     async markAllMessagesAsRead(receiver) {
-        await this.messages.updateMany({receiver: receiver}, {$set: {read: true}});
+        receiver = String(receiver);
+        await this.messages.updateMany(
+            { receiver: receiver },
+            { $set: { read: true } },
+        );
     }
 
     /**
@@ -2318,7 +3489,8 @@ class UserManager {
      * @async
      */
     async deleteMessage(id) {
-        await this.messages.deleteOne({id: id});
+        id = String(id);
+        await this.messages.deleteOne({ id: id });
     }
 
     /**
@@ -2327,7 +3499,8 @@ class UserManager {
      * @returns {Promise<boolean>} True if the message is disputable, false if not
      */
     async isMessageDisputable(id) {
-        const result = await this.messages.findOne({id: id});
+        id = String(id);
+        const result = await this.messages.findOne({ id: id });
 
         return result.disputable;
     }
@@ -2338,7 +3511,11 @@ class UserManager {
      * @param {string} dispute The dispute
      */
     async dispute(id, dispute) {
-        await this.messages.updateOne({id: id}, {$set: {dispute: dispute, disputable: false}});
+        id = String(id);
+        await this.messages.updateOne(
+            { id: id },
+            { $set: { dispute: dispute, disputable: false } },
+        );
 
         // to respond to a dispute you just send another message
     }
@@ -2350,34 +3527,36 @@ class UserManager {
      * @async
      */
     async projectExists(id, nonPublic) {
-        const result = nonPublic ? 
-            await this.projects.findOne({id: String(id)}) :
-            await this.projects.findOne({id: String(id), public: true});
+        const result = nonPublic
+            ? await this.projects.findOne({ id: String(id) })
+            : await this.projects.findOne({ id: String(id), public: true });
 
         return result ? true : false;
     }
 
     /**
      * Check for illegal wording on text
-     * @param {string} text The text to check for illegal wording 
-     * @returns {Promise<String>} Empty if there is nothing illegal, not empty if it was triggered (returns the trigger)
+     * @param {string} text The text to check for illegal wording
+     * @returns {Promise<string>} Empty if there is nothing illegal, not empty if it was triggered (returns the trigger)
      * @async
      */
     async checkForIllegalWording(text) {
-        let illegalWords = (await this.illegalList.findOne
-            ({ id: "illegalWords" })).items;
-        let illegalWebsites = (await this.illegalList.findOne
-            ({ id: "illegalWebsites" })).items;
-        let spacedOutWordsOnly = (await this.illegalList.findOne
-            ({ id: "spacedOutWordsOnly" })).items;
+        // TODO: probably cache this
+        let [illegalWords, illegalWebsites, spacedOutWordsOnly] = (
+            await Promise.all([
+                this.illegalList.findOne({ id: "illegalWords" }),
+                this.illegalList.findOne({ id: "illegalWebsites" }),
+                this.illegalList.findOne({ id: "spacedOutWordsOnly" }),
+            ])
+        ).map((t) => t.items);
 
         illegalWords = illegalWords ? illegalWords : [];
         illegalWebsites = illegalWebsites ? illegalWebsites : [];
         spacedOutWordsOnly = spacedOutWordsOnly ? spacedOutWordsOnly : [];
 
         const joined = illegalWords.concat(illegalWebsites);
-        
-        const no_spaces = text.replace(/\s/g, "");
+
+        const no_spaces = text.replace(REMOVE_SYMBOLS_REGEX, "");
 
         for (const item of joined) {
             if (no_spaces.includes(item)) {
@@ -2386,9 +3565,38 @@ class UserManager {
         }
 
         for (const item of spacedOutWordsOnly) {
-            const with_spaces = " " + item + " ";
+            const regex = new RegExp(`(^| )${item}( |$)`);
 
-            if (text.includes(with_spaces)) {
+            if (text.match(regex)) {
+                return item;
+            }
+        }
+
+        return "";
+    }
+
+    /**
+     * Check for illegal wording on a username
+     * @param {string} username The username to check for illegal wording
+     * @returns {Promise<string>} Empty if there is nothing illegal, not empty if it was triggered (returns the trigger)
+     * @async
+     */
+    async checkForUnsafeUsername(username) {
+        const basicTrigger = await this.checkForIllegalWording(username);
+        if (basicTrigger) {
+            return basicTrigger;
+        }
+
+        let unsafeUsernames = (
+            await this.illegalList.findOne({ id: "unsafeUsernames" })
+        ).items;
+
+        unsafeUsernames = unsafeUsernames || [];
+
+        const no_spaces = username.replace(REMOVE_SYMBOLS_REGEX, "");
+
+        for (const item of unsafeUsernames) {
+            if (no_spaces.includes(item)) {
                 return item;
             }
         }
@@ -2398,51 +3606,55 @@ class UserManager {
 
     /**
      * Get the index of illegal wording
-     * @param {string} text Text to get the index from
+     * @param {string} username Username to get the index from
      * @returns {Promise<number>} Index of the illegal wording
      */
-    async getIndexOfIllegalWording(text) {
-        const illegalWords = (await this.illegalList.findOne
-            ({ id: "illegalWords" })).items;
-        const illegalWebsites = (await this.illegalList.findOne
-            ({ id: "illegalWebsites" })).items;
-        const spacedOutWordsOnly = (await this.illegalList.findOne
-            ({ id: "spacedOutWordsOnly" })).items;
-        const joined = illegalWords.concat(illegalWebsites);
+    async getIndexOfUnsafeUsername(username) {
+        // TODO! make this work better
+        const normalWording = await this.getIndexOfIllegalWording(username);
+        if (normalWording[0] !== -1) {
+            return normalWording;
+        }
 
-        const no_spaces = text.replace(/\s/g, "");
-        
-        for (const item of joined) {
-            const index = no_spaces.indexOf(item)
+        const unsafeUsernames = (
+            await this.illegalList.findOne({ id: "unsafeUsernames" })
+        ).items;
+
+        const no_spaces = username.replace(REMOVE_SYMBOLS_REGEX, "");
+
+        for (const item of unsafeUsernames) {
+            const index = no_spaces.indexOf(item);
             if (index + 1) {
-                return [index, index+item.length];
+                return [index, index + item.length];
             }
         }
 
-        for (const item of spacedOutWordsOnly) {
-            const with_spaces = " " + item + " ";
-            const index = text.indexOf(with_spaces)
-            if (index + 1) {
-                return [index, index+item.length];
-            }
-        }
+        return [-1, -1];
     }
 
     /**
-     * Check for slightly illegal wording on text
+     * Check for potentially illegal wording on text
      * @param {string} text The text to check for slightly illegal wording
-     * @returns {Promise<String>} same as normal illegal
+     * @returns {Promise<string>} same as normal illegal
      * @async
      */
-    async checkForSlightlyIllegalWording(text) {
-        let potentiallyUnsafeWords = (await this.illegalList.findOne
-            ({ id: "potentiallyUnsafeWords" })).items;
-        let potentiallyUnsafeWordsSpacedOut = (await this.illegalList.findOne
-            ({ id: "potentiallyUnsafeWordsSpacedOut" })).items;
+    async checkForPotentiallyUnsafeUsername(text) {
+        let [potentiallyUnsafeWords, potentiallyUnsafeWordsSpacedOut] = (
+            await Promise.all([
+                this.illegalList.findOne({ id: "potentiallyUnsafeWords" }),
+                this.illegalList.findOne({
+                    id: "potentiallyUnsafeWordsSpacedOut",
+                }),
+            ])
+        ).map((t) => t.items);
 
-        potentiallyUnsafeWords = potentiallyUnsafeWords ? potentiallyUnsafeWords : [];
-        potentiallyUnsafeWordsSpacedOut = potentiallyUnsafeWordsSpacedOut ? potentiallyUnsafeWordsSpacedOut : [];
-        
+        potentiallyUnsafeWords = potentiallyUnsafeWords
+            ? potentiallyUnsafeWords
+            : [];
+        potentiallyUnsafeWordsSpacedOut = potentiallyUnsafeWordsSpacedOut
+            ? potentiallyUnsafeWordsSpacedOut
+            : [];
+
         for (const item of potentiallyUnsafeWords) {
             if (text.includes(item)) {
                 return item;
@@ -2450,8 +3662,116 @@ class UserManager {
         }
 
         for (const item of potentiallyUnsafeWordsSpacedOut) {
-            const with_spaces = " " + item + " ";
-            if (text.includes(with_spaces)) {
+            const regex = new RegExp(`(^| )${item}( |$)`);
+
+            if (text.match(regex)) {
+                return item;
+            }
+        }
+
+        return "";
+    }
+
+    /**
+     * Get the index of potentially unsafe username
+     * @param {string} username Username to get the index from
+     * @returns {Promise<number>} Index of the potentially unsafe wording
+     */
+    async getIndexOfPotentiallyUnsafeUsername(username) {
+        // TODO: make this work better/correctly
+        const [potentiallyUnsafeWords, potentiallyUnsafeWordsSpacedOut] = (
+            await Promise.all([
+                this.illegalList.findOne({ id: "potentiallyUnsafeWords" }),
+                this.illegalList.findOne({
+                    id: "potentiallyUnsafeWordsSpacedOut",
+                }),
+            ])
+        ).map((t) => t.items);
+
+        const joined = potentiallyUnsafeWords.concat(
+            potentiallyUnsafeWordsSpacedOut,
+        );
+
+        for (const item of joined) {
+            const index = username.indexOf(item);
+            if (index + 1) {
+                return [index, index + item.length];
+            }
+        }
+
+        return [-1, -1];
+    }
+
+    /**
+     * Get the index of illegal wording
+     * @param {string} text Text to get the index from
+     * @returns {Promise<number>} Index of the illegal wording
+     */
+    async getIndexOfIllegalWording(text) {
+        // TODO! make this work better
+        const [illegalWords, illegalWebsites, spacedOutWordsOnly] = (
+            await Promise.all([
+                this.illegalList.findOne({ id: "illegalWords" }),
+                this.illegalList.findOne({ id: "illegalWebsites" }),
+                this.illegalList.findOne({ id: "spacedOutWordsOnly" }),
+            ])
+        ).map((t) => t.items);
+        const joined = illegalWords.concat(illegalWebsites);
+
+        const no_spaces = text.replace(REMOVE_SYMBOLS_REGEX, "");
+
+        for (const item of joined) {
+            const index = no_spaces.indexOf(item);
+            if (index + 1) {
+                return [index, index + item.length];
+            }
+        }
+
+        for (const item of spacedOutWordsOnly) {
+            const regex = new RegExp(`(^| )${item}( |$)`);
+            const match = text.match(regex);
+
+            if (match) {
+                return [match.index, match.index + item.length];
+            }
+        }
+
+        return [-1, -1];
+    }
+
+    /**
+     * Check for potentially illegal wording on text
+     * @param {string} text The text to check for slightly illegal wording
+     * @returns {Promise<string>} same as normal illegal
+     * @async
+     */
+    async checkForPotentiallyIllegalWording(text) {
+        let [potentiallyUnsafeWords, potentiallyUnsafeWordsSpacedOut] = (
+            await Promise.all([
+                this.illegalList.findOne({ id: "potentiallyUnsafeWords" }),
+                this.illegalList.findOne({
+                    id: "potentiallyUnsafeWordsSpacedOut",
+                }),
+            ])
+        ).map((t) => t.items);
+
+        potentiallyUnsafeWords = potentiallyUnsafeWords
+            ? potentiallyUnsafeWords
+            : [];
+        potentiallyUnsafeWordsSpacedOut = potentiallyUnsafeWordsSpacedOut
+            ? potentiallyUnsafeWordsSpacedOut
+            : [];
+
+        for (const item of potentiallyUnsafeWords) {
+            if (text.includes(item)) {
+                return item;
+            }
+        }
+
+        for (const item of potentiallyUnsafeWordsSpacedOut) {
+            const regex = new RegExp(`(^| )${item}( |$)`);
+
+            if (text.match(regex)) {
                 return item;
             }
         }
@@ -2464,19 +3784,29 @@ class UserManager {
      * @param {string} text Text to get the index from
      * @returns {Promise<number>} Index of the slightly illegal wording
      */
-    async getIndexOfSlightlyIllegalWording(text) {
-        const potentiallyUnsafeWords = (await this.illegalList.findOne
-            ({ id: "potentiallyUnsafeWords" })).items;
-        const potentiallyUnsafeWordsSpacedOut = (await this.illegalList.findOne
-            ({ id: "potentiallyUnsafeWordsSpacedOut" })).items;
-        const joined = potentiallyUnsafeWords.concat(potentiallyUnsafeWordsSpacedOut);
-        
+    async getIndexOfPotentiallyIllegalWording(text) {
+        // TODO: make this work better/correctly
+
+        const [potentiallyUnsafeWords, potentiallyUnsafeWordsSpacedOut] = (
+            await Promise.all([
+                this.illegalList.findOne({ id: "potentiallyUnsafeWords" }),
+                this.illegalList.findOne({
+                    id: "potentiallyUnsafeWordsSpacedOut",
+                }),
+            ])
+        ).map((t) => t.items);
+        const joined = potentiallyUnsafeWords.concat(
+            potentiallyUnsafeWordsSpacedOut,
+        );
+
         for (const item of joined) {
-            const index = text.indexOf(item)
+            const index = text.indexOf(item);
             if (index + 1) {
-                return [index, index+item.length];
+                return [index, index + item.length];
             }
         }
+
+        return [-1, -1];
     }
 
     /**
@@ -2486,7 +3816,11 @@ class UserManager {
      * @async
      */
     async setIllegalWords(type, words) {
-        await this.illegalList.updateOne({id: type}, {$set: {items: words}});
+        type = String(type);
+        await this.illegalList.updateOne(
+            { id: type },
+            { $set: { items: words } },
+        );
     }
 
     /**
@@ -2496,17 +3830,25 @@ class UserManager {
      * @async
      */
     async addIllegalWord(word, type) {
-        await this.illegalList.updateOne({id: type}, {$push: {items: word}});
+        type = String(type);
+        await this.illegalList.updateOne(
+            { id: type },
+            { $push: { items: word } },
+        );
     }
 
     /**
      * Remove an illegal word
-     * @param {string} word The item to remove 
+     * @param {string} word The item to remove
      * @param {string} type The type of the illegal item
      * @async
      */
     async removeIllegalWord(word, type) {
-        await this.illegalList.updateOne({id: type}, {$pull: {items: word}});
+        type = String(type);
+        await this.illegalList.updateOne(
+            { id: type },
+            { $pull: { items: word } },
+        );
     }
 
     /**
@@ -2515,17 +3857,29 @@ class UserManager {
      * @async
      */
     async getIllegalWords() {
-        const illegalWords = (await this.illegalList.findOne
-            ({ id: "illegalWords" })).items;
-        const illegalWebsites = (await this.illegalList.findOne
-            ({ id: "illegalWebsites" })).items;
-        const spacedOutWordsOnly = (await this.illegalList.findOne
-            ({ id: "spacedOutWordsOnly" })).items;
-        const potentiallyUnsafeWords = (await this.illegalList.findOne
-            ({ id: "potentiallyUnsafeWords" })).items;
-        const potentiallyUnsafeWordsSpacedOut = (await this.illegalList.findOne
-            ({ id: "potentiallyUnsafeWordsSpacedOut" })).items;
-        const legalExtensions = await this.getLegalExtensions();
+        const [
+            illegalWords,
+            illegalWebsites,
+            spacedOutWordsOnly,
+            potentiallyUnsafeWords,
+            potentiallyUnsafeWordsSpacedOut,
+            unsafeUsernames,
+            potentiallyUnsafeUsernames,
+            legalExtensions,
+        ] = (
+            await Promise.all([
+                this.illegalList.findOne({ id: "illegalWords" }),
+                this.illegalList.findOne({ id: "illegalWebsites" }),
+                this.illegalList.findOne({ id: "spacedOutWordsOnly" }),
+                this.illegalList.findOne({ id: "potentiallyUnsafeWords" }),
+                this.illegalList.findOne({
+                    id: "potentiallyUnsafeWordsSpacedOut",
+                }),
+                this.illegalList.findOne({ id: "unsafeUsernames" }),
+                this.illegalList.findOne({ id: "potentiallyUnsafeUsernames" }),
+                this.getLegalExtensions(),
+            ])
+        ).map((t) => (t.items ? t.items : t));
 
         return {
             illegalWords,
@@ -2533,23 +3887,31 @@ class UserManager {
             spacedOutWordsOnly,
             potentiallyUnsafeWords,
             potentiallyUnsafeWordsSpacedOut,
-            legalExtensions
-        }
+            legalExtensions,
+            unsafeUsernames,
+            potentiallyUnsafeUsernames,
+        };
     }
 
     /**
      * Verify the state from an OAuth2 request
-     * @param {string} state The state to verify 
+     * @param {string} state The state to verify
      * @returns {Promise<boolean>} True if the state is valid, false if not
      * @async
      */
     async verifyOAuth2State(state) {
-        const result = await this.oauthStates.findOne({ state: state, expireAt: { $gt: Date.now() } });
+        // TODO: find & delete should be combined to avoid race conditions
+        state = String(state);
+        const result = await this.oauthStates.findOne({
+            state: state,
+            createdAt: { $lt: new Date(Date.now() + 1000 * 60 * 5) },
+        });
 
         // now get rid of the state cuz uh we dont need it anymore
 
-        if (result)
-        await this.oauthStates.deleteOne({ state: state })
+        if (result) {
+            await this.oauthStates.deleteOne({ state: state });
+        }
 
         return result ? true : false;
     }
@@ -2558,12 +3920,15 @@ class UserManager {
      * Generate a new OAuth2 state and save it for verification
      * @returns {Promise<string>} The state
      */
-    async generateOAuth2State(extra="") {
-        const state = (randomBytes(32).toString("base64") + extra).replaceAll("+", "-");
+    async generateOAuth2State(extra = "") {
+        const state = (randomBytes(32).toString("base64") + extra).replaceAll(
+            "+",
+            "-",
+        );
 
         await this.oauthStates.insertOne({
             state: state,
-            expireAt: Date.now() + 1000 * 60 * 5
+            createdAt: new Date(),
         });
 
         return state;
@@ -2573,39 +3938,49 @@ class UserManager {
      * Make an OAuth2 request
      * @param {string} code The from the original OAuth2 request
      * @param {string} method The method of OAuth2 request
-     * @returns 
+     * @returns
      */
     async makeOAuth2Request(code, method) {
         let response;
         try {
             switch (method) {
                 case "scratch":
-                    response = await fetch(`https://oauth2.scratch-wiki.info/w/rest.php/soa2/v0/tokens`, {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json"
+                    response = await fetch(
+                        `https://oauth2.scratch-wiki.info/w/rest.php/soa2/v0/tokens`,
+                        {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify({
+                                client_id: Number(
+                                    process.env.ScratchOAuthClientID,
+                                ),
+                                client_secret:
+                                    process.env.ScratchOAuthClientSecret,
+                                code: code,
+                                scopes: ["identify"],
+                            }),
                         },
-                        body: JSON.stringify({
-                            client_id: Number(process.env.ScratchOAuthClientID),
-                            client_secret: process.env.ScratchOAuthClientSecret,
-                            code: code,
-                            scopes: ["identify"]
-                        })
-                    }).then(res => res.json());
+                    ).then((res) => res.json());
                     return response;
                 case "github":
-                    response = await fetch(`https://github.com/login/oauth/access_token`, {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "Accept": "application/json"
+                    response = await fetch(
+                        `https://github.com/login/oauth/access_token`,
+                        {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                Accept: "application/json",
+                            },
+                            body: JSON.stringify({
+                                client_id: process.env.GithubOAuthClientID,
+                                client_secret:
+                                    process.env.GithubOAuthClientSecret,
+                                code: code,
+                            }),
                         },
-                        body: JSON.stringify({
-                            client_id: process.env.GithubOAuthClientID,
-                            client_secret: process.env.GithubOAuthClientSecret,
-                            code: code
-                        })
-                    }).then(res => res.json());
+                    ).then((res) => res.json());
                     return response;
             }
         } catch (e) {
@@ -2615,6 +3990,8 @@ class UserManager {
 
     async makeOAuth2Account(method, data, utils, res) {
         let username, id, real_username;
+        let email = null;
+        let check_username = true;
         switch (method) {
             case "scratch":
                 username = data.user_name.toLowerCase();
@@ -2625,13 +4002,15 @@ class UserManager {
                 id = data.id;
                 username = data.username.toLowerCase();
                 real_username = data.username;
+                email = data.email;
+                check_username = false;
                 break;
             case "github":
                 try {
                     username = String(data.login).toLowerCase();
                     real_username = String(data.login);
-                } catch(e) {
-                    console.error("it broke", data, e);
+                } catch (e) {
+                    console.error(`gh oauth broke: ${data} --- ${e}`);
                     throw e;
                 }
                 id = data.id;
@@ -2639,13 +4018,31 @@ class UserManager {
         }
 
         let n = 0;
-        let orig_username = username;
+        const orig_username = username;
         while (await this.existsByUsername(username)) {
             username = `${orig_username}${n}`;
+            real_username = `${real_username}${n}`;
             n++;
         }
 
-        const info = await this.createAccount(username, real_username, null, null, null, null, false, utils, res)
+        const info = await this.createAccount(
+            username,
+            real_username,
+            null,
+            { email, verify: true },
+            null,
+            null,
+            false,
+            utils,
+            res,
+            check_username,
+        );
+
+        if (!info) {
+            console.error(`failed to create oauth account: ${username}`);
+            return false;
+        }
+
         const token = info[0];
         const pm_id = info[1];
 
@@ -2658,7 +4055,10 @@ class UserManager {
      * @param {Array<string>} extensions Array of extension IDs to set the legal list to
      */
     async setLegalExtensions(extensions) {
-        await this.illegalList.updateOne({id: "legalExtensions"}, {$set: {items: extensions}});
+        await this.illegalList.updateOne(
+            { id: "legalExtensions" },
+            { $set: { items: extensions } },
+        );
     }
 
     /**
@@ -2666,7 +4066,11 @@ class UserManager {
      * @param {string} extension Extension ID
      */
     async addLegalExlegalExtentension(extension) {
-        await this.illegalList.updateOne({id: "legalExtensions"}, {$push: {items: extension}});
+        extension = String(extension);
+        await this.illegalList.updateOne(
+            { id: "legalExtensions" },
+            { $push: { items: extension } },
+        );
     }
 
     /**
@@ -2674,11 +4078,17 @@ class UserManager {
      * @param {string} extension Extension ID
      */
     async removeLegalExtension(extension) {
-        await this.illegalList.updateOne({id: "legalExtensions"}, {$pull: {items: extension}});
+        extension = String(extension);
+        await this.illegalList.updateOne(
+            { id: "legalExtensions" },
+            { $pull: { items: extension } },
+        );
     }
 
     async getLegalExtensions() {
-        const result = await this.illegalList.findOne({id: "legalExtensions"});
+        const result = await this.illegalList.findOne({
+            id: "legalExtensions",
+        });
 
         return result.items;
     }
@@ -2689,35 +4099,51 @@ class UserManager {
      * @returns {Promise<boolean>} True if the extension is allowed, false if not
      */
     async checkExtensionIsAllowed(extension) {
-        if (!extension) return true;
+        if (!extension) {
+            return true;
+        }
+        extension = String(extension);
 
-        const extensionsConfig = await this.illegalList.findOne({id: "legalExtensions"});
+        const extensionsConfig = await this.illegalList.findOne({
+            id: "legalExtensions",
+        });
         const isIncluded = extensionsConfig.items.includes(extension);
 
         return isIncluded;
-    };
-    async validateAreProjectExtensionsAllowed(extensions, extensionURLs, username) {
-        const isAdmin = await this.isAdmin(username);
-        const isModerator = await this.isModerator(username);
+    }
+    async validateAreProjectExtensionsAllowed(
+        extensions,
+        extensionURLs,
+        username,
+    ) {
+        const [userData, extensionsConfig] = await Promise.all([
+            this.getUserData(username),
+            this.illegalList.findOne({
+                id: "legalExtensions",
+            }),
+        ]);
+        const isAdmin = userData.admin;
+        const isModerator = userData.moderator;
+        const userRank = userData.rank;
 
-        // Note, this does make the above function useless. Not sure if there's any need to keep it yet.
-        const extensionsConfig = await this.illegalList.findOne({id: "legalExtensions"});
-
-        // check the extensions
-        const userRank = await this.getRank(username);
         if (userRank < 1 && !isAdmin && !isModerator) {
             const isUrlExtension = (extId) => {
-                if (!extensionURLs) return false;
-                return (extId in extensionURLs);
+                if (!extensionURLs) {
+                    return false;
+                }
+                return extId in extensionURLs;
             };
 
             if (extensions && !isAdmin && !isModerator) {
-                for (let extension of extensions) {
-                    if (isUrlExtension(extension)) { // url extension names can be faked (if not trusted source)
+                for (const extension of extensions) {
+                    if (isUrlExtension(extension)) {
+                        // url extension names can be faked (if not trusted source)
                         let found = false;
-                        for (let source of extensionsConfig.items) {
+                        for (const source of extensionsConfig.items) {
                             // http and localhost urls shouldnt be allowed anyway, and :// means no extension ID should ever collide with this
-                            if (!source.startsWith("https://")) continue;
+                            if (!source.startsWith("https://")) {
+                                continue;
+                            }
                             // Still using startsWith since it allows for an entire URL to be whitelisted if neccessary.
                             if (extensionURLs[extension].startsWith(source)) {
                                 found = true;
@@ -2729,7 +4155,7 @@ class UserManager {
                             continue;
                         }
                     }
-                    
+
                     if (!extensionsConfig.items.includes(extension)) {
                         return [false, extension];
                     }
@@ -2748,220 +4174,350 @@ class UserManager {
     async newTokenGen(username) {
         const token = randomBytes(32).toString("hex");
 
-        await this.users.updateOne({ username: username }, { $set: { token: token, lastLogin: Date.now() } });
+        await this.users.updateOne(
+            { username: username },
+            { $set: { token: token, lastLogin: Date.now() } },
+        );
 
         return token;
+    }
+
+    /**
+     *
+     * @param {string} query Query to search for. Searches for *exact matches*
+     * @param {"newest" | "views" | "votes" | "loves"} sort What to sort the projects by
+     * @param {boolean} reverse Reverse the sorting
+     * @param {Date?} before Only search for projects before this
+     * @param {Date?} after Only search for projects after this
+     * @param {string?} remix The id of the project to search for the remixes of, if provided
+     * @param {boolean?} featured Whether to search for only featured projects. True for only featured, false for only unfeatured, null/undefined for both
+     * @param {string?} author The id of a user, if you'd like to search for only their projects
+     * @param {"all" | "all-allowed" | "ranked" | "unranked" | "rejected"} include What types (standing) of projects to show
+     * @param {number} page The page to get
+     * @param {number} page_size The size of each page
+     * @param {boolean?} withTotal If true, also return the total number of matching projects (uncapped by pagination). Returns { projects, total } instead of just an array.
+     * @returns {Promise<Array|{projects: Array, total: number}>}
+     */
+    async searchProjectsNew(
+        query,
+        sort,
+        reverse,
+        before,
+        after,
+        remix,
+        featured,
+        author,
+        include,
+        page,
+        page_size,
+        include_total = false,
+    ) {
+        function escapeRegex(input) {
+            return String(input).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        }
+
+        const rev = reverse ? -1 : 1;
+
+        let expect = { softRejected: false, public: true };
+        switch (include) {
+            case "all":
+                expect = {};
+                break;
+
+            case "all-allowed":
+                break;
+            case "unranked":
+                expect["authorRank"] = 0;
+                break;
+            case "ranked":
+                expect["authorRank"] = 1;
+                break;
+
+            case "rejected":
+                expect = { softRejected: true };
+                break;
+        }
+
+        if (typeof featured === "boolean") {
+            expect["featured"] = featured;
+        }
+
+        if (author) {
+            expect["author"] = author;
+        }
+
+        if (remix) {
+            expect["remix"] = remix;
+        }
+
+        if (before || after) {
+            expect["date"] = {};
+            if (before) {
+                expect["date"]["$lt"] = before.getTime();
+            }
+            if (after) {
+                expect["date"]["$gt"] = after.getTime();
+            }
+        }
+
+        const pipeline = [
+            {
+                $match: {
+                    hardReject: false,
+                    ...expect,
+                    $or: [
+                        {
+                            title: {
+                                $regex: `.*${escapeRegex(query)}.*`,
+                                $options: "i",
+                            },
+                        },
+                        {
+                            instructions: {
+                                $regex: `.*${escapeRegex(query)}.*`,
+                                $options: "i",
+                            },
+                        },
+                        {
+                            notes: {
+                                $regex: `.*${escapeRegex(query)}.*`,
+                                $options: "i",
+                            },
+                        },
+                    ],
+                },
+            },
+        ];
+
+        switch (sort) {
+            case "newest-update":
+                pipeline.push({
+                    $sort: { lastUpdate: -1 * rev },
+                });
+                break;
+            case "newest-upload":
+                pipeline.push({
+                    $sort: { date: -1 * rev },
+                });
+                break;
+            case "views":
+                pipeline.push({
+                    $sort: { views: -1 * rev },
+                });
+                break;
+            case "loves":
+                pipeline.push({
+                    $sort: { loves: -1 * rev },
+                });
+                break;
+            case "votes":
+                pipeline.push({
+                    $sort: { votes: -1 * rev },
+                });
+                break;
+        }
+
+        const projectPipeline = [
+            {
+                $skip: page * page_size,
+            },
+            {
+                $limit: page_size,
+            },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "author",
+                    foreignField: "id",
+                    as: "authorInfo",
+                },
+            },
+            {
+                // set author to { id: old_.author, username: authorInfo.username }
+                $addFields: {
+                    author: {
+                        id: "$author",
+                        username: { $arrayElemAt: ["$authorInfo.username", 0] },
+                    },
+                    fromDonator: {
+                        $in: ["donator", "$authorInfo.badges"],
+                    },
+                },
+            },
+            {
+                $unset: ["_id", "authorInfo"],
+            },
+        ];
+
+        if (!include_total) {
+            pipeline.push(...projectPipeline);
+            return {
+                projects: await this.projects.aggregate(pipeline).toArray(),
+                total: 0,
+            };
+        }
+
+        pipeline.push({
+            $facet: {
+                projects: projectPipeline,
+                totalCount: [{ $count: "count" }],
+            },
+        });
+
+        const [result] = await this.projects.aggregate(pipeline).toArray();
+
+        return {
+            projects: result?.projects ?? [],
+            total: result?.totalCount?.[0]?.count ?? 0,
+        };
     }
 
     /**
      * Search project names/instructions/notes by query
      * @param {boolean} show_unranked Show unranked users
      * @param {string} query Query to search for
-     * @param {number} page Page of projects to get 
-     * @param {number} pageSize Amount of projects to get 
+     * @param {number} page Page of projects to get
+     * @param {number} pageSize Amount of projects to get
      * @param {boolean} reverse Reverse the results
      * @returns {Promise<Array<object>>} Array of projects
      */
-    async searchProjects(show_unranked, query, type, page, pageSize, maxPageSize, reverse=false) {
-        let aggregateList = [
+    async searchProjects(
+        show_unranked,
+        query,
+        type,
+        page,
+        pageSize,
+        maxPageSize,
+        reverse = false,
+        notes_and_instructions = false,
+    ) {
+        function escapeRegex(input) {
+            return String(input).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        }
+
+        const text_search = [
             {
-                $match: { softRejected: false, hardReject: false, public: true }
+                title: {
+                    $regex: `.*${escapeRegex(query)}.*`,
+                    $options: "i",
+                },
             },
         ];
 
-        const rev = reverse ? -1 : 1;
+        //if (notes_and_instructions) {
+        text_search.push(
+            {
+                instructions: {
+                    $regex: `.*${escapeRegex(query)}.*`,
+                    $options: "i",
+                },
+            },
+            {
+                notes: {
+                    $regex: `.*${escapeRegex(query)}.*`,
+                    $options: "i",
+                },
+            },
+        );
 
-        function escapeRegex(input) {
-            return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const aggregateList = [
+            {
+                $match: {
+                    softRejected: false,
+                    hardReject: false,
+                    public: true,
+                    // $text: { $search: query },
+                    $or: text_search,
+                },
+            },
+        ];
+
+        if (!show_unranked) {
+            aggregateList.push({
+                $match: {
+                    authorRank: { $gt: 0 },
+                },
+            });
         }
 
-        aggregateList.push(
-            {
-                $match: { $or: [
-                    { title: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } },
-                    { instructions: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } },
-                    { notes: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } }
-                ] },
-            }
-        );
+        const rev = reverse ? -1 : 1;
 
         switch (type) {
             case "featured":
-                aggregateList.push({
-                    $match: { featured: true }
-                },
-                {
-                    $sort: { date: -1 * rev  }
-                });
+                aggregateList.push(
+                    {
+                        $match: { featured: true },
+                    },
+                    {
+                        $sort: { date: -1 * rev },
+                    },
+                );
                 break;
             case "newest":
                 aggregateList.push({
-                    $sort: { lastUpdate: -1 * rev }
+                    $sort: { lastUpdate: -1 * rev },
+                });
+                break;
+            case "uploaddate":
+                aggregateList.push({
+                    $sort: { date: -1 * rev },
                 });
                 break;
             default:
             case "views":
                 aggregateList.push({
-                    $sort: { views: -1 * rev }
+                    $sort: { views: -1 * rev },
                 });
                 break;
             case "loves":
-                // collect likes
-                aggregateList.push(
-                    // top ones are gonna have most views, so lets just get top of those first
-                    {
-                        $sort: { views: -1 * rev }
-                    },
-                    {
-                        $skip: page * pageSize
-                    },
-                    {
-                        $limit: maxPageSize
-                    },
-                    {
-                        $lookup: {
-                            from: "projectStats",
-                            localField: "id",
-                            foreignField: "projectId",
-                            as: "projectStatsData"
-                        }
-                    },
-                    {
-                        $addFields: {
-                            loves: {
-                                $size: {
-                                    $filter: {
-                                        input: "$projectStatsData",
-                                        as: "stat",
-                                        cond: { $eq: ["$$stat.type", "love"] }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    {
-                        $sort: { loves: -1 * rev }
-                    }
-                );
+                aggregateList.push({
+                    $sort: { loves: -1 * rev },
+                });
                 break;
             case "votes":
-                aggregateList.push(
-                    {
-                        $sort: { views: -1 * rev }
-                    },
-                    {
-                        $skip: page * pageSize
-                    },
-                    {
-                        $limit: maxPageSize
-                    },
-                    {
-                        $lookup: {
-                            from: "projectStats",
-                            localField: "id",
-                            foreignField: "projectId",
-                            as: "projectStatsData"
-                        }
-                    },
-                    {
-                        $addFields: {
-                            loves: {
-                                $size: {
-                                    $filter: {
-                                        input: "$projectStatsData",
-                                        as: "stat",
-                                        cond: { $eq: ["$$stat.type", "love"] }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    {
-                        $sort: { loves: -1 * rev }
-                    }
-                );
+                aggregateList.push({
+                    $sort: { votes: -1 * rev },
+                });
                 break;
-        }
-
-        if (!show_unranked) {
-            aggregateList.push(
-                {
-                    $lookup: {
-                        from: "users",
-                        localField: "author",
-                        foreignField: "id",
-                        as: "authorInfo"
-                    }
-                },
-                { // only allow ranked users to show up
-                    $match: { "authorInfo.rank": { $gt: 0 } }
-                },
-            );
         }
 
         aggregateList.push(
             {
-                $skip: page * pageSize
+                $skip: page * pageSize,
             },
             {
-                $limit: pageSize
+                $limit: pageSize,
             },
-        )
+        );
 
-        if (show_unranked) {
-            aggregateList.push(
-                {
-                    $lookup: {
-                        from: "users",
-                        localField: "author",
-                        foreignField: "id",
-                        as: "authorInfo"
-                    }
-                },
-            );
-        }
-        
+        aggregateList.push({
+            $lookup: {
+                from: "users",
+                localField: "author",
+                foreignField: "id",
+                as: "authorInfo",
+            },
+        });
+
         aggregateList.push(
             {
                 // set author to { id: old_.author, username: authorInfo.username }
                 $addFields: {
-                    "author": {
+                    author: {
                         id: "$author",
-                        username: { $arrayElemAt: ["$authorInfo.username", 0] }
+                        username: { $arrayElemAt: ["$authorInfo.username", 0] },
                     },
-                    "fromDonator": {
-                        $in: ["donator", "$authorInfo.badges"]
-                    }
-                }
+                    fromDonator: {
+                        $in: ["donator", "$authorInfo.badges"],
+                    },
+                },
             },
             {
-                $unset: [
-                    "projectStatsData",
-                    "_id",
-                    "authorInfo",              
-                ]
-            }
+                $unset: ["_id", "authorInfo"],
+            },
         );
 
-        const result = await this.projects.aggregate(aggregateList)
-        .toArray();
-
-        /*
-        const final = [];
-        for (const project of result[0].data) {
-            delete project._id;
-            project.author = {
-                id: project.author,
-                username: await this.getUsernameByID(project.author)
-            }
-
-            if (project.projectStatsData) {
-                delete project.projectStatsData;
-            }
-
-            final.push(project);
-        }
-            */
+        const result = await this.projects.aggregate(aggregateList).toArray();
 
         return result;
     }
@@ -2969,260 +4525,97 @@ class UserManager {
     /**
      * Search users by a query
      * @param {string} query Query to search for
-     * @param {number} page Page of projects to get 
-     * @param {number} pageSize Amount of projects to get 
+     * @param {number} page Page of projects to get
+     * @param {number} pageSize Amount of projects to get
      * @returns {Promise<Array<object>>} Array of users
      */
     async searchUsers(query, page, pageSize) {
         function escapeRegex(input) {
-            return input.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            return String(input).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
         }
 
-        const result = await this.users.aggregate([
-            {
-                $match: { permBanned: false, username: { $regex: `.*${escapeRegex(query)}.*`, $options: "i" } }
-            },
-            {
-                $sort: { followers: -1 }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: pageSize
-            },
-            // turn all the data into just {username, id}
-            {
-                $project: {
-                    username: true,
-                    id: true,
+        const result = await this.users
+            .aggregate([
+                {
+                    $match: {
+                        permBanned: false,
+                        username: {
+                            $regex: `.*${escapeRegex(query)}.*`,
+                            $options: "i",
+                        },
+                    },
                 },
-            }
-        ])
-        .toArray();
-
-        /*
-        const cleaned = result[0].data.map(x => {let v = x;delete v._id;return v;})
-
-        const final = cleaned.map((user) => ({username: user.username, id: user.id}))
-        */
+                {
+                    $sort: { followers: -1 },
+                },
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: pageSize,
+                },
+                {
+                    $project: {
+                        username: true,
+                        real_username: true,
+                        id: true,
+                        _id: false,
+                    },
+                },
+            ])
+            .toArray();
 
         return result;
-    }
-
-    /**
-     * Specialized search for a query, like { author: abc } or another metadata item, (you can also use cool mongodb stuff!!)
-     * @param {Array<Object>} query Query to search for, will be expanded with ...
-     * @param {number} page Page of projects to get
-     * @param {number} pageSize Amount of projects to get
-     * @returns {Promise<Array<Object>>} Array of projects
-     */
-    async specializedSearch(query, page, pageSize, maxPageSize) {
-        let pipeline = [
-            {
-                $sort: { lastUpdate: -1 }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: maxPageSize,
-            },
-            ...query,
-            {
-                $limit: pageSize
-            },
-            {
-                $lookup: {
-                    from: "users",
-                    localField: "author",
-                    foreignField: "id",
-                    as: "authorInfo"
-                }
-            },
-            {
-                $addFields: {
-                    "author": {
-                        id: "$author",
-                        username: { $arrayElemAt: ["$authorInfo.username", 0] }
-                    }
-                }
-            },
-            {
-                $unset: [
-                    "authorInfo",
-                    "_id"
-                ]
-            }
-        ];
-
-        const aggResult = await this.projects.aggregate(pipeline)
-        .toArray();
-
-        /*
-        const final = []
-        for (const project of aggResult[0].data) {
-            delete project._id;
-            project.author = {
-                id: project.author,
-                username: project.authorInfo[0].username
-            }
-            delete project.authorInfo; // dont send sensitive info
-            final.push(project);
-        }
-            */
-
-        return aggResult;
     }
 
     async almostFeatured(page, pageSize, maxPageSize) {
-        const result = await this.projects.aggregate([
-            {
-                $match: { softRejected: false, hardReject: false, public: true, featured: false }
-            },
-            {
-                $sort: { views: -1 }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: Math.min(maxPageSize, pageSize*2)
-            },
-            {
-                $lookup: {
-                    from: "projectStats",
-                    localField: "id",
-                    foreignField: "projectId",
-                    as: "projectStatsData"
-                }
-            },
-            {
-                $addFields: {
-                    votes: {
-                        $size: {
-                            $filter: {
-                                input: "$projectStatsData",
-                                as: "stat",
-                                cond: { $eq: ["$$stat.type", "vote"] }
-                            }
-                        }
-                    }
-                }
-            },
-            {
-                $sort: { votes: -1 }
-            },
-            {
-                $limit: pageSize
-            },
-            {
-                $lookup: {
-                    from: "users",
-                    localField: "author",
-                    foreignField: "id",
-                    as: "authorInfo"
-                }
-            },
-            {
-                // set author to { id: old_.author, username: authorInfo.username }
-                $addFields: {
-                    "author": {
-                        id: "$author",
-                        username: { $arrayElemAt: ["$authorInfo.username", 0] }
+        const result = await this.projects
+            .aggregate([
+                {
+                    $match: {
+                        softRejected: false,
+                        hardReject: false,
+                        public: true,
+                        featured: false,
+                        noFeature: { $ne: true },
                     },
-                    "fromDonator": {
-                        $in: ["donator", "$authorInfo.badges"]
-                    }
-                }
-            },
-            {
-                $unset: [
-                    "projectStatsData",
-                    "_id",
-                    "authorInfo",              
-                ]
-            }
-        ])
-        .toArray();
-
-        return result;
-    }
-
-    async mostLiked(page, pageSize, maxPageSize) {
-        const time_after = Date.now() - (1000 * 60 * 60 * 24 * 14);
-        const result = await this.projects.aggregate([
-            {
-                $match: { softRejected: false, hardReject: false, public: true, featured: false, date: { $gt: time_after } }
-            }, 
-            {
-                $sort: { views: -1 }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: maxPageSize * 3
-            },
-            {
-                $lookup: {
-                    from: "projectStats",
-                    localField: "id",
-                    foreignField: "projectId",
-                    as: "projectStatsData"
-                }
-            },
-            {
-                $addFields: {
-                    loves: {
-                        $size: {
-                            $filter: {
-                                input: "$projectStatsData",
-                                as: "stat",
-                                cond: { $eq: ["$$stat.type", "love"] }
-                            }
-                        }
-                    }
-                }
-            },
-            {
-                $sort: { loves: -1 }
-            },
-            {
-                $lookup: {
-                    from: "users",
-                    localField: "author",
-                    foreignField: "id",
-                    as: "authorInfo"
-                }
-            },
-            { // only allow ranked users to show up
-                $match: { "authorInfo.rank": { $gt: 0 } }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: pageSize
-            },
-            {
-                // set author to { id: old_.author, username: authorInfo.username }
-                $addFields: {
-                    "author": {
-                        id: "$author",
-                        username: { $arrayElemAt: ["$authorInfo.username", 0] }
-                    }
-                }
-            },
-            {
-                $unset: [
-                    "projectStatsData",
-                    "_id",
-                    "authorInfo",              
-                ]
-            }
-        ])
-        .toArray();
+                },
+                {
+                    $sort: { votes: -1 },
+                },
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: pageSize,
+                },
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "author",
+                        foreignField: "id",
+                        as: "authorInfo",
+                    },
+                },
+                {
+                    // set author to { id: old_.author, username: authorInfo.username }
+                    $addFields: {
+                        author: {
+                            id: "$author",
+                            username: {
+                                $arrayElemAt: ["$authorInfo.username", 0],
+                            },
+                        },
+                        fromDonator: {
+                            $in: ["donator", "$authorInfo.badges"],
+                        },
+                    },
+                },
+                {
+                    $unset: ["_id", "authorInfo"],
+                },
+            ])
+            .toArray();
 
         return result;
     }
@@ -3233,8 +4626,12 @@ class UserManager {
      * @param {boolean} toggle True if soft rejecting, false if undoing it
      */
     async softReject(id, toggle) {
+        id = String(id);
         // dont change if public as you should still be able to go to it if you have the id
-        await this.projects.updateOne({id: id}, { $set: { softRejected: toggle } });
+        await this.projects.updateOne(
+            { id: id },
+            { $set: { softRejected: toggle } },
+        );
     }
 
     /**
@@ -3243,7 +4640,8 @@ class UserManager {
      * @returns {Promise<boolean>}
      */
     async isSoftRejected(id) {
-        const result = await this.projects.findOne({id: id});
+        id = String(id);
+        const result = await this.projects.findOne({ id: id });
 
         return result.softRejected;
     }
@@ -3254,44 +4652,50 @@ class UserManager {
      * @param {boolean} toggle True if making private, false if not
      */
     async privateProject(id, toggle) {
-        await this.projects.updateOne({id: id}, { $set: { public: !toggle } });
+        id = String(id);
+        await this.projects.updateOne(
+            { id: id },
+            { $set: { public: !toggle } },
+        );
     }
 
     async getAllFollowing(id, page, pageSize) {
-        const result = await this.followers.aggregate([
-            {
-                $match: { follower: id, active: true }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: pageSize
-            },
-            {
-                $lookup: {
-                    from: "users",
-                    localField: "target",
-                    foreignField: "id",
-                    as: "userInfo"
+        id = String(id);
+        const result = await this.followers
+            .aggregate([
+                {
+                    $match: { follower: id, active: true },
                 },
-            },
-            {
-                $addFields: {
-                    username: { $arrayElemAt: ["$userInfo.username", 0] },
-                    // target
-                    id: "$target"
-                }
-            },
-            {
-                $project: {
-                    username: true,
-                    id: true,
-                    _id: false,
-                }
-            }
-        ])
-        .toArray();
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: pageSize,
+                },
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "target",
+                        foreignField: "id",
+                        as: "userInfo",
+                    },
+                },
+                {
+                    $addFields: {
+                        username: { $arrayElemAt: ["$userInfo.username", 0] },
+                        // target
+                        id: "$target",
+                    },
+                },
+                {
+                    $project: {
+                        username: true,
+                        id: true,
+                        _id: false,
+                    },
+                },
+            ])
+            .toArray();
 
         return result;
     }
@@ -3299,70 +4703,75 @@ class UserManager {
     /**
      * Get a users feed
      * @param {string} username Username of the user
-     * @param {number} size Size of the feed 
+     * @param {number} size Size of the feed
      * @returns {Promise<ARray<Object>>}
      */
     async getUserFeed(username, size) {
+        username = String(username);
         const id = await this.getIDByUsername(username);
-        const followers = await this.getAllFollowing(id, 0, Number(process.env.MaxPageSize || 0));
+        const followers = await this.getAllFollowing(
+            id,
+            0,
+            Number(process.env.MaxPageSize || 0),
+        );
 
-        const feed = await this.userFeed.aggregate([
-            {
-                $match: { userID: { $in: followers.map(x => x.id) } }//, expireAt: { $gt: Date.now() } }
-            },
-            {
-                $sort: { date: -1 }
-            },
-            {
-                $limit: size
-            },
-            {
-                $lookup: {
-                    from: "users",
-                    localField: "userID",
-                    foreignField: "id",
-                    as: "userInfo"
-                }
-            },
-            {
-                $addFields: {
-                    username: { $arrayElemAt: ["$userInfo.username", 0] },
-                    id: "$userID"
+        const feed = await this.userFeed
+            .aggregate([
+                {
+                    $match: { userID: { $in: followers.map((x) => x.id) } }, //, expireAt: { $gt: Date.now() } }
                 },
-            },
-            {
-                $unset: ["_id", "userInfo", "userID"]
-            }
-        ])
-        .toArray();
+                {
+                    $sort: { date: -1 },
+                },
+                {
+                    $limit: size,
+                },
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "userID",
+                        foreignField: "id",
+                        as: "userInfo",
+                    },
+                },
+                {
+                    $addFields: {
+                        username: { $arrayElemAt: ["$userInfo.username", 0] },
+                        id: "$userID",
+                    },
+                },
+                {
+                    $unset: ["_id", "userInfo", "userID"],
+                },
+            ])
+            .toArray();
 
         return feed;
     }
 
     /**
-     * 
+     *
      * @param {string} userID ID of the user
      * @param {string} type Type of the feed item
      * @param {string} data Data of the feed item, for example the project id
      */
     async addToFeed(userID, type, data) {
+        userID = String(userID);
         await this.userFeed.insertOne({
             userID: userID,
             type: type,
             data: data,
-            date: Date.now(),
-            expireAt: Date.now() + Number(process.env.FeedExpirationTime)
+            date: new Date(),
         });
     }
 
     /**
      * Set a users pfp
-     * @param {string} username Username of the user
+     * @param {string} id ID of the user
      * @param {Buffer} buffer Buffer of the pfp
+     * @returns {Promise<>}
      */
-    async setProfilePicture(username, buffer) {
-        const id = await this.getIDByUsername(username);
-
+    async setProfilePicture(id, buffer) {
         await this.minioClient.putObject("profile-pictures", id, buffer);
     }
 
@@ -3372,13 +4781,18 @@ class UserManager {
      * @returns {Promise<Buffer>} User's pfp
      */
     async getProfilePicture(username) {
+        username = String(username);
         const id = await this.getIDByUsername(username);
 
         const buffer = await this.readObjectFromBucket("profile-pictures", id);
 
+        if (!buffer) {
+            return false;
+        }
+
         return buffer;
     }
-    
+
     /**
      * Set a user's birthday and or country
      * @param {string} username Username of the user
@@ -3386,8 +4800,9 @@ class UserManager {
      * @param {string?} country country code if the user as defined by ISO 3166-1 Alpha-2, if provided
      */
     async setUserBirthdayAndOrCountry(username, birthday, country) {
+        username = String(username);
         if (!birthday && !country) {
-            console.log("neither birthday nor country entered");
+            console.warn("neither birthday nor country entered");
             return;
         }
         const updateObj = {};
@@ -3411,26 +4826,40 @@ class UserManager {
             total,
             free,
             used,
-            precentage_used
+            precentage_used,
         };
     }
     async getStats() {
-        const userCount = await this.users.countDocuments({ permBanned: false }) || 0; // dont count perm banned users :tongue:
-        const bannedCount = await this.users.countDocuments({ $or: [{ permBanned: true }, { unbanTime: { $gt: Date.now() } }] }) || 0;
-        const projectCount = await this.projects.countDocuments() || 0;
+        const userCount =
+            (await this.users.countDocuments({ permBanned: false })) || 0; // dont count perm banned users :tongue:
+        const bannedCount =
+            (await this.users.countDocuments({
+                $or: [{ permBanned: true }, { unbanTime: { $gt: Date.now() } }],
+            })) || 0;
+        const projectCount = (await this.projects.countDocuments()) || 0;
         // check if remix is not 0
-        const remixCount = await this.projects.countDocuments({ remix: { $ne: "0" } }) || 0;
-        const featuredCount = await this.projects.countDocuments({ featured: true }) || 0;
-        const totalViewsResult = await this.projects.aggregate([{$match: {views:{$gte:0}}},{$group: {_id:null, total_views:{$sum:"$views"}}}]).toArray();
-        const totalViews = totalViewsResult.length > 0 ? totalViewsResult[0].total_views || 0 : 0;
+        const remixCount =
+            (await this.projects.countDocuments({ remix: { $ne: "0" } })) || 0;
+        const featuredCount =
+            (await this.projects.countDocuments({ featured: true })) || 0;
+        const totalViewsResult = await this.projects
+            .aggregate([
+                { $match: { views: { $gte: 0 } } },
+                { $group: { _id: null, total_views: { $sum: "$views" } } },
+            ])
+            .toArray();
+        const totalViews =
+            totalViewsResult.length > 0
+                ? totalViewsResult[0].total_views || 0
+                : 0;
 
-        const mongodb_stats = await this.db.command(
-            {
-              serverStatus: 1
-            }
-        );
+        /*
+        const mongodb_stats = await this.db.command({
+            serverStatus: 1,
+        });
         const current_mem_usage = process.memoryUsage();
         const comp_mem_usage = this.compMemUsage();
+        */
 
         return {
             userCount,
@@ -3439,39 +4868,53 @@ class UserManager {
             remixCount,
             featuredCount,
             totalViews,
+            /*
             current_mem_usage,
             comp_mem_usage,
             mongodb_stats,
-        }
+            */
+        };
     }
 
     async markPrivacyPolicyAsRead(username) {
-        await this.users.updateOne({ username: username }, { $set: { lastPrivacyPolicyRead: Date.now() } });
+        username = String(username);
+        await this.users.updateOne(
+            { username: username },
+            { $set: { lastPrivacyPolicyRead: Date.now() } },
+        );
     }
 
     async markTOSAsRead(username) {
-        await this.users.updateOne({ username: username }, { $set: { lastTOSRead: Date.now() } });
+        username = String(username);
+        await this.users.updateOne(
+            { username: username },
+            { $set: { lastTOSRead: Date.now() } },
+        );
     }
 
     async markGuidelinesAsRead(username) {
-        await this.users.updateOne({ username: username }, { $set: { lastGuidelinesRead: Date.now() } });
+        username = String(username);
+        await this.users.updateOne(
+            { username: username },
+            { $set: { lastGuidelinesRead: Date.now() } },
+        );
     }
 
     async getLastPolicyRead(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
         return {
             privacyPolicy: result.lastPrivacyPolicyRead,
             TOS: result.lastTOSRead,
-            guidelines: result.lastGuidelinesRead
-        }
+            guidelines: result.lastGuidelinesRead,
+        };
     }
 
     async getLastPolicyUpdate() {
         const out = {};
 
-        (await this.lastPolicyUpdates.find().toArray())
-        .map(x => {
+        (await this.lastPolicyUpdates.find().toArray()).map((x) => {
             out[x.id] = x.lastUpdate;
         });
 
@@ -3479,50 +4922,72 @@ class UserManager {
     }
 
     async setLastPrivacyPolicyUpdate() {
-        await this.lastPolicyUpdates.updateOne({ id: "privacyPolicy" }, { $set: { lastUpdate: Date.now() } });
+        await this.lastPolicyUpdates.updateOne(
+            { id: "privacyPolicy" },
+            { $set: { lastUpdate: Date.now() } },
+        );
     }
 
     async setLastTOSUpdate() {
-        await this.lastPolicyUpdates.updateOne({ id: "TOS" }, { $set: { lastUpdate: Date.now() } });
+        await this.lastPolicyUpdates.updateOne(
+            { id: "TOS" },
+            { $set: { lastUpdate: Date.now() } },
+        );
     }
 
     async setLastGuidelinesUpdate() {
-        await this.lastPolicyUpdates.updateOne({ id: "guidelines" }, { $set: { lastUpdate: Date.now() } });
+        await this.lastPolicyUpdates.updateOne(
+            { id: "guidelines" },
+            { $set: { lastUpdate: Date.now() } },
+        );
     }
 
     async getRuntimeConfigItem(id) {
         const result = await this.runtimeConfig.findOne({ id: id });
 
         if (!result) {
-            console.log(`Couldn't find config item ${id}`);
+            console.warn(`Couldn't find config item ${id}`);
             return true; // minimize disruptions
-        };
+        }
 
         return result.value;
     }
 
     async setRuntimeConfigItem(id, value) {
-        await this.runtimeConfig.updateOne({ id: id }, { $set: { value: value } });
+        await this.runtimeConfig.updateOne(
+            { id: id },
+            { $set: { value: value } },
+        );
     }
 
     async isPrivateProfile(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
         return result.privateProfile;
     }
 
     async setPrivateProfile(username, toggle) {
-        await this.users.updateOne({ username: username }, { $set: { privateProfile: toggle } });
+        username = String(username);
+        await this.users.updateOne(
+            { username: username },
+            { $set: { privateProfile: toggle } },
+        );
     }
 
     async canFollowingSeeProfile(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
         return result.allowFollowingView;
     }
 
     async setFollowingSeeProfile(username, toggle) {
-        await this.users.updateOne({ username: username }, { $set: { allowFollowingView: toggle } });
+        username = String(username);
+        await this.users.updateOne(
+            { username: username },
+            { $set: { allowFollowingView: toggle } },
+        );
     }
 
     async setProfileHideFollowing(username, toggle) {
@@ -3549,35 +5014,52 @@ class UserManager {
      * @returns {Promise<void>}
      */
     async tempBanUser(username, reason, length) {
-        await this.users.updateOne({ username: username }, { $set: { banReason: reason, unbanTime: Date.now()+length } });
+        username = String(username);
+        await this.users.updateOne(
+            { username: username },
+            { $set: { banReason: reason, unbanTime: Date.now() + length } },
+        );
     }
 
     async unTempBan(username) {
-        await this.users.updateOne({ username: username }, { $set: { unbanTime: 0 } });
+        username = String(username);
+        await this.users.updateOne(
+            { username: username },
+            { $set: { unbanTime: 0 } },
+        );
     }
 
     async getBanReason(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
         return result.banReason;
     }
 
     async isTempBanned(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
         return result.unbanTime > Date.now();
     }
 
     async getStanding(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
-        if (result.unbanTime > Date.now()) return 2;
-        if (result.permBanned) return 3;
-        // ATODO: 2 is limited, not yet implemented
+        if (result.unbanTime > Date.now()) {
+            return 2;
+        }
+        if (result.permBanned) {
+            return 3;
+        }
+        // TODO: 1 is limited, not yet implemented
         return 0;
     }
 
     async hasLoggedInWithIP(username, ip) {
+        username = String(username);
+        ip = String(ip);
         const id = await this.getIDByUsername(username);
 
         const result = await this.loggedIPs.findOne({ id: id, ip: ip });
@@ -3592,6 +5074,8 @@ class UserManager {
      * @returns {Promise<>}
      */
     async addIP(username, ip) {
+        username = String(username);
+        ip = String(ip);
         const id = await this.getIDByUsername(username);
 
         await this.loggedIPs.updateOne(
@@ -3599,10 +5083,10 @@ class UserManager {
             {
                 $set: { lastLogin: Date.now() },
                 $setOnInsert: {
-                    banned: false
-                }
+                    banned: false,
+                },
             },
-            { upsert: true }
+            { upsert: true },
         );
     }
 
@@ -3613,61 +5097,82 @@ class UserManager {
      * @returns {Promise<>}
      */
     async addIPID(id, ip) {
+        id = String(id);
+        ip = String(ip);
         await this.loggedIPs.updateOne(
             { id: id, ip: ip }, // match condition
             {
                 $set: { lastLogin: Date.now() },
                 $setOnInsert: {
-                    banned: false
-                }
+                    banned: false,
+                },
             },
-            { upsert: true }
+            { upsert: true },
         );
     }
 
     async getIPs(username) {
+        username = String(username);
         const id = await this.getIDByUsername(username);
 
         return await this.getIpsByID(id);
     }
 
     async getIpsByID(id) {
-        const ips = (await this.loggedIPs.find({ id: id }).toArray())
-        .map(x => {
-            return {
-                ip: x.ip,
-                banned: x.banned,
-                lastLogin: x.lastLogin
-            }
-        });
+        id = String(id);
+        const ips = (await this.loggedIPs.find({ id: id }).toArray()).map(
+            (x) => {
+                return {
+                    ip: x.ip,
+                    banned: x.banned,
+                    lastLogin: x.lastLogin,
+                };
+            },
+        );
 
         return ips;
     }
 
     async isIPBanned(ip) {
+        ip = String(ip);
         const result = await this.loggedIPs.findOne({ ip: ip });
 
-        if (!result) return false;
+        if (!result) {
+            return false;
+        }
 
         return result.banned;
     }
 
     async banIP(ip, toggle) {
-        await this.loggedIPs.updateMany({ ip: ip }, { $set: { banned: toggle } });
+        ip = String(ip);
+        await this.loggedIPs.updateMany(
+            { ip: ip },
+            { $set: { banned: toggle } },
+        );
 
         if (toggle) {
             // ban all accounts with this ip
             const accounts = await this.loggedIPs.find({ ip: ip }).toArray();
             for (const account of accounts) {
-                await this.setPermBanned(await this.getUsernameByID(account.id), true, "IP banned", true);
+                await this.setPermBanned(
+                    await this.getUsernameByID(account.id),
+                    true,
+                    "IP banned",
+                    true,
+                );
             }
         }
     }
 
     async banUserIP(username, toggle) {
+        username = String(username);
         const id = await this.getIDByUsername(username);
 
-        await this.loggedIPs.updateMany({ id: id }, { $set: { banned: toggle } });
+        await this.loggedIPs.updateMany(
+            { id: id },
+            { $set: { banned: toggle } },
+        );
 
         if (toggle) {
             // ban all accounts with the same ip
@@ -3675,16 +5180,24 @@ class UserManager {
 
             for (const ip of ips) {
                 // find all accounts with this ip
-                const accounts = await this.loggedIPs.find({ ip: ip.ip }).toArray();
-                
+                const accounts = await this.loggedIPs
+                    .find({ ip: ip.ip })
+                    .toArray();
+
                 for (const account of accounts) {
-                    await this.setPermBanned(await this.getUsernameByID(account.id), true, "IP banned", true);
+                    await this.setPermBanned(
+                        await this.getUsernameByID(account.id),
+                        true,
+                        "IP banned",
+                        true,
+                    );
                 }
             }
         }
     }
 
     async getAllAccountsWithIP(ip) {
+        ip = String(ip);
         const result = await this.loggedIPs.find({ ip: ip }).toArray();
         //.map(x => ({id: x.id, username: await this.getUsernameByID(x.id)}));
 
@@ -3692,39 +5205,42 @@ class UserManager {
         for (const account of result) {
             final.push({
                 id: account.id,
-                username: await this.getUsernameByID(account.id)
+                username: await this.getUsernameByID(account.id),
             });
         }
 
         return final;
     }
 
-    async setEmail(username, email) {
-        if (await this.emailInUse(email)) return;
-
-        await this.users.updateOne({ username: username }, { $set: { email: email } });
-    }
-
     async isEmailVerified(username) {
+        username = String(username);
         const result = await this.users.findOne({ username: username });
 
         return result.emailVerified;
     }
 
     async setEmailVerified(username, toggle) {
-        await this.users.updateOne({ username: username }, { $set: { emailVerified: toggle } });
+        username = String(username);
+        await this.users.updateOne(
+            { username: username },
+            { $set: { emailVerified: toggle } },
+        );
     }
 
     async emailInUse(email) {
+        email = String(email);
         const result = await this.users.findOne({ email: email });
 
         return result ? true : false;
     }
 
     async getUsernameByEmail(email) {
+        email = String(email);
         const result = await this.users.findOne({ email: email });
 
-        if (!result) return false;
+        if (!result) {
+            return false;
+        }
 
         return result.username;
     }
@@ -3735,13 +5251,20 @@ class UserManager {
      * @returns {Promise<string>}  The ID of the user
      */
     async getIDByEmail(email) {
+        email = String(email);
         const result = await this.users.findOne({ email: email });
 
         return result.id;
     }
 
     async getEmailCount() {
-        const result = await this.sentEmails.countDocuments({expireAt: { $gt: Date.now() }});
+        const result = await this.sentEmails.countDocuments({
+            sentAt: {
+                $lt: new Date(
+                    Date.now() + Number(process.env.LinkExpire) * 60 * 1000,
+                ),
+            },
+        });
 
         return result;
     }
@@ -3756,15 +5279,25 @@ class UserManager {
      * @param {string} messageHtml Message of the email but html (use this as primary)
      * @returns {Promise<boolean>} Success or not
      */
-    async sendEmail(userid, userip, type, email, name, subject, message, messageHtml) {
-        if (await this.getEmailCount() > process.env.EmailLimit) return false;
+    async sendEmail(
+        userid,
+        userip,
+        type,
+        email,
+        name,
+        subject,
+        message,
+        messageHtml,
+    ) {
+        if ((await this.getEmailCount()) > process.env.EmailLimit) {
+            return false;
+        }
 
         await this.sentEmails.insertOne({
             userid,
             userip,
-            sentAt: Date.now(),
-            expireAt: new Date(),
-            type
+            sentAt: new Date(),
+            type,
         });
 
         /*/
@@ -3775,32 +5308,32 @@ class UserManager {
 
         const mailjet = new Mailjet({
             apiKey: process.env.MJApiKeyPublic,
-            apiSecret: process.env.MJApiKeyPrivate
+            apiSecret: process.env.MJApiKeyPrivate,
         });
 
         try {
-            await mailjet.post('send', { version: 'v3.1' })
-            .request({
+            await mailjet.post("send", { version: "v3.1" }).request({
                 Messages: [
                     {
-                        "From": {
-                        "Email": "no-reply@penguinmod.com",
-                        "Name": "Penguinmod"
+                        // TODO: don't hardcode email addr, move to env
+                        From: {
+                            Email: "no-reply@penguinmod.com",
+                            Name: "PenguinMod",
                         },
-                        "To": [
-                        {
-                            "Email": email,
-                            "Name": name
-                        }
+                        To: [
+                            {
+                                Email: email,
+                                Name: name,
+                            },
                         ],
-                        "Subject": subject,
-                        "TextPart": message,
-                        "HTMLPart": messageHtml,
-                    }
-                ]
-            })
+                        Subject: subject,
+                        TextPart: message,
+                        HTMLPart: messageHtml,
+                    },
+                ],
+            });
         } catch (e) {
-            console.log("mail error", e);
+            console.error(`mail error: ${e}`);
             return false;
         }
 
@@ -3808,76 +5341,202 @@ class UserManager {
     }
 
     async lastEmailSentByID(userid) {
-        const result = (await this.sentEmails.aggregate([{
-            $match: { userid }
-        },
-        {
-            $sort: { sentAt: -1 }
-        },
-        {
-            $limit: 1
-        }]).toArray())[0];
+        userid = String(userid);
+        const result = (
+            await this.sentEmails
+                .aggregate([
+                    {
+                        $match: { userid },
+                    },
+                    {
+                        $sort: { sentAt: -1 },
+                    },
+                    {
+                        $limit: 1,
+                    },
+                ])
+                .toArray()
+        )[0];
 
-        if (!result) return 0;
+        if (!result) {
+            return 0;
+        }
 
         return result.sentAt;
     }
 
     async lastEmailSentByIP(userip) {
-        const result = (await this.sentEmails.aggregate([{
-            $match: { userip }
-        },
-        {
-            $sort: { sentAt: -1 }
-        },
-        {
-            $limit: 1
-        }]).toArray())[0];
+        userip = String(userip);
+        const result = (
+            await this.sentEmails
+                .aggregate([
+                    {
+                        $match: { userip },
+                    },
+                    {
+                        $sort: { sentAt: -1 },
+                    },
+                    {
+                        $limit: 1,
+                    },
+                ])
+                .toArray()
+        )[0];
 
-        if (!result) return 0;
+        if (!result) {
+            return 0;
+        }
 
         return result.sentAt;
     }
 
-    async generatePasswordResetState(email) {
-        const state = randomBytes(32).toString("hex");
+    async generatePasswordResetState(email, userid, is_verify_email = false) {
+        const state =
+            randomBytes(32).toString("hex") + (is_verify_email ? "_VE" : "");
 
         await this.passwordResetStates.insertOne({
             state: state,
             email: email,
-            expireAt: Date.now() + 1000 * 60 * 60 * 2
+            id: userid,
+            createdAt: new Date(),
         });
 
         return state;
     }
 
-    async verifyPasswordResetState(state, email) {
-        const result = await this.passwordResetStates.findOne({ state: state, email: email });
+    async verifyPasswordResetState(state, email, is_verify_email = false) {
+        if (!state || !email) {
+            return false;
+        }
 
-        // now get rid of the state cuz uh we dont need it anymore
+        state = String(state);
+        email = String(email);
+        if (!state || state.endsWith("_VE") !== is_verify_email) {
+            console.warn(
+                (state.endsWith("_VE")
+                    ? "says ve but not ve"
+                    : "ve but says not ve") +
+                    ` - ${state.slice(-4)} (${email})`,
+            );
+            return false;
+        }
 
-        if (!!result)
-            await this.passwordResetStates.deleteOne({ state: state })
+        const result = await this.passwordResetStates.findOne({
+            state: state,
+            email: email,
+            createdAt: {
+                $lt: new Date(
+                    Date.now() + Number(process.env.LinkExpire) * 60 * 1000,
+                ),
+            },
+        });
 
-        return !!result ? true : false;
+        const is_valid = !!result;
+
+        if (is_valid) {
+            await this.passwordResetStates.deleteOne({ state: state });
+        }
+
+        return is_valid;
     }
 
+    /**
+     * Gets arbitrary customization data, meant for donators to customize their profile.
+     * @param {string} username The user with the customization data
+     * @returns {string} JSON with Arbitrary keys and values
+     */
     async getUserCustomization(username) {
-        const result = await this.accountCustomization.findOne({ username: username });
-
-        return result.text;
+        username = String(username);
+        const result = await this.accountCustomization.findOne({
+            username: username,
+        });
+        if (!result) {
+            return "{}";
+        }
+        return result.customJson || "{}";
+    }
+    async getUserCustomizationDisabled(username) {
+        username = String(username);
+        const result = await this.accountCustomization.findOne({
+            username: username,
+        });
+        if (!result) {
+            return false;
+        }
+        return result.disabled === true;
     }
 
-    async setUserCustomization(username, text) {
-        await this.accountCustomization.updateOne({ username: username }, { $set: { text: text } });
+    /**
+     * User customization is arbitrary customization data, meant for donators to customize their profile.
+     * This function checks whether or not the arbitrary data fits our requirements
+     * The arbitrary data should be a stringified JSON.
+     * @param {string} customJson Stringified JSON containing Arbitrary keys and values
+     * @returns {null|string} `null` if the customJson is valid, and a string containing the error reason if the customJson is invalid.
+     */
+    verifyCustomizationJson(customJson) {
+        if (typeof customJson !== "string") {
+            return "JSONNotString";
+        }
+        // NOTE: 2kb for now, can increase later if we somehow need more
+        if (customJson.length > 2 * 1024) {
+            return "DataTooLarge";
+        }
+        // NOTE: why parse if {} will always be valid customization JSON
+        if (customJson === "{}") {
+            return null;
+        }
+
+        let customData;
+        try {
+            customData = JSON.parse(customJson);
+        } catch (err) {
+            return err;
+        }
+
+        // verify the object itself
+        if (typeof customData !== "object" || Array.isArray(customData)) {
+            return "DataNotObject";
+        }
+        return null;
+    }
+
+    /**
+     * Sets arbitrary customization data, meant for donators to customize their profile.
+     * Any endpoint that exposes this functionality to regular users should also make sure `verifyCustomizationJson` does not give an error reason.
+     * @param {string} username The user to set the customization data for
+     * @param {string} customJson JSON with Arbitrary keys and values
+     */
+    async setUserCustomization(username, customJson) {
+        username = String(username);
+        customJson = String(customJson);
+
+        const errorReason = this.verifyCustomizationJson(customJson);
+        if (errorReason) {
+            throw new Error(errorReason);
+        }
+        await this.accountCustomization.updateOne(
+            { username: username },
+            { $set: { customJson: customJson } },
+            { upsert: true },
+        );
+    }
+    async setUserCustomizationDisabled(username, disabled) {
+        username = String(username);
+        await this.accountCustomization.updateOne(
+            { username: username },
+            { $set: { disabled: disabled } },
+            { upsert: true },
+        );
     }
 
     async clearAllEmails() {
         await this.sentEmails.deleteMany({});
     }
 
-    async massBanByUsername(regex, toggle, reason="Banned by staff") {
-        const users = await this.users.find({ username: { $regex: regex } }).toArray();
+    async massBanByUsername(regex, toggle, reason = "Banned by staff") {
+        const users = await this.users
+            .find({ username: { $regex: regex } })
+            .toArray();
         const count = users.length;
 
         for (const user of users) {
@@ -3888,6 +5547,7 @@ class UserManager {
     }
 
     async verifyFollowers(username) {
+        username = String(username);
         // what this means: go through the followers. if they are banned, remove them.
         const id = await this.getIDByUsername(username);
 
@@ -3897,14 +5557,32 @@ class UserManager {
             const user = await this.users.findOne({ id: follower.follower });
 
             if (user.permBanned) {
-                await this.followers.updateOne({ follower: follower.follower, target: id }, { $set: { active: false } });
+                await this.followers.updateOne(
+                    { follower: follower.follower, target: id },
+                    { $set: { active: false } },
+                );
             }
         }
 
         // count the amount of followers
-        const count = await this.followers.countDocuments({ target: id, active: true });
+        const count = await this.followers.countDocuments({
+            target: id,
+            active: true,
+        });
 
         await this.users.updateOne({ id: id }, { $set: { followers: count } });
+    }
+
+    async getAllBlocked(user_id) {
+        user_id = String(user_id);
+        return (
+            await this.blocking
+                .aggregate([
+                    { $match: { blocker: user_id } },
+                    { $project: { target: 1 } },
+                ])
+                .toArray()
+        ).map((t) => t.target);
     }
 
     /**
@@ -3914,16 +5592,23 @@ class UserManager {
      * @param {boolean} active true if blocking, false if unblocking
      */
     async blockUser(user_id, target_id, active) {
-        if (await this.blocking.findOne({blocker:user_id,target:target_id})) {
-            await this.blocking.updateOne({
-                blocker: user_id,
-                target: target_id,
-            }, {
-                $set: {
-                    active,
-                    time: Date.now(),
-                }
-            });
+        user_id = String(user_id);
+        target_id = String(target_id);
+        if (
+            await this.blocking.findOne({ blocker: user_id, target: target_id })
+        ) {
+            await this.blocking.updateOne(
+                {
+                    blocker: user_id,
+                    target: target_id,
+                },
+                {
+                    $set: {
+                        active,
+                        time: Date.now(),
+                    },
+                },
+            );
             return;
         }
 
@@ -3942,15 +5627,25 @@ class UserManager {
      * @returns {Promise<boolean>} true if they're blocked, false if not
      */
     async hasBlocked(user_id, target_id) {
-        return !!(await this.blocking.findOne({blocker:user_id,target:target_id,active:true}));
+        user_id = String(user_id);
+        target_id = String(target_id);
+        return !!(await this.blocking.findOne({
+            blocker: user_id,
+            target: target_id,
+            active: true,
+        }));
     }
 
     async renameObjectMinio(bucket, old_key, new_key) {
         try {
-            await this.minioClient.copyObject(bucket, new_key, `/${bucket}/${old_key}`);
+            await this.minioClient.copyObject(
+                bucket,
+                new_key,
+                `/${bucket}/${old_key}`,
+            );
             await this.minioClient.removeObject(bucket, old_key);
         } catch (err) {
-            console.error('Error renaming object:', err);
+            console.error(`Error renaming object: ${err}`);
         }
     }
 
@@ -3960,21 +5655,21 @@ class UserManager {
      * @param {string} prefix Prefix to search for
      * @returns {Promise<string[]>}
      */
-    listWithPrefix(bucket, prefix) {
+    async listWithPrefix(bucket, prefix) {
         return new Promise((resolve, reject) => {
             const objectNames = [];
-        
+
             const stream = this.minioClient.listObjects(bucket, prefix, true); // recursive = true
-        
-            stream.on('data', obj => {
+
+            stream.on("data", (obj) => {
                 objectNames.push(obj.name);
             });
-        
-            stream.on('error', err => {
+
+            stream.on("error", (err) => {
                 reject(err);
             });
-        
-            stream.on('end', () => {
+
+            stream.on("end", () => {
                 resolve(objectNames);
             });
         });
@@ -3987,38 +5682,76 @@ class UserManager {
      * @returns {Promise<null>}
      */
     async changeProjectID(original_id, new_id) {
+        original_id = String(original_id);
+        new_id = String(new_id);
         // first lets change the entry
-        await this.projects.updateOne({id: original_id}, {$set:{id:new_id}});
+        await this.projects.updateOne(
+            { id: original_id },
+            { $set: { id: new_id } },
+        );
         // now we need to change the entries in minio
         // minio bucket stuff
         await this.renameObjectMinio("project-thumbnails", original_id, new_id);
         await this.renameObjectMinio("projects", original_id, new_id);
-        const assets = await this.listWithPrefix("project-assets", `${original_id}_`);
+
+        const search_term = `${original_id}_`;
+        const assets = using_backblaze
+            ? await this.listWithPrefixBackblaze(search_term)
+            : await this.listWithPrefix("project-assets", search_term);
         for (const asset of assets) {
-            const actual_id = asset.split("_")[1];
-            await this.renameObjectMinio("project-assets", asset, `${new_id}_${actual_id}`);
+            const asset_id = asset.split("_")[1];
+
+            if (using_backblaze) {
+                await this.renameObjectBackblaze(
+                    asset,
+                    `${new_id}_${asset_id}`,
+                );
+            } else {
+                await this.renameObjectMinio(
+                    "project-assets",
+                    asset,
+                    `${new_id}_${asset_id}`,
+                );
+            }
         }
-        await this.users.updateMany({favoriteProjectID: original_id},{$set:{favoriteProjectID:new_id}});
-        await this.projectStats.updateMany({projectId:original_id},{$set:{projectId:new_id}});
-        await this.messages.updateMany({type:"upload","data.id":original_id}, {$set: {"data.id":new_id }});
-        await this.projects.updateMany({remix:original_id},{$set:{remix:new_id}});
+        await this.users.updateMany(
+            { favoriteProjectID: original_id },
+            { $set: { favoriteProjectID: new_id } },
+        );
+        await this.projectStats.updateMany(
+            { projectId: original_id },
+            { $set: { projectId: new_id } },
+        );
+        await this.messages.updateMany(
+            { type: "upload", "data.id": original_id },
+            { $set: { "data.id": new_id } },
+        );
+        await this.projects.updateMany(
+            { remix: original_id },
+            { $set: { remix: new_id } },
+        );
     }
 
     /**
      * Get alts of a user, by ip. NOTE: THIS IS RECURSIVE!!!
      * @param {string} user_id id of the user
-     * @returns {Promise<String[]>} ids of the alts
+     * @returns {Promise<string[]>} ids of the alts
      */
     async getAlts(user_id) {
+        user_id = String(user_id);
         const current_ids = new Set();
         await this._getAltsRec(user_id, current_ids);
         return [...current_ids];
     }
 
     async idListToUsernames(ids) {
-        const usernames = (await this.users.find({
-            id: { $in: ids }
-        }).toArray()).map(x => x.username);
+        const usernames = (
+            await this.users
+                .find({
+                    id: { $in: ids },
+                })
+                .toArray()
+        ).map((x) => x.username);
         return usernames;
     }
 
@@ -4029,7 +5762,9 @@ class UserManager {
      * @returns {Promise<>}
      */
     async _getAltsRec(user_id, current_ids) {
-        if (current_ids.has(user_id)) return;
+        if (current_ids.has(user_id)) {
+            return;
+        }
         current_ids.add(user_id);
         const current_data = await this.getIpsByID(user_id);
         for (const item of current_data) {
@@ -4041,12 +5776,17 @@ class UserManager {
     }
 
     async getImpressions(project_id) {
-        const project = await this.projects.findOne({id:project_id});
+        project_id = String(project_id);
+        const project = await this.projects.findOne({ id: project_id });
         return project.impressions ? project.impressions : 0;
     }
 
     async addImpression(project_id) {
-        await this.projects.updateOne({id:project_id},{$inc:{impressions:1}});
+        project_id = String(project_id);
+        await this.projects.updateOne(
+            { id: project_id },
+            { $inc: { impressions: 1 } },
+        );
     }
 
     /**
@@ -4057,6 +5797,7 @@ class UserManager {
      * @returns {Promise<>}
      */
     async registerInteraction(user_id, interaction_type, tags) {
+        user_id = String(user_id);
         let weight;
         switch (interaction_type) {
             case "view":
@@ -4073,6 +5814,7 @@ class UserManager {
                 break;
             case "more":
                 weight = 25;
+                break;
             default:
                 weight = 0;
                 break;
@@ -4082,18 +5824,18 @@ class UserManager {
             await this.tagWeights.updateOne(
                 {
                     user_id,
-                    tag
+                    tag,
                 },
                 {
                     $inc: { weight },
                     $set: {
-                        most_recent: Date.now()
-                    }
+                        most_recent: Date.now(),
+                    },
                 },
                 {
                     upsert: true,
-                }
-            )
+                },
+            );
         }
     }
 
@@ -4105,8 +5847,8 @@ class UserManager {
     collectTags(text) {
         // i hate regex. but anyways. this gets occurences of a hash followed by non-whitespace characters. ty stackoverflow user
         const res = text.match(/#\w+/g);
-        const tags = res ? res.map(t => t.substring(1)) : [];
-        return tags.slice(0,10); // first 10 tags only
+        const tags = res ? res.map((t) => t.substring(1)) : [];
+        return tags.slice(0, 10); // first 10 tags only
     }
 
     /**
@@ -4167,206 +5909,232 @@ class UserManager {
      * @returns {Promise<object[]>} The projects
      */
     async getFYP(username, page, pageSize, maxPageSize) {
+        throw "disabled";
+
+        /*
+        username = String(username);
         const userId = await this.getIDByUsername(username);
 
         console.time("top tags & followed authors");
         // get top tags and followed authors in parallel (so we are fast)
         const [topTagsDocs, followedAuthors] = await Promise.all([
-            this.tagWeights.aggregate([
-                { $match: { user_id: userId } },
-                { $sort: { weight: -1, most_recent: -1 } },
-                { $limit: 10 },
-                { $project: { tag: 1, _id: 0 } }
-            ]).toArray(),
-            
-            this.followers.aggregate([
-                { $match: { follower: userId, active: true } },
-                { $project: { _id: 0, target: 1 } }
-            ]).toArray()
+            this.tagWeights
+                .aggregate([
+                    { $match: { user_id: userId } },
+                    { $sort: { weight: -1, most_recent: -1 } },
+                    { $limit: 10 },
+                    { $project: { tag: 1, _id: 0 } },
+                ])
+                .toArray(),
+
+            this.followers
+                .aggregate([
+                    { $match: { follower: userId, active: true } },
+                    { $project: { _id: 0, target: 1 } },
+                ])
+                .toArray(),
         ]);
-        
-        const topTags = topTagsDocs.map(doc => doc.tag);
-        const followedIds = followedAuthors.map(f => f.target);
+
+        const topTags = topTagsDocs.map((doc) => doc.tag);
+        const followedIds = followedAuthors.map((f) => f.target);
         console.timeEnd("top tags & followed authors");
 
         console.time("whole scoring");
-        const scoredProjects = await this.projects.aggregate([
-            {
-                $match: { 
-                    softRejected: false, 
-                    hardReject: false, 
-                    public: true,
-                    // date filter
-                    date: { $gte: Date.now() - (1000 * 60 * 60 * 24 * 90) } // last 90 days (fyp like tiktok lmao heh...)
-                }
-            },
-            {
-                $sort: { date: -1 }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: maxPageSize
-            },
+        const scoredProjects = await this.projects
+            .aggregate([
+                {
+                    $match: {
+                        softRejected: false,
+                        hardReject: false,
+                        public: true,
+                        // date filter
+                        date: { $gte: Date.now() - 1000 * 60 * 60 * 24 * 90 }, // last 90 days (fyp like tiktok lmao heh...)
+                    },
+                },
+                {
+                    $sort: { date: -1 },
+                },
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: maxPageSize,
+                },
 
-            // check blocking
-            {
-                $lookup: {
-                    from: "blocking",
-                    let: { authorId: "$author" },
-                    pipeline: [
-                        {
-                            $match: {
-                                $expr: {
-                                    $and: [
-                                        { $eq: ["$blocker", userId] },
-                                        { $eq: ["$target", "$$authorId"] },
-                                        { $eq: ["$active", true] }
-                                    ]
-                                }
-                            }
+                // check blocking
+                {
+                    $lookup: {
+                        from: "blocking",
+                        let: { authorId: "$author" },
+                        pipeline: [
+                            {
+                                $match: {
+                                    $expr: {
+                                        $and: [
+                                            { $eq: ["$blocker", userId] },
+                                            { $eq: ["$target", "$$authorId"] },
+                                            { $eq: ["$active", true] },
+                                        ],
+                                    },
+                                },
+                            },
+                            { $limit: 1 },
+                        ],
+                        as: "blocked",
+                    },
+                },
+                {
+                    $match: { blocked: { $size: 0 } },
+                },
+
+                // get love count
+                {
+                    $lookup: {
+                        from: "projectStats",
+                        let: { pid: "$id" },
+                        pipeline: [
+                            {
+                                $match: {
+                                    $expr: {
+                                        $and: [
+                                            { $eq: ["$projectId", "$$pid"] },
+                                            { $eq: ["$type", "love"] },
+                                        ],
+                                    },
+                                },
+                            },
+                            { $count: "count" },
+                        ],
+                        as: "loves",
+                    },
+                },
+
+                // calculate score (fast frfr)
+                // Score: +10 if followed, +2 per top tag match, +love count
+                {
+                    $addFields: {
+                        loveCount: {
+                            $ifNull: [{ $arrayElemAt: ["$loves.count", 0] }, 0],
                         },
-                        { $limit: 1 }
-                    ],
-                    as: "blocked"
-                }
-            },
-            {
-                $match: { blocked: { $size: 0 } }
-            },
-
-            // get love count
-            {
-                $lookup: {
-                    from: 'projectStats',
-                    let: { pid: '$id' },
-                    pipeline: [
-                        { 
-                            $match: { 
-                                $expr: { 
-                                    $and: [
-                                        { $eq: ['$projectId', '$$pid'] },
-                                        { $eq: ['$type', 'love'] }
-                                    ]
-                                }
-                            }
+                        followedAuthor: { $in: ["$author", followedIds] },
+                        combinedText: {
+                            $concat: [
+                                { $ifNull: ["$title", ""] },
+                                " ",
+                                { $ifNull: ["$instructions", ""] },
+                                " ",
+                                { $ifNull: ["$notes", ""] },
+                            ],
                         },
-                        { $count: 'count' }
-                    ],
-                    as: 'loves'
-                }
-            },
+                    },
+                },
+                {
+                    $addFields: {
+                        tagMatches: {
+                            $reduce: {
+                                input: topTags,
+                                initialValue: 0,
+                                in: {
+                                    $add: [
+                                        "$$value",
+                                        {
+                                            $cond: [
+                                                {
+                                                    $regexMatch: {
+                                                        input: "$combinedText",
+                                                        regex: {
+                                                            $concat: [
+                                                                ".*#",
+                                                                "$$this",
+                                                                ".*",
+                                                            ],
+                                                        },
+                                                        options: "i",
+                                                    },
+                                                },
+                                                1,
+                                                0,
+                                            ],
+                                        },
+                                    ],
+                                },
+                            },
+                        },
+                    },
+                },
+                {
+                    $addFields: {
+                        score: {
+                            $add: [
+                                { $cond: ["$followedAuthor", 10, 0] },
+                                { $multiply: ["$tagMatches", 2] },
+                                "$loveCount",
+                            ],
+                        },
+                    },
+                },
 
-            // calculate score (fast frfr)
-            // Score: +10 if followed, +2 per top tag match, +love count
-            {
-                $addFields: {
-                    loveCount: { $ifNull: [{ $arrayElemAt: ['$loves.count', 0] }, 0] },
-                    followedAuthor: { $in: ['$author', followedIds] },
-                    combinedText: {
-                        $concat: [
-                            { $ifNull: ['$title', ''] },
-                            ' ',
-                            { $ifNull: ['$instructions', ''] },
-                            ' ',
-                            { $ifNull: ['$notes', ''] }
-                        ]
-                    }
-                }
-            },
-            {
-                $addFields: {
-                    tagMatches: {
-                        $reduce: {
-                            input: topTags,
-                            initialValue: 0,
-                            in: {
-                                $add: [
-                                    "$$value",
-                                    {
-                                        $cond: [
-                                            {
-                                                $regexMatch: {
-                                                    input: "$combinedText",
-                                                    regex: { $concat: ['.*#', '$$this', '.*'] },
-                                                    options: 'i'
-                                                }
-                                            },
-                                            1,
-                                            0
-                                        ]
-                                    }
-                                ]
-                            }
-                        }
-                    }
-                }
-            },
-            {
-                $addFields: {
-                    score: {
-                        $add: [
-                            { $cond: ['$followedAuthor', 10, 0] },
-                            { $multiply: ['$tagMatches', 2] },
-                            '$loveCount'
-                        ]
-                    }
-                }
-            },
+                {
+                    $sort: { score: -1, date: -1 },
+                },
+                {
+                    $limit: pageSize,
+                },
 
-            {
-                $sort: { score: -1, date: -1 }
-            },
-            {
-                $limit: pageSize
-            },
-
-            // collect author data
-            {
-                $lookup: {
-                    from: "users",
-                    localField: "author",
-                    foreignField: "id",
-                    as: "authorInfo"
-                }
-            },
-            {
-                $addFields: {
-                    "author": {
-                        id: "$author",
-                        username: { $arrayElemAt: ["$authorInfo.username", 0] }
-                    }
-                }
-            },
-            {
-                $project: {
-                    _id: 0,
-                    authorInfo: 0,
-                    blocked: 0,
-                    loves: 0,
-                    followedAuthor: 0,
-                    combinedText: 0,
-                    tagMatches: 0,
-                    score: 0
-                }
-            }
-        ]).toArray();
+                // collect author data
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "author",
+                        foreignField: "id",
+                        as: "authorInfo",
+                    },
+                },
+                {
+                    $addFields: {
+                        author: {
+                            id: "$author",
+                            username: {
+                                $arrayElemAt: ["$authorInfo.username", 0],
+                            },
+                        },
+                    },
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        authorInfo: 0,
+                        blocked: 0,
+                        loves: 0,
+                        followedAuthor: 0,
+                        combinedText: 0,
+                        tagMatches: 0,
+                        score: 0,
+                    },
+                },
+            ])
+            .toArray();
         console.timeEnd("whole scoring");
 
         return scoredProjects;
+        */
     }
-
 
     async addImpressionsMany(project_ids) {
+        if (!Array.isArray(project_ids)) {
+            return;
+        }
+        const sanitized_ids = project_ids.map((id) => String(id));
         await this.projects.updateMany(
-            {id: {
-                $in: project_ids
-            }},
-            {$inc:{impressions:1}}
+            {
+                id: {
+                    $in: sanitized_ids,
+                },
+            },
+            { $inc: { impressions: 1 } },
         );
     }
-    
+
     /**
      * Convert a protobuf file to a json object
      * @param {Uint8Array} protobuf The protobuf file
@@ -4386,17 +6154,19 @@ class UserManager {
     }
 
     async getWorstOffenders(page, pageSize) {
-        return await this.performance_logging.aggregate([
-            {
-                $sort: { millis: -1 }
-            },
-            {
-                $skip: page * pageSize
-            },
-            {
-                $limit: pageSize
-            },
-        ]).toArray();
+        return await this.performance_logging
+            .aggregate([
+                {
+                    $sort: { millis: -1 },
+                },
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: pageSize,
+                },
+            ])
+            .toArray();
     }
 
     /**
@@ -4405,8 +6175,13 @@ class UserManager {
      * @returns {Promise<>}
      */
     async deleteThumb(project_id) {
+        project_id = String(project_id);
         const image_buffer = await deleted_thumb_buffer;
-        await this.minioClient.putObject("project-thumbnails", project_id, image_buffer);
+        await this.minioClient.putObject(
+            "project-thumbnails",
+            project_id,
+            image_buffer,
+        );
     }
 
     /**
@@ -4415,13 +6190,227 @@ class UserManager {
      * @returns {Promise<boolean>} If they have mod perms
      */
     async hasModPerms(username) {
+        username = String(username);
         return !!(await this.users.findOne({
             username,
-            $or: [
-                { moderator: true },
-                { admin: true }
-            ]
+            $or: [{ moderator: true }, { admin: true }],
         }));
+    }
+
+    /**
+     * Toggle if a user is on the watchlist or not
+     * @param {string} username username of the user
+     * @param {boolean} enabled if to enable it or not
+     * @returns {Promise<>}
+     */
+    async toggleWatchlist(username, enabled) {
+        username = String(username);
+        await this.users.updateOne(
+            { username },
+            { $set: { onWatchlist: enabled } },
+        );
+    }
+
+    /**
+     * Check if a user is on the watchlist
+     * @param {string} username Username of the user
+     * @returns {Promise<boolean>}
+     */
+    async isOnWatchlist(username) {
+        username = String(username);
+        return !!(await this.users.findOne({ username })).onWatchlist;
+    }
+
+    async backupAssetCheck(asset_name) {
+        // we will use minio here
+        const item = await this.readObjectFromBucket(
+            "project-assets",
+            asset_name,
+        );
+        if (item && using_backblaze) {
+            await this.saveToBackblaze(asset_name, item);
+        }
+        return item;
+    }
+
+    async backupGetProjAssets(proj_id) {
+        proj_id = String(proj_id);
+        const assets = await this.listWithPrefix(
+            "project-assets",
+            `${proj_id}_`,
+        );
+
+        const promises = [];
+        for (const asset_name of assets) {
+            promises.push(this.backupAssetCheck(asset_name));
+        }
+
+        return await Promise.all(promises);
+    }
+
+    async getUserStats() {
+        const result = await this.users
+            .aggregate([
+                {
+                    $match: { birthdayEntered: true },
+                },
+                {
+                    $addFields: {
+                        age: {
+                            $dateDiff: {
+                                startDate: { $toDate: "$birthday" },
+                                endDate: "$$NOW",
+                                unit: "year",
+                            },
+                        },
+                    },
+                },
+                {
+                    $bucket: {
+                        groupBy: "$age",
+                        boundaries: [
+                            0, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
+                            26, 65, 500,
+                        ],
+                        default: "unknown",
+                        output: {
+                            count: { $sum: 1 },
+                        },
+                    },
+                },
+                {
+                    $project: {
+                        _id: 0,
+                        range: {
+                            $switch: {
+                                branches: [
+                                    {
+                                        case: { $eq: ["$_id", 0] },
+                                        then: "under 5",
+                                    },
+                                    { case: { $eq: ["$_id", 6] }, then: "6" },
+                                    { case: { $eq: ["$_id", 7] }, then: "7" },
+                                    { case: { $eq: ["$_id", 8] }, then: "8" },
+                                    { case: { $eq: ["$_id", 9] }, then: "9" },
+                                    { case: { $eq: ["$_id", 10] }, then: "10" },
+                                    { case: { $eq: ["$_id", 11] }, then: "11" },
+                                    { case: { $eq: ["$_id", 12] }, then: "12" },
+                                    { case: { $eq: ["$_id", 13] }, then: "13" },
+                                    { case: { $eq: ["$_id", 14] }, then: "14" },
+                                    { case: { $eq: ["$_id", 15] }, then: "15" },
+                                    { case: { $eq: ["$_id", 16] }, then: "16" },
+                                    { case: { $eq: ["$_id", 17] }, then: "17" },
+                                    {
+                                        case: { $eq: ["$_id", 18] },
+                                        then: "18-25",
+                                    },
+                                    {
+                                        case: { $eq: ["$_id", 26] },
+                                        then: "26-64",
+                                    },
+                                    {
+                                        case: { $eq: ["$_id", 65] },
+                                        then: "65+",
+                                    },
+                                ],
+                                default: "unknown",
+                            },
+                        },
+                        count: 1,
+                    },
+                },
+            ])
+            .toArray();
+
+        // zed is evil and formats "6" as 6 so it looks like this... but its okay
+        const formatted = {
+            "under 5": 0,
+            6: 0,
+            7: 0,
+            8: 0,
+            9: 0,
+            10: 0,
+            11: 0,
+            12: 0,
+            13: 0,
+            14: 0,
+            15: 0,
+            16: 0,
+            17: 0,
+            "18-25": 0,
+            "26-64": 0,
+            "65+": 0,
+        };
+
+        for (const r of result) {
+            if (formatted.hasOwn(r.range)) {
+                formatted[r.range] = r.count;
+            }
+        }
+
+        return formatted;
+    }
+
+    /**
+     * Validate whether or not the email is valid. Also check that the domain is not blocked.
+     * @param {string} email Email to be verified
+     * @returns {boolean}
+     */
+    validateEmail(email) {
+        if (
+            !email.match(
+                /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
+            )
+        ) {
+            return false;
+        }
+
+        // TODO: emails should be made lowercase. this is kinda a big issue
+
+        const domain = email.split("@").pop().toLowerCase();
+        if (disposableDomains.includes(domain)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * This function will remove references to the project from the feed and remix messages from people's inboxes
+     * @param {string} projectID ID of the evil project
+     */
+    async removeEvilProjectReferences(projectID) {
+        // only one remix "parent" will get the notification
+        await this.messages.deleteOne({ projectID, "message.type": "remix" });
+        await this.userFeed.deleteMany({ data: projectID }); // right now, user feed is just project uploads. so the data field will always be a project id.
+    }
+
+    /**
+     * Get some projects. Order is "implementation defined", i.e. mongo's ordering so upload date basically
+     * @param {number} pageSize Page size
+     * @param {undefined|string} after Internal mongo ID
+     * @returns {Promise<{projects:string[],next:string}>} projects is an array of project IDs
+     */
+    async getProjectsUnordered(pageSize, after) {
+        const filter = {};
+
+        if (after) {
+            filter._id = { $gt: new ObjectId(after) };
+        }
+
+        const projects = await this.projects
+            .find(filter, { projection: { _id: 1, id: 1 } })
+            .sort({ _id: 1 })
+            .limit(pageSize)
+            .toArray();
+
+        return {
+            projects: projects.map((d) => d.id),
+            next:
+                projects.length === pageSize
+                    ? projects[projects.length - 1]._id
+                    : null,
+        };
     }
 }
 

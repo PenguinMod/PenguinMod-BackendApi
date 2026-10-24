@@ -33,6 +33,8 @@ Either setup as you would with prod, or:
 5. Add a `.env` file copied from the .env.template file and fill in the values.
 6. Run `npm run dev` to start the server in development mode.
 
+OR with docker, run `docker compose up -d --build`
+
 ## Deployment
 
 Make sure your env is setup, then use docker-compose to get the containers running.

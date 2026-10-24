@@ -1,12 +1,10 @@
-const UserManager = require("../../../../db/UserManager");
-
 /**
  * @typedef {Object} Utils
- * @property {UserManager} UserManager
+ * @property {import("../../../../db/UserManager")} UserManager
  */
 
 /**
- * 
+ *
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
@@ -15,14 +13,14 @@ module.exports = (app, utils) => {
         const packet = req.query;
 
         // meant for getting the data
-        const target = (String(packet.target)).toLowerCase();
+        const target = String(packet.target).toLowerCase();
         const page = utils.handle_page(packet.page);
 
         if (!target) {
             utils.error(res, 400, "Missing username");
             return;
         }
-        if (!await utils.UserManager.existsByUsername(target)) {
+        if (!(await utils.UserManager.existsByUsername(target))) {
             utils.error(res, 404, "User not found");
             return;
         }
@@ -66,10 +64,14 @@ module.exports = (app, utils) => {
             }
         }
 
-        const followers = await utils.UserManager.getFollowers(target, page, Number(utils.env.PageSize));
+        const followers = await utils.UserManager.getFollowers(
+            target,
+            page,
+            Number(utils.env.PageSize)
+        );
 
         res.status(200);
-        res.header("Content-Type", 'application/json');
+        res.header("Content-Type", "application/json");
         res.send(followers);
     });
-}
+};

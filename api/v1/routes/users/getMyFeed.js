@@ -1,21 +1,18 @@
-const UserManager = require("../../db/UserManager");
-
 /**
  * @typedef {Object} Utils
- * @property {UserManager} UserManager
+ * @property {import("../../db/UserManager")} UserManager
  */
 
 /**
- * 
+ *
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.get('/api/v1/users/getmyfeed', utils.cors(), async function (req, res) {
+    app.get("/api/v1/users/getmyfeed", utils.cors(), async function (req, res) {
         const packet = req.query;
 
-
-        const token = packet.token;
+        const token = String(packet.token);
 
         if (!token) {
             utils.error(res, 400, "Missing token");
@@ -29,25 +26,34 @@ module.exports = (app, utils) => {
         }
         const username = login.username;
 
-        const feed = await utils.UserManager.getUserFeed(username, Number(utils.env.FeedSize));
+        const feed = await utils.UserManager.getUserFeed(
+            username,
+            Number(utils.env.FeedSize),
+        );
 
-        const final = []
+        const final = [];
 
         for (const item of feed) {
             switch (item.type) {
                 case "follow":
                     item.data = {
                         id: item.data,
-                        username: await utils.UserManager.getUsernameByID(item.data)
-                    }
+                        username: await utils.UserManager.getUsernameByID(
+                            item.data,
+                        ),
+                    };
                     final.push(item);
                     break;
                 case "upload":
                 case "remix":
                     item.data = {
                         id: item.data,
-                        name: (await utils.UserManager.getProjectMetadata(item.data)).title
-                    }
+                        name: (
+                            await utils.UserManager.getProjectMetadata(
+                                item.data,
+                            )
+                        ).title,
+                    };
                     final.push(item);
                     break;
                 default:
@@ -57,7 +63,7 @@ module.exports = (app, utils) => {
         }
 
         res.status(200);
-        res.header("Content-Type", 'application/json');
+        res.header("Content-Type", "application/json");
         res.send({ feed: final });
     });
-}
+};

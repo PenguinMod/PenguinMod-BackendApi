@@ -8,7 +8,11 @@ services:
             - ${DOCKER_CURRENT_DIR_LOCATION}
         networks:
             - sigma_network
+        environment:
+            - TERM=xterm-256color
+            - GIT_COMMIT=${GIT_COMMIT}
         restart: always
+        tty: true
 
     mongo:
         restart: always
@@ -34,9 +38,11 @@ services:
         ports:
             - 9000:9000
             - 9001:9001
+        expose:
+            - 9000
         logging:
             driver: none
-        mem_limit: 1750m
+        mem_limit: 4000m
         restart: always
 
 networks:

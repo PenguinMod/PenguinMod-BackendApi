@@ -1,20 +1,18 @@
-const UserManager = require("../../../../db/UserManager");
-
 /**
  * @typedef {Object} Utils
- * @property {UserManager} UserManager
+ * @property {import("../../../../db/UserManager")} UserManager
  */
 
 /**
- * 
+ *
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.post('/api/v1/projects/restore', utils.cors(), async (req, res) => {
+    app.post("/api/v1/projects/restore", utils.cors(), async (req, res) => {
         const packet = req.body;
 
-        const token = packet.token;
+        const token = String(packet.token);
 
         const project = String(packet.project);
 
@@ -24,20 +22,20 @@ module.exports = (app, utils) => {
 
         const login = await utils.UserManager.loginWithToken(token);
         if (!login.success) {
-            utils.error(res, 401, "Reauthenticate")
+            utils.error(res, 401, "Reauthenticate");
             return;
         }
         const username = login.username;
 
-        if (!await utils.UserManager.hasModPerms(username)) {
+        if (!login.isMod) {
             return utils.error(res, 401, "Invalid credentials");
         }
 
-        if (!await utils.UserManager.projectExists(project)) {
+        if (!(await utils.UserManager.projectExists(project))) {
             return utils.error(res, 404, "ProjectNotFound");
         }
 
-        if (!await utils.UserManager.isSoftRejected(project)) {
+        if (!(await utils.UserManager.isSoftRejected(project))) {
             return utils.error(res, 400, "NotSoftRejected");
         }
 
@@ -46,7 +44,12 @@ module.exports = (app, utils) => {
         const projectData = await utils.UserManager.getProjectMetadata(project);
         const author = projectData.author.id;
 
-        await utils.UserManager.sendMessage(author, {type: "restored"}, false, project);
+        await utils.UserManager.sendMessage(
+            author,
+            { type: "restored" },
+            false,
+            project,
+        );
 
         utils.logs.sendAdminLog(
             {
@@ -55,27 +58,29 @@ module.exports = (app, utils) => {
                 fields: [
                     {
                         name: "Mod",
-                        value: username
+                        value: username,
                     },
                     {
                         name: "Project ID",
-                        value: project
+                        value: project,
                     },
                     {
                         name: "URL",
-                        value: `${utils.env.StudioURL}/#${project}`
-                    }
-                ]
+                        value: `${utils.env.StudioURL}/#${project}`,
+                    },
+                ],
             },
             {
                 name: username,
-                icon_url: String(`${utils.env.ApiURL}/api/v1/users/getpfp?username=${username}`),
-                url: String("https://penguinmod.com/profile?user=" + username)
+                icon_url: String(
+                    `${utils.env.ApiURL}/api/v1/users/getpfp?username=${username}`,
+                ),
+                url: `${utils.env.HomeURL}/profile?user=${username}`,
             },
-            0x2de65d
+            0x2de65d,
         );
 
-        res.header('Content-type', "application/json");
+        res.header("Content-type", "application/json");
         res.send({ success: true });
     });
-}
+};
