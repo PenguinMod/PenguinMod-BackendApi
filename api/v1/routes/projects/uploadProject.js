@@ -23,7 +23,7 @@ module.exports = (app, utils) => {
             // assets
             { name: "assets", maxCount: Number(process.env.MaxFilesUpload) },
         ]),
-        utils.file_size_limit(utils),
+        utils.file_size_limit(utils, (req) => String(req.body.token)),
         async (req, res) => {
             const unlink = async () => {
                 if (req.files.jsonFile) {

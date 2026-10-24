@@ -153,33 +153,33 @@ console.error = (...args) => {
         res.sendFile(path.join(__dirname, "robots.txt"));
     });
 
-    function file_size_limit(utils) {
+    function file_size_limit(utils, get_token) {
         return async function (req, res, next) {
             const unlink = async () => {
-                if (req.files.jsonFile)
-                    {await utils.unlinkAsync(req.files.jsonFile[0].path);}
-                if (req.files.thumbnail)
-                    {await utils.unlinkAsync(req.files.thumbnail[0].path);}
-                if (req.files.assets)
-                    {for (const asset of req.files.assets) {
+                if (req.files.jsonFile) {
+                    await utils.unlinkAsync(req.files.jsonFile[0].path);
+                }
+                if (req.files.thumbnail) {
+                    await utils.unlinkAsync(req.files.thumbnail[0].path);
+                }
+                if (req.files.assets) {
+                    for (const asset of req.files.assets) {
                         await utils.unlinkAsync(asset.path);
-                    }}
+                    }
+                }
             };
 
-            const login = await utils.UserManager.loginWithToken(
-                String(req.body?.token ?? ""),
-            );
-            
+            const token = get_token();
+            const login = await utils.UserManager.loginWithToken(token);
+
             if (!login?.success) {
                 await unlink();
                 return utils.error(res, 401, "Invalid credentials");
             }
-            
-            const ud = await utils.UserManager.getUserData(login.username);
-            const is_donator = Boolean(ud?.badges?.includes("donator"));
+
             const maxSingleSize =
-                (Number(process.env.UploadSize) * (is_donator ? 1.75 : 1) ||
-                    5) * 1000000;
+                (Number(process.env.UploadSize) *
+                    (login.isDonator ? 1.75 : 1) || 5) * 1000000;
 
             if (!req.files) {
                 return utils.error(res, 400, "What??");
@@ -196,16 +196,21 @@ console.error = (...args) => {
 
             const maxCombinedSize =
                 (Number(
-                    process.env.CumulativeUploadSize * (is_donator ? 1.75 : 1),
+                    process.env.CumulativeUploadSize *
+                        (login.isDonator ? 1.75 : 1),
                 ) || 32) * 1000000;
             let combinedSize = 0;
 
-            if (req.files.jsonFile) {combinedSize += req.files.jsonFile[0].size;}
+            if (req.files.jsonFile) {
+                combinedSize += req.files.jsonFile[0].size;
+            }
             //if (req.files.thumbnail) combinedSize += req.files.thumbnail[0].size;
 
-            if (req.files.assets)
-                {for (const asset of req.files.assets)
-                    {combinedSize += asset.size;}}
+            if (req.files.assets) {
+                for (const asset of req.files.assets) {
+                    combinedSize += asset.size;
+                }
+            }
 
             if (combinedSize > maxCombinedSize) {
                 await unlink();
@@ -296,7 +301,9 @@ console.error = (...args) => {
                 try {
                     return await todo();
                 } catch (e) {
-                    if (onFail) {onFail(e);}
+                    if (onFail) {
+                        onFail(e);
+                    }
                     if (curRetries > finalRetries) {
                         console.error("exceeded max retry count");
                         throw e;
