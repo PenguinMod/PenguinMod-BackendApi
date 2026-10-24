@@ -40,7 +40,7 @@ module.exports = (app, utils) => {
                 return utils.error(res, 403, "FeatureDisabledForThisAccount");
             }
 
-            const targetID = await utils.UserManager.getUsernameByID(target);
+            const targetID = await utils.UserManager.getIDByUsername(target);
             if (!targetID) {
                 return utils.error(res, 400, "TargetNotFound");
             }
