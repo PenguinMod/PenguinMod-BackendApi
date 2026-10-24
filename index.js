@@ -169,7 +169,7 @@ console.error = (...args) => {
                 }
             };
 
-            const token = get_token();
+            const token = get_token(req);
             const login = await utils.UserManager.loginWithToken(token);
 
             if (!login?.success) {
