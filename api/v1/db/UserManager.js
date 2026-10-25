@@ -3136,7 +3136,7 @@ class UserManager {
     }
 
     /**
-     * Check if a user is following another user
+     * Check if a user is following another user. Bypasses profileHideFollowing for follower and bypasses profileHideFollowers for followee
      * @param {string} follower ID of the person following
      * @param {string} followee ID of the person being followed
      * @returns {Promise<boolean>} True if they are following, false if not
@@ -3155,14 +3155,15 @@ class UserManager {
     }
 
     /**
-     * Get the people a person is being followed by
+     * Get the people a person is being followed by. This bypasses profileHideFollowers
      * @param {string} username username of the person
      * @param {number} page page of followers to get
      * @param {number} pageSize amount of followers to get
+     * @param {boolean} [ignoreHideFollowing=false] If true, show people who have hidden the list of people they follow.
      * @returns {Promise<Array<string>>} Array of the people the person is being followed by
      * @async
      */
-    async getFollowers(username, page, pageSize) {
+    async getFollowers(username, page, pageSize, ignoreHideFollowing = false) {
         username = String(username);
         const id = await this.getIDByUsername(username);
         const result = await this.followers
@@ -3195,13 +3196,16 @@ class UserManager {
                             banned: {
                                 $arrayElemAt: ["$followerInfo.permBanned", 0],
                             },
+                            profileHideFollowing: {
+                                $arrayElemAt: ["$followerInfo.profileHideFollowing", 0],
+                            },
                         },
                     },
                 },
                 {
                     $match: {
                         "follower.banned": false,
-                        "follower.profileHideFollowing": { $ne: true },
+                        ...(ignoreHideFollowing ? {} : {"follower.profileHideFollowing": { $ne: true }}),
                     },
                 },
                 {
@@ -3216,12 +3220,15 @@ class UserManager {
     }
 
     /**
-     * Get the people a person is following
-     * @param {string} id username of the person
+     * Get the people a person is following. This bypasses profileHideFollowing
+     * @param {string} username username of the person
+     * @param {number} page page of following users to get
+     * @param {number} pageSize amount of following users to get
+     * @param {boolean} [ignoreHideFollowers=false] If true, show people who have hidden their follower lists.
      * @returns {Promise<Array<string>>} Array of the people the person is following
      * @async
      */
-    async getFollowing(username, page, pageSize) {
+    async getFollowing(username, page, pageSize, ignoreHideFollowers = false) {
         username = String(username);
         const id = await this.getIDByUsername(username);
         const result = await this.followers
@@ -3254,13 +3261,16 @@ class UserManager {
                             banned: {
                                 $arrayElemAt: ["$targetInfo.permBanned", 0],
                             },
+                            profileHideFollowers: {
+                                $arrayElemAt: ["$targetInfo.profileHideFollowers", 0],
+                            },
                         },
                     },
                 },
                 {
                     $match: {
                         "target.banned": false,
-                        "$targetInfo.profileHideFollowers": { $ne: true },
+                        ...(ignoreHideFollowers ? {} : {"target.profileHideFollowers": { $ne: true }}),
                     },
                 },
                 {
@@ -3277,7 +3287,7 @@ class UserManager {
     }
 
     /**
-     * Check if a person has ever followed another person
+     * Check if a person has ever followed another person. Bypasses profileHideFollowing for follower and bypasses profileHideFollowers for followee
      * @param {string} follower ID of the person following
      * @param {*} followee ID of the person being followed
      * @returns {Promise<boolean>} True if the person has followed/is following the other person, false if not
@@ -3295,6 +3305,8 @@ class UserManager {
 
     /**
      * Get the amount of people following a user
+     * 
+     * The amount of users that are following a user is meant to be public. We only hide the individual users when profileHideFollowers = true
      * @param {string} username Username of the user
      * @returns {Promise<number|undefined>} Amount of people following the user
      */
@@ -3306,7 +3318,9 @@ class UserManager {
     }
 
     /**
-     * Get the amount of people a user is following
+     * Get the amount of people a user is following. Bypasses profileHideFollowing
+     * 
+     * The amount of users that a user is following is intended to be private when profileHideFollowing = true
      * @param {string} username Username of the user
      * @returns {Promise<number>} Amount of people the user is following
      */
@@ -4660,6 +4674,13 @@ class UserManager {
         );
     }
 
+    /**
+     * get the list of user ids and usernames that the target user follows. Bypasses profileHideFollowing for id and profileHideFollowers for found users 
+     * @param {string} id id of the user
+     * @param {number} page amount of users
+     * @param {number} pageSize amount of users on a page
+     * @returns {Promise<{id:string, username:string}[]>} users
+     */
     async getAllFollowing(id, page, pageSize) {
         id = String(id);
         const result = await this.followers
@@ -4991,20 +5012,60 @@ class UserManager {
         );
     }
 
-    async setProfileHideFollowing(username, toggle) {
-        await this.users.updateOne({ username: username }, { $set: { profileHideFollowing: toggle } });
+    /**
+     * Gets whether or not a user is hiding their followers
+     * 
+     * users with profileHideFollowers are hiding the individual names of people following them, and they arent hiding their follower count
+     * @param {string} username username of the user
+     * @returns {Promise<boolean>}
+     */
+    async getProfileHideFollowers(username) {
+        username = String(username);
+        const result = await this.users.findOne({ username: username });
+        return result ? result.profileHideFollowers || false : false;
     }
-    async setProfileHideFollowers(username, toggle) {
-        await this.users.updateOne({ username: username }, { $set: { profileHideFollowers: toggle } });
+    /**
+     * Gets whether or not a user is hiding users they follow
+     * 
+     * users with profileHideFollowing are hidden in other follower lists, and it also hides their following count
+     * @param {string} username username of the user
+     * @returns {Promise<boolean>}
+     */
+    async getProfileHideFollowing(username) {
+        username = String(username);
+        const result = await this.users.findOne({ username: username });
+        return result ? result.profileHideFollowing || false : false;
     }
 
-    async getProfileHideFollowing(username) {
-        const result = await this.users.findOne({ username: username });
-        return result.profileHideFollowing || false;
+    /**
+     * Sets whether or not a user is hiding their followers
+     * 
+     * users with profileHideFollowers are hiding the individual names of people following them, and they arent hiding their follower count
+     * @param {string} username username of the user
+     * @param {boolean} toggle true to hide followers
+     * @returns {Promise<void>}
+     */
+    async setProfileHideFollowers(username, toggle) {
+        username = String(username);
+        await this.users.updateOne(
+            { username: username },
+            { $set: { profileHideFollowers: toggle } },
+        );
     }
-    async getProfileHideFollowers(username) {
-        const result = await this.users.findOne({ username: username });
-        return result.profileHideFollowers || false;
+    /**
+     * Sets whether or not a user is hiding users they follow
+     * 
+     * users with profileHideFollowing are hidden in other follower lists, and it also hides their following count
+     * @param {string} username username of the user
+     * @param {boolean} toggle true to hide following
+     * @returns {Promise<void>}
+     */
+    async setProfileHideFollowing(username, toggle) {
+        username = String(username);
+        await this.users.updateOne(
+            { username: username },
+            { $set: { profileHideFollowing: toggle } },
+        );
     }
 
     /**

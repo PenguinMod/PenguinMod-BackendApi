@@ -54,9 +54,11 @@ module.exports = (app, utils) => {
             return;
         }
 
+        // send the user a message if we are following them, weve never followed them before, and we show users who we are following
         if (
+            toggle &&
             !(await utils.UserManager.hasFollowed(userID, targetID)) &&
-            toggle
+            !(await utils.UserManager.getProfileHideFollowing(userID))
         ) {
             await utils.UserManager.sendMessage(
                 targetID,

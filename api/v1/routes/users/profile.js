@@ -39,7 +39,9 @@ module.exports = (app, utils) => {
 
         const privateProfile = target_data.privateProfile;
         const canFollowingSeeProfile = target_data.allowFollowingView;
-        const canSeeFollowing = !target_data.profileHideFollowing;
+
+        const profileHideFollowers = target_data.profileHideFollowers;
+        const profileHideFollowing = target_data.profileHideFollowing;
 
         let user = {
             success: false,
@@ -57,7 +59,8 @@ module.exports = (app, utils) => {
             canrankup: false,
             privateProfile,
             canFollowingSeeProfile,
-            canSeeFollowing,
+            profileHideFollowers,
+            profileHideFollowing,
             isFollowing: false,
         };
 
@@ -78,21 +81,15 @@ module.exports = (app, utils) => {
                 return;
             }
 
-            if (username !== target) {
-                const usernameID = await utils.UserManager.getIDByUsername(username);
-                const isTargetFollowingUser = await utils.UserManager.isFollowing(targetID, usernameID);
-
-                // if we arent a mod, then error if followers cant see the profile or if they can but you arent a follower
-                if (
-                    !isMod &&
-                    ((!canFollowingSeeProfile && !isTargetFollowingUser) ||
-                        (canFollowingSeeProfile && !isTargetFollowingUser))
-                ) {
-                    res.status(200);
-                    res.header("Content-Type", "application/json");
-                    res.send(user);
-                    return;
-                }
+            if (
+                username !== target &&
+                !(user.isFollowing && canFollowingSeeProfile) &&
+                !isMod
+            ) {
+                res.status(200);
+                res.header("Content-Type", "application/json");
+                res.send(user);
+                return;
             }
         }
 
@@ -118,7 +115,9 @@ module.exports = (app, utils) => {
 
         const followers = await utils.UserManager.getFollowerCount(target);
         const following = await utils.UserManager.getFollowingCount(target);
-        const canActuallySeeFollowing = canSeeFollowing || (!canSeeFollowing && ((loggedIn && username === target) || isMod))
+        const canActuallySeeFollowing = !profileHideFollowing
+            || isMod
+            || loggedIn && username === target;
 
         const myFeaturedProject =
             await utils.UserManager.getFeaturedProject(target);
@@ -143,7 +142,8 @@ module.exports = (app, utils) => {
             canrankup: canRequestRankUp && rank !== 1,
             privateProfile,
             canFollowingSeeProfile,
-            canSeeFollowing,
+            profileHideFollowers,
+            profileHideFollowing,
             isFollowing: user.isFollowing,
         };
 

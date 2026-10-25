@@ -77,6 +77,9 @@ module.exports = (app, utils) => {
             const privateProfile = user_meta.privateProfile;
             const canFollowingSeeProfile = user_meta.allowFollowingView;
 
+            const profileHideFollowers = user_meta.profileHideFollowers;
+            const profileHideFollowing = user_meta.profileHideFollowing;
+
             const standing =
                 user_meta.unbanTime > Date.now()
                     ? 2
@@ -118,6 +121,8 @@ module.exports = (app, utils) => {
                 lastPolicyRead: lastPolicyRead,
                 privateProfile,
                 canFollowingSeeProfile,
+                profileHideFollowers,
+                profileHideFollowing,
                 standing,
                 email,
                 isEmailVerified,
