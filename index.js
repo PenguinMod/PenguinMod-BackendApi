@@ -156,6 +156,10 @@ console.error = (...args) => {
     function file_size_limit(utils, get_token) {
         return async function (req, res, next) {
             const unlink = async () => {
+                if (req.files) {
+                    return;
+                }
+
                 if (req.files.jsonFile) {
                     await utils.unlinkAsync(req.files.jsonFile[0].path);
                 }

@@ -71,7 +71,7 @@ module.exports = (app, utils) => {
         const login = await utils.UserManager.loginWithToken(token);
         const is_mod = login.success && login.isMod;
 
-        const include = is_mod ? "ranked" : include_raw;
+        const include = is_mod ? include_raw : "ranked";
         if (is_mod) {
             switch (include_raw) {
                 case "all":

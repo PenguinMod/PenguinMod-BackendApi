@@ -68,8 +68,6 @@ module.exports = (app, utils) => {
                 return utils.error(res, 503, "Please try again later.");
             }
 
-            global_creation_counter.count++;
-
             if (!(await utils.UserManager.canCreateAccount())) {
                 return utils.error(res, 403, "Account creation is not enabled");
             }
@@ -244,6 +242,8 @@ module.exports = (app, utils) => {
 
             await utils.UserManager.addIPID(id, req.realIP);
             await utils.logs.sendCreationLog(username, id, "", "account");
+
+            global_creation_counter.count++;
 
             res.status(200);
             res.header("Content-Type", "application/json");
