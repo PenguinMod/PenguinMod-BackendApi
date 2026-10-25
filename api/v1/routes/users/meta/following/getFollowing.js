@@ -16,52 +16,35 @@ module.exports = (app, utils) => {
         const target = String(packet.target).toLowerCase();
         const page = utils.handle_page(packet.page);
 
+        const token = String(packet.token);
+        const login = await utils.UserManager.loginWithToken(token);
+        if (!login.success) {
+            utils.error(res, 401, "Reauthenticate");
+            return;
+        }
+
         if (!target) {
             utils.error(res, 400, "Missing username");
             return;
         }
+
         if (!await utils.UserManager.existsByUsername(target)) {
             utils.error(res, 404, "User not found");
             return;
         }
 
-        // incase the user hides following, check if we are the user/a mod
-        const token = packet.token || "";
-
-        const login = await utils.UserManager.loginWithToken(token);
-        let username = login.username;
-        let loggedIn = login.success;
+        // incase the user hides followers, check if we are the user/a mod
+        const fetcher_data = await utils.UserManager.getUserData(login.username);
+        const fetcherIsMod = fetcher_data.moderator || fetcher_data.admin;
 
         const target_data = await utils.UserManager.getUserData(target);
-        const user_data = await utils.UserManager.getUserData(username);
-        const isMod = loggedIn ? (user_data.moderator || user_data.admin) : false;
 
-        // if not logged in, or we arent a mod and the current acc is not the target
-        if (!loggedIn || (!isMod && (username !== target))) {
-            if (target_data.privateProfile) {
-                // if its a private profile, error if we arent logged in, the account doesnt let following view their profile, or we arent being followed by them
-                if (!loggedIn || !target_data.allowFollowingView) {
-                    res.status(403);
-                    res.header("Content-Type", "application/json");
-                    res.json({ "error": "PrivateProfile" });
-                    return;
-                }
-
-                const usernameID = await utils.UserManager.getIDByUsername(username);
-                const isFollowing = await utils.UserManager.isFollowing(target_data.id, usernameID);
-                if (!isFollowing) {
-                    res.status(403);
-                    res.header("Content-Type", "application/json");
-                    res.json({ "error": "PrivateProfile" });
-                    return;
-                }
-            }
-            if (await utils.UserManager.getProfileHideFollowing(target)) {
-                res.status(403);
-                res.header("Content-Type", "application/json");
-                res.json({ "error": "Hidden" });
-                return;
-            }
+        // if we arent a mod and fetcher isnt the source user then respect following rules
+        if (!fetcherIsMod && !(login.id === target_data.id) && target_data.profileHideFollowing) {
+            res.status(403);
+            res.header("Content-Type", "application/json");
+            res.json({ "error": "Hidden" });
+            return;
         }
 
         const following = await utils.UserManager.getFollowing(

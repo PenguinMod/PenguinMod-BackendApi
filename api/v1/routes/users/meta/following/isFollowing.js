@@ -48,8 +48,8 @@ module.exports = (app, utils) => {
         const usernameID = await utils.UserManager.getIDByUsername(username);
         const targetID = await utils.UserManager.getIDByUsername(target);
 
-        // if we arent a mod then respect follower and following rules
-        if (!fetcherIsMod && (target_data.profileHideFollowers || user_data.profileHideFollowing)) {
+        // if we arent a mod and fetcher isnt the source user then respect follower and following rules
+        if (!fetcherIsMod && !(login.id === usernameID) && (target_data.profileHideFollowers || user_data.profileHideFollowing)) {
             res.status(403);
             res.header("Content-Type", "application/json");
             res.json({ "error": "Hidden" });
