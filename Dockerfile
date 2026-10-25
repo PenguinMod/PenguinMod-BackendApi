@@ -1,4 +1,4 @@
-FROM node:20
+FROM node:24
 
 ARG GIT_COMMIT=unknown
 ENV GIT_COMMIT=$GIT_COMMIT
@@ -6,4 +6,5 @@ ENV GIT_COMMIT=$GIT_COMMIT
 WORKDIR /app
 COPY . .
 RUN npm i
-CMD FORCE_COLOR=1 node index.js
+ENV FORCE_COLOR=1
+CMD ["node", "index.js"]
