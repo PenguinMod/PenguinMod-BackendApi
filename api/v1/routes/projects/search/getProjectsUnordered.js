@@ -24,7 +24,7 @@ module.exports = (app, utils) => {
         async (req, res) => {
             const packet = req.query;
 
-            const after = packet.after || undefined;
+            const after = String(packet.after) || undefined;
 
             const { projects, next } =
                 await utils.UserManager.getProjectsUnordered(
