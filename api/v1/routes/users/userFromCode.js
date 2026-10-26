@@ -12,20 +12,10 @@ module.exports = (app, utils) => {
     app.get(
         "/api/v1/users/userfromcode",
         utils.cors(),
+        utils.requireAuth(utils.UserManager, true),
         async function (req, res) {
-            const packet = req.query;
+            const login = req.login;
 
-            const token = String(packet.token);
-
-            const login = await utils.UserManager.loginWithToken(
-                token,
-                true,
-                true,
-            );
-            if (!login.success) {
-                utils.error(res, 400, "Reauthenticate");
-                return;
-            }
             const username = login.username;
             const id = login.id;
             const user_meta = login.fullMeta;
