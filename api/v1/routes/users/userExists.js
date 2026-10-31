@@ -14,12 +14,6 @@ module.exports = (app, utils) => {
 
         const username = String(packet.username).toLowerCase();
 
-        // TODO: we probably  don't need this many checks. they are in like every file. just taking up space.
-        if (!username) {
-            utils.error(res, 400, "Missing username");
-            return;
-        }
-
         const exists = await utils.UserManager.existsByUsername(username);
 
         res.status(200);

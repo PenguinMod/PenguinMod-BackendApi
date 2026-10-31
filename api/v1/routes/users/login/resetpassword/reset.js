@@ -15,7 +15,7 @@ module.exports = (app, utils) => {
         async (req, res) => {
             const packet = req.body;
 
-            const email = String(packet.email);
+            const email = String(packet.email).toLowerCase();
             const state = String(packet.state);
             const password = String(packet.password);
 

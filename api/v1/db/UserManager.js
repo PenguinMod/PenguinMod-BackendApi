@@ -530,15 +530,18 @@ class UserManager {
             // PROBABLY just saying its full - try again
             this.removeBBUrl(url_data);
             return new Promise((resolve, _) => {
-                setTimeout(async () => {
-                    resolve(
-                        await this.saveToBackblaze(
-                            name,
-                            file,
-                            trying_again + 1,
-                        ),
-                    );
-                }, 250); // TODO: we should NOT hardcode 250. that is a bad!!!
+                setTimeout(
+                    async () => {
+                        resolve(
+                            await this.saveToBackblaze(
+                                name,
+                                file,
+                                trying_again + 1,
+                            ),
+                        );
+                    },
+                    (1 + Math.random()) * 200,
+                );
             });
         }
 
@@ -3060,8 +3063,6 @@ class UserManager {
         if (del_res.deletedCount <= 0) {
             return;
         }
-
-        // TODO: remove mentions of the project from feed
 
         // remove the loves and votes
         await this.projectStats.deleteMany({ projectId: id });
