@@ -16,27 +16,16 @@ const magic = new Magic.Magic(Magic.MAGIC_MIME_TYPE);
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/users/setpfpadmin",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager, { require_admin: true }),
         utils.upload.single("picture"),
         async (req, res) => {
             const packet = req.body;
-
-            const token = String(packet.token);
 
             const target = String(packet.target).toLowerCase();
 
             const pictureName = req.file;
 
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 400, "Reauthenticate");
-                return;
-            }
-            const username = login.username;
-
-            if (!login.isAdmin) {
-                return utils.error(res, 403, "FeatureDisabledForThisAccount");
-            }
+            const username = req.login.username;
 
             const targetID = await utils.UserManager.getIDByUsername(target);
             if (!targetID) {

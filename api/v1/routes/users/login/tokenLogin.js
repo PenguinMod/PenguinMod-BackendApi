@@ -3,6 +3,10 @@
  * @property {import("../../../db/UserManager")} UserManager
  */
 
+// TODO: we should probably get rid of this endpoint.
+// It's more useful if the frontend just fetches a load of data and stores it,
+// then can use that instead of making multiple requests
+
 /**
  *
  * @param {any} app Express app
@@ -11,23 +15,8 @@
 module.exports = (app, utils) => {
     app.get(
         "/api/v1/users/tokenlogin",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager),
         async function (req, res) {
-            const packet = req.query;
-
-            const token = String(packet.token);
-
-            if (!token) {
-                utils.error(res, 400, "Missing token");
-                return;
-            }
-
-            const login = await utils.UserManager.loginWithToken(token, true);
-            if (!login.success) {
-                utils.error(res, 400, "Reauthenticate");
-                return;
-            }
-
             res.status(200);
             res.header("Content-Type", "application/json");
             res.json({ success: true });

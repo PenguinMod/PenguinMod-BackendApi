@@ -1,6 +1,6 @@
 /**
  * @typedef {Object} Utils
- * @property {import("../../../../db/UserManager)} UserManager
+ * @property {import("../../../../db/UserManager")} UserManager
  */
 
 /**
@@ -11,25 +11,16 @@
 module.exports = (app, utils) => {
     app.get(
         "/api/v1/users/addoauthmethod",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager),
         async function (req, res) {
             // get the method
             const packet = req.query;
 
             const method = String(packet.method);
-            const token = String(packet.token);
 
-            if (!method || !token) {
-                utils.error(res, 400, "Missing method or token");
-                return;
-            }
+            const username = req.login.username;
 
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 400, "Reauthenticate");
-                return;
-            }
-            const username = login.username;
+            // TODO: some of our DB queries are making extra requests (i.e. getting the users ID)
 
             const methods = await utils.UserManager.getOAuthMethods(username);
 
@@ -38,7 +29,7 @@ module.exports = (app, utils) => {
                 return;
             }
 
-            const userid = await utils.UserManager.getIDByUsername(username);
+            const userid = req.login.id;
 
             // using switch case cuz erm i like it
             // TODO: we should not store the user id in the state. it exposes the user id to the methods.

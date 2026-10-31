@@ -11,29 +11,14 @@
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/users/customization/setCustomizationDisabled",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager, { require_admin: true }),
         async (req, res) => {
             const packet = req.body;
-
-            const token = String(packet.token);
 
             const target = String(packet.target).toLowerCase();
             const isEnabled = String(packet.toggle) === "true";
 
-            if (!token || typeof isEnabled !== "boolean") {
-                return utils.error(res, 400, "Missing token, or toggle");
-            }
-
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 401, "Reauthenticate");
-                return;
-            }
-            const username = login.username;
-
-            if (!(await utils.UserManager.isModeratorOrAdmin(username))) {
-                return utils.error(res, 401, "Invalid credentials");
-            }
+            const username = req.login.username;
 
             await utils.UserManager.setUserCustomizationDisabled(
                 target,

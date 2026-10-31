@@ -16,25 +16,8 @@ const cached = {
 module.exports = (app, utils) => {
     app.get(
         "/api/v1/users/getuserstats",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager, { require_admin: true }),
         async function (req, res) {
-            const packet = req.query;
-
-            const token = String(packet.token);
-
-            if (!token) {
-                return utils.error(res, 400, "Missing token");
-            }
-
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 400, "Reauthenticate");
-                return;
-            }
-            if (!login.isAdmin) {
-                return utils.error(res, 401, "Unauthorized");
-            }
-
             const hour = 1000 * 60 * 60;
             const day = hour * 24;
             if (cached.time + day >= Date.now()) {

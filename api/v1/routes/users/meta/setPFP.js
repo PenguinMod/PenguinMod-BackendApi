@@ -16,21 +16,12 @@ const magic = new Magic.Magic(Magic.MAGIC_MIME_TYPE);
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/users/setpfp",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager),
         utils.upload.single("picture"),
         async (req, res) => {
-            const packet = req.query;
-
-            const token = String(packet.token);
-
             const pictureName = req.file;
 
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 400, "Reauthenticate");
-                return;
-            }
-            const id = login.id;
+            const id = req.login.id;
 
             if (!pictureName) {
                 return utils.error(res, 400, "No picture was provided");

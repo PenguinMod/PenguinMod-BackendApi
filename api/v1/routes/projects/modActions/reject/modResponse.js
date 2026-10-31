@@ -9,63 +9,44 @@
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.post("/api/v1/projects/modresponse", utils.cors(), async (req, res) => {
-        const packet = req.body;
+    app.post(
+        "/api/v1/projects/modresponse",
+        utils.requireAuth(utils.UserManager, { require_mod: true }),
+        async (req, res) => {
+            const packet = req.body;
 
-        const token = String(packet.token);
+            const disputeID = String(packet.disputeID);
+            const message = String(packet.message);
 
-        const disputeID = String(packet.disputeID);
-        const message = String(packet.message);
+            const username = req.login.username;
 
-        if (
-            !token ||
-            typeof disputeID !== "string" ||
-            typeof message !== "string"
-        ) {
-            return utils.error(
-                res,
-                400,
-                "Missing token, disputeID, or message",
+            const dispute = await utils.UserManager.getMessage(disputeID);
+
+            if (!dispute) {
+                return utils.error(res, 404, "MessageNotFound");
+            }
+
+            const id = await utils.UserManager.sendMessage(
+                dispute.receiver,
+                { type: "disputeResponse", message },
+                true,
+                dispute.projectID,
             );
-        }
 
-        const login = await utils.UserManager.loginWithToken(token);
-        if (!login.success) {
-            utils.error(res, 401, "Reauthenticate");
-            return;
-        }
-        const username = login.username;
+            const disputer = await utils.UserManager.getUsernameByID(
+                dispute.receiver,
+            );
 
-        if (!login.isMod) {
-            return utils.error(res, 401, "Invalid credentials");
-        }
+            utils.logs.modResponse(
+                username,
+                disputer,
+                id,
+                dispute.dispute,
+                message,
+            );
 
-        const dispute = await utils.UserManager.getMessage(disputeID);
-
-        if (!dispute) {
-            return utils.error(res, 404, "MessageNotFound");
-        }
-
-        const id = await utils.UserManager.sendMessage(
-            dispute.receiver,
-            { type: "disputeResponse", message },
-            true,
-            dispute.projectID,
-        );
-
-        const disputer = await utils.UserManager.getUsernameByID(
-            dispute.receiver,
-        );
-
-        utils.logs.modResponse(
-            username,
-            disputer,
-            id,
-            dispute.dispute,
-            message,
-        );
-
-        res.header("Content-type", "application/json");
-        res.send({ success: true });
-    });
+            res.header("Content-type", "application/json");
+            res.send({ success: true });
+        },
+    );
 };

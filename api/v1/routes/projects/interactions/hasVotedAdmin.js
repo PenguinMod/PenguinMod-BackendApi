@@ -11,31 +11,16 @@
 module.exports = (app, utils) => {
     app.get(
         "/api/v1/projects/hasVotedAdmin",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager, { require_admin: true }),
         async (req, res) => {
             const packet = req.query;
-
-            const token = String(packet.token);
 
             const target = String(packet.target).toLowerCase();
 
             const projectID = String(packet.projectID);
 
-            if (!token || !projectID || !target) {
-                return utils.error(
-                    res,
-                    400,
-                    "Missing token, projectID, or target",
-                );
-            }
-
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 401, "Reauthenticate");
-                return;
-            }
-            if (!login.isAdmin) {
-                return utils.error(res, 401, "Invalid credentials");
+            if (!projectID || !target) {
+                return utils.error(res, 400, "Missing projectID, or target");
             }
 
             if (!(await utils.UserManager.projectExists(projectID))) {

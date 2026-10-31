@@ -11,18 +11,11 @@
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/users/privateProfile",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager),
         async function (req, res) {
             const packet = req.body;
 
-            const token = String(packet.token);
-
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 400, "Reauthenticate");
-                return;
-            }
-            const username = login.username;
+            const username = req.login.username;
 
             const privateProfile = String(packet.privateProfile) === "true";
             const privateToFollowing =

@@ -1625,7 +1625,7 @@ class UserManager {
         username = String(username);
         const result = await this.users.findOne({ username: username });
 
-        return result.admin;
+        return result ? result.admin : undefined;
     }
 
     /**
@@ -1652,7 +1652,7 @@ class UserManager {
         username = String(username);
         const result = await this.users.findOne({ username: username });
 
-        return result.moderator;
+        return result ? result.moderator : undefined;
     }
 
     /**
@@ -3056,7 +3056,10 @@ class UserManager {
      */
     async deleteProject(id) {
         id = String(id);
-        await this.projects.deleteOne({ id: id });
+        const del_res = await this.projects.deleteOne({ id: id });
+        if (del_res.deletedCount <= 0) {
+            return;
+        }
 
         // TODO: remove mentions of the project from feed
 
@@ -3906,6 +3909,7 @@ class UserManager {
      * @returns {Promise<string>} The state
      */
     async generateOAuth2State(extra = "") {
+        // TODO: this "extra" bullshit is stupid. just store it with the state in the DB.
         const state = (randomBytes(32).toString("base64") + extra).replaceAll(
             "+",
             "-",
@@ -5518,7 +5522,11 @@ class UserManager {
     async verifyFollowers(username) {
         username = String(username);
         // what this means: go through the followers. if they are banned, remove them.
-        const id = await this.getIDByUsername(username);
+        const id = await this.getIDByUsername(username, false);
+
+        if (!id) {
+            return false;
+        }
 
         const followers = await this.followers.find({ target: id }).toArray();
 
@@ -5540,6 +5548,8 @@ class UserManager {
         });
 
         await this.users.updateOne({ id: id }, { $set: { followers: count } });
+
+        return true;
     }
 
     async getAllBlocked(user_id) {

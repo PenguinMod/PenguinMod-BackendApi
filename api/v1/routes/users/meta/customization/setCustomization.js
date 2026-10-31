@@ -11,42 +11,32 @@
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/users/customization/setCustomization",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager),
         async (req, res) => {
             const packet = req.body;
 
-            const token = String(packet.token);
             const customization = String(packet.customization);
 
-            if (!token || !customization) {
-                utils.error(res, 400, "Missing token or customization");
+            if (!customization) {
+                utils.error(res, 400, "Missing customization");
                 return;
             }
 
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 400, "Reauthenticate");
-                return;
+            const username = req.login.username;
+            const isMod = req.login.isMod;
+
+            if (!isMod && !req.login.isDonator) {
+                return utils.error(res, 401, "Unauthorized");
             }
-            const username = login.username;
 
             // you can change other people's customization if you are a mod
             const target = packet.target
                 ? String(packet.target).toLowerCase()
                 : null;
-            if (
-                target &&
-                !(await utils.UserManager.isModeratorOrAdmin(username))
-            ) {
+            if (target && !isMod) {
                 return utils.error(res, 401, "Invalid credentials");
             }
             if (!target) {
-                const badges = await utils.UserManager.getBadges(username);
-
-                if (!badges.includes("donator")) {
-                    utils.error(res, 403, "MissingPermission");
-                    return;
-                }
                 if (
                     await utils.UserManager.getUserCustomizationDisabled(
                         username,

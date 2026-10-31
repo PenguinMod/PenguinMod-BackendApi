@@ -11,22 +11,11 @@
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/misc/setProfanityList",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager, { require_admin: true }),
         async function (req, res) {
             const packet = req.body;
 
-            const token = String(packet.token);
-
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 401, "Reauthenticate");
-                return;
-            }
-            const username = login.username;
-            if (!login.isAdmin) {
-                utils.error(res, 403, "FeatureDisabledForThisAccount");
-                return;
-            }
+            const username = req.login.username;
 
             const words = packet.json;
 

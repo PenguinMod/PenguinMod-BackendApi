@@ -11,39 +11,23 @@
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/users/deleteaccount",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager, { require_admin: true }),
         async function (req, res) {
             const packet = req.body;
 
-            const token = String(packet.token);
             const target = String(packet.target).toLowerCase();
             const reason = String(packet.reason);
 
+            if (reason.length > 512) {
+                return utils.error(res, 400, "ReasonTooLong");
+            }
+
+            const username = req.login.username;
+
             if (
-                !token ||
                 !target ||
-                typeof reason !== "string" ||
-                reason.length > 512
+                !(await utils.UserManager.existsByUsername(target, true))
             ) {
-                return utils.error(
-                    res,
-                    400,
-                    "Missing token, target, or reason, or reason is too long",
-                );
-            }
-
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 400, "Reauthenticate");
-                return;
-            }
-            const username = login.username;
-
-            if (!login.isAdmin) {
-                return utils.error(res, 401, "Unauthorized");
-            }
-
-            if (!(await utils.UserManager.existsByUsername(target, true))) {
                 return utils.error(res, 404, "TargetNotFound");
             }
 

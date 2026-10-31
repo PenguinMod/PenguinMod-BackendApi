@@ -11,28 +11,16 @@
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/users/setmyfeaturedproject",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager),
         async function (req, res) {
             const packet = req.body;
-
-            const token = String(packet.token);
 
             const project = String(packet.project);
             const title = Number(packet.title);
 
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 400, "Reauthenticate");
-                return;
-            }
-            const username = login.username;
+            const username = req.login.username;
 
-            if (!project || typeof title !== "number") {
-                utils.error(res, 400, "InvalidInput");
-                return;
-            }
-
-            if (!(await utils.UserManager.projectExists(project))) {
+            if (!project || !(await utils.UserManager.projectExists(project))) {
                 utils.error(res, 400, "InvalidProject");
                 return;
             }

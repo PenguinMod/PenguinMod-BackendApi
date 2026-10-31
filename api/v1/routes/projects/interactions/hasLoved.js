@@ -9,36 +9,26 @@
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.get("/api/v1/projects/hasLoved", utils.cors(), async (req, res) => {
-        const packet = req.query;
+    app.get(
+        "/api/v1/projects/hasLoved",
+        utils.requireAuth(utils.UserManager),
+        async (req, res) => {
+            const packet = req.query;
 
-        const token = String(packet.token);
+            const projectID = String(packet.projectID);
 
-        const projectID = String(packet.projectID);
+            if (
+                !projectID ||
+                !(await utils.UserManager.projectExists(projectID))
+            ) {
+                return utils.error(res, 404, "Project not found");
+            }
 
-        if (!token || !projectID) {
-            return utils.error(
-                res,
-                400,
-                "Missing username, token, or projectID",
-            );
-        }
+            const id = req.login.id;
 
-        const login = await utils.UserManager.loginWithToken(token);
-        if (!login.success) {
-            utils.error(res, 401, "Reauthenticate");
-            return;
-        }
-        const username = login.username;
+            const has = await utils.UserManager.hasLovedProject(projectID, id);
 
-        if (!(await utils.UserManager.projectExists(projectID))) {
-            return utils.error(res, 404, "Project not found");
-        }
-
-        const id = await utils.UserManager.getIDByUsername(username);
-
-        const has = await utils.UserManager.hasLovedProject(projectID, id);
-
-        return res.send({ hasLoved: has });
-    });
+            return res.send({ hasLoved: has });
+        },
+    );
 };

@@ -14,12 +14,11 @@ module.exports = (app, utils) => {
 
         const username = String(packet.username).toLowerCase();
 
-        if (!(await utils.UserManager.existsByUsername(username))) {
-            utils.error(res, 404, "NotFound");
-            return;
-        }
-
         const pfp = await utils.UserManager.getProfilePicture(username);
+
+        if (!pfp) {
+            return utils.error(res, 404, "UserNotFound");
+        }
 
         res.status(200);
         res.header("Content-Type", "image/png");

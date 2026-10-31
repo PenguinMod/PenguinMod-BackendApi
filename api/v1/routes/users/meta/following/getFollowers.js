@@ -15,12 +15,10 @@ module.exports = (app, utils) => {
         const username = String(packet.username).toLowerCase();
         const page = utils.handle_page(packet.page);
 
-        if (!username) {
-            utils.error(res, 400, "Missing username");
-            return;
-        }
-
-        if (!(await utils.UserManager.existsByUsername(username))) {
+        if (
+            !username ||
+            !(await utils.UserManager.existsByUsername(username))
+        ) {
             utils.error(res, 404, "User not found");
             return;
         }

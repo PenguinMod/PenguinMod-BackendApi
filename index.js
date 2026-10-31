@@ -334,10 +334,22 @@ console.error = (...args) => {
         },
         /**
          * @param {UserManager} um
-         * @param {boolean} allow_banned
+         * @param {Object} [options]
+         * @param {boolean} [options.allow_banned]
+         * @param {boolean} [options.require_mod]
+         * @param {boolean} [options.require_admin]
+         * @param {boolean} [options.require_supporter]
          */
-        requireAuth:
-            (um, allow_banned = false) =>
+        requireAuth: (
+            um,
+            {
+                allow_banned = false,
+                require_mod = false,
+                require_admin = false,
+                require_supporter = false,
+            } = {},
+        ) => [
+            utils.cors(),
             async (req, res, next) => {
                 const header = req.get("Authorization");
 
@@ -351,27 +363,47 @@ console.error = (...args) => {
                     return res.status(401).json({ error: "InvalidAuthformat" });
                 }
 
-                const login = await um.loginWithToken(token, allow_banned);
+                const login = await um.loginWithToken(
+                    token,
+                    allow_banned,
+                    true,
+                );
 
                 if (!login.success) {
                     return res.status(401).json({ error: "InvalidToken" });
+                }
+
+                if (
+                    (require_admin && !login.isAdmin) ||
+                    (require_mod && !login.isMod)
+                ) {
+                    return res.status(401).json({ error: "Unauthorized" });
+                }
+
+                if (require_supporter && !login.isDonator) {
+                    return res.status(401).json({ error: "SupporterRequired" });
                 }
 
                 req.login = login;
 
                 next();
             },
+        ],
         /**
          * @param {UserManager} um
          * @param {boolean} allow_banned
          */
         maybeAuth:
-            (um, allow_banned = false) =>
+            (um, { allow_banned = false } = {}) =>
             async (req, res, next) => {
                 const token = req.get("Authorization");
 
                 if (token) {
-                    const login = await um.loginWithToken(token, allow_banned);
+                    const login = await um.loginWithToken(
+                        token,
+                        allow_banned,
+                        true,
+                    );
 
                     // TODO: if login is invalid, should we return an error?
 

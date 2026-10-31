@@ -65,6 +65,8 @@ module.exports = (app, utils) => {
                 return;
             }
 
+            // TODO: make this return more info than just username.
+            // we later fetch the id. thats an extra, unneeded db query.
             const username = await utils.UserManager.getUsernameByEmail(email);
 
             if (!username) {

@@ -11,26 +11,14 @@
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/users/changeusernameadmin",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager, { require_mod: true }),
         async function (req, res) {
             const packet = req.body;
-
-            const token = String(packet.token);
 
             const target = String(packet.target).toLowerCase();
             const newUsername = String(packet.newUsername).toLowerCase();
 
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 400, "Reauthenticate");
-                return;
-            }
-            const username = login.username;
-
-            if (!login.isAdmin) {
-                utils.error(res, 403, "FeatureDisabledForThisAccount");
-                return;
-            }
+            const username = req.login.username;
 
             if (await utils.UserManager.existsByUsername(newUsername, true)) {
                 utils.error(res, 400, "UsernameInUse");

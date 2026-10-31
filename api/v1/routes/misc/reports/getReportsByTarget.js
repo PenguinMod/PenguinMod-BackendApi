@@ -11,20 +11,9 @@
 module.exports = (app, utils) => {
     app.get(
         "/api/v1/reports/getReportsByTarget",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager, { require_mod: true }),
         async (req, res) => {
             const packet = req.query;
-
-            const token = String(packet.token);
-
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 401, "Reauthenticate");
-                return;
-            }
-            if (!login.isMod) {
-                return utils.error(res, 403, "Unauthorized");
-            }
 
             let target = String(packet.target);
             const page = utils.handle_page(packet.page);
@@ -33,6 +22,7 @@ module.exports = (app, utils) => {
                 return utils.error(res, 400, "Missing target");
             }
 
+            // TODO: multiple, unneeded db queries
             if (await utils.UserManager.existsByUsername(target)) {
                 target = await utils.UserManager.getIDByUsername(target);
             } else {

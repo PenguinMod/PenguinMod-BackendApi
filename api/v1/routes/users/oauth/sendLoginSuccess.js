@@ -14,6 +14,12 @@ module.exports = (app, utils) => {
     app.get("/api/v1/users/sendloginsuccess", async function (req, res) {
         const packet = req.query;
 
+        // TODO: this is the last shitty vestage of token via parameters.
+        // we need to change all the oauth things to make them somehow
+        // give the client the client the token without doing this.
+        // maybe we could make an iframe with the home page and send
+        // across there?
+
         const token = String(packet.token);
         const username = String(packet.username).toLowerCase();
 

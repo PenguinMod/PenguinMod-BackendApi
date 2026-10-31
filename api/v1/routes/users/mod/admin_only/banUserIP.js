@@ -11,33 +11,19 @@
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/users/banuserip",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager, { require_admin: true }),
         async function (req, res) {
             const packet = req.body;
-
-            const token = String(packet.token);
 
             const target = String(packet.target).toLowerCase();
             const toggle = String(packet.toggle) === "true";
 
-            if (!token || !target || typeof toggle !== "boolean") {
-                utils.error(res, 400, "Missing token, target, or toggle");
-                return;
-            }
+            const username = req.login.username;
 
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 400, "Reauthenticate");
-                return;
-            }
-            const username = login.username;
-
-            if (!login.isAdmin) {
-                utils.error(res, 403, "Unauthorized");
-                return;
-            }
-
-            if (!(await utils.UserManager.existsByUsername(target, true))) {
+            if (
+                !target ||
+                !(await utils.UserManager.existsByUsername(target, true))
+            ) {
                 utils.error(res, 404, "NotFound");
                 return;
             }

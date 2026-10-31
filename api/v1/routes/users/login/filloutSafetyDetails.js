@@ -12,11 +12,9 @@ const countryLookup = require("../../../db/country-lookup.json");
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/users/filloutSafetyDetails",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager),
         async function (req, res) {
             const packet = req.body;
-
-            const token = String(packet.token);
 
             const birthday = String(packet.birthday);
             const countryCode = String(packet.country);
@@ -26,14 +24,8 @@ module.exports = (app, utils) => {
                 return;
             }
 
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 400, "Reauthenticate");
-                return;
-            }
-            const username = login.username;
-
-            const user_meta = await utils.UserManager.getUserData(username);
+            const username = req.login.username;
+            const user_meta = req.login.fullMeta;
 
             const parseBirthday = (birthday) => {
                 if (!birthday) {

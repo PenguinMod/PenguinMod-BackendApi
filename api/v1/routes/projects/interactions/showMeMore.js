@@ -8,6 +8,9 @@
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
+
+/*
+
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/projects/interactions/showMeMore",
@@ -54,3 +57,5 @@ module.exports = (app, utils) => {
         },
     );
 };
+
+*/

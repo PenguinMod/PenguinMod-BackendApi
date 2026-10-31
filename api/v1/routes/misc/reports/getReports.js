@@ -9,74 +9,67 @@
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.get("/api/v1/reports/getReports", utils.cors(), async (req, res) => {
-        const packet = req.query;
+    app.get(
+        "/api/v1/reports/getReports",
+        utils.requireAuth(utils.UserManager, { require_mod: true }),
+        async (req, res) => {
+            const packet = req.query;
 
-        const token = String(packet.token);
+            const type = String(packet.type);
+            const page = utils.handle_page(packet.page);
 
-        const login = await utils.UserManager.loginWithToken(token);
-        if (!login.success) {
-            utils.error(res, 401, "Reauthenticate");
-            return;
-        }
-        if (!login.isMod) {
-            return utils.error(res, 403, "Unauthorized");
-        }
+            const reports = type
+                ? await utils.UserManager.getReportsByType(
+                      type,
+                      page,
+                      Number(utils.env.PageSize),
+                  )
+                : await utils.UserManager.getReports(
+                      page,
+                      Number(utils.env.PageSize),
+                  );
 
-        const type = String(packet.type);
-        const page = utils.handle_page(packet.page);
+            const final = [];
 
-        const reports = type
-            ? await utils.UserManager.getReportsByType(
-                  type,
-                  page,
-                  Number(utils.env.PageSize),
-              )
-            : await utils.UserManager.getReports(
-                  page,
-                  Number(utils.env.PageSize),
-              );
+            for (const report of reports) {
+                // TODO: getting of the username should be done in the DB query
+                const pushing = {
+                    reporter: await utils.UserManager.getUsernameByID(
+                        report.reporter,
+                    ),
+                    target: report.reportee,
+                    targetID: report.reportee,
+                    report: report.reason,
+                    author: "",
+                    date: report.date,
+                    type: report.type,
+                    id: report.id,
+                };
 
-        const final = [];
+                if (pushing.type === "user") {
+                    pushing.target = await utils.UserManager.getUsernameByID(
+                        pushing.targetID,
+                    );
+                } else {
+                    const metadata = await utils.UserManager.getProjectMetadata(
+                        pushing.targetID,
+                    );
 
-        for (const report of reports) {
-            // TODO: getting of the username should be done in the DB query
-            const pushing = {
-                reporter: await utils.UserManager.getUsernameByID(
-                    report.reporter,
-                ),
-                target: report.reportee,
-                targetID: report.reportee,
-                report: report.reason,
-                author: "",
-                date: report.date,
-                type: report.type,
-                id: report.id,
-            };
+                    if (!metadata) {
+                        await utils.UserManager.deleteReport(pushing.id);
+                        continue;
+                    }
 
-            if (pushing.type === "user") {
-                pushing.target = await utils.UserManager.getUsernameByID(
-                    pushing.targetID,
-                );
-            } else {
-                const metadata = await utils.UserManager.getProjectMetadata(
-                    pushing.targetID,
-                );
-
-                if (!metadata) {
-                    await utils.UserManager.deleteReport(pushing.id);
-                    continue;
+                    pushing.target = metadata.title;
+                    pushing.author = metadata.author.username;
                 }
 
-                pushing.target = metadata.title;
-                pushing.author = metadata.author.username;
+                final.push(pushing);
             }
 
-            final.push(pushing);
-        }
-
-        res.status(200);
-        res.header("Content-Type", "application/json");
-        res.send({ reports: final });
-    });
+            res.status(200);
+            res.header("Content-Type", "application/json");
+            res.send({ reports: final });
+        },
+    );
 };

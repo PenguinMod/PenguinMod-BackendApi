@@ -9,84 +9,87 @@
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.post("/api/v1/reports/sendReport", utils.cors(), async (req, res) => {
-        const packet = req.body;
+    app.post(
+        "/api/v1/reports/sendReport",
+        utils.requireAuth(utils.UserManager),
+        async (req, res) => {
+            const packet = req.body;
 
-        const token = String(packet.token);
+            const username = req.login.username;
+            const reporterID = req.login.id;
 
-        const login = await utils.UserManager.loginWithToken(token);
-        if (!login.success) {
-            utils.error(res, 401, "Reauthenticate");
-            return;
-        }
-        const username = login.username;
+            const report = String(packet.report);
+            let target = String(packet.target).toLowerCase();
+            const type = String(packet.type);
 
-        const report = String(packet.report);
-        let target = String(packet.target).toLowerCase();
-        const type = String(packet.type);
-
-        if (!report || !type) {
-            return utils.error(res, 400, "Invalid request");
-        }
-
-        const allowedTypes = ["user", "project"];
-
-        if (!allowedTypes.includes(type)) {
-            return utils.error(res, 400, "Invalid type");
-        }
-
-        let targetID = target;
-
-        if (type === "user") {
-            if (!(await utils.UserManager.existsByUsername(target))) {
-                return utils.error(res, 404, "User not found");
+            if (!report || !type) {
+                return utils.error(res, 400, "Invalid request");
             }
 
-            targetID = await utils.UserManager.getIDByUsername(target);
-        } else if (type === "project") {
-            if (!(await utils.UserManager.projectExists(target))) {
-                return utils.error(res, 404, "Project not found");
+            const allowedTypes = ["user", "project"];
+
+            if (!allowedTypes.includes(type)) {
+                return utils.error(res, 400, "Invalid type");
             }
 
-            target = (await utils.UserManager.getProjectMetadata(target)).title;
-        }
+            let targetID = target;
 
-        const reporterID = await utils.UserManager.getIDByUsername(username);
+            if (type === "user") {
+                if (!(await utils.UserManager.existsByUsername(target))) {
+                    return utils.error(res, 404, "User not found");
+                }
 
-        if (await utils.UserManager.hasAlreadyReported(reporterID, targetID)) {
-            res.status(200);
-            res.header("Content-Type", "application/json");
-            res.send({ success: true }); // so they think its working
+                targetID = await utils.UserManager.getIDByUsername(target);
+            } else if (type === "project") {
+                if (!(await utils.UserManager.projectExists(target))) {
+                    return utils.error(res, 404, "Project not found");
+                }
+
+                target = (await utils.UserManager.getProjectMetadata(target))
+                    .title;
+            }
 
             if (
-                await utils.UserManager.hasAlreadyReported("Server", reporterID)
+                await utils.UserManager.hasAlreadyReported(reporterID, targetID)
             ) {
+                res.status(200);
+                res.header("Content-Type", "application/json");
+                res.send({ success: true }); // so they think its working
+
+                if (
+                    await utils.UserManager.hasAlreadyReported(
+                        "Server",
+                        reporterID,
+                    )
+                ) {
+                    return;
+                }
+
+                await utils.UserManager.report(
+                    "MultiReport",
+                    reporterID,
+                    `User has sent multiple reports on same ${type}.`,
+                    "Server",
+                );
+
+                // TODO: investigate whether this actually works correctly or not
+                utils.logs.sendMultiReportLog(
+                    username,
+                    reporterID,
+                    target,
+                    targetID,
+                    report,
+                );
                 return;
             }
 
-            await utils.UserManager.report(
-                "MultiReport",
-                reporterID,
-                `User has sent multiple reports on same ${type}.`,
-                "Server",
-            );
+            await utils.UserManager.report(type, targetID, report, reporterID);
 
-            utils.logs.sendMultiReportLog(
-                username,
-                reporterID,
-                target,
-                targetID,
-                report,
-            );
-            return;
-        }
+            utils.logs.sendReportLog(type, username, targetID, target, report);
 
-        await utils.UserManager.report(type, targetID, report, reporterID);
-
-        utils.logs.sendReportLog(type, username, targetID, target, report);
-
-        res.status(200);
-        res.header("Content-Type", "application/json");
-        res.send({ success: true });
-    });
+            res.status(200);
+            res.header("Content-Type", "application/json");
+            res.send({ success: true });
+        },
+    );
 };

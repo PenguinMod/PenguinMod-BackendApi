@@ -11,15 +11,9 @@
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/users/changePassword",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager),
         async function (req, res) {
             const packet = req.body;
-
-            const token = String(packet.token);
-            if (typeof token !== "string") {
-                utils.error(res, 400, "Missing token");
-                return;
-            }
 
             const old_password = String(packet.old_password);
             const new_password = String(packet.new_password);
@@ -49,13 +43,7 @@ module.exports = (app, utils) => {
                 return;
             }
 
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 400, "Reauthenticate");
-                return;
-            }
-
-            const username = login.username;
+            const username = req.login.username;
             if (
                 !(await utils.UserManager.loginWithPassword(
                     username,

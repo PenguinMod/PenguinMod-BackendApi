@@ -11,8 +11,7 @@
 module.exports = (app, utils) => {
     app.get(
         "/api/v1/users/userfromcode",
-        utils.cors(),
-        utils.requireAuth(utils.UserManager, true),
+        utils.requireAuth(utils.UserManager, { allow_banned: true }),
         async function (req, res) {
             const login = req.login;
 

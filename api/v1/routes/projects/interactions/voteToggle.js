@@ -11,35 +11,22 @@
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/projects/interactions/voteToggle",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager),
         async (req, res) => {
             const packet = req.body;
-
-            const token = String(packet.token);
 
             const vote = String(packet.toggle) === "true";
             const projectID = String(packet.projectId);
 
-            if (!token || typeof vote !== "boolean" || !projectID) {
-                return utils.error(
-                    res,
-                    400,
-                    "Missing token, vote, or projectID",
-                );
+            if (!projectID) {
+                return utils.error(res, 400, "Missing projectID");
             }
 
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 401, "Reauthenticate");
-                return;
-            }
-            const username = login.username;
+            const id = req.login.id;
 
             if (!(await utils.UserManager.projectExists(projectID))) {
                 return utils.error(res, 404, "Project not found");
             }
-
-            const id = await utils.UserManager.getIDByUsername(username);
 
             const hasVoted = await utils.UserManager.hasVotedProject(
                 projectID,

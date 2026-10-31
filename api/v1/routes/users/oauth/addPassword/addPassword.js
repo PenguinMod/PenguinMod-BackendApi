@@ -1,6 +1,6 @@
 /**
  * @typedef {Object} Utils
- * @property {import("../../../../db/UserManager)} UserManager
+ * @property {import("../../../../db/UserManager")} UserManager
  */
 
 /**
@@ -11,32 +11,22 @@
 module.exports = (app, utils) => {
     app.get(
         "/api/v1/users/addpasswordtooauth",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager),
         async function (req, res) {
             const packet = req.query;
 
             const method = String(packet.method);
-            const token = String(packet.token);
 
-            if (!method || !token) {
-                utils.error(res, 400, "Missing method, username, or token");
-                return;
-            }
+            const username = req.login.username;
 
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 400, "Reauthenticate");
-                return;
-            }
-            const username = login.username;
-
+            // TODO: this method immediately gets the ID. just pass the ID.
             const methods = await utils.UserManager.getOAuthMethods(username);
 
             if (!methods) {
                 utils.error(
                     res,
                     400,
-                    "No login methods (PLEASE REPORT THIS TO A DEVELOPER)",
+                    "No login methods (PLEASE REPORT THIS VIA OUR SUPPORT PAGE)",
                 );
                 return;
             }

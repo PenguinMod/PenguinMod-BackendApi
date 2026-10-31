@@ -11,23 +11,12 @@
 module.exports = (app, utils) => {
     app.get(
         "/api/v1/users/getunreadmessagecount",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager, { allow_banned: true }),
         async (req, res) => {
-            const packet = req.query;
+            // TODO: use the fullmeta provided by req.login
 
-            const token = String(packet.token);
-
-            if (!token) {
-                return utils.error(res, 400, "Missing token");
-            }
-
-            const login = await utils.UserManager.loginWithToken(token, true);
-            if (!login.success) {
-                utils.error(res, 400, "Reauthenticate");
-                return;
-            }
-            const username = login.username;
-            const id = login.id;
+            const username = req.login.username;
+            const id = req.login.id;
 
             let count = await utils.UserManager.getUnreadMessageCount(id);
 

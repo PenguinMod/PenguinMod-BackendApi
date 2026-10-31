@@ -3,6 +3,8 @@
  * @property {import("../../../db/UserManager")} UserManager
  */
 
+// TODO: maybe require mod for this
+
 /**
  *
  * @param {any} app Express app
