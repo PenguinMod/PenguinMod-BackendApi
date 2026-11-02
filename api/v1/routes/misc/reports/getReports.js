@@ -56,7 +56,7 @@ module.exports = (app, utils) => {
                     );
 
                     if (!metadata) {
-                        await utils.UserManager.deleteReport(pushing.id);
+                        await utils.UserManager.resolveReport(pushing.id);
                         continue;
                     }
 

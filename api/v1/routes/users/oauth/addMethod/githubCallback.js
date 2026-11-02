@@ -31,6 +31,13 @@ module.exports = (app, utils) => {
 
             const userid = data;
 
+            const methods = await utils.UserManager.getOAuthMethods(userid);
+
+            if (methods.includes("github")) {
+                utils.error(res, 400, "Method already added");
+                return;
+            }
+
             const response = await utils.UserManager.makeOAuth2Request(
                 code,
                 "github",
@@ -64,13 +71,6 @@ module.exports = (app, utils) => {
             }
 
             const username = await utils.UserManager.getUsernameByID(userid);
-
-            const methods = await utils.UserManager.getOAuthMethods(username);
-
-            if (methods.includes("github")) {
-                utils.error(res, 400, "Method already added");
-                return;
-            }
 
             await utils.UserManager.addOAuthMethod(
                 username,

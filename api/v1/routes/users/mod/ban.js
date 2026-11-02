@@ -129,7 +129,7 @@ module.exports = (app, utils) => {
                 toggle ? 0xc40404 : 0x45efc6,
             );
 
-            await utils.UserManager.deleteReports("user", targetID);
+            await utils.UserManager.resolveReports("user", targetID);
 
             res.status(200);
             res.header("Content-Type", "application/json");

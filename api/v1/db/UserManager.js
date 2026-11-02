@@ -1243,13 +1243,11 @@ class UserManager {
 
     /**
      * Get a user's oauth login methods
-     * @param {string} username Username of the user
+     * @param {string} id ID of the user
      * @returns {Promise<Array<string>>} Array of the user's oauth methods
      */
-    async getOAuthMethods(username) {
-        const id = await this.getIDByUsername(username);
-
-        const result = (await this.oauthIDs.find({ id: id }).toArray()).map(
+    async getOAuthMethods(id) {
+        const result = (await this.oauthIDs.find({ id }).toArray()).map(
             (x) => x.method,
         );
 
@@ -1280,10 +1278,8 @@ class UserManager {
      * @param {string} username Username of the user
      * @param {string} method Method to remove
      */
-    async removeOAuthMethod(username, method) {
-        const id = await this.getIDByUsername(username);
-
-        await this.oauthIDs.deleteOne({ id: id, method: method });
+    async removeOAuthMethod(id, method) {
+        await this.oauthIDs.deleteOne({ id, method });
     }
 
     /**
@@ -1749,11 +1745,17 @@ class UserManager {
         const user_id = await this.getIDByUsername(username);
         await this.privateAllProjects(user_id, banned);
 
-        // remove all reports by the user
-        await this.reports.deleteMany({ reporter: user_id });
+        // resolve all reports by the user
+        await this.reports.updateMany(
+            { reporter: user_id },
+            { $set: { resolved: true } },
+        );
 
-        // remove all reports on the user
-        await this.reports.deleteMany({ reportee: user_id });
+        // resolve all reports on the user
+        await this.reports.updateMany(
+            { reportee: user_id },
+            { $set: { resolved: true } },
+        );
 
         if (remove_follows) {
             // get all references to the user in the followers collection
@@ -1857,6 +1859,7 @@ class UserManager {
             reporter: reporter,
             date: Date.now(),
             id: ULID.ulid(),
+            resolved: false,
         });
     }
 
@@ -1884,7 +1887,7 @@ class UserManager {
         const result = await this.reports
             .aggregate([
                 {
-                    $match: { type: type },
+                    $match: { type: type, resolved: { $ne: true } },
                 },
                 {
                     $sort: { date: -1 },
@@ -1916,7 +1919,7 @@ class UserManager {
         const result = await this.reports
             .aggregate([
                 {
-                    $match: { reportee: reportee },
+                    $match: { reportee: reportee, resolved: { $ne: true } },
                 },
                 {
                     $sort: { date: -1 },
@@ -1936,9 +1939,20 @@ class UserManager {
         return result;
     }
 
-    async deleteReports(type, id) {
+    /**
+     * Resolve all reports against a certain target
+     * @param {string} type
+     * @param {string} id Target's ID
+     * @returns {Promise<number>} The number of reports resolved
+     */
+    async resolveReports(type, id) {
         id = String(id);
-        await this.reports.deleteMany({ id: id, type: type });
+        return (
+            await this.reports.updateMany(
+                { id: id, type: type },
+                { $set: { resolved: true } },
+            )
+        ).modifiedCount;
     }
 
     /**
@@ -1953,7 +1967,7 @@ class UserManager {
         const result = await this.reports
             .aggregate([
                 {
-                    $match: { reporter: reporter },
+                    $match: { reporter: reporter, resolved: true },
                 },
                 {
                     $sort: { date: -1 },
@@ -2001,6 +2015,9 @@ class UserManager {
         const result = await this.reports
             .aggregate([
                 {
+                    $match: { resolved: { $ne: true } },
+                },
+                {
                     $sort: { date: -1 },
                 },
                 {
@@ -2019,13 +2036,21 @@ class UserManager {
     }
 
     /**
-     * Delete a report
-     * @param {string} id ID of the report to delete
+     * Resolve a report
+     * @param {string} id ID of the report to resolve
+     * @returns {Promise<bool>} Whether a report was updated
      * @async
      */
-    async deleteReport(id) {
+    async resolveReport(id) {
         id = String(id);
-        await this.reports.deleteOne({ id: id });
+        return (
+            (
+                await this.reports.updateOne(
+                    { id: id },
+                    { $set: { resolved: true } },
+                )
+            ).modifiedCount > 0
+        );
     }
 
     /**

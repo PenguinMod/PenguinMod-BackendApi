@@ -28,20 +28,14 @@ module.exports = (app, utils) => {
             return res.status(401).json({ error: "InvalidToken" });
         }
 
-        const username = login.username;
-
-        // TODO: some of our DB queries are making extra requests (i.e. getting the users ID)
-
-        const methods = await utils.UserManager.getOAuthMethods(username);
+        const methods = await utils.UserManager.getOAuthMethods(login.id);
 
         if (methods.includes(method)) {
             utils.error(res, 400, "Method already added");
             return;
         }
 
-        const userid = login.id;
-
-        const state = await utils.UserManager.generateOAuth2State(userid);
+        const state = await utils.UserManager.generateOAuth2State(login.id);
         switch (method) {
             case "scratch":
                 res.redirect(

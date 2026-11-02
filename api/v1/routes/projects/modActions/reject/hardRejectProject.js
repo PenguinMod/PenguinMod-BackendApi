@@ -92,7 +92,7 @@ module.exports = (app, utils) => {
                 0xe51810,
             );
 
-            await utils.UserManager.deleteReports("project", project);
+            await utils.UserManager.resolveReports("project", project);
 
             res.status(200);
             res.header("Content-type", "application/json");

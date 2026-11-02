@@ -118,8 +118,7 @@ console.error = (...args) => {
     // TODO: just have UM load from env
     await um.init(MAXVIEWS, VIEWRESETRATE);
 
-    // TODO: should timezone be dynamic? It's CST because I'm in CST
-    // log when starting and what time zone (utc+-x)
+    // TODO: should timezone be dynamic? It's Central because I'm in Central, but thats maybe not amazing practice
     console.log(
         `Starting at ${new Date().toLocaleString("en-US", { timeZone: "CST" })} CST...`
             .green,

@@ -56,12 +56,11 @@ module.exports = (app, utils) => {
                 user = await oauth2Client.request({ url });
             } catch (e) {
                 console.warn("Google api failed to respond: " + e);
-                return await new Promise(
-                    (resolve) =>
-                        setTimeout(
-                            () => try_user(tries + 1).then(resolve),
-                            300,
-                        ), // TODO: don't hardcode 300
+                return await new Promise((resolve) =>
+                    setTimeout(
+                        () => try_user(tries + 1).then(resolve),
+                        200 * (1 + Math.random()),
+                    ),
                 );
             }
 

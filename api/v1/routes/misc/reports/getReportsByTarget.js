@@ -3,6 +3,8 @@
  * @property {import("../../../db/UserManager")} UserManager
  */
 
+const { isValid } = require("ulid");
+
 /**
  *
  * @param {any} app Express app
@@ -22,13 +24,12 @@ module.exports = (app, utils) => {
                 return utils.error(res, 400, "Missing target");
             }
 
-            // TODO: multiple, unneeded db queries
-            if (await utils.UserManager.existsByUsername(target)) {
-                target = await utils.UserManager.getIDByUsername(target);
-            } else {
-                if (!(await utils.UserManager.projectExists(target))) {
-                    return utils.error(res, 404, "Target not found");
-                }
+            target = isValid(target)
+                ? target
+                : await utils.UserManager.getIDByUsername(target, false);
+
+            if (!target) {
+                return utils.error(res, 404, "InvalidID");
             }
 
             const reports = await utils.UserManager.getReportsByReportee(

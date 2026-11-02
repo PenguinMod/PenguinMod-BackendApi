@@ -29,6 +29,13 @@ module.exports = (app, utils) => {
 
         const userid = data;
 
+        const methods = await utils.UserManager.getOAuthMethods(userid);
+
+        if (methods.includes("scratch")) {
+            utils.error(res, 400, "Method already added");
+            return;
+        }
+
         // now make the request
         const response = await utils.UserManager.makeOAuth2Request(
             code,
@@ -67,13 +74,6 @@ module.exports = (app, utils) => {
         }
 
         const username = await utils.UserManager.getUsernameByID(userid);
-
-        const methods = await utils.UserManager.getOAuthMethods(username);
-
-        if (methods.includes("scratch")) {
-            utils.error(res, 400, "Method already added");
-            return;
-        }
 
         await utils.UserManager.addOAuthMethod(
             username,

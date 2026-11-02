@@ -27,10 +27,7 @@ module.exports = (app, utils) => {
             return res.status(401).json({ error: "InvalidToken" });
         }
 
-        const username = login.username;
-
-        // TODO: this method immediately gets the ID. just pass the ID.
-        const methods = await utils.UserManager.getOAuthMethods(username);
+        const methods = await utils.UserManager.getOAuthMethods(login.id);
 
         if (!methods) {
             utils.error(

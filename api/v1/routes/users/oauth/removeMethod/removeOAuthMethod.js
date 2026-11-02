@@ -18,10 +18,10 @@ module.exports = (app, utils) => {
 
             const method = String(packet.method);
 
-            const username = req.login.username;
+            const id = req.login.id;
             const hasPassword = !!req.login.fullMeta.password;
 
-            const methods = await utils.UserManager.getOAuthMethods(username);
+            const methods = await utils.UserManager.getOAuthMethods(id);
 
             if (!methods.includes(method)) {
                 utils.error(res, 404, "MethodNotConnected");
@@ -36,7 +36,7 @@ module.exports = (app, utils) => {
                 );
             }
 
-            await utils.UserManager.removeOAuthMethod(username, method);
+            await utils.UserManager.removeOAuthMethod(id, method);
 
             res.status(200);
             res.header("Content-Type", "application/json");

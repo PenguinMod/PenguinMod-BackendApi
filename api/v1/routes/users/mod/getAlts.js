@@ -17,16 +17,14 @@ module.exports = (app, utils) => {
 
             const target = String(packet.target).toLowerCase();
 
-            // TODO: we're making multiple DB requests here. combine to one.
-            if (
-                !target ||
-                !(await utils.UserManager.existsByUsername(target, true))
-            ) {
+            const targetID = await utils.UserManager.getIDByUsername(
+                target,
+                false,
+            );
+            if (!targetID) {
                 utils.error(res, 404, "NotFound");
                 return;
             }
-
-            const targetID = await utils.UserManager.getIDByUsername(target);
 
             const alts = await utils.UserManager.getAlts(targetID);
             const usernames = await utils.UserManager.idListToUsernames(alts);

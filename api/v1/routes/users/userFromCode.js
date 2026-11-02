@@ -32,7 +32,7 @@ module.exports = (app, utils) => {
                           id,
                           projs_to_rankup,
                       ),
-                utils.UserManager.getOAuthMethods(username),
+                utils.UserManager.getOAuthMethods(id),
             ]);
 
             const isDonator = badges.includes("donator");

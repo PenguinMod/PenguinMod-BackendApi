@@ -29,6 +29,13 @@ module.exports = (app, utils) => {
 
         const userid = data;
 
+        const methods = await utils.UserManager.getOAuthMethods(userid);
+
+        if (methods.includes("google")) {
+            utils.error(res, 400, "Method already added");
+            return;
+        }
+
         const oauth2Client = new utils.googleOAuth2Client(
             utils.env.GoogleOAuthClientID,
             utils.env.GoogleOAuthClientSecret,
@@ -53,13 +60,6 @@ module.exports = (app, utils) => {
         const id = user.data.resourceName.split("/")[1];
 
         const username = await utils.UserManager.getUsernameByID(userid);
-
-        const methods = await utils.UserManager.getOAuthMethods(username);
-
-        if (methods.includes("google")) {
-            utils.error(res, 400, "Method already added");
-            return;
-        }
 
         await utils.UserManager.addOAuthMethod(username, "google", id);
 
