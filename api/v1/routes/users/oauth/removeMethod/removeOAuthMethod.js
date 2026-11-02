@@ -19,12 +19,21 @@ module.exports = (app, utils) => {
             const method = String(packet.method);
 
             const username = req.login.username;
+            const hasPassword = !!req.login.fullMeta.password;
 
             const methods = await utils.UserManager.getOAuthMethods(username);
 
             if (!methods.includes(method)) {
-                utils.error(res, 400, "Method not found");
+                utils.error(res, 404, "MethodNotConnected");
                 return;
+            }
+
+            if (methods.length === 1 && !hasPassword) {
+                utils.error(
+                    res,
+                    400,
+                    "You would get locked out of your account",
+                );
             }
 
             await utils.UserManager.removeOAuthMethod(username, method);

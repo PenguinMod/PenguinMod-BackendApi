@@ -17,11 +17,10 @@ module.exports = (app, utils) => {
 
             const reportID = String(packet.reportID);
 
-            if (!reportID) {
-                return utils.error(res, 400, "Missing report ID");
-            }
-
-            if (!(await utils.UserManager.reportExists(reportID))) {
+            if (
+                !reportID ||
+                !(await utils.UserManager.reportExists(reportID))
+            ) {
                 return utils.error(res, 404, "Report not found");
             }
 

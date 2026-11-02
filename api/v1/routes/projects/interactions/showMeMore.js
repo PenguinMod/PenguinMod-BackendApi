@@ -9,6 +9,8 @@
  * @param {Utils} utils Utils
  */
 
+module.exports = "iamnotloadingonpurpose";
+
 /*
 
 module.exports = (app, utils) => {

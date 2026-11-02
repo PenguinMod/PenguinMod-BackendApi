@@ -36,7 +36,15 @@ function loadEndpoints(app, dir, utils = {}) {
         const endpointPath = path.join(endpointDir, file);
         try {
             const endpoint = require(endpointPath);
-            endpoint(app, utils);
+            if (typeof endpoint !== "function") {
+                if (endpoint !== "iamnotloadingonpurpose") {
+                    console.warn(
+                        `File ${endpointPath} is not giving a function`,
+                    );
+                }
+            } else {
+                endpoint(app, utils);
+            }
         } catch (e) {
             console.real_error(
                 `${"[ ERROR ]".red} loading endpoint ${file}: ${e}`,

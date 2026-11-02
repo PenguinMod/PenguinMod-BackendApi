@@ -30,11 +30,10 @@ module.exports = (app, utils) => {
                 return utils.error(res, 400, "Missing requestType");
             }
 
-            if (!projectID) {
-                return utils.error(res, 400, "Missing projectId");
-            }
-
-            if (!(await utils.UserManager.projectExists(projectID, true))) {
+            if (
+                !projectID ||
+                !(await utils.UserManager.projectExists(projectID, true))
+            ) {
                 return utils.error(res, 404, "Project not found");
             }
 
@@ -43,7 +42,7 @@ module.exports = (app, utils) => {
 
             const is_author =
                 req.login && metadata.author === req.login.username;
-            const is_mod = req.login.isMod;
+            const is_mod = req.login && req.login.isMod;
 
             if (
                 ((!is_author && !metadata.public) || metadata.hardReject) &&

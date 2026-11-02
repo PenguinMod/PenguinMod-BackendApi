@@ -18,13 +18,12 @@ module.exports = (app, utils) => {
             const vote = String(packet.toggle) === "true";
             const projectID = String(packet.projectId);
 
-            if (!projectID) {
-                return utils.error(res, 400, "Missing projectID");
-            }
-
             const id = req.login.id;
 
-            if (!(await utils.UserManager.projectExists(projectID))) {
+            if (
+                !projectID ||
+                !(await utils.UserManager.projectExists(projectID))
+            ) {
                 return utils.error(res, 404, "Project not found");
             }
 
@@ -46,12 +45,13 @@ module.exports = (app, utils) => {
 
             if (
                 metadata.votes >= utils.env.FeatureAmount &&
-                !(await utils.UserManager.isFeatured(projectID)) &&
-                (await utils.UserManager.canBeFeatured(projectID))
+                !metadata.featured &&
+                !metadata.noFeature
             ) {
                 const author = metadata.author;
                 const title = metadata.title;
 
+                await utils.UserManager.featureProject(projectID, true, false);
                 await utils.UserManager.sendMessage(
                     author.id,
                     { type: "projectFeatured" },
@@ -59,7 +59,6 @@ module.exports = (app, utils) => {
                     projectID,
                 );
 
-                await utils.UserManager.featureProject(projectID, true, false);
                 utils.logs.sendFeatureLog(projectID, title, author.username);
 
                 if (

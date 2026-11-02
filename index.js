@@ -154,7 +154,7 @@ console.error = (...args) => {
         res.sendFile(path.join(__dirname, "robots.txt"));
     });
 
-    function file_size_limit(utils, get_token) {
+    function file_size_limit(utils) {
         return async function (req, res, next) {
             const unlink = async () => {
                 if (req.files) {
@@ -174,17 +174,9 @@ console.error = (...args) => {
                 }
             };
 
-            const token = get_token(req);
-            const login = await utils.UserManager.loginWithToken(token);
-
-            if (!login?.success) {
-                await unlink();
-                return utils.error(res, 401, "Invalid credentials");
-            }
-
             const maxSingleSize =
                 (Number(process.env.UploadSize) *
-                    (login.isDonator ? 1.75 : 1) || 5) * 1000000;
+                    (req.login.isDonator ? 1.75 : 1) || 5) * 1000000;
 
             if (!req.files) {
                 return utils.error(res, 400, "What??");
@@ -202,7 +194,7 @@ console.error = (...args) => {
             const maxCombinedSize =
                 (Number(
                     process.env.CumulativeUploadSize *
-                        (login.isDonator ? 1.75 : 1),
+                        (req.login.isDonator ? 1.75 : 1),
                 ) || 32) * 1000000;
             let combinedSize = 0;
 
@@ -268,7 +260,7 @@ console.error = (...args) => {
             key: get_key,
         },
         rateLimiter: rateLimit,
-        file_size_limit: file_size_limit,
+        file_size_limit,
         cachinator: (refreshTime) => ({
             curr: null,
             lastRefresh: 0,
