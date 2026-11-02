@@ -11,27 +11,15 @@
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/users/setbadgesmultiple",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager, { require_admin: true }),
         async function (req, res) {
             const packet = req.body;
-
-            const token = String(packet.token);
 
             const targets = packet.targets;
             const badges = packet.badges;
             const removing = String(packet.removing) === "true";
 
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 400, "Reauthenticate");
-                return;
-            }
-            const username = login.username;
-
-            if (!login.isAdmin) {
-                utils.error(res, 403, "Unauthorized");
-                return;
-            }
+            const username = req.login.username;
 
             if (!Array.isArray(targets)) {
                 utils.error(res, 400, "InvalidTargets");

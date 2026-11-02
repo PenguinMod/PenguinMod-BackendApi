@@ -11,32 +11,18 @@
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/projects/setCanBeFeatured",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager, { require_admin: true }),
         async (req, res) => {
             const packet = req.body;
 
-            const token = String(packet.token);
-
             const projectID = String(packet.projectID);
-
             const canBeFeatured = String(packet.toggle) === "true";
+            const username = req.login.username;
 
-            if (!token || typeof projectID !== "string") {
-                return utils.error(res, 400, "Missing token or projectID");
-            }
-
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 401, "Reauthenticate");
-                return;
-            }
-            const username = login.username;
-
-            if (!login.isAdmin) {
-                return utils.error(res, 401, "Invalid credentials");
-            }
-
-            if (!(await utils.UserManager.projectExists(projectID))) {
+            if (
+                !projectID ||
+                !(await utils.UserManager.projectExists(projectID))
+            ) {
                 return utils.error(res, 404, "Project not found");
             }
 
@@ -71,7 +57,9 @@ module.exports = (app, utils) => {
                 0xc8e847,
             );
 
-            return res.send({ success: true });
+            res.status(200);
+            res.header("Content-type", "application/json");
+            res.send({ success: true });
         },
     );
 };

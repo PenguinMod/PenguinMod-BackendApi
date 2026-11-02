@@ -11,26 +11,13 @@
 module.exports = (app, utils) => {
     app.get(
         "/api/v1/projects/getmyprojects",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager),
         async (req, res) => {
             const packet = req.query;
 
-            const token = String(packet.token);
-
-            if (!token) {
-                return utils.error(res, 400, "Missing token");
-            }
-
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 401, "Reauthenticate");
-                return;
-            }
-            const username = login.username;
+            const authorID = req.login.id;
 
             const page = utils.handle_page(packet.page);
-
-            const authorID = await utils.UserManager.getIDByUsername(username);
 
             const projects = await utils.UserManager.getProjectsByAuthor(
                 authorID,

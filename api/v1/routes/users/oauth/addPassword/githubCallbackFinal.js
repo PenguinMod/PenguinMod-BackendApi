@@ -1,6 +1,6 @@
 /**
  * @typedef {Object} Utils
- * @property {import("../../../../db/UserManager)} UserManager
+ * @property {import("../../../../db/UserManager")} UserManager
  */
 
 /**

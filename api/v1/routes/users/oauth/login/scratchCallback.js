@@ -1,6 +1,6 @@
 /**
  * @typedef {Object} Utils
- * @property {import("../../../../db/UserManager)} UserManager
+ * @property {import("../../../../db/UserManager")} UserManager
  */
 
 /**
@@ -20,7 +20,8 @@ module.exports = (app, utils) => {
             return;
         }
 
-        if (!(await utils.UserManager.verifyOAuth2State(state))) {
+        const { valid } = await utils.UserManager.verifyOAuth2State(state);
+        if (!valid) {
             utils.error(res, 400, "Invalid state");
             return;
         }
@@ -92,9 +93,9 @@ module.exports = (app, utils) => {
 
         await utils.UserManager.addIPID(userid, req.realIP);
 
+        const ottCode = await utils.UserManager.genOneTimeTokenCode(token);
+
         res.status(200);
-        res.redirect(
-            `/api/v1/users/sendloginsuccess?token=${token}&username=${username}`,
-        );
+        res.redirect(`${utils.env.HomeURL}/exchangeottcode?code=${ottCode}`);
     });
 };

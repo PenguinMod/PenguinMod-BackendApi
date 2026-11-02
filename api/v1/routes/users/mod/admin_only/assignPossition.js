@@ -11,26 +11,15 @@
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/users/assignPossition",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager, { require_admin: true }),
         async function (req, res) {
             const packet = req.body;
-
-            const token = String(packet.token);
 
             const target = String(packet.target).toLowerCase();
             const admin = String(packet.admin) === "true";
             const approver = String(packet.approver) === "true";
 
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 400, "Reauthenticate");
-                return;
-            }
-            const username = login.username;
-            if (!login.isAdmin) {
-                utils.error(res, 403, "FeatureDisabledForThisAccount");
-                return;
-            }
+            const username = req.login.username;
 
             if (!(await utils.UserManager.existsByUsername(target))) {
                 utils.error(res, 400, "AccountDoesNotExist");

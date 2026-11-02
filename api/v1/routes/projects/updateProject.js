@@ -14,14 +14,14 @@ const sharp = require("sharp");
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/projects/updateProject",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager),
         utils.upload.fields([
             { name: "jsonFile", maxCount: 1 },
             { name: "thumbnail", maxCount: 1 },
             // assets
             { name: "assets" },
         ]),
-        utils.file_size_limit(utils, (req) => String(req.body.token)),
+        utils.file_size_limit(utils),
         async (req, res) => {
             const unlink = async () => {
                 if (req.files.jsonFile) {
@@ -49,16 +49,9 @@ module.exports = (app, utils) => {
 
             const packet = req.body;
 
-            const login = await utils.UserManager.loginWithToken(
-                String(packet.token),
-            );
-            if (!login.success) {
-                await unlink();
-                return utils.error(res, 401, "Invalid credentials");
-            }
-            const username = login.username;
-            const isDonator = login.isDonator;
-            const hasModPerms = login.isMod;
+            const username = req.login.username;
+            const isDonator = req.login.isDonator;
+            const hasModPerms = req.login.isMod;
 
             // TODO: just use meta
             const lastUpload = await utils.UserManager.getLastUpload(username);
@@ -71,7 +64,7 @@ module.exports = (app, utils) => {
                 return utils.error(res, 400, "Uploaded in the last 8 minutes");
             }
 
-            if (!login.emailVerified) {
+            if (!req.login.emailVerified) {
                 await unlink();
                 return utils.error(
                     res,
@@ -119,7 +112,7 @@ module.exports = (app, utils) => {
                         before + "\x1b[31;1m" + illegalWord + "\x1b[0m" + after,
                         illegal,
                         type,
-                        { projectID, username, userID: login.id },
+                        { projectID, username, userID: req.login.id },
                     );
 
                     return true;
@@ -149,7 +142,7 @@ module.exports = (app, utils) => {
                         before + "\x1b[33;1m" + illegalWord + "\x1b[0m" + after,
                         trigger,
                         type,
-                        { projectID, username, userID: login.id },
+                        { projectID, username, userID: req.login.id },
                         0xffbb00,
                     );
                     return true;

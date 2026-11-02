@@ -11,31 +11,22 @@
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/projects/hardDeleteProject",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager),
         async (req, res) => {
             const packet = req.body;
 
             const projectID = String(packet.projectID);
 
-            const token = String(packet.token);
             const reason = String(packet.reason);
 
-            if (!token) {
-                return utils.error(res, 400, "Missing token");
-            }
-
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 401, "Reauthenticate");
-                return;
-            }
-            const username = login.username;
-            const isAdmin = login.isAdmin;
+            const username = req.login.username;
+            const isAdmin = req.login.isAdmin;
 
             if (!projectID) {
                 return utils.error(res, 404, "Project not found");
             }
 
+            // TODO: just fetch meta once
             if (!(await utils.UserManager.projectExists(projectID, true))) {
                 return utils.error(res, 404, "Project not found");
             }

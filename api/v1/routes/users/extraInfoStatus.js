@@ -11,22 +11,9 @@
 module.exports = (app, utils) => {
     app.get(
         "/api/v1/users/extrainfostatus",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager, { allow_banned: true }),
         async function (req, res) {
-            const packet = req.query;
-
-            const token = String(packet.token);
-
-            const login = await utils.UserManager.loginWithToken(
-                token,
-                true,
-                true,
-            );
-            if (!login.success) {
-                utils.error(res, 400, "Reauthenticate");
-                return;
-            }
-            const user_meta = login.fullMeta;
+            const user_meta = req.login.fullMeta;
 
             const birthdayEntered = user_meta.birthdayEntered;
             const countryEntered = user_meta.countryEntered;

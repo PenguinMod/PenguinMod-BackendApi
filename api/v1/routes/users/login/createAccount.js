@@ -76,7 +76,7 @@ module.exports = (app, utils) => {
             const real_username = String(packet.username);
             const password = String(packet.password);
 
-            const email = String(packet.email || "");
+            const email = String(packet.email || "").toLowerCase();
             const birthday = String(packet.birthday);
             const countryCode = String(packet.country);
             const captcha_token = String(packet.captcha_token);

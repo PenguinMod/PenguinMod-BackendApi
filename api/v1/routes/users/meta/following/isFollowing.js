@@ -15,17 +15,15 @@ module.exports = (app, utils) => {
         const username = String(packet.username).toLowerCase();
         const target = String(packet.target).toLowerCase();
 
-        if (!username || !target) {
-            utils.error(res, 400, "Missing username or target");
-            return;
-        }
-
-        if (!(await utils.UserManager.existsByUsername(username))) {
+        if (
+            !username ||
+            !(await utils.UserManager.existsByUsername(username))
+        ) {
             utils.error(res, 404, "NotFound");
             return;
         }
 
-        if (!(await utils.UserManager.existsByUsername(target))) {
+        if (!target || !(await utils.UserManager.existsByUsername(target))) {
             utils.error(res, 404, "NotFound");
             return;
         }

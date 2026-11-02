@@ -11,20 +11,9 @@
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/misc/markTOSAsRead",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager),
         async function (req, res) {
-            const packet = req.body;
-
-            const token = String(packet.token);
-
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 401, "Reauthenticate");
-                return;
-            }
-            const username = login.username;
-
-            await utils.UserManager.markTOSAsRead(username);
+            await utils.UserManager.markTOSAsRead(req.login.username);
 
             res.status(200);
             res.header("Content-Type", "application/json");

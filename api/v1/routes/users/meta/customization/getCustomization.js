@@ -11,7 +11,7 @@
 module.exports = (app, utils) => {
     app.get(
         "/api/v1/users/customization/getCustomization",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager, { require_supporter: true }),
         async (req, res) => {
             const packet = req.query;
 

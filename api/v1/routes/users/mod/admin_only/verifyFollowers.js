@@ -11,30 +11,17 @@
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/users/verifyfollowers",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager, { require_admin: true }),
         async function (req, res) {
             const packet = req.body;
 
-            const token = String(packet.token);
-
             const target = String(packet.target);
 
-            if (!token || !target) {
-                utils.error(res, 400, "Missing token or target");
-                return;
-            }
+            const success = await utils.UserManager.verifyFollowers(target);
 
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 400, "Reauthenticate");
-                return;
+            if (!success) {
+                return utils.error(res, 404, "UserNotFound");
             }
-            if (!login.isAdmin) {
-                utils.error(res, 403, "Unauthorized");
-                return;
-            }
-
-            await utils.UserManager.verifyFollowers(target);
 
             res.status(200);
             res.header("Content-Type", "application/json");

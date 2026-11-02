@@ -1,6 +1,6 @@
 /**
  * @typedef {Object} Utils
- * @property {import("../../../../db/UserManager)} UserManager
+ * @property {import("../../../../db/UserManager")} UserManager
  */
 
 /**
@@ -20,7 +20,6 @@ module.exports = (app, utils) => {
             return;
         }
 
-        // using switch case cuz erm i like it
         const state = await utils.UserManager.generateOAuth2State();
         switch (method) {
             case "scratch":

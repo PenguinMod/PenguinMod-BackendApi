@@ -11,35 +11,21 @@
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/projects/interactions/loveToggle",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager),
         async (req, res) => {
             const packet = req.body;
-
-            const token = String(packet.token);
 
             const love = String(packet.toggle) === "true";
             const projectID = String(packet.projectId);
 
-            if (!token || typeof love !== "boolean" || !projectID) {
-                return utils.error(
-                    res,
-                    400,
-                    "Missing username, token, love, or projectID",
-                );
-            }
+            const id = req.login.id;
 
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 401, "Reauthenticate");
-                return;
-            }
-            const username = login.username;
-
-            if (!(await utils.UserManager.projectExists(projectID))) {
+            if (
+                !projectID ||
+                !(await utils.UserManager.projectExists(projectID))
+            ) {
                 return utils.error(res, 404, "Project not found");
             }
-
-            const id = await utils.UserManager.getIDByUsername(username);
 
             if (
                 (await utils.UserManager.hasLovedProject(projectID, id)) &&

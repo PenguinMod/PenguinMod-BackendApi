@@ -25,7 +25,7 @@ module.exports = (app, utils) => {
         async (req, res) => {
             const packet = req.body;
 
-            const email = String(packet.email);
+            const email = String(packet.email).toLowerCase();
             const captcha_token = String(packet.captcha_token);
 
             if (!email || !captcha_token) {
@@ -65,6 +65,8 @@ module.exports = (app, utils) => {
                 return;
             }
 
+            // TODO: make this return more info than just username.
+            // we later fetch the id. thats an extra, unneeded db query.
             const username = await utils.UserManager.getUsernameByEmail(email);
 
             if (!username) {

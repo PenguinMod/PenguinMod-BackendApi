@@ -9,30 +9,26 @@
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.get("/api/v1/users/getAllIPs", utils.cors(), async function (req, res) {
-        const packet = req.query;
+    app.get(
+        "/api/v1/users/getAllIPs",
+        utils.requireAuth(utils.UserManager, { require_admin: true }),
+        async function (req, res) {
+            const packet = req.query;
 
-        const token = String(packet.token);
+            const target = String(packet.target);
 
-        const target = String(packet.target);
+            if (
+                !target ||
+                !(await utils.UserManager.existsByUsername(target, true))
+            ) {
+                return utils.error(res, 404, "User not found");
+            }
 
-        const login = await utils.UserManager.loginWithToken(token);
-        if (!login.success) {
-            utils.error(res, 400, "Reauthenticate");
-            return;
-        }
-        if (!login.isAdmin) {
-            return utils.error(res, 403, "Unauthorized");
-        }
+            const ips = await utils.UserManager.getIPs(target);
 
-        if (!(await utils.UserManager.existsByUsername(target, true))) {
-            return utils.error(res, 404, "User not found");
-        }
-
-        const ips = await utils.UserManager.getIPs(target);
-
-        res.status(200);
-        res.header("Content-Type", "application/json");
-        res.json({ ips });
-    });
+            res.status(200);
+            res.header("Content-Type", "application/json");
+            res.json({ ips });
+        },
+    );
 };

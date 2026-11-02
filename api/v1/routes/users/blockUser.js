@@ -11,18 +11,11 @@
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/users/blockuser",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager),
         async function (req, res) {
             const packet = req.body;
 
-            const token = String(packet.token);
-
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 400, "Reauthenticate");
-                return;
-            }
-            const user_id = login.id;
+            const user_id = req.login.id;
 
             const target = String(packet.target);
 

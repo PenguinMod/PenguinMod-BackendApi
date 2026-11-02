@@ -11,30 +11,19 @@
 module.exports = (app, utils) => {
     app.get(
         "/api/v1/users/hasblocked",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager),
         async function (req, res) {
             const packet = req.query;
 
-            const token = String(packet.token);
-
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 400, "Reauthenticate");
-                return;
-            }
-            const username = login.username;
-
             const target = String(packet.target).toLowerCase();
 
-            if (
-                !target ||
-                !(await utils.UserManager.existsByUsername(target))
-            ) {
+            const targetMeta = await utils.UserManager.getUserData(target);
+            if (!targetMeta) {
                 return utils.error(res, 404, "Target not found");
             }
 
-            const user_id = await utils.UserManager.getIDByUsername(username);
-            const target_id = await utils.UserManager.getIDByUsername(target);
+            const user_id = req.login.id;
+            const target_id = targetMeta.id;
 
             const has_blocked = await utils.UserManager.hasBlocked(
                 user_id,

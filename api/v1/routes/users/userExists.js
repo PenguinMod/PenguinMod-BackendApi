@@ -14,17 +14,10 @@ module.exports = (app, utils) => {
 
         const username = String(packet.username).toLowerCase();
 
-        if (!username) {
-            utils.error(res, 400, "Missing username");
-            return;
-        }
-
-        const exists = await utils.UserManager.existsByUsername(
-            username.toLowerCase(),
-        );
+        const exists = await utils.UserManager.existsByUsername(username);
 
         res.status(200);
         res.header("Content-type", "application/json");
-        res.send({ exists: exists });
+        res.send({ exists });
     });
 };

@@ -11,35 +11,21 @@
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/projects/interactions/voteToggle",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager),
         async (req, res) => {
             const packet = req.body;
-
-            const token = String(packet.token);
 
             const vote = String(packet.toggle) === "true";
             const projectID = String(packet.projectId);
 
-            if (!token || typeof vote !== "boolean" || !projectID) {
-                return utils.error(
-                    res,
-                    400,
-                    "Missing token, vote, or projectID",
-                );
-            }
+            const id = req.login.id;
 
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 401, "Reauthenticate");
-                return;
-            }
-            const username = login.username;
-
-            if (!(await utils.UserManager.projectExists(projectID))) {
+            if (
+                !projectID ||
+                !(await utils.UserManager.projectExists(projectID))
+            ) {
                 return utils.error(res, 404, "Project not found");
             }
-
-            const id = await utils.UserManager.getIDByUsername(username);
 
             const hasVoted = await utils.UserManager.hasVotedProject(
                 projectID,
@@ -59,12 +45,13 @@ module.exports = (app, utils) => {
 
             if (
                 metadata.votes >= utils.env.FeatureAmount &&
-                !(await utils.UserManager.isFeatured(projectID)) &&
-                (await utils.UserManager.canBeFeatured(projectID))
+                !metadata.featured &&
+                !metadata.noFeature
             ) {
                 const author = metadata.author;
                 const title = metadata.title;
 
+                await utils.UserManager.featureProject(projectID, true, false);
                 await utils.UserManager.sendMessage(
                     author.id,
                     { type: "projectFeatured" },
@@ -72,7 +59,6 @@ module.exports = (app, utils) => {
                     projectID,
                 );
 
-                await utils.UserManager.featureProject(projectID, true, false);
                 utils.logs.sendFeatureLog(projectID, title, author.username);
 
                 if (

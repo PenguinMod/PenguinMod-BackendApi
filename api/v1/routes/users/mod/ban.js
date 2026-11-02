@@ -9,145 +9,131 @@
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.post("/api/v1/users/ban", utils.cors(), async function (req, res) {
-        const packet = req.body;
+    app.post(
+        "/api/v1/users/ban",
+        utils.requireAuth(utils.UserManager, { require_mod: true }),
+        async function (req, res) {
+            const packet = req.body;
 
-        const token = String(packet.token);
+            const target = String(packet.target).toLowerCase();
+            const toggle = String(packet.toggle) === "true";
+            const time = Math.max(Number(packet.time) || 0, 0);
+            const reason = String(packet.reason);
+            const remove_follows = String(packet.remove_follows) !== "false";
 
-        const target = String(packet.target).toLowerCase();
-        const toggle = String(packet.toggle) === "true";
-        const time = Number(packet.time) || 0;
-        const reason = String(packet.reason);
-        const remove_follows = String(packet.remove_follows) !== "false";
+            if (reason.length > 512) {
+                utils.error(res, 400, "ReasonTooLong");
+                return;
+            }
 
-        if (
-            !token ||
-            !target ||
-            typeof toggle !== "boolean" ||
-            typeof reason !== "string" ||
-            reason.length > 512 ||
-            typeof time !== "number" ||
-            time < 0
-        ) {
-            utils.error(
-                res,
-                400,
-                "Missing token, target, toggle, reason, or time",
+            const username = req.login.username;
+
+            // TODO: we're making 4 separate db requests that really all get the same info. combine to one
+            if (
+                !target ||
+                !(await utils.UserManager.existsByUsername(target, true))
+            ) {
+                utils.error(res, 404, "NotFound");
+                return;
+            }
+
+            if (
+                !req.login.isAdmin &&
+                (await utils.UserManager.hasModPerms(target))
+            ) {
+                utils.error(res, 403, "Unauthorized");
+                return;
+            }
+
+            const targetID = await utils.UserManager.getIDByUsername(target);
+
+            const isTempBanned = await utils.UserManager.isTempBanned(target);
+            if (!toggle && isTempBanned) {
+                await utils.UserManager.unTempBan(target);
+            } else if (toggle && time) {
+                await utils.UserManager.tempBanUser(target, reason, time);
+            } else {
+                await utils.UserManager.setPermBanned(
+                    target,
+                    toggle,
+                    reason,
+                    remove_follows,
+                );
+            }
+
+            if (toggle && time) {
+                await utils.UserManager.sendMessage(
+                    targetID,
+                    { type: `tempban`, time: time, reason: reason },
+                    false,
+                    0,
+                );
+            } else if (toggle) {
+                await utils.UserManager.sendMessage(
+                    targetID,
+                    { type: "ban", reason: reason },
+                    false,
+                    0,
+                );
+            } else {
+                await utils.UserManager.sendMessage(
+                    targetID,
+                    { type: "unban" },
+                    false,
+                    0,
+                );
+            }
+
+            const fields = [
+                {
+                    name: "Mod",
+                    value: username,
+                },
+                {
+                    name: "Target",
+                    value: target,
+                },
+            ];
+
+            if (toggle && time) {
+                fields.push({
+                    name: "Time",
+                    value: `${time / 1000} seconds (${time / (1000 * 60 * 60)} hours)`,
+                });
+            }
+
+            fields.push(
+                {
+                    name: "Reason",
+                    value: `\`\`\`\n${reason}\n\`\`\``,
+                },
+                {
+                    name: "URL",
+                    value: `${utils.env.HomeURL}/profile?userid=${targetID}`,
+                },
             );
-            return;
-        }
 
-        const login = await utils.UserManager.loginWithToken(token);
-        if (!login.success) {
-            utils.error(res, 400, "Reauthenticate");
-            return;
-        }
-        const username = login.username;
-
-        if (!login.isMod) {
-            utils.error(res, 403, "Unauthorized");
-            return;
-        }
-
-        // TODO: we're making 4 separate db requests that really all get the same info. combine to one
-        if (!(await utils.UserManager.existsByUsername(target, true))) {
-            utils.error(res, 404, "NotFound");
-            return;
-        }
-
-        if (!login.isAdmin && (await utils.UserManager.hasModPerms(target))) {
-            utils.error(res, 403, "Unauthorized");
-            return;
-        }
-
-        const targetID = await utils.UserManager.getIDByUsername(target);
-
-        const isTempBanned = await utils.UserManager.isTempBanned(target);
-        if (!toggle && isTempBanned) {
-            await utils.UserManager.unTempBan(target);
-        } else if (toggle && time) {
-            await utils.UserManager.tempBanUser(target, reason, time);
-        } else {
-            await utils.UserManager.setPermBanned(
-                target,
-                toggle,
-                reason,
-                remove_follows,
+            utils.logs.sendAdminLog(
+                {
+                    action: `User has been ${toggle && time ? "temp " : ""}${toggle ? "" : "un"}banned`,
+                    content: `${username} ${toggle ? "" : "un"}banned ${target}`,
+                    fields,
+                },
+                {
+                    name: username,
+                    icon_url: String(
+                        `${utils.env.ApiURL}/api/v1/users/getpfp?username=${username}`,
+                    ),
+                    url: `${utils.env.HomeURL}/profile?user=${username}`,
+                },
+                toggle ? 0xc40404 : 0x45efc6,
             );
-        }
 
-        if (toggle && time) {
-            await utils.UserManager.sendMessage(
-                targetID,
-                { type: `tempban`, time: time, reason: reason },
-                false,
-                0,
-            );
-        } else if (toggle) {
-            await utils.UserManager.sendMessage(
-                targetID,
-                { type: "ban", reason: reason },
-                false,
-                0,
-            );
-        } else {
-            await utils.UserManager.sendMessage(
-                targetID,
-                { type: "unban" },
-                false,
-                0,
-            );
-        }
+            await utils.UserManager.deleteReports("user", targetID);
 
-        const fields = [
-            {
-                name: "Mod",
-                value: username,
-            },
-            {
-                name: "Target",
-                value: target,
-            },
-        ];
-
-        if (toggle && time) {
-            fields.push({
-                name: "Time",
-                value: `${time / 1000} seconds (${time / (1000 * 60 * 60)} hours)`,
-            });
-        }
-
-        fields.push(
-            {
-                name: "Reason",
-                value: `\`\`\`\n${reason}\n\`\`\``,
-            },
-            {
-                name: "URL",
-                value: `${utils.env.HomeURL}/profile?userid=${targetID}`,
-            },
-        );
-
-        utils.logs.sendAdminLog(
-            {
-                action: `User has been ${toggle && time ? "temp " : ""}${toggle ? "" : "un"}banned`,
-                content: `${username} ${toggle ? "" : "un"}banned ${target}`,
-                fields,
-            },
-            {
-                name: username,
-                icon_url: String(
-                    `${utils.env.ApiURL}/api/v1/users/getpfp?username=${username}`,
-                ),
-                url: `${utils.env.HomeURL}/profile?user=${username}`,
-            },
-            toggle ? 0xc40404 : 0x45efc6,
-        );
-
-        await utils.UserManager.deleteReports("user", targetID);
-
-        res.status(200);
-        res.header("Content-Type", "application/json");
-        res.send({ success: true });
-    });
+            res.status(200);
+            res.header("Content-Type", "application/json");
+            res.send({ success: true });
+        },
+    );
 };

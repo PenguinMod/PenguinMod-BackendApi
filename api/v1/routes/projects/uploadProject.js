@@ -14,14 +14,14 @@ const sharp = require("sharp");
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/projects/uploadProject",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager),
         utils.upload.fields([
             { name: "jsonFile", maxCount: 1 },
             { name: "thumbnail", maxCount: 1 },
             // assets
             { name: "assets", maxCount: Number(process.env.MaxFilesUpload) },
         ]),
-        utils.file_size_limit(utils, (req) => String(req.body.token)),
+        utils.file_size_limit(utils),
         async (req, res) => {
             const unlink = async () => {
                 if (req.files.jsonFile) {
@@ -48,17 +48,10 @@ module.exports = (app, utils) => {
 
             const packet = req.body;
 
-            const token = String(packet.token);
-
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                await unlink();
-                return utils.error(res, 401, "Invalid credentials");
-            }
-            const username = login.username;
-            const userid = login.id;
-            const isDonator = login.isDonator;
-            const hasModPerms = login.isMod;
+            const username = req.login.username;
+            const userid = req.login.id;
+            const isDonator = req.login.isDonator;
+            const hasModPerms = req.login.isMod;
 
             const priv = String(packet.private) === "true" && hasModPerms;
 
@@ -72,7 +65,7 @@ module.exports = (app, utils) => {
                 return utils.error(res, 400, "Uploaded in the last 8 minutes");
             }
 
-            if (!login.emailVerified) {
+            if (!req.login.emailVerified) {
                 await unlink();
                 return utils.error(
                     res,

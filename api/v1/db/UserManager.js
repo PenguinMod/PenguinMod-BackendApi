@@ -105,6 +105,11 @@ class UserManager {
         this.messages = this.db.collection("messages");
         this.messages.createIndex({ receiver: -1, id: -1 });
         this.oauthStates = this.db.collection("oauthStates");
+        this.oneTimeTkCodes = this.db.collection("ottCodes");
+        this.oneTimeTkCodes.createIndex(
+            { expiresAt: 1 },
+            { expireAfterSeconds: 0 },
+        );
         // await this.oauthStates.dropIndexes();
         await this.oauthStates.createIndex(
             { createdAt: 1 },
@@ -530,15 +535,18 @@ class UserManager {
             // PROBABLY just saying its full - try again
             this.removeBBUrl(url_data);
             return new Promise((resolve, _) => {
-                setTimeout(async () => {
-                    resolve(
-                        await this.saveToBackblaze(
-                            name,
-                            file,
-                            trying_again + 1,
-                        ),
-                    );
-                }, 250); // TODO: we should NOT hardcode 250. that is a bad!!!
+                setTimeout(
+                    async () => {
+                        resolve(
+                            await this.saveToBackblaze(
+                                name,
+                                file,
+                                trying_again + 1,
+                            ),
+                        );
+                    },
+                    (1 + Math.random()) * 200,
+                );
             });
         }
 
@@ -1010,6 +1018,7 @@ class UserManager {
     /**
      * @typedef {Object} LoginResult
      * @property {string} username The user's username. Blank if unsuccessful
+     * @property {string} token The user's token.
      * @property {string} id The user's id. Blank if unsuccessful
      * @property {boolean} success If the login was successful
      * @property {boolean} exists If the account even exists
@@ -1035,6 +1044,7 @@ class UserManager {
         const data = {
             success: false,
             username: "",
+            token,
             id: "",
             exists: false,
             isDonator: false,
@@ -1625,7 +1635,7 @@ class UserManager {
         username = String(username);
         const result = await this.users.findOne({ username: username });
 
-        return result.admin;
+        return result ? result.admin : undefined;
     }
 
     /**
@@ -1652,7 +1662,7 @@ class UserManager {
         username = String(username);
         const result = await this.users.findOne({ username: username });
 
-        return result.moderator;
+        return result ? result.moderator : undefined;
     }
 
     /**
@@ -3056,9 +3066,10 @@ class UserManager {
      */
     async deleteProject(id) {
         id = String(id);
-        await this.projects.deleteOne({ id: id });
-
-        // TODO: remove mentions of the project from feed
+        const del_res = await this.projects.deleteOne({ id: id });
+        if (del_res.deletedCount <= 0) {
+            return;
+        }
 
         // remove the loves and votes
         await this.projectStats.deleteMany({ projectId: id });
@@ -3881,38 +3892,30 @@ class UserManager {
     /**
      * Verify the state from an OAuth2 request
      * @param {string} state The state to verify
-     * @returns {Promise<boolean>} True if the state is valid, false if not
+     * @returns {Promise<{valid:boolean,data:any}>}
      * @async
      */
     async verifyOAuth2State(state) {
-        // TODO: find & delete should be combined to avoid race conditions
         state = String(state);
-        const result = await this.oauthStates.findOne({
+        const result = await this.oauthStates.findOneAndDelete({
             state: state,
             createdAt: { $lt: new Date(Date.now() + 1000 * 60 * 5) },
         });
 
-        // now get rid of the state cuz uh we dont need it anymore
-
-        if (result) {
-            await this.oauthStates.deleteOne({ state: state });
-        }
-
-        return result ? true : false;
+        return { valid: !!result, data: result ? result.data : undefined };
     }
 
     /**
      * Generate a new OAuth2 state and save it for verification
+     * @param {any} data Data to be stored with the state
      * @returns {Promise<string>} The state
      */
-    async generateOAuth2State(extra = "") {
-        const state = (randomBytes(32).toString("base64") + extra).replaceAll(
-            "+",
-            "-",
-        );
+    async generateOAuth2State(data) {
+        const state = randomBytes(32).toString("base64").replaceAll("+", "-");
 
         await this.oauthStates.insertOne({
             state: state,
+            data,
             createdAt: new Date(),
         });
 
@@ -5390,7 +5393,7 @@ class UserManager {
             return false;
         }
 
-        const result = await this.passwordResetStates.findOne({
+        const result = await this.passwordResetStates.findOneAndDelete({
             state: state,
             email: email,
             createdAt: {
@@ -5400,13 +5403,7 @@ class UserManager {
             },
         });
 
-        const is_valid = !!result;
-
-        if (is_valid) {
-            await this.passwordResetStates.deleteOne({ state: state });
-        }
-
-        return is_valid;
+        return !!result;
     }
 
     /**
@@ -5518,7 +5515,11 @@ class UserManager {
     async verifyFollowers(username) {
         username = String(username);
         // what this means: go through the followers. if they are banned, remove them.
-        const id = await this.getIDByUsername(username);
+        const id = await this.getIDByUsername(username, false);
+
+        if (!id) {
+            return false;
+        }
 
         const followers = await this.followers.find({ target: id }).toArray();
 
@@ -5540,6 +5541,8 @@ class UserManager {
         });
 
         await this.users.updateOne({ id: id }, { $set: { followers: count } });
+
+        return true;
     }
 
     async getAllBlocked(user_id) {
@@ -6380,6 +6383,47 @@ class UserManager {
                     ? projects[projects.length - 1]._id
                     : null,
         };
+    }
+
+    /**
+     * Our frontend and backend are on different urls (@ vs projects). After OAuth login related stuff,
+     * we need to give the frontend the login token. We can't just hand it via url params; thats insecure.
+     * So instead we hand it a one time code, which it then exchanges for the token.
+     * This function generates that one time code.
+     * @param {string} token The user's token
+     * @returns {Promise<string>} A one time code to give the frontend so that it can securely get the token
+     */
+    async genOneTimeTokenCode(token) {
+        const code = randomBytes(32).toString("hex");
+
+        await this.oneTimeTkCodes.insertOne({
+            _id: code,
+            token,
+            expiresAt: new Date(Date.now() + 60_000),
+        });
+
+        return code;
+    }
+
+    /**
+     * Our frontend and backend are on different urls (@ vs projects). After OAuth login related stuff,
+     * we need to give the frontend the login token. We can't just hand it via url params; thats insecure.
+     * So instead we hand it a one time code, which it then exchanges for the token.
+     * This function gets the token from the code
+     * @param {string} code The one time code
+     * @returns {Promise<string|null>} The user's token, or null if not found
+     */
+    async exchangeCodeForToken(code) {
+        const result = await this.oneTimeTkCodes.findOneAndDelete({
+            _id: code,
+            expiresAt: { $gt: new Date() },
+        });
+
+        if (!result) {
+            return null;
+        }
+
+        return result.token;
     }
 }
 

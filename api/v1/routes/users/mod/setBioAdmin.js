@@ -11,31 +11,14 @@
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/users/setbioadmin",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager, { require_mod: true }),
         async function (req, res) {
             const packet = req.body;
-
-            const token = String(packet.token);
 
             const target = String(packet.target).toLowerCase();
             const bio = String(packet.bio);
 
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 400, "Reauthenticate");
-                return;
-            }
-            const username = login.username;
-
-            if (!login.isMod) {
-                utils.error(res, 400, "Unauthorized");
-                return;
-            }
-
-            if (typeof bio !== "string") {
-                utils.error(res, 400, "InvalidBioInput");
-                return;
-            }
+            const username = req.login.username;
 
             if (bio.length > 2048) {
                 utils.error(res, 400, "BioLengthMustBeLessThan2048Chars");

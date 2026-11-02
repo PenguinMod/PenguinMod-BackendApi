@@ -11,31 +11,17 @@
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/projects/deletemodmessage",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager, { require_admin: true }),
         async (req, res) => {
             const packet = req.body;
 
-            const token = String(packet.token);
-
             const messageID = String(packet.messageID);
 
-            if (!token || typeof messageID !== "string") {
-                return utils.error(
-                    res,
-                    400,
-                    "Missing token, target, or message",
-                );
+            if (typeof messageID !== "string") {
+                return utils.error(res, 400, "Missing messageID");
             }
 
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 401, "Reauthenticate");
-                return;
-            }
-            const username = login.username;
-            if (!login.isAdmin) {
-                return utils.error(res, 401, "Invalid credentials");
-            }
+            const username = req.login.username;
 
             utils.logs.sendAdminLog({
                 action: `Mod message has been deleted`,

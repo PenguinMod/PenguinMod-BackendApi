@@ -1,6 +1,6 @@
 /**
  * @typedef {Object} Utils
- * @property {import("../../../../db/UserManager)} UserManager
+ * @property {import("../../../../db/UserManager")} UserManager
  */
 
 /**
@@ -20,7 +20,8 @@ module.exports = (app, utils) => {
             return;
         }
 
-        if (!(await utils.UserManager.verifyOAuth2State(state))) {
+        const { valid } = await utils.UserManager.verifyOAuth2State(state);
+        if (!valid) {
             utils.error(res, 400, "Invalid state");
             return;
         }

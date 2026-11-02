@@ -11,31 +11,29 @@
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/users/removeoauthmethod",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager),
         async function (req, res) {
             // get the method
             const packet = req.body;
 
             const method = String(packet.method);
-            const token = String(packet.token);
 
-            if (!method || !token) {
-                utils.error(res, 400, "Missing method or token");
-                return;
-            }
-
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 400, "Reauthenticate");
-                return;
-            }
-            const username = login.username;
+            const username = req.login.username;
+            const hasPassword = !!req.login.fullMeta.password;
 
             const methods = await utils.UserManager.getOAuthMethods(username);
 
             if (!methods.includes(method)) {
-                utils.error(res, 400, "Method not found");
+                utils.error(res, 404, "MethodNotConnected");
                 return;
+            }
+
+            if (methods.length === 1 && !hasPassword) {
+                utils.error(
+                    res,
+                    400,
+                    "You would get locked out of your account",
+                );
             }
 
             await utils.UserManager.removeOAuthMethod(username, method);

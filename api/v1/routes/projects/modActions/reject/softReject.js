@@ -9,89 +9,83 @@
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.post("/api/v1/projects/softreject", utils.cors(), async (req, res) => {
-        const packet = req.body;
+    app.post(
+        "/api/v1/projects/softreject",
+        utils.requireAuth(utils.UserManager, { require_mod: true }),
+        async (req, res) => {
+            const packet = req.body;
 
-        const token = String(packet.token);
+            const project = String(packet.project);
+            const message = String(packet.message);
 
-        const project = String(packet.project);
-        const message = String(packet.message);
+            if (!project || typeof message !== "string") {
+                return utils.error(res, 400, "Missing project or message");
+            }
 
-        if (!token || !project || typeof message !== "string") {
-            return utils.error(res, 400, "Missing token, project, or message");
-        }
+            const username = req.login.username;
 
-        const login = await utils.UserManager.loginWithToken(token);
-        if (!login.success) {
-            utils.error(res, 401, "Reauthenticate");
-            return;
-        }
-        const username = login.username;
+            if (!(await utils.UserManager.projectExists(project, true))) {
+                return utils.error(res, 404, "ProjectNotFound");
+            }
 
-        if (!login.isMod) {
-            return utils.error(res, 401, "Invalid credentials");
-        }
+            if (await utils.UserManager.isSoftRejected(project)) {
+                return utils.error(res, 400, "AlreadySoftRejected");
+            }
 
-        if (!(await utils.UserManager.projectExists(project, true))) {
-            return utils.error(res, 404, "ProjectNotFound");
-        }
+            await utils.UserManager.softReject(project, true);
 
-        if (await utils.UserManager.isSoftRejected(project)) {
-            return utils.error(res, 400, "AlreadySoftRejected");
-        }
+            const projectData =
+                await utils.UserManager.getProjectMetadata(project);
 
-        await utils.UserManager.softReject(project, true);
+            await utils.UserManager.sendMessage(
+                projectData.author.id,
+                { type: "reject", message, hardReject: false },
+                true,
+                project,
+            );
 
-        const projectData = await utils.UserManager.getProjectMetadata(project);
+            utils.logs.sendAdminLog(
+                {
+                    action: `${username} soft rejected ${projectData.title}`,
+                    content: "",
+                    fields: [
+                        {
+                            name: "Mod",
+                            value: username,
+                        },
+                        {
+                            name: "Title",
+                            value: projectData.title,
+                        },
+                        {
+                            name: "Message",
+                            value: `\`\`\`\n${message}\n\`\`\``,
+                        },
+                        {
+                            name: "Author",
+                            value: projectData.author.username,
+                        },
+                        {
+                            name: "URL",
+                            value: `${utils.env.StudioURL}/#${project}`,
+                        },
+                    ],
+                },
+                {
+                    name: username,
+                    icon_url: String(
+                        `${utils.env.ApiURL}/api/v1/users/getpfp?username=${username}`,
+                    ),
+                    url: `${utils.env.HomeURL}/profile?user=${username}`,
+                },
+                0xffae33,
+            );
 
-        await utils.UserManager.sendMessage(
-            projectData.author.id,
-            { type: "reject", message, hardReject: false },
-            true,
-            project,
-        );
+            await utils.UserManager.deleteReports("project", project);
 
-        utils.logs.sendAdminLog(
-            {
-                action: `${username} soft rejected ${projectData.title}`,
-                content: "",
-                fields: [
-                    {
-                        name: "Mod",
-                        value: username,
-                    },
-                    {
-                        name: "Title",
-                        value: projectData.title,
-                    },
-                    {
-                        name: "Message",
-                        value: `\`\`\`\n${message}\n\`\`\``,
-                    },
-                    {
-                        name: "Author",
-                        value: projectData.author.username,
-                    },
-                    {
-                        name: "URL",
-                        value: `${utils.env.StudioURL}/#${project}`,
-                    },
-                ],
-            },
-            {
-                name: username,
-                icon_url: String(
-                    `${utils.env.ApiURL}/api/v1/users/getpfp?username=${username}`,
-                ),
-                url: `${utils.env.HomeURL}/profile?user=${username}`,
-            },
-            0xffae33,
-        );
-
-        await utils.UserManager.deleteReports("project", project);
-
-        res.status(200);
-        res.header("Content-type", "application/json");
-        res.send({ success: true });
-    });
+            res.status(200);
+            res.header("Content-type", "application/json");
+            res.send({ success: true });
+        },
+    );
 };

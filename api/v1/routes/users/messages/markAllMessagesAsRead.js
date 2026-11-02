@@ -11,24 +11,9 @@
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/users/markallmessagesasread",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager, { allow_banned: true }),
         async (req, res) => {
-            const packet = req.body;
-
-            const token = String(packet.token);
-
-            if (!token) {
-                return utils.error(res, 400, "Missing token");
-            }
-
-            const login = await utils.UserManager.loginWithToken(token, true);
-            if (!login.success) {
-                utils.error(res, 400, "Reauthenticate");
-                return;
-            }
-            const id = login.id;
-
-            await utils.UserManager.markAllMessagesAsRead(id);
+            await utils.UserManager.markAllMessagesAsRead(req.login.id);
 
             res.header("Content-type", "application/json");
             res.send({ success: true });

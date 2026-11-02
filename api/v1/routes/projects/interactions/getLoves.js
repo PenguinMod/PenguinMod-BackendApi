@@ -3,6 +3,8 @@
  * @property {import("../../../db/UserManager")} UserManager
  */
 
+// TODO: delete this?
+
 /**
  *
  * @param {any} app Express app
@@ -14,11 +16,7 @@ module.exports = (app, utils) => {
 
         const projectID = String(packet.projectID);
 
-        if (!projectID) {
-            return utils.error(res, 400, "InvalidProjectID");
-        }
-
-        if (!(await utils.UserManager.projectExists(projectID))) {
+        if (!projectID || !(await utils.UserManager.projectExists(projectID))) {
             return utils.error(res, 404, "Project not found");
         }
 

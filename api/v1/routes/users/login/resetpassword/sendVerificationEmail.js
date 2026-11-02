@@ -11,21 +11,12 @@
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/users/resetpassword/sendVerifyEmail",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager),
         async (req, res) => {
-            const packet = req.body;
-
-            const token = String(packet.token);
-
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 400, "Reauthenticate");
-                return;
-            }
-            const username = login.username;
-            const userid = login.id;
-            const email = login.email;
-            const emailVerified = login.emailVerified;
+            const username = req.login.username;
+            const userid = req.login.id;
+            const email = req.login.email;
+            const emailVerified = req.login.emailVerified;
 
             if (email === "") {
                 utils.error(res, 400, "EmailInvalid");

@@ -11,21 +11,8 @@
 module.exports = (app, utils) => {
     app.get(
         "/api/v1/misc/getProfanityList",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager, { require_admin: true }),
         async function (req, res) {
-            const packet = req.query;
-
-            const token = String(packet.token);
-
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 401, "Reauthenticate");
-                return;
-            }
-            if (!login.isAdmin) {
-                utils.error(res, 403, "FeatureDisabledForThisAccount");
-                return;
-            }
             const illegalWords = await utils.UserManager.getIllegalWords();
 
             res.status(200);

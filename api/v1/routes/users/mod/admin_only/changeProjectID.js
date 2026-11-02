@@ -11,31 +11,26 @@
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/users/changeprojectid",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager, { require_admin: true }),
         async function (req, res) {
             const packet = req.body;
 
-            const token = String(packet.token);
+            // TODO: this might be broken? related to assets.
 
             const target = String(packet.target);
             const newId = String(packet.newId);
 
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 400, "Reauthenticate");
-                return;
-            }
-            const username = login.username;
-            if (!login.isAdmin) {
-                utils.error(res, 403, "FeatureDisabledForThisAccount");
-                return;
-            }
-            if (!(await utils.UserManager.projectExists(target, true))) {
-                utils.error(res, 400, "ProjectDoesNotExist");
+            const username = req.login.username;
+
+            if (
+                !target ||
+                !(await utils.UserManager.projectExists(target, true))
+            ) {
+                utils.error(res, 404, "NotFound");
                 return;
             }
             if (await utils.UserManager.projectExists(newId, true)) {
-                utils.error(res, 400, "IDIsTaken");
+                utils.error(res, 400, "IDTaken");
                 return;
             }
 

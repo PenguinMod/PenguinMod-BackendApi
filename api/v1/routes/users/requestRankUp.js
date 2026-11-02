@@ -11,30 +11,20 @@
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/users/requestrankup",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager),
         async function (req, res) {
-            const packet = req.body;
+            const badges = req.login.badges;
 
-            const token = String(packet.token);
-
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 400, "Reauthenticate");
-                return;
-            }
-            const username = login.username;
-
-            const badges = await utils.UserManager.getBadges(username);
-
-            const rank = await utils.UserManager.getRank(username);
+            const rank = req.fullMeta.firstLogin;
             if (rank !== 0) {
                 utils.error(res, 400, "AlreadyRankedHighest");
                 return;
             }
 
-            const user_id = await utils.UserManager.getIDByUsername(username);
+            const user_id = req.login.id;
 
-            const signInDate = await utils.UserManager.getFirstLogin(username);
+            const signInDate = req.login.fullMeta.firstLogin;
+            // TODO: probably not the best way to do this
             const userProjects = await utils.UserManager.getProjectsByAuthor(
                 user_id,
                 0,
@@ -53,7 +43,8 @@ module.exports = (app, utils) => {
                 return;
             }
 
-            await utils.UserManager.setRank(username, 1); // 1 is normal penguin
+            const PENGUIN_RANK = 1;
+            await utils.UserManager.setRank(req.login.username, PENGUIN_RANK);
 
             res.status(200);
             res.header("Content-Type", "application/json");

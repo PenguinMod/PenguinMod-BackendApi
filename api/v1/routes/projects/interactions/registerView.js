@@ -11,34 +11,21 @@
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/projects/interactions/registerView",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager),
         async (req, res) => {
             const packet = req.body;
 
-            const token = String(packet.token);
-
             const projectID = String(packet.projectID);
 
-            if (!token || !projectID) {
-                return utils.error(
-                    res,
-                    400,
-                    "Missing token, love, or projectID",
-                );
+            if (!projectID) {
+                return utils.error(res, 400, "Missing projectID");
             }
 
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 401, "Reauthenticate");
-                return;
-            }
-            const username = login.username;
+            const id = req.login.id;
 
             if (!(await utils.UserManager.projectExists(projectID))) {
                 return utils.error(res, 404, "Project not found");
             }
-
-            const id = await utils.UserManager.getIDByUsername(username);
 
             const projectMeta =
                 await utils.UserManager.getProjectMetadata(projectID);

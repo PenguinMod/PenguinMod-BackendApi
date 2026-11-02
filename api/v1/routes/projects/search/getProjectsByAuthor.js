@@ -9,77 +9,77 @@
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.get("/api/v1/projects/getprojectsbyauthor", async (req, res) => {
-        const packet = req.query;
+    app.get(
+        "/api/v1/projects/getprojectsbyauthor",
+        utils.maybeAuth(utils.UserManager),
+        async (req, res) => {
+            const packet = req.query;
 
-        const token = String(packet.token);
-
-        const authorUsername = String(packet.authorUsername).toLowerCase();
-        const page = utils.handle_page(packet.page);
-
-        if (!authorUsername) {
-            return utils.error(res, 400, "Missing author username");
-        }
-
-        if (!(await utils.UserManager.existsByUsername(authorUsername))) {
-            return utils.error(res, 404, "User not found");
-        }
-
-        const login = await utils.UserManager.loginWithToken(token);
-        const username = login.username;
-
-        const logged_in = login.success;
-
-        const target_data = await utils.UserManager.getUserData(authorUsername);
-        let isMod = false;
-        if (logged_in) {
-            const user_data = await utils.UserManager.getUserData(username);
-            isMod = user_data.moderator || user_data.admin;
-        }
-
-        const id = target_data.id;
-        const privateProfile = target_data.privateProfile;
-        const canFollowingSeeProfile = target_data.allowFollowingView;
-
-        if (privateProfile) {
-            if (!logged_in) {
-                return await utils.error(res, 403, "PrivateProfile");
-            }
-
-            const user_id = await utils.UserManager.getIDByUsername(username);
-            const is_following = await utils.UserManager.isFollowing(
-                id,
-                user_id,
-            );
+            const authorUsername = String(packet.authorUsername).toLowerCase();
+            const page = utils.handle_page(packet.page);
 
             if (
-                username !== authorUsername &&
-                !(is_following && canFollowingSeeProfile) &&
-                !isMod
+                !authorUsername ||
+                !(await utils.UserManager.existsByUsername(authorUsername))
             ) {
-                return await utils.error(res, 403, "PrivateProfile");
+                return utils.error(res, 404, "User not found");
             }
-        }
 
-        const projects = (
-            await utils.UserManager.getProjectsByAuthor(
-                id,
-                page,
-                Number(utils.env.PageSize),
-            )
-        ).map((project) => {
-            project.author = {
-                username: authorUsername,
-                id: id,
-            };
+            const logged_in = !!req.login;
+            const username = logged_in ? req.login.username : null;
 
-            return project;
-        });
+            const target_data =
+                await utils.UserManager.getUserData(authorUsername);
+            let isMod = false;
+            if (logged_in) {
+                const user_data = await utils.UserManager.getUserData(username);
+                isMod = user_data.moderator || user_data.admin;
+            }
 
-        for (const project of projects) {
-            await utils.UserManager.addImpression(project.id);
-        }
+            const id = target_data.id;
+            const privateProfile = target_data.privateProfile;
+            const canFollowingSeeProfile = target_data.allowFollowingView;
 
-        return res.send(projects);
-    });
+            if (privateProfile) {
+                if (!logged_in) {
+                    return await utils.error(res, 403, "PrivateProfile");
+                }
+
+                const user_id = req.login.id;
+                const is_following = await utils.UserManager.isFollowing(
+                    id,
+                    user_id,
+                );
+
+                if (
+                    username !== authorUsername &&
+                    !(is_following && canFollowingSeeProfile) &&
+                    !isMod
+                ) {
+                    return await utils.error(res, 403, "PrivateProfile");
+                }
+            }
+
+            const projects = (
+                await utils.UserManager.getProjectsByAuthor(
+                    id,
+                    page,
+                    Number(utils.env.PageSize),
+                )
+            ).map((project) => {
+                project.author = {
+                    username: authorUsername,
+                    id: id,
+                };
+
+                return project;
+            });
+
+            for (const project of projects) {
+                await utils.UserManager.addImpression(project.id);
+            }
+
+            return res.send(projects);
+        },
+    );
 };

@@ -3,7 +3,7 @@ const cors = require("cors");
 const rateLimit = require("express-rate-limit");
 const express = require("express");
 const endpointLoader = require("./api/endpointLoader");
-const um = require("./api/v1/db/UserManager");
+const UserManager = require("./api/v1/db/UserManager");
 const logs = require("./utils/Logs");
 const path = require("path");
 const multer = require("multer");
@@ -84,7 +84,7 @@ app.use(
 );
 app.use(requestIp.mw());
 
-const UserManager = new um();
+const um = new UserManager();
 
 console.real_log = console.log;
 console.log = (str) => {
@@ -116,8 +116,9 @@ console.error = (...args) => {
 
 (async () => {
     // TODO: just have UM load from env
-    await UserManager.init(MAXVIEWS, VIEWRESETRATE);
+    await um.init(MAXVIEWS, VIEWRESETRATE);
 
+    // TODO: should timezone be dynamic? It's CST because I'm in CST
     // log when starting and what time zone (utc+-x)
     console.log(
         `Starting at ${new Date().toLocaleString("en-US", { timeZone: "CST" })} CST...`
@@ -125,7 +126,7 @@ console.error = (...args) => {
     );
 
     app.use((req, res, next) => {
-        // get the actuall ip
+        // get the actual ip
         req.realIP = ipaddr.process(
             process.env.isCFTunnel === "true"
                 ? req.get("CF-Connecting-IP")
@@ -143,8 +144,8 @@ console.error = (...args) => {
 
     // ip banning
     app.use(async (req, res, next) => {
-        if (await UserManager.isIPBanned(req.realIP)) {
-            return error(res, 418, "You are banned from using this service."); // 418 for the sillies
+        if (await um.isIPBanned(req.realIP)) {
+            return error(res, 418, "NanananaBooBoo");
         }
         next();
     });
@@ -153,7 +154,7 @@ console.error = (...args) => {
         res.sendFile(path.join(__dirname, "robots.txt"));
     });
 
-    function file_size_limit(utils, get_token) {
+    function file_size_limit(utils) {
         return async function (req, res, next) {
             const unlink = async () => {
                 if (req.files) {
@@ -173,17 +174,9 @@ console.error = (...args) => {
                 }
             };
 
-            const token = get_token(req);
-            const login = await utils.UserManager.loginWithToken(token);
-
-            if (!login?.success) {
-                await unlink();
-                return utils.error(res, 401, "Invalid credentials");
-            }
-
             const maxSingleSize =
                 (Number(process.env.UploadSize) *
-                    (login.isDonator ? 1.75 : 1) || 5) * 1000000;
+                    (req.login.isDonator ? 1.75 : 1) || 5) * 1000000;
 
             if (!req.files) {
                 return utils.error(res, 400, "What??");
@@ -201,7 +194,7 @@ console.error = (...args) => {
             const maxCombinedSize =
                 (Number(
                     process.env.CumulativeUploadSize *
-                        (login.isDonator ? 1.75 : 1),
+                        (req.login.isDonator ? 1.75 : 1),
                 ) || 32) * 1000000;
             let combinedSize = 0;
 
@@ -246,7 +239,7 @@ console.error = (...args) => {
     }
 
     const utils = {
-        UserManager: UserManager,
+        UserManager: um,
         homeDir: path.join(__dirname, "./"),
         escapeXML: escapeXML,
         error: error,
@@ -267,7 +260,7 @@ console.error = (...args) => {
             key: get_key,
         },
         rateLimiter: rateLimit,
-        file_size_limit: file_size_limit,
+        file_size_limit,
         cachinator: (refreshTime) => ({
             curr: null,
             lastRefresh: 0,
@@ -331,6 +324,86 @@ console.error = (...args) => {
 
             return await f(todo, 0, retries, delay, onFail);
         },
+        /**
+         * @param {UserManager} um
+         * @param {Object} [options]
+         * @param {boolean} [options.allow_banned]
+         * @param {boolean} [options.require_mod]
+         * @param {boolean} [options.require_admin]
+         * @param {boolean} [options.require_supporter]
+         */
+        requireAuth: (
+            um,
+            {
+                allow_banned = false,
+                require_mod = false,
+                require_admin = false,
+                require_supporter = false,
+            } = {},
+        ) => [
+            utils.cors(),
+            async (req, res, next) => {
+                const header = req.get("Authorization");
+
+                if (!header) {
+                    return res.status(401).json({ error: "MissingAuthHeader" });
+                }
+
+                const [scheme, token] = header.split(" ");
+
+                if (scheme?.toLowerCase() !== "bearer" || !token) {
+                    return res.status(401).json({ error: "InvalidAuthformat" });
+                }
+
+                const login = await um.loginWithToken(
+                    token,
+                    allow_banned,
+                    true,
+                );
+
+                if (!login.success) {
+                    return res.status(401).json({ error: "InvalidToken" });
+                }
+
+                if (
+                    (require_admin && !login.isAdmin) ||
+                    (require_mod && !login.isMod)
+                ) {
+                    return res.status(401).json({ error: "Unauthorized" });
+                }
+
+                if (require_supporter && !login.isDonator) {
+                    return res.status(401).json({ error: "SupporterRequired" });
+                }
+
+                req.login = login;
+
+                next();
+            },
+        ],
+        /**
+         * @param {UserManager} um
+         * @param {boolean} allow_banned
+         */
+        maybeAuth:
+            (um, { allow_banned = false } = {}) =>
+            async (req, res, next) => {
+                const token = req.get("Authorization");
+
+                if (token) {
+                    const login = await um.loginWithToken(
+                        token,
+                        allow_banned,
+                        true,
+                    );
+
+                    // TODO: if login is invalid, should we return an error?
+
+                    req.login = login.success ? login : null;
+                }
+
+                next();
+            },
     };
 
     endpointLoader(app, "v1/routes", utils);
@@ -356,6 +429,8 @@ console.error = (...args) => {
 
         console.error(err);
         error(res, 500, "InternalError");
+
+        next();
     });
 
     app.listen(PORT, () => {

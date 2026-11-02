@@ -11,27 +11,17 @@
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/users/markmessageasread",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager, { allow_banned: true }),
         async (req, res) => {
             const packet = req.body;
 
-            const token = String(packet.token);
-
             const messageID = String(packet.messageID);
-
-            if (!token) {
-                return utils.error(res, 400, "Missing token");
-            }
-
-            const login = await utils.UserManager.loginWithToken(token, true);
-            if (!login.success) {
-                utils.error(res, 400, "Reauthenticate");
-                return;
-            }
 
             if (!(await utils.UserManager.messageExists(messageID))) {
                 return utils.error(res, 400, "Invalid message ID");
             }
+
+            // TODO: verify user is recipient of message
 
             await utils.UserManager.markMessageAsRead(messageID, true);
 

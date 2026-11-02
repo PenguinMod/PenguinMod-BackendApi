@@ -11,25 +11,18 @@
 module.exports = (app, utils) => {
     app.get(
         "/api/v1/projects/downloadHardReject",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager),
         async (req, res) => {
             const packet = req.query;
 
-            const token = String(packet.token);
-
             const project = String(packet.project);
 
-            if (!token || !project) {
-                return utils.error(res, 400, "Missing token or project");
+            if (!project) {
+                return utils.error(res, 400, "Missing project");
             }
 
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 401, "Reauthenticate");
-                return;
-            }
-            const isAdmin = login.isAdmin;
-            const id = login.id;
+            const isAdmin = req.login.isAdmin;
+            const id = req.login.id;
 
             if (!(await utils.UserManager.projectExists(project, true))) {
                 return utils.error(res, 404, "ProjectNotFound");

@@ -11,22 +11,11 @@
 module.exports = (app, utils) => {
     app.get(
         "/api/v1/users/getAllAccountsWithIP",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager, { require_admin: true }),
         async function (req, res) {
             const packet = req.query;
 
-            const token = String(packet.token);
-
             const target = String(packet.target);
-
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 400, "Reauthenticate");
-                return;
-            }
-            if (!login.isAdmin) {
-                return utils.error(res, 403, "Unauthorized");
-            }
 
             const users = await utils.UserManager.getAllAccountsWithIP(target);
 

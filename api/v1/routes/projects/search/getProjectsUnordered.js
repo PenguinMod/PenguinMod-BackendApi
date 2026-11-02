@@ -3,6 +3,8 @@
  * @property {import("../../../db/UserManager")} UserManager
  */
 
+const { ObjectId } = require("mongodb");
+
 /**
  *
  * @param {any} app Express app
@@ -25,6 +27,10 @@ module.exports = (app, utils) => {
             const packet = req.query;
 
             const after = String(packet.after) || undefined;
+
+            if (after && !ObjectId.isValid(after)) {
+                return utils.error(400, "InvalidAfter");
+            }
 
             const { projects, next } =
                 await utils.UserManager.getProjectsUnordered(

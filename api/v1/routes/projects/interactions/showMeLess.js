@@ -8,18 +8,21 @@
  * @param {any} app Express app
  * @param {Utils} utils Utils
  */
+
+module.exports = "iamnotloadingonpurpose";
+
+/*
+
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/projects/interactions/showMeLess",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager),
         async (req, res) => {
             const packet = req.body;
 
-            const token = String(packet.token);
-
             const projectID = String(packet.projectID);
 
-            if (!token || !projectID) {
+            if (!projectID) {
                 return utils.error(
                     res,
                     400,
@@ -54,3 +57,5 @@ module.exports = (app, utils) => {
         },
     );
 };
+
+*/

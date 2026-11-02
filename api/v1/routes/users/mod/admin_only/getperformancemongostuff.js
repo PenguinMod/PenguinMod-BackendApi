@@ -10,28 +10,12 @@
  */
 module.exports = (app, utils) => {
     app.get(
-        "/api/v1/users/getworstoffenders",
-        utils.cors(),
+        "/api/v1/users/perfgetworstoffenders",
+        utils.requireAuth(utils.UserManager, { require_admin: true }),
         async function (req, res) {
             const packet = req.query;
 
-            const token = String(packet.token);
-            const page = Number(packet.page) || 0;
-
-            if (!token) {
-                return utils.error(res, 400, "Missing token");
-            }
-
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 400, "Reauthenticate");
-                return;
-            }
-            const is_admin = login.isAdmin;
-
-            if (!is_admin) {
-                return utils.error(res, 401, "Unauthorized");
-            }
+            const page = utils.handle_page(packet.page);
 
             const items = await utils.UserManager.getWorstOffenders(
                 page,

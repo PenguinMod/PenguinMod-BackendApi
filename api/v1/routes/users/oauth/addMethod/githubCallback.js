@@ -1,6 +1,6 @@
 /**
  * @typedef {Object} Utils
- * @property {import("../../../../db/UserManager)} UserManager
+ * @property {import("../../../../db/UserManager")} UserManager
  */
 
 /**
@@ -22,12 +22,14 @@ module.exports = (app, utils) => {
                 return;
             }
 
-            if (!(await utils.UserManager.verifyOAuth2State(state))) {
+            const { valid, data } =
+                await utils.UserManager.verifyOAuth2State(state);
+            if (!valid) {
                 utils.error(res, 400, "InvalidState");
                 return;
             }
 
-            const userid = state.split("_")[1]; // get the userid from the state (a little hacky)
+            const userid = data;
 
             const response = await utils.UserManager.makeOAuth2Request(
                 code,
@@ -78,9 +80,11 @@ module.exports = (app, utils) => {
 
             const token = await utils.UserManager.newTokenGen(username);
 
+            const ottCode = await utils.UserManager.genOneTimeTokenCode(token);
+
             res.status(200);
             res.redirect(
-                `/api/v1/users/sendloginsuccess?token=${token}&username=${username}`,
+                `${utils.env.HomeURL}/exchangeottcode?code=${ottCode}`,
             );
         },
     );

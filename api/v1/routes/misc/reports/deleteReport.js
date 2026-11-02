@@ -9,34 +9,26 @@
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
-    app.post("/api/v1/reports/deleteReport", utils.cors(), async (req, res) => {
-        const packet = req.body;
+    app.post(
+        "/api/v1/reports/deleteReport",
+        utils.requireAuth(utils.UserManager, { require_mod: true }),
+        async (req, res) => {
+            const packet = req.body;
 
-        const token = String(packet.token);
+            const reportID = String(packet.reportID);
 
-        const login = await utils.UserManager.loginWithToken(token);
-        if (!login.success) {
-            utils.error(res, 401, "Reauthenticate");
-            return;
-        }
-        if (!login.isMod) {
-            return utils.error(res, 403, "Unauthorized");
-        }
+            if (
+                !reportID ||
+                !(await utils.UserManager.reportExists(reportID))
+            ) {
+                return utils.error(res, 404, "Report not found");
+            }
 
-        const reportID = String(packet.reportID);
+            await utils.UserManager.deleteReport(reportID);
 
-        if (!reportID) {
-            return utils.error(res, 400, "Missing report ID");
-        }
-
-        if (!(await utils.UserManager.reportExists(reportID))) {
-            return utils.error(res, 404, "Report not found");
-        }
-
-        await utils.UserManager.deleteReport(reportID);
-
-        res.status(200);
-        res.header("Content-Type", "application/json");
-        res.send({ success: true });
-    });
+            res.status(200);
+            res.header("Content-Type", "application/json");
+            res.send({ success: true });
+        },
+    );
 };

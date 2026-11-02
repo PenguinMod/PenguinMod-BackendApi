@@ -11,37 +11,13 @@
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/projects/manualfeature",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager, { require_admin: true }),
         async (req, res) => {
             const packet = req.body;
 
-            const token = String(packet.token);
-
             const toggle = String(packet.toggle) === "true";
             const projectID = String(packet.projectID);
-
-            if (
-                !token ||
-                typeof toggle !== "boolean" ||
-                typeof projectID !== "string"
-            ) {
-                return utils.error(
-                    res,
-                    400,
-                    "Missing token, toggle, or projectID",
-                );
-            }
-
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 401, "Reauthenticate");
-                return;
-            }
-            const username = login.username;
-
-            if (!login.isAdmin) {
-                return utils.error(res, 401, "Invalid credentials");
-            }
+            const username = req.login.username;
 
             if (!(await utils.UserManager.projectExists(projectID))) {
                 return utils.error(res, 404, "Project not found");

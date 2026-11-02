@@ -21,6 +21,7 @@ module.exports = (app, utils) => {
             standardHeaders: "draft-7",
             legacyHeaders: false,
         }),
+        utils.maybeAuth(utils.UserManager),
         async (req, res) => {
             const packet = req.query;
 
@@ -36,13 +37,7 @@ module.exports = (app, utils) => {
                 reverse = true;
             }
 
-            const token = String(packet.token);
-
-            const login = await utils.UserManager.loginWithToken(token);
-
-            const is_mod =
-                login.success &&
-                (await utils.UserManager.isModeratorOrAdmin(login.username));
+            const is_mod = !!req.login && req.login.isMod;
 
             const projects = await utils.UserManager.searchProjects(
                 is_mod,

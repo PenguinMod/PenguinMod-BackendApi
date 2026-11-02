@@ -1,6 +1,6 @@
 /**
  * @typedef {Object} Utils
- * @property {import("../../../../db/UserManager")} UserManager
+ * @property {import("../../../db/UserManager")} UserManager
  */
 
 /**
@@ -11,41 +11,27 @@
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/users/setmyfeaturedprojectadmin",
-        utils.cors(),
+        utils.requireAuth(utils.UserManager, { require_mod: true }),
         async function (req, res) {
             const packet = req.body;
-
-            const token = String(packet.token);
 
             const target = String(packet.target).toLowerCase();
             const project = String(packet.project);
             const title = Number(packet.title);
 
-            const login = await utils.UserManager.loginWithToken(token);
-            if (!login.success) {
-                utils.error(res, 400, "Reauthenticate");
-                return;
-            }
-            const username = login.username;
+            const username = req.login.username;
 
-            if (!login.isMod) {
-                utils.error(res, 400, "Unauthorized");
-                return;
-            }
-
-            if (!project || typeof title !== "number") {
-                utils.error(res, 400, "InvalidInput");
-                return;
-            }
-
-            if (!(await utils.UserManager.projectExists(project))) {
+            if (!project || !(await utils.UserManager.projectExists(project))) {
                 utils.error(res, 400, "InvalidProject");
                 return;
             }
 
+            // TODO: pretty sure this is not the correct range
             if (packet.title < 0 || packet.title > 500) {
                 utils.error("InvalidTitleType");
             }
+
+            // TODO: verify user exists
 
             await utils.UserManager.setFeaturedProject(target, project);
             await utils.UserManager.setFeaturedProjectTitle(target, title);
