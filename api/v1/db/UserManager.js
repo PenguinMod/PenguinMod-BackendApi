@@ -4770,7 +4770,11 @@ class UserManager {
      */
     async getProfilePicture(username) {
         username = String(username);
-        const id = await this.getIDByUsername(username);
+        const id = await this.getIDByUsername(username, false);
+
+        if (!id) {
+            return false;
+        }
 
         const buffer = await this.readObjectFromBucket("profile-pictures", id);
 
