@@ -25,7 +25,7 @@ module.exports = (app, utils) => {
             const username = req.login.username;
 
             if (newUsername === username) {
-                return utils.status(200).json({ success: true });
+                return res.status(200).json({ success: true });
             }
 
             const usernameDoesNotMeetLength =
