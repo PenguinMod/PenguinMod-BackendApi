@@ -29,7 +29,7 @@ module.exports = (app, utils) => {
                 return;
             }
 
-            if (email.toLowerCase() === req.login.email) {
+            if (email === req.login.email) {
                 utils.error(res, 200, "ThatsTheSameEmailDingus");
                 return;
             }
