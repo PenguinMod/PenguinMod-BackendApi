@@ -73,7 +73,7 @@ module.exports = (app, utils) => {
             const username = await utils.UserManager.getUsernameByID(userid);
 
             await utils.UserManager.addOAuthMethod(
-                username,
+                userid,
                 "github",
                 user.user.id,
             );

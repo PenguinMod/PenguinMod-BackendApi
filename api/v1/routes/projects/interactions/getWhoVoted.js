@@ -26,22 +26,14 @@ module.exports = (app, utils) => {
                 return utils.error(res, 404, "Project not found");
             }
 
-            const votes = await utils.UserManager.getWhoVoted(
+            const votes = await utils.UserManager.getWhoInteracted(
                 projectID,
                 page,
                 Number(utils.env.PageSize),
+                "vote",
             );
 
-            // convert to usernames
-            const usernames = [];
-            for (const vote of votes) {
-                const username = await utils.UserManager.getUsernameByID(
-                    vote.userId,
-                );
-                usernames.push(username);
-            }
-
-            return res.send({ votes: usernames });
+            return res.send({ votes });
         },
     );
 };

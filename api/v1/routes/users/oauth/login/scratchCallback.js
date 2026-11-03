@@ -73,21 +73,7 @@ module.exports = (app, utils) => {
             return;
         }
 
-        let username;
-        try {
-            username = await utils.UserManager.getUsernameByID(userid);
-        } catch (e) {
-            utils.error(
-                res,
-                500,
-                "This is an error. Please report this stuff: " +
-                    JSON.stringify({
-                        scratch_id: user.user.user_id,
-                        userid: userid,
-                    }),
-            );
-            return;
-        }
+        const username = await utils.UserManager.getUsernameByID(userid);
 
         const token = await utils.UserManager.newTokenGen(username);
 

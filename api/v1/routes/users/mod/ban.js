@@ -29,11 +29,12 @@ module.exports = (app, utils) => {
             const username = req.login.username;
 
             // TODO: we're making 4 separate db requests that really all get the same info. combine to one
-            if (
-                !target ||
-                !(await utils.UserManager.existsByUsername(target, true))
-            ) {
-                utils.error(res, 404, "NotFound");
+            const targetID = await utils.UserManager.getIDByUsername(
+                target,
+                false,
+            );
+            if (!targetID) {
+                utils.error(res, 404, "TargetNotFound");
                 return;
             }
 
@@ -44,8 +45,6 @@ module.exports = (app, utils) => {
                 utils.error(res, 403, "Unauthorized");
                 return;
             }
-
-            const targetID = await utils.UserManager.getIDByUsername(target);
 
             const isTempBanned = await utils.UserManager.isTempBanned(target);
             if (!toggle && isTempBanned) {

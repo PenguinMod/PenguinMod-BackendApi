@@ -584,18 +584,6 @@ class UserManager {
     }
 
     /**
-     * Copy an object in Backblaze
-     * @param {string} old_name The old name
-     * @param {string} new_name The new name
-     * @returns {Promise<void>}
-     */
-    async copyObjectBackblaze(old_name, new_name) {
-        const file_id = await this.getBBFileID(old_name);
-
-        return await this.copyObjectBackblazeID(file_id, new_name);
-    }
-
-    /**
      * Copy an object in Backblaze given it's ID, in order to avoid multiple ID lookups.
      * @param {string} file_id The ID of the file
      * @param {string} new_name The new name
@@ -628,17 +616,6 @@ class UserManager {
                 `FAILED TO COPY!!!! VERY BAD!!! ${JSON.stringify(await result.json())}`,
             );
         }
-    }
-
-    /**
-     * Delete a file from Backblaze
-     * @param {string} fileName The name of the file
-     * @returns {Promise<void>}
-     */
-    async deleteFileBackblaze(fileName) {
-        const id = await this.getBBFileID(fileName);
-
-        return await this.deleteFileBackblazeID(fileName, id);
     }
 
     /**
@@ -717,19 +694,6 @@ class UserManager {
                 resolve();
             });
         });
-    }
-
-    /**
-     * Reset a minio bucket
-     * @param {string} bucketName Name of the bucket
-     * @async
-     */
-    async resetBucket(bucketName) {
-        this.deleteMultipleObjects(bucketName, "");
-    }
-
-    async setLifecyclePolicy(bucketName, policy) {
-        await this.minioClient.setBucketLifecycle(bucketName, policy);
     }
 
     /**
@@ -1094,11 +1058,6 @@ class UserManager {
         return data;
     }
 
-    async getRealUsername(username) {
-        username = String(username);
-        return (await this.users.findOne({ username: username })).real_username;
-    }
-
     async quickProjectCountCheck(author_id, at_least) {
         // TODO: this is shitty. is there any better way?
         author_id = String(author_id);
@@ -1128,21 +1087,6 @@ class UserManager {
             };
         }
         const result = await this.users.findOne(query);
-        if (result) {
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Check if a user exists by ID
-     * @param {string} id id of the user
-     * @returns {Promise<boolean>} true if the user exists, false if not
-     * @async
-     */
-    async existsByID(id) {
-        id = String(id);
-        const result = await this.users.findOne({ id: id });
         if (result) {
             return true;
         }
@@ -1186,21 +1130,6 @@ class UserManager {
         } // prevent crashes
 
         return result.username;
-    }
-
-    /**
-     * Change the username of a user
-     * @param {string} id id of the user
-     * @param {string} newUsername new username of the user
-     * @async
-     */
-    async changeUsernameByID(id, newUsername, real_username) {
-        id = String(id);
-        newUsername = String(newUsername);
-        await this.users.updateOne(
-            { id: id },
-            { $set: { username: newUsername, real_username } },
-        );
     }
 
     async changeUsername(username, newUsername, real_username) {
@@ -1254,22 +1183,12 @@ class UserManager {
         return result;
     }
 
-    async getOAuthCode(username, method) {
-        const id = await this.getIDByUsername(username);
-
-        const result = await this.oauthIDs.findOne({ id: id, method: method });
-
-        return result.code;
-    }
-
     /**
      * Add an oauth login method to a user
-     * @param {string} username Username of the user
+     * @param {string} id ID of the user
      * @param {string} method Method to add
      */
-    async addOAuthMethod(username, method, code) {
-        const id = await this.getIDByUsername(username);
-
+    async addOAuthMethod(id, method, code) {
         await this.oauthIDs.insertOne({ id: id, method: method, code: code });
     }
 
@@ -1340,71 +1259,6 @@ class UserManager {
             { username: username },
             { $set: { favoriteProjectType: type, favoriteProjectID: id } },
         );
-    }
-
-    /**
-     * Get the user's first login
-     * @param {string} username Username of the user
-     * @returns {Promise<number>} When the user first logged in Unix time
-     */
-    async getFirstLogin(username) {
-        username = String(username);
-        const result = await this.users.findOne({ username: username });
-
-        return result.firstLogin;
-    }
-
-    /**
-     * Get the user's last login
-     * @param {string} username Username of the user
-     * @returns {Promise<number>} Last time the user logged in Unix time
-     * @async
-     */
-    async getLastLogin(username) {
-        username = String(username);
-        const result = await this.users.findOne({ username: username });
-
-        return result.lastLogin;
-    }
-
-    /**
-     * Get the amount of cubes a user has
-     * @param {string} username username of the user
-     * @returns {Promise<number>} amount of cubes the user has
-     * @async
-     */
-    async getCubes(username) {
-        username = String(username);
-        const result = await this.users.findOne({ username: username });
-
-        return result.cubes;
-    }
-
-    /**
-     * Set the amount of cubes a user has
-     * @param {string} username username of the user
-     * @param {number} amount amount of cubes the user has
-     * @async
-     */
-    async setCubes(username, amount) {
-        username = String(username);
-        await this.users.updateOne(
-            { username: username },
-            { $set: { cubes: amount } },
-        );
-    }
-
-    /**
-     * Get the rank of a user
-     * @param {string} username username of the user
-     * @returns {Promise<number>} rank of the user
-     * @async
-     */
-    async getRank(username) {
-        username = String(username);
-        const result = await this.users.findOne({ username: username });
-
-        return result.rank;
     }
 
     /**
@@ -1675,17 +1529,6 @@ class UserManager {
         );
     }
 
-    async isModeratorOrAdmin(username) {
-        username = String(username);
-        const result = await this.users.findOne({ username: username });
-
-        if (!result) {
-            return false;
-        }
-
-        return result.moderator || result.admin;
-    }
-
     /**
      * Get all admins
      * @returns {Promise<Array<object>>} Array of all admins
@@ -1729,6 +1572,7 @@ class UserManager {
         return result && (result.permBanned || result.unbanTime > Date.now());
     }
 
+    // TODO: allow this to take an ID instead of a username to avoid unnecessary DB requests
     /**
      * Ban/unban a user
      * @param {string} username username of the user
@@ -2071,6 +1915,7 @@ class UserManager {
         projectBuffer,
         assetBuffers,
         author,
+        author_rank,
         title,
         imageBuffer,
         instructions,
@@ -2107,8 +1952,6 @@ class UserManager {
                 );
             }
         }
-
-        const author_rank = await this.getRankByID(author);
 
         await this.projects.insertOne({
             id: id,
@@ -2150,18 +1993,6 @@ class UserManager {
         });
 
         return !!result;
-    }
-
-    /**
-     * Check if a project can be featured
-     * @param {string} projectID ID of the project
-     * @returns {Promise<boolean>}
-     */
-    async canBeFeatured(projectID) {
-        projectID = String(projectID);
-        const result = await this.projects.findOne({ id: projectID });
-
-        return !result.noFeature;
     }
 
     /**
@@ -2498,30 +2329,6 @@ class UserManager {
         return _result;
     }
 
-    objectExists(bucketName, objectName) {
-        return new Promise((resolve, reject) => {
-            this.minioClient.statObject(
-                bucketName,
-                objectName,
-                function (err, stat) {
-                    if (err) {
-                        if (err.code === "NotFound") {
-                            resolve(false);
-                        } else {
-                            console.error(
-                                "Error checking if object exists: ",
-                                err,
-                            );
-                            reject(err);
-                        }
-                    } else {
-                        resolve(true);
-                    }
-                },
-            );
-        });
-    }
-
     /**
      * Read an object from a bucket
      * @param {string} bucketName Name of the bucket
@@ -2529,23 +2336,9 @@ class UserManager {
      * @returns {Promise<Buffer>} The object
      */
     async readObjectFromBucket(bucketName, objectName) {
-        /*
-        if (!this.objectExists(bucketName, objectName)) {
-            console.error("Tried to get project that doesn't exist: " + objectName);
-            throw new Error("Tried to get project that doesn't exist: " + objectName);
-        }
-        */
         const stream = await this.minioClient
             .getObject(bucketName, objectName)
-            .catch((err) => {
-                /*
-                // temporarily disable: this is spamming logs rn
-                console.error(
-                    `ERROR READING OBJECT "${objectName}" from bucket ${bucketName}: ` +
-                        err,
-                );
-                */
-            });
+            .catch((err) => {});
 
         if (!stream) {
             return;
@@ -2780,18 +2573,6 @@ class UserManager {
     }
 
     /**
-     * Get the amount of views a project has
-     * @param {number} id ID of the project
-     * @returns {Promise<number>} The number of views the project has
-     */
-    async getProjectViews(id) {
-        id = String(id);
-        const result = this.projects.findOne({ id: id });
-
-        return result.views;
-    }
-
-    /**
      * Check if a user has loved a project
      * @param {number} id ID of the project.
      * @param {string} userId ID of the person loving the project.
@@ -2838,29 +2619,20 @@ class UserManager {
     }
 
     /**
-     * Get the amount of loves a project has
-     * @param {number} id ID of the project
-     * @returns {Promise<number>} Amount of loves the project has
-     */
-    async getProjectLoves(id) {
-        id = String(id);
-        return (await this.projects.findOne({ id })).loves;
-    }
-
-    /**
      * Get who loved a project
      * @param {string} projectID ID of the project
      * @param {number} page Page to get
      * @param {number} pageSize Page size
+     * @param {"love"|"vote"} type The type of interaction
      * @returns {Promise<Array<string>>} Array of user ids
      */
-    async getWhoLoved(projectID, page, pageSize) {
+    async getWhoInteracted(projectID, page, pageSize, type) {
         projectID = String(projectID);
         const result = (
             await this.projectStats
                 .aggregate([
                     {
-                        $match: { projectId: projectID, type: "love" },
+                        $match: { projectId: projectID, type },
                     },
                     {
                         $skip: page * pageSize,
@@ -2869,40 +2641,22 @@ class UserManager {
                         $limit: pageSize,
                     },
                     {
-                        $unset: "_id",
+                        $lookup: {
+                            from: "users",
+                            localField: "userId",
+                            foreignField: "id",
+                            pipeline: [{ $project: { _id: 0, username: 1 } }],
+                            as: "user",
+                        },
+                    },
+                    {
+                        $addFields: {
+                            username: { $arrayElemAt: ["$user.username", 0] },
+                        },
                     },
                 ])
                 .toArray()
-        ).map((data) => data.userId);
-
-        return result;
-    }
-
-    /**
-     * Get who voted for a project
-     * @param {string} projectID ID of the project
-     * @param {number} page Page to get
-     * @param {number} pageSize Page size
-     * @returns {Promise<Array<string>>} Array of user ids
-     */
-    async getWhoVoted(projectID, page, pageSize) {
-        projectID = String(projectID);
-        const result = await this.projectStats
-            .aggregate([
-                {
-                    $match: { projectId: projectID, type: "vote" },
-                },
-                {
-                    $skip: page * pageSize,
-                },
-                {
-                    $limit: pageSize,
-                },
-                {
-                    $unset: "_id",
-                },
-            ])
-            .toArray();
+        ).map((data) => ({ id: data.userId, username: data.username }));
 
         return result;
     }
@@ -2951,17 +2705,6 @@ class UserManager {
             });
             await this.projects.updateOne({ id }, { $inc: { votes: -1 } });
         }
-    }
-
-    /**
-     * Get the amount of votes a project has
-     * @param {number} id ID of the project
-     * @returns {Promise<number>} Amount of votes the project has
-     * @async
-     */
-    async getProjectVotes(id) {
-        id = String(id);
-        return (await this.projects.findOne({ id })).votes;
     }
 
     /**
@@ -3463,19 +3206,6 @@ class UserManager {
     }
 
     /**
-     * Modify a message
-     * @param {string} id ID of the message
-     * @param {function} modifierFunction the function that modifies the message
-     * @async
-     */
-    async modifyMessage(id, modifierFunction) {
-        id = String(id);
-        const result = await this.messages.findOne({ id: id });
-
-        await this.messages.updateOne({ id: id }, modifierFunction(result));
-    }
-
-    /**
      * Mark a message as read
      * @param {string} id ID of the message
      * @param {boolean} read Toggle between read and not read
@@ -3512,18 +3242,6 @@ class UserManager {
     async deleteMessage(id) {
         id = String(id);
         await this.messages.deleteOne({ id: id });
-    }
-
-    /**
-     * Check if a message is disputable
-     * @param {string} id ID of the message
-     * @returns {Promise<boolean>} True if the message is disputable, false if not
-     */
-    async isMessageDisputable(id) {
-        id = String(id);
-        const result = await this.messages.findOne({ id: id });
-
-        return result.disputable;
     }
 
     /**
@@ -3845,34 +3563,6 @@ class UserManager {
     }
 
     /**
-     * Add an illegal word
-     * @param {string} word The item to add
-     * @param {string} type The type of the illegal item
-     * @async
-     */
-    async addIllegalWord(word, type) {
-        type = String(type);
-        await this.illegalList.updateOne(
-            { id: type },
-            { $push: { items: word } },
-        );
-    }
-
-    /**
-     * Remove an illegal word
-     * @param {string} word The item to remove
-     * @param {string} type The type of the illegal item
-     * @async
-     */
-    async removeIllegalWord(word, type) {
-        type = String(type);
-        await this.illegalList.updateOne(
-            { id: type },
-            { $pull: { items: word } },
-        );
-    }
-
-    /**
      * Get all illegal words
      * @returns {Promise<Object>} Object containing all the illegal words
      * @async
@@ -4059,43 +3749,8 @@ class UserManager {
         const token = info[0];
         const pm_id = info[1];
 
-        await this.addOAuthMethod(username, method, id);
+        await this.addOAuthMethod(pm_id, method, id);
         return { token, username, id: pm_id };
-    }
-
-    /**
-     * Set the legal extensions
-     * @param {Array<string>} extensions Array of extension IDs to set the legal list to
-     */
-    async setLegalExtensions(extensions) {
-        await this.illegalList.updateOne(
-            { id: "legalExtensions" },
-            { $set: { items: extensions } },
-        );
-    }
-
-    /**
-     * Add an extension to the legal list
-     * @param {string} extension Extension ID
-     */
-    async addLegalExlegalExtentension(extension) {
-        extension = String(extension);
-        await this.illegalList.updateOne(
-            { id: "legalExtensions" },
-            { $push: { items: extension } },
-        );
-    }
-
-    /**
-     * Remove an extension from the legal list
-     * @param {string} extension Extension ID
-     */
-    async removeLegalExtension(extension) {
-        extension = String(extension);
-        await this.illegalList.updateOne(
-            { id: "legalExtensions" },
-            { $pull: { items: extension } },
-        );
     }
 
     async getLegalExtensions() {
@@ -4107,39 +3762,24 @@ class UserManager {
     }
 
     /**
-     * Check if an extension is allowed
-     * @param {string} extension The extension to check
-     * @returns {Promise<boolean>} True if the extension is allowed, false if not
+     *
+     * @param {*} extensions
+     * @param {*} extensionURLs
+     * @param {LoginResult} user_data
+     * @returns
      */
-    async checkExtensionIsAllowed(extension) {
-        if (!extension) {
-            return true;
-        }
-        extension = String(extension);
-
-        const extensionsConfig = await this.illegalList.findOne({
-            id: "legalExtensions",
-        });
-        const isIncluded = extensionsConfig.items.includes(extension);
-
-        return isIncluded;
-    }
     async validateAreProjectExtensionsAllowed(
         extensions,
         extensionURLs,
-        username,
+        user_data,
     ) {
-        const [userData, extensionsConfig] = await Promise.all([
-            this.getUserData(username),
-            this.illegalList.findOne({
-                id: "legalExtensions",
-            }),
-        ]);
-        const isAdmin = userData.admin;
-        const isModerator = userData.moderator;
-        const userRank = userData.rank;
+        const extensionsConfig = await this.illegalList.findOne({
+            id: "legalExtensions",
+        });
+        const isModerator = user_data.isMod;
+        const userRank = user_data.rank;
 
-        if (userRank < 1 && !isAdmin && !isModerator) {
+        if (userRank < 1 && !isModerator) {
             const isUrlExtension = (extId) => {
                 if (!extensionURLs) {
                     return false;
@@ -4147,7 +3787,7 @@ class UserManager {
                 return extId in extensionURLs;
             };
 
-            if (extensions && !isAdmin && !isModerator) {
+            if (extensions && !isModerator) {
                 for (const extension of extensions) {
                     if (isUrlExtension(extension)) {
                         // url extension names can be faked (if not trusted source)
@@ -4158,6 +3798,7 @@ class UserManager {
                                 continue;
                             }
                             // Still using startsWith since it allows for an entire URL to be whitelisted if neccessary.
+                            // Note that if that ever happens, MAKE SURE YOU END IT WITH A /!!!!
                             if (extensionURLs[extension].startsWith(source)) {
                                 found = true;
                             }
@@ -4977,26 +4618,12 @@ class UserManager {
         );
     }
 
-    async isPrivateProfile(username) {
-        username = String(username);
-        const result = await this.users.findOne({ username: username });
-
-        return result.privateProfile;
-    }
-
     async setPrivateProfile(username, toggle) {
         username = String(username);
         await this.users.updateOne(
             { username: username },
             { $set: { privateProfile: toggle } },
         );
-    }
-
-    async canFollowingSeeProfile(username) {
-        username = String(username);
-        const result = await this.users.findOne({ username: username });
-
-        return result.allowFollowingView;
     }
 
     async setFollowingSeeProfile(username, toggle) {
@@ -5211,13 +4838,6 @@ class UserManager {
         }
 
         return final;
-    }
-
-    async isEmailVerified(username) {
-        username = String(username);
-        const result = await this.users.findOne({ username: username });
-
-        return result.emailVerified;
     }
 
     async setEmailVerified(username, toggle) {
@@ -5522,10 +5142,6 @@ class UserManager {
             { $set: { disabled: disabled } },
             { upsert: true },
         );
-    }
-
-    async clearAllEmails() {
-        await this.sentEmails.deleteMany({});
     }
 
     async massBanByUsername(regex, toggle, reason = "Banned by staff") {
@@ -6145,15 +5761,6 @@ class UserManager {
         return pmp_protobuf.protobufToJson(protobuf);
     }
 
-    /**
-     * Converts a project.json object to a protobuf file
-     * @param {Object} json The project.json
-     * @returns {Uint8Array} The protobuf file
-     */
-    projectJsonToProtobuf(json) {
-        return pmp_protobuf.jsonToProtobuf(json);
-    }
-
     async getWorstOffenders(page, pageSize) {
         const time_before = 1000 * 60 * 60 * 24 * 14;
 
@@ -6227,33 +5834,6 @@ class UserManager {
     async isOnWatchlist(username) {
         username = String(username);
         return !!(await this.users.findOne({ username })).onWatchlist;
-    }
-
-    async backupAssetCheck(asset_name) {
-        // we will use minio here
-        const item = await this.readObjectFromBucket(
-            "project-assets",
-            asset_name,
-        );
-        if (item && using_backblaze) {
-            await this.saveToBackblaze(asset_name, item);
-        }
-        return item;
-    }
-
-    async backupGetProjAssets(proj_id) {
-        proj_id = String(proj_id);
-        const assets = await this.listWithPrefix(
-            "project-assets",
-            `${proj_id}_`,
-        );
-
-        const promises = [];
-        for (const asset_name of assets) {
-            promises.push(this.backupAssetCheck(asset_name));
-        }
-
-        return await Promise.all(promises);
     }
 
     async getUserStats() {

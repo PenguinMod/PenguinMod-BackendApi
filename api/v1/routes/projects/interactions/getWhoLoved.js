@@ -26,21 +26,14 @@ module.exports = (app, utils) => {
                 return utils.error(res, 404, "Project not found");
             }
 
-            const loves = await utils.UserManager.getWhoLoved(
+            const loves = await utils.UserManager.getWhoInteracted(
                 projectID,
                 page,
                 Number(utils.env.PageSize),
+                "love",
             );
 
-            // convert to usernames
-            const usernames = [];
-            for (const love of loves) {
-                const username = await utils.UserManager.getUsernameByID(love);
-                usernames.push(username);
-            }
-            // TODO: have the getWhoLoved method do this. because this is slow.
-
-            return res.send({ loves: usernames });
+            return res.send({ loves });
         },
     );
 };

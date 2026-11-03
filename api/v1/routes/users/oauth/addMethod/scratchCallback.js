@@ -76,7 +76,7 @@ module.exports = (app, utils) => {
         const username = await utils.UserManager.getUsernameByID(userid);
 
         await utils.UserManager.addOAuthMethod(
-            username,
+            userid,
             "scratch",
             user.user.user_id,
         );

@@ -14,18 +14,11 @@ module.exports = (app, utils) => {
 
         const target = String(packet.target).toLowerCase();
 
-        if (!target) {
-            utils.error(res, 400, "Missing target");
+        const id = await utils.UserManager.getIDByUsername(target, false);
+        if (!id) {
+            utils.error(res, 404, "TargetNotFound");
             return;
         }
-
-        const exists = await utils.UserManager.existsByUsername(target, false);
-        if (!exists) {
-            utils.error(res, 404, "User does not exist");
-            return;
-        }
-
-        const id = await utils.UserManager.getIDByUsername(target);
 
         const count = await utils.UserManager.getProjectCountOfUser(id);
 

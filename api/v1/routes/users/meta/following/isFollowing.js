@@ -15,24 +15,23 @@ module.exports = (app, utils) => {
         const username = String(packet.username).toLowerCase();
         const target = String(packet.target).toLowerCase();
 
-        if (
-            !username ||
-            !(await utils.UserManager.existsByUsername(username))
-        ) {
-            utils.error(res, 404, "NotFound");
+        const agentID = await utils.UserManager.getIDByUsername(
+            username,
+            false,
+        );
+        if (!agentID) {
+            utils.error(res, 404, "AgentNotFound");
             return;
         }
 
-        if (!target || !(await utils.UserManager.existsByUsername(target))) {
-            utils.error(res, 404, "NotFound");
+        const targetID = await utils.UserManager.getIDByUsername(target, false);
+        if (!targetID) {
+            utils.error(res, 404, "TargetNotFound");
             return;
         }
-
-        const usernameID = await utils.UserManager.getIDByUsername(username);
-        const targetID = await utils.UserManager.getIDByUsername(target);
 
         const isFollowing = await utils.UserManager.isFollowing(
-            usernameID,
+            agentID,
             targetID,
         );
 

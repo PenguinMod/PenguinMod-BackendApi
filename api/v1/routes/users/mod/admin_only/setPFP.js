@@ -27,7 +27,10 @@ module.exports = (app, utils) => {
 
             const username = req.login.username;
 
-            const targetID = await utils.UserManager.getIDByUsername(target);
+            const targetID = await utils.UserManager.getIDByUsername(
+                target,
+                false,
+            );
             if (!targetID) {
                 return utils.error(res, 400, "TargetNotFound");
             }

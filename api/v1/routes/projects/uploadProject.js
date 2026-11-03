@@ -212,7 +212,7 @@ module.exports = (app, utils) => {
                 await utils.UserManager.validateAreProjectExtensionsAllowed(
                     jsonFile.extensions,
                     jsonFile.extensionURLs,
-                    username,
+                    req.login,
                 );
             if (!areExtensionsAllowed) {
                 await unlink();
@@ -260,6 +260,7 @@ module.exports = (app, utils) => {
                 protobufFile,
                 assets,
                 userid,
+                req.login.rank,
                 title,
                 thumbnail,
                 instructions,

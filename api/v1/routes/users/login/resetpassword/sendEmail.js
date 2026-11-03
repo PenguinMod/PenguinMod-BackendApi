@@ -74,13 +74,6 @@ module.exports = (app, utils) => {
                 return;
             }
 
-            /*
-            if (!(await utils.UserManager.isEmailVerified(username))) {
-                utils.error(res, 400, "EmailNotVerified");
-                return;
-            }
-            */
-
             const userid = await utils.UserManager.getIDByUsername(username);
             const userip = req.realIP;
 

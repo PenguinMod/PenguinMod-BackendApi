@@ -21,20 +21,19 @@ module.exports = (app, utils) => {
             const username = req.login.username;
             const userID = req.login.id;
 
-            if (
-                !target ||
-                !(await utils.UserManager.existsByUsername(target))
-            ) {
-                utils.error(res, 400, "Invalid target");
-                return;
-            }
-
             if (username === target) {
                 utils.error(res, 400, "CannotFollowSelf");
                 return;
             }
 
-            const targetID = await utils.UserManager.getIDByUsername(target);
+            const targetID = await utils.UserManager.getIDByUsername(
+                target,
+                false,
+            );
+            if (!targetID) {
+                utils.error(res, 404, "TargetNotFound");
+                return;
+            }
 
             if (
                 (await utils.UserManager.isFollowing(userID, targetID)) &&
