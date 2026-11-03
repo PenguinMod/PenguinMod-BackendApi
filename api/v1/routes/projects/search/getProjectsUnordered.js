@@ -23,6 +23,7 @@ module.exports = (app, utils) => {
             standardHeaders: "draft-7",
             legacyHeaders: false,
         }),
+        utils.maybeAuth(utils.UserManager),
         async (req, res) => {
             const packet = req.query;
 
@@ -36,6 +37,7 @@ module.exports = (app, utils) => {
                 await utils.UserManager.getProjectsUnordered(
                     Number(utils.env.MaxPageSize),
                     after,
+                    req.login && req.login.isMod,
                 );
 
             res.status(200).json({ projects, next });

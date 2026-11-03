@@ -24,6 +24,10 @@ module.exports = (app, utils) => {
             return utils.error(res, 404, "Not Found");
         }
 
+        if (!json.public || json.softRejected || json.hardReject) {
+            return utils.error(res, 404, "Not Found");
+        }
+
         let html = projectTemplate;
         for (const prop in json) {
             html = html.replaceAll(

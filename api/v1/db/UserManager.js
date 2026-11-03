@@ -5977,13 +5977,20 @@ class UserManager {
      * Get some projects. Order is "implementation defined", i.e. mongo's ordering so upload date basically
      * @param {number} pageSize Page size
      * @param {undefined|string} after Internal mongo ID
+     * @param {boolean} showAll Whether to show all projects, or not (i.e. private/softrejected/hardrejected)
      * @returns {Promise<{projects:string[],next:string}>} projects is an array of project IDs
      */
-    async getProjectsUnordered(pageSize, after) {
+    async getProjectsUnordered(pageSize, after, showAll) {
         const filter = {};
 
         if (after) {
             filter._id = { $gt: new ObjectId(after) };
+        }
+
+        if (!showAll) {
+            filter.public = true;
+            filter.softRejected = false;
+            filter.hardReject = false;
         }
 
         const projects = await this.projects
