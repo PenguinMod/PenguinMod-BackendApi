@@ -132,21 +132,9 @@ module.exports = (app, utils) => {
                 return false;
             };
 
-            let title = String(packet.title);
-            let instructions = String(packet.instructions);
-            let notes = String(packet.notes);
-
-            if (!title || typeof title !== "string") {
-                title = "";
-            }
-
-            if (!instructions || typeof instructions !== "string") {
-                instructions = "";
-            }
-
-            if (!notes || typeof notes !== "string") {
-                notes = "";
-            }
+            const title = String(packet.title);
+            const instructions = String(packet.instructions);
+            const notes = String(packet.notes);
 
             if (
                 title.length > 100 ||

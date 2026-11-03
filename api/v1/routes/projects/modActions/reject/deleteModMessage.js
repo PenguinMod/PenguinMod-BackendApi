@@ -17,10 +17,6 @@ module.exports = (app, utils) => {
 
             const messageID = String(packet.messageID);
 
-            if (typeof messageID !== "string") {
-                return utils.error(res, 400, "Missing messageID");
-            }
-
             const username = req.login.username;
 
             utils.logs.sendAdminLog({

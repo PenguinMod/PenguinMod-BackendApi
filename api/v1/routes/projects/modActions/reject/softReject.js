@@ -18,13 +18,13 @@ module.exports = (app, utils) => {
             const project = String(packet.project);
             const message = String(packet.message);
 
-            if (!project || typeof message !== "string") {
-                return utils.error(res, 400, "Missing project or message");
-            }
-
             const username = req.login.username;
 
-            if (!(await utils.UserManager.projectExists(project, true))) {
+            // multiple DB queries being made (wasteful)
+            if (
+                !project ||
+                !(await utils.UserManager.projectExists(project, true))
+            ) {
                 return utils.error(res, 404, "ProjectNotFound");
             }
 

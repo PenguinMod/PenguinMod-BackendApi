@@ -17,11 +17,6 @@ module.exports = (app, utils) => {
 
             const email = String(packet.email).toLowerCase();
 
-            if (typeof email !== "string") {
-                utils.error(res, 400, "Missing token or email");
-                return;
-            }
-
             const username = req.login.username;
 
             if (!utils.UserManager.validateEmail(email)) {

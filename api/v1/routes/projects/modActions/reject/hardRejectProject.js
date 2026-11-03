@@ -18,17 +18,13 @@ module.exports = (app, utils) => {
             const project = String(packet.project);
             const message = String(packet.message);
 
-            if (!project || typeof message !== "string") {
-                return utils.error(res, 400, "Missing project, or message");
-            }
-
             const username = req.login.username;
 
-            if (!req.login.isMod) {
-                return utils.error(res, 401, "Invalid credentials");
-            }
-
-            if (!(await utils.UserManager.projectExists(project, true))) {
+            // TODO: multiple DB queries being made, only 1 needed
+            if (
+                !project ||
+                !(await utils.UserManager.projectExists(project, true))
+            ) {
                 return utils.error(res, 404, "ProjectNotFound");
             }
 

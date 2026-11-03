@@ -19,11 +19,6 @@ module.exports = (app, utils) => {
             const birthday = String(packet.birthday);
             const countryCode = String(packet.country);
 
-            if (typeof token !== "string") {
-                utils.error(res, 400, "Missing token");
-                return;
-            }
-
             const username = req.login.username;
             const user_meta = req.login.fullMeta;
 
