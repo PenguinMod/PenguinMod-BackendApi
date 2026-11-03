@@ -193,7 +193,10 @@ module.exports = (app, utils) => {
 
             const uploadingProject = !!req.files.jsonFile;
 
-            if (uploadingProject && req.files.assets === undefined) {
+            if (
+                uploadingProject &&
+                (!req.files.assets || req.files.assets.length === undefined)
+            ) {
                 await unlink();
                 return utils.error(res, 400, "Missing assets");
             }
@@ -281,11 +284,7 @@ module.exports = (app, utils) => {
 
             if (!success) {
                 await unlink();
-                return utils.error(
-                    res,
-                    Number(process.env.MaxFilesUpload),
-                    "Failed to update project",
-                );
+                return utils.error(res, 500, "Failed to update project");
             }
 
             utils.logs.sendCreationLog(

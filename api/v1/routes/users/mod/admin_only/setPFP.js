@@ -25,6 +25,16 @@ module.exports = (app, utils) => {
 
             const pictureName = req.file;
 
+            const unlink = async () => {
+                if (pictureName) {
+                    await utils.unlinkAsync(pictureName.path);
+                }
+            };
+
+            if (!pictureName) {
+                return utils.error(res, 400, "InvalidPicture");
+            }
+
             const username = req.login.username;
 
             const targetID = await utils.UserManager.getIDByUsername(
@@ -32,23 +42,22 @@ module.exports = (app, utils) => {
                 false,
             );
             if (!targetID) {
+                await unlink();
                 return utils.error(res, 400, "TargetNotFound");
-            }
-
-            if (!pictureName) {
-                return utils.error(res, 400, "InvalidPicture");
             }
 
             if (
                 pictureName.size >
                 (Number(process.env.UploadSize) || 5) * 1024 * 1024
             ) {
+                await unlink();
                 return utils.error(res, 400, "File too large");
             }
 
             const picture = fs.readFileSync(
                 path.join(utils.homeDir, pictureName.path),
             );
+            await unlink();
 
             const allowedImages = ["image/png", "image/jpeg"];
             const allowedAnimated = ["image/gif", "image/webp"];
