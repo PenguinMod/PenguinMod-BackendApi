@@ -29,7 +29,7 @@ module.exports = (app, utils) => {
             const after = String(packet.after) || undefined;
 
             if (after && !ObjectId.isValid(after)) {
-                return utils.error(400, "InvalidAfter");
+                return utils.error(res, 400, "InvalidAfter");
             }
 
             const { projects, next } =
