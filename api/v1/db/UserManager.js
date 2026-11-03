@@ -6155,8 +6155,15 @@ class UserManager {
     }
 
     async getWorstOffenders(page, pageSize) {
+        const time_before = 1000 * 60 * 60 * 24 * 14;
+
         return await this.performance_logging
             .aggregate([
+                {
+                    $match: {
+                        ts: { $gt: new Date(Date.now() - time_before) },
+                    },
+                },
                 {
                     $sort: { millis: -1 },
                 },
