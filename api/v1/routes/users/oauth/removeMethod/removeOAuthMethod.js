@@ -29,7 +29,7 @@ module.exports = (app, utils) => {
             }
 
             if (methods.length === 1 && !hasPassword) {
-                utils.error(
+                return utils.error(
                     res,
                     400,
                     "You would get locked out of your account",
