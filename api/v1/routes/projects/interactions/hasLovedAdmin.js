@@ -27,7 +27,10 @@ module.exports = (app, utils) => {
                 return utils.error(res, 404, "Project not found");
             }
 
-            const id = await utils.UserManager.getIDByUsername(target);
+            const id = await utils.UserManager.getIDByUsername(target, false);
+            if (!id) {
+                return utils.error(res, 404, "UserNotFound");
+            }
 
             const has = await utils.UserManager.hasLovedProject(projectID, id);
 

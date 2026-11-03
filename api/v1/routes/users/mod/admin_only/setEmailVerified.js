@@ -24,9 +24,7 @@ module.exports = (app, utils) => {
 
             await utils.UserManager.setEmailVerified(user, value);
 
-            res.status(200);
-            res.header("Content-type", "application/json");
-            res.send({ success: true });
+            res.status(200).json({ success: true });
         },
     );
 };

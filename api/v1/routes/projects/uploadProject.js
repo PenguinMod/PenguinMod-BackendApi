@@ -330,9 +330,7 @@ module.exports = (app, utils) => {
 
             await unlink();
 
-            res.status(200);
-            res.header("Content-Type", "application/json");
-            res.send({ id: projectID });
+            res.status(200).json({ id: projectID });
         },
     );
 };

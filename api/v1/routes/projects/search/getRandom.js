@@ -16,8 +16,6 @@ module.exports = (app, utils) => {
 
         const projects = await utils.UserManager.getRandomProjects(n);
 
-        res.status(200);
-        res.header("Content-Type", "application/json");
-        return res.send(projects);
+        res.status(200).json(projects);
     });
 };

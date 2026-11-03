@@ -39,9 +39,7 @@ module.exports = (app, utils) => {
                 await utils.UserManager.addImpression(project.id);
             }
 
-            res.status(200);
-            res.setHeader("Content-Type", "application/json");
-            return res.send(projects);
+            res.status(200).json(projects);
         },
     );
 };

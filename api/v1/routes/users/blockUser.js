@@ -19,14 +19,13 @@ module.exports = (app, utils) => {
 
             const target = String(packet.target);
 
-            if (
-                !target ||
-                !(await utils.UserManager.existsByUsername(target))
-            ) {
+            const target_id = await utils.UserManager.getIDByUsername(
+                target,
+                false,
+            );
+            if (!target_id) {
                 return utils.error(res, 404, "Target not found");
             }
-
-            const target_id = await utils.UserManager.getIDByUsername(target);
 
             if (user_id === target_id) {
                 return utils.error(res, 401, "Cannot block yourself");
@@ -36,9 +35,7 @@ module.exports = (app, utils) => {
 
             await utils.UserManager.blockUser(user_id, target_id, active);
 
-            res.status(200);
-            res.header("Content-Type", "application/json");
-            res.json({ success: true });
+            res.status(200).json({ success: true });
         },
     );
 };

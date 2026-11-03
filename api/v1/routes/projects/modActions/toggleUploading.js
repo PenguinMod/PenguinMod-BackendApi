@@ -48,7 +48,7 @@ module.exports = (app, utils) => {
                 0xaf1157,
             );
 
-            return res.send({ success: true });
+            res.status(200).json({ success: true });
         },
     );
 };

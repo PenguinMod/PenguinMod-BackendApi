@@ -38,9 +38,7 @@ module.exports = (app, utils) => {
                     after,
                 );
 
-            res.status(200);
-            res.header("Content-Type", "application/json");
-            return res.send({ projects, next });
+            res.status(200).json({ projects, next });
         },
     );
 };

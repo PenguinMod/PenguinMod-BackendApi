@@ -21,8 +21,6 @@ module.exports = (app, utils) => {
             Number(utils.env.PageSize),
         );
 
-        res.status(200);
-        res.header({ "Content-Type": "application/json" });
-        return res.send(users);
+        res.status(200).json(users);
     });
 };

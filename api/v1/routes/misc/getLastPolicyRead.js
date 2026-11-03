@@ -19,9 +19,7 @@ module.exports = (app, utils) => {
                 guidelines: req.login.fullMeta.lastGuidelinesRead,
             };
 
-            res.status(200);
-            res.header("Content-Type", "application/json");
-            res.json(lastPolicyRead);
+            res.status(200).json(lastPolicyRead);
         },
     );
 };

@@ -15,8 +15,7 @@ module.exports = (app, utils) => {
         async (req, res) => {
             await utils.UserManager.markAllMessagesAsRead(req.login.id);
 
-            res.header("Content-type", "application/json");
-            res.send({ success: true });
+            res.status(200).json({ success: true });
         },
     );
 };

@@ -13,8 +13,6 @@ module.exports = (app, utils) => {
         const canUpload =
             await utils.UserManager.getRuntimeConfigItem("uploadingEnabled");
 
-        res.status(200);
-        res.header("Content-Type", "application/json");
-        return res.send({ canUpload });
+        res.status(200).json({ canUpload });
     });
 };

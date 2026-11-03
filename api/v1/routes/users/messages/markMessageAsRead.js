@@ -25,8 +25,7 @@ module.exports = (app, utils) => {
 
             await utils.UserManager.markMessageAsRead(messageID, true);
 
-            res.header("Content-type", "application/json");
-            res.send({ success: true });
+            res.status(200).json({ success: true });
         },
     );
 };

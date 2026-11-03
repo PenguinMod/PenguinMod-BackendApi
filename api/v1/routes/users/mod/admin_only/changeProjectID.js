@@ -71,9 +71,7 @@ module.exports = (app, utils) => {
                 0xc6be27,
             );
 
-            res.status(200);
-            res.header("Content-Type", "application/json");
-            res.json({ success: true });
+            res.status(200).json({ success: true });
         },
     );
 };

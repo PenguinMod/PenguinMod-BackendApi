@@ -245,9 +245,7 @@ module.exports = (app, utils) => {
 
             global_creation_counter.count++;
 
-            res.status(200);
-            res.header("Content-Type", "application/json");
-            res.json({ token: token });
+            res.status(200).json({ token });
         },
     );
 };

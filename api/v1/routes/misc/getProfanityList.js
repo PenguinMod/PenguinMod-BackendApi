@@ -15,9 +15,7 @@ module.exports = (app, utils) => {
         async function (req, res) {
             const illegalWords = await utils.UserManager.getIllegalWords();
 
-            res.status(200);
-            res.header("Content-Type", "application/json");
-            res.json(illegalWords);
+            res.status(200).json(illegalWords);
         },
     );
 };

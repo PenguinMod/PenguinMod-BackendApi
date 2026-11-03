@@ -113,7 +113,7 @@ module.exports = (app, utils) => {
                 );
             }
 
-            return res.send({ success: true });
+            res.status(200).json({ success: true });
         },
     );
 };

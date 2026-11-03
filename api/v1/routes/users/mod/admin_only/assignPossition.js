@@ -55,9 +55,7 @@ module.exports = (app, utils) => {
                 fields,
             );
 
-            res.status(200);
-            res.header("Content-Type", "application/json");
-            res.json({ success: true });
+            res.status(200).json({ success: true });
         },
     );
 };

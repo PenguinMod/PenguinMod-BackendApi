@@ -15,9 +15,7 @@ module.exports = (app, utils) => {
         async function (req, res) {
             await utils.UserManager.logout(req.login.username);
 
-            res.status(200);
-            res.header("Content-Type", "application/json");
-            res.send({ success: true });
+            res.status(200).json({ success: true });
         },
     );
 };

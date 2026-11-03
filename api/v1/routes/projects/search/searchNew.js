@@ -51,7 +51,10 @@ module.exports = (app, utils) => {
             const featured = tristate(String(packet.featured));
 
             const author = packet.author
-                ? await utils.UserManager.getIDByUsername(String(packet.author))
+                ? await utils.UserManager.getIDByUsername(
+                      String(packet.author),
+                      false,
+                  )
                 : null;
             if (author !== null && !author) {
                 return utils.error(res, 400, "InvalidAuthorUsername");
@@ -107,10 +110,8 @@ module.exports = (app, utils) => {
                 await utils.UserManager.addImpression(project.id);
             }
 
-            res.status(200);
-            res.header({ "Content-Type": "application/json" });
             res.header("Cache-Control", "public, max-age=90");
-            return res.send({ projects, total });
+            res.status(200).json({ projects, total });
         },
     );
 };

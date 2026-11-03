@@ -25,9 +25,7 @@ module.exports = (app, utils) => {
                 isEmailVerified,
             };
 
-            res.status(200);
-            res.header("Content-Type", "application/json");
-            res.send(user);
+            res.status(200).json(user);
         },
     );
 };

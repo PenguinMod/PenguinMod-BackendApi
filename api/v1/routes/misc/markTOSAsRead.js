@@ -15,9 +15,7 @@ module.exports = (app, utils) => {
         async function (req, res) {
             await utils.UserManager.markTOSAsRead(req.login.username);
 
-            res.status(200);
-            res.header("Content-Type", "application/json");
-            res.json({ success: true });
+            res.status(200).json({ success: true });
         },
     );
 };

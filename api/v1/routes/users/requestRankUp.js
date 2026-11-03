@@ -46,9 +46,7 @@ module.exports = (app, utils) => {
             const PENGUIN_RANK = 1;
             await utils.UserManager.setRank(req.login.username, PENGUIN_RANK);
 
-            res.status(200);
-            res.header("Content-Type", "application/json");
-            res.json({ success: true });
+            res.status(200).json({ success: true });
         },
     );
 };

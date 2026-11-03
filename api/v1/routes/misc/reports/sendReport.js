@@ -35,11 +35,13 @@ module.exports = (app, utils) => {
             let targetID = target;
 
             if (type === "user") {
-                if (!(await utils.UserManager.existsByUsername(target))) {
+                targetID = await utils.UserManager.getIDByUsername(
+                    target,
+                    false,
+                );
+                if (!targetID) {
                     return utils.error(res, 404, "User not found");
                 }
-
-                targetID = await utils.UserManager.getIDByUsername(target);
             } else if (type === "project") {
                 if (!(await utils.UserManager.projectExists(target))) {
                     return utils.error(res, 404, "Project not found");
@@ -52,9 +54,7 @@ module.exports = (app, utils) => {
             if (
                 await utils.UserManager.hasAlreadyReported(reporterID, targetID)
             ) {
-                res.status(200);
-                res.header("Content-Type", "application/json");
-                res.send({ success: true }); // so they think its working
+                res.status(200).json({ success: true });
 
                 if (
                     await utils.UserManager.hasAlreadyReported(
@@ -87,9 +87,7 @@ module.exports = (app, utils) => {
 
             utils.logs.sendReportLog(type, username, targetID, target, report);
 
-            res.status(200);
-            res.header("Content-Type", "application/json");
-            res.send({ success: true });
+            res.status(200).json({ success: true });
         },
     );
 };

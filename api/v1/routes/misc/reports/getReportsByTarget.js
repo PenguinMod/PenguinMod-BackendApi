@@ -69,9 +69,7 @@ module.exports = (app, utils) => {
                 final.push(pushing);
             }
 
-            res.status(200);
-            res.header("Content-Type", "application/json");
-            res.send({ reports: final });
+            res.status(200).json({ reports: final });
         },
     );
 };

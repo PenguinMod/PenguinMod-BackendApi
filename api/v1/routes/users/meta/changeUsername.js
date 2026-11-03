@@ -132,9 +132,7 @@ module.exports = (app, utils) => {
                 String(packet.newUsername),
             );
 
-            res.status(200);
-            res.header("Content-Type", "application/json");
-            res.send({ success: true });
+            res.status(200).json({ success: true });
         },
     );
 };

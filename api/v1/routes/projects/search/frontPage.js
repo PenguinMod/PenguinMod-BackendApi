@@ -108,10 +108,8 @@ module.exports = (app, utils) => {
                 page.blocked = await utils.UserManager.getAllBlocked(user_id);
             }
 
-            res.header("Content-Type", "application/json");
             res.header("Cache-Control", "public, max-age=90");
-            res.status(200);
-            res.send(page);
+            res.status(200).json(page);
 
             const pids = Object.values(page)
                 .flat()

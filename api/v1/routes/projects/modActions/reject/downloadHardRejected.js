@@ -43,9 +43,7 @@ module.exports = (app, utils) => {
             const projectPB = await utils.UserManager.getProjectFile(project);
             const assets = await utils.UserManager.getProjectAssets(project);
 
-            res.status(200);
-            res.header("Content-type", "application/json");
-            res.send({ project: projectPB, assets });
+            res.status(200).json({ project: projectPB, assets });
         },
     );
 };

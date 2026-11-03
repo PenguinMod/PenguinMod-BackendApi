@@ -22,14 +22,13 @@ module.exports = (app, utils) => {
 
             const username = req.login.username;
 
-            if (
-                !target ||
-                !(await utils.UserManager.existsByUsername(target))
-            ) {
+            const targetID = await utils.UserManager.getIDByUsername(
+                target,
+                false,
+            );
+            if (!targetID) {
                 return utils.error(res, 404, "UserNotFound");
             }
-
-            const targetID = await utils.UserManager.getIDByUsername(target);
 
             const id = await utils.UserManager.sendMessage(
                 targetID,
@@ -40,8 +39,7 @@ module.exports = (app, utils) => {
 
             utils.logs.modMessage(username, target, id, message);
 
-            res.header("Content-type", "application/json");
-            res.send({ success: true });
+            res.status(200).json({ success: true });
         },
     );
 };

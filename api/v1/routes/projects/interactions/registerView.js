@@ -37,7 +37,7 @@ module.exports = (app, utils) => {
 
             await utils.UserManager.collectAndInteractView(id, concatted);
 
-            return res.send({ success: true });
+            res.status(200).json({ success: true });
         },
     );
 };

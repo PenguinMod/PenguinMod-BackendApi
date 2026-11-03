@@ -17,9 +17,7 @@ module.exports = (app, utils) => {
         "/api/v1/users/tokenlogin",
         utils.requireAuth(utils.UserManager),
         async function (req, res) {
-            res.status(200);
-            res.header("Content-Type", "application/json");
-            res.json({ success: true });
+            res.status(200).json({ success: true });
         },
     );
 };

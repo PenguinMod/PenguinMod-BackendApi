@@ -30,9 +30,7 @@ module.exports = (app, utils) => {
                 target_id,
             );
 
-            res.status(200);
-            res.header("Content-Type", "application/json");
-            res.json({ has_blocked });
+            res.status(200).json({ has_blocked });
         },
     );
 };
