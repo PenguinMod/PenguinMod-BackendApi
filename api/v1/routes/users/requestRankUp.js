@@ -15,7 +15,7 @@ module.exports = (app, utils) => {
         async function (req, res) {
             const badges = req.login.badges;
 
-            const rank = req.fullMeta.firstLogin;
+            const rank = req.login.fullMeta.firstLogin;
             if (rank !== 0) {
                 utils.error(res, 400, "AlreadyRankedHighest");
                 return;
