@@ -70,7 +70,10 @@ module.exports = (app, utils) => {
                     const project =
                         await utils.UserManager.getProjectFile(projectID);
 
-                    return res.status(200).json(project);
+                    return res
+                        .status(200)
+                        .type("application/octet-stream")
+                        .send(Buffer.from(project));
                 }
                 case "assets": {
                     const assets =
