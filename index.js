@@ -426,10 +426,11 @@ console.error = (...args) => {
             }
         }
 
+        console.error(
+            `Request Error:\n\tMethod: ${req.method}\n\tURL: ${req.originalUrl}`,
+        );
         console.error(err);
         error(res, 500, "InternalError");
-
-        next();
     });
 
     app.listen(PORT, () => {
