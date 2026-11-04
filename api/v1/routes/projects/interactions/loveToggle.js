@@ -28,10 +28,10 @@ module.exports = (app, utils) => {
             }
 
             if (
-                (await utils.UserManager.hasLovedProject(projectID, id)) &&
+                (await utils.UserManager.hasLovedProject(projectID, id)) ===
                 love
             ) {
-                return utils.error(res, 400, "Already loved");
+                return utils.error(res, 400, "DoesNothing");
             }
 
             const projectMeta =

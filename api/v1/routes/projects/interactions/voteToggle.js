@@ -27,15 +27,11 @@ module.exports = (app, utils) => {
                 return utils.error(res, 404, "Project not found");
             }
 
-            const hasVoted = await utils.UserManager.hasVotedProject(
-                projectID,
-                id,
-            );
-
-            if (hasVoted && vote) {
-                return utils.error(res, 400, "Already voted");
-            } else if (!hasVoted && !vote) {
-                return utils.error(res, 400, "Not voted");
+            if (
+                (await utils.UserManager.hasVotedProject(projectID, id)) ===
+                vote
+            ) {
+                return utils.error(res, 400, "DoesNothing");
             }
 
             await utils.UserManager.voteProject(projectID, id, vote);
