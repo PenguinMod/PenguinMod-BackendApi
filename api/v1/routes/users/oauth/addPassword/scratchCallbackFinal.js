@@ -11,6 +11,7 @@
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/users/scratchaddpasswordfinal",
+        utils.requireAuth(utils.UserManager),
         async function (req, res) {
             const packet = req.body;
 

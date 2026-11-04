@@ -42,7 +42,11 @@ module.exports = (app, utils) => {
             return utils.error(res, 404, "MethodNotFound");
         }
 
-        const state = await utils.UserManager.generateOAuth2State();
+        // TODO: we need to verify that the person actually sending the step to "final" is this person.
+        // intermediate breaks shit. it sucks.
+        // really, we should probably just rewrite this whole oauth flow for like everything.
+        // but that'll take a little bit so i'll do it later
+        const state = await utils.UserManager.generateOAuth2State(login.id);
         switch (method) {
             case "scratch":
                 res.redirect(
