@@ -7,7 +7,7 @@ const { isValid } = require("ulid");
 
 /**
  *
- * @param {any} app Express app
+ * @param {import("express").Application} app Express app
  * @param {Utils} utils Utils
  */
 module.exports = (app, utils) => {
