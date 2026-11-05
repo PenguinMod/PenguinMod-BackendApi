@@ -429,7 +429,7 @@ console.error = (...args) => {
         console.error(
             `Request Error:\n\tMethod: ${req.method}\n\tURL: ${req.originalUrl}`,
         );
-        console.error(err);
+        console.error(`error is: ${err}`);
         error(res, 500, "InternalError");
     });
 
