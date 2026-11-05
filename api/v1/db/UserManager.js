@@ -2338,7 +2338,11 @@ class UserManager {
     async readObjectFromBucket(bucketName, objectName) {
         const stream = await this.minioClient
             .getObject(bucketName, objectName)
-            .catch((err) => {});
+            .catch((err) => {
+                console.warn(
+                    `minio not making stream for this: ${bucketName}/${objectName}\nerror: ${err}`,
+                );
+            });
 
         if (!stream) {
             return;
