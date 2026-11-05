@@ -103,15 +103,15 @@ console.error = (...args) => {
     const str = args[0];
 
     if (String(str) === "Error: Request aborted") {
-        return; // yes, this is dumb, no i dont care
+        return;
     }
-    const date_str = `(${new Date().toISOString()})`.gray;
-    console.real_error(`${"ERORR".bgRed.white} ${date_str}: ${str}`);
 
-    const fake = console.error;
-    console.error = console.real_error;
-    console.trace();
-    console.error = fake;
+    const date_str = `(${new Date().toISOString()})`.gray;
+
+    console.real_error(
+        `${"ERORR".bgRed.white} ${date_str}:`,
+        ...args.map((arg) => (arg instanceof Error ? arg.stack : arg)),
+    );
 };
 
 (async () => {

@@ -70,10 +70,14 @@ module.exports = (app, utils) => {
                     const project =
                         await utils.UserManager.getProjectFile(projectID);
 
+                    if (!project) {
+                        return utils.error(res, 500, "CouldntGetProjectFile");
+                    }
+
                     return res
                         .status(200)
                         .type("application/octet-stream")
-                        .send(Buffer.from(project));
+                        .send(project);
                 }
                 case "assets": {
                     const assets =
