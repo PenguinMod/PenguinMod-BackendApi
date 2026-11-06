@@ -125,18 +125,18 @@ console.error = (...args) => {
     );
 
     app.use((req, res, next) => {
-        // get the actual ip
-        req.realIP = ipaddr.process(
+        const parsed = ipaddr.process(
             process.env.isCFTunnel === "true"
                 ? req.get("CF-Connecting-IP")
                 : req.clientIp,
         );
 
-        if (req.realIP.kind() === "ipv6") {
-            req.realIP = req.realIP.toNormalizedString();
-        } else {
-            req.realIP = req.realIP.toIPv4MappedAddress().toNormalizedString();
-        }
+        req.realIPPlain = parsed.toString();
+
+        req.realIP =
+            parsed.kind() === "ipv6"
+                ? parsed.toNormalizedString()
+                : parsed.toIPv4MappedAddress().toNormalizedString();
 
         next();
     });
@@ -292,36 +292,25 @@ console.error = (...args) => {
                 },
             }),
         retryIfFailure: async (todo, retries, delay, onFail = null) => {
-            // TODO: actually use this
-            const f = async (todo, curRetries, finalRetries, delay, onFail) => {
+            for (let attempt = 0; ; attempt++) {
                 try {
                     return await todo();
                 } catch (e) {
                     if (onFail) {
                         onFail(e);
                     }
-                    if (curRetries > finalRetries) {
+                    if (attempt >= retries) {
                         console.error("exceeded max retry count");
                         throw e;
                     }
                     console.warn(
-                        `Try if failed has failed (${curRetries}/${finalRetries})`,
+                        `Try if failed has failed (${attempt + 1}/${retries})`,
                     );
-                    return await new Promise((resolve) => {
-                        setTimeout(() => {
-                            f(
-                                todo,
-                                curRetries + 1,
-                                finalRetries,
-                                delay,
-                                onFail,
-                            ).then(resolve);
-                        }, delay); // TODO: add some randomization to delay
-                    });
+                    await new Promise((resolve) =>
+                        setTimeout(resolve, delay * (1 + 0.5 * Math.random())),
+                    );
                 }
-            };
-
-            return await f(todo, 0, retries, delay, onFail);
+            }
         },
         /**
          * @param {UserManager} um

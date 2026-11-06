@@ -11,6 +11,18 @@ const global_creation_counter = {
 };
 
 /**
+ * @param {string} birthday
+ * @returns {string|null} ISO string, or null if invalid
+ */
+const parseBirthday = (birthday) => {
+    const date = new Date(birthday);
+    if (isNaN(date.getTime())) {
+        return null;
+    }
+    return date.toISOString();
+};
+
+/**
  *
  * @param {import("express").Application} app Express app
  * @param {Utils} utils Utils
@@ -72,6 +84,19 @@ module.exports = (app, utils) => {
                 return utils.error(res, 403, "Account creation is not enabled");
             }
 
+            if (
+                packet.username === null ||
+                packet.password === null ||
+                packet.birthday === null ||
+                packet.country === null
+            ) {
+                return utils.error(
+                    res,
+                    400,
+                    "Missing username, password, birthday, or country",
+                );
+            }
+
             const username = String(packet.username).toLowerCase();
             const real_username = String(packet.username);
             const password = String(packet.password);
@@ -81,44 +106,86 @@ module.exports = (app, utils) => {
             const countryCode = String(packet.country);
             const captcha_token = String(packet.captcha_token);
 
+            if (username.length < 3 || username.length > 20) {
+                return utils.error(res, 400, "InvalidLengthUsername");
+            }
+            if (username.match(/[^a-z0-9\-_]/i)) {
+                return utils.error(res, 400, "InvalidUsername");
+            }
+
+            if (password.length < 8 || password.length > 50) {
+                return utils.error(res, 400, "InvalidLengthPassword");
+            }
+            const passwordMeetsTextInclude =
+                password.match(/[a-z]/) && password.match(/[A-Z]/);
+            const passwordMeetsSpecialInclude =
+                password.match(/[0-9]/) && password.match(/[^a-z0-9]/i);
+            if (!(passwordMeetsTextInclude && passwordMeetsSpecialInclude)) {
+                return utils.error(res, 400, "MissingRequirementsPassword");
+            }
+
+            if (email && !utils.UserManager.validateEmail(email)) {
+                return utils.error(res, 400, "InvalidEmail");
+            }
+
+            const parsedBirthday = parseBirthday(birthday);
+            if (!parsedBirthday) {
+                return utils.error(res, 400, "InvalidBirthday");
+            }
+
+            if (!countryLookup.countryCodes.includes(countryCode)) {
+                return utils.error(res, 400, "UnsupportedCountry");
+            }
+
+            // ---- captcha ----
+
             if (utils.env.CFCaptchaEnabled !== "false") {
-                // verify token
-                if (!captcha_token) {
-                    utils.error(res, 400, "MissingCaptchaToken");
-                    return;
-                }
-
                 if (captcha_token.length > 2048) {
-                    utils.error(res, 400, "InvalidCaptcha");
-                    return;
+                    return utils.error(res, 400, "InvalidCaptcha");
                 }
 
-                let die = false;
+                const captchaBody = {
+                    secret: utils.env.CFCaptchaSecret,
+                    response: captcha_token,
+                    remoteip: req.realIPPlain,
+                };
 
-                await utils.retryIfFailure(
-                    async () => {
-                        const success = await fetch(
-                            "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-                            {
-                                method: "POST",
-                                headers: {
-                                    "Content-Type":
-                                        "application/x-www-form-urlencoded",
+                let captchaResult = null;
+
+                try {
+                    await utils.retryIfFailure(
+                        async () => {
+                            const resp = await fetch(
+                                "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+                                {
+                                    method: "POST",
+                                    body: new URLSearchParams(captchaBody),
+                                    signal: AbortSignal.timeout(5000),
                                 },
-                                body: `secret=${utils.env.CFCaptchaSecret}&response=${captcha_token}`,
-                            },
-                        ).then((res) => res.json());
-                        if (!success.success) {
-                            utils.error(res, 400, "InvalidCaptcha");
-                            die = true;
-                        }
-                    },
-                    3,
-                    500,
-                );
+                            );
 
-                if (die) {
-                    return;
+                            if (!resp.ok) {
+                                throw new Error(
+                                    `Turnstile HTTP ${resp.status}`,
+                                );
+                            }
+
+                            captchaResult = await resp.json();
+                        },
+                        3,
+                        500,
+                    );
+                } catch (err) {
+                    console.error("Turnstile verification unavailable:", err);
+                    return utils.error(res, 503, "CaptchaServiceUnavailable");
+                }
+
+                if (!captchaResult || !captchaResult.success) {
+                    console.warn(
+                        "Turnstile rejected:",
+                        captchaResult?.["error-codes"],
+                    );
+                    return utils.error(res, 400, "InvalidCaptcha");
                 }
             } else {
                 console.warn(
@@ -126,105 +193,18 @@ module.exports = (app, utils) => {
                 );
             }
 
-            /*
-        res.status(500);
-        res.header("Content-Type", "application/json");
-        res.json({ "disabled": true });
-        return;
-        */
-
-            const parseBirthday = (birthday) => {
-                if (!birthday) {
-                    return;
-                }
-                if (typeof birthday !== "string") {
-                    return;
-                }
-                try {
-                    const date = new Date(birthday);
-                    if (isNaN(date.getTime())) {
-                        return; // invalid format
-                    }
-
-                    return date.toISOString();
-                } catch {
-                    return;
-                }
-            };
-
-            if (
-                typeof username !== "string" ||
-                typeof password !== "string" ||
-                typeof email !== "string"
-            ) {
-                utils.error(res, 400, "Missing username, password, or email");
-                return;
-            }
-
-            // prevents usernames having unicode & non-scratch limits (since pm projects are built with scratch limits in mind)
-            const usernameDoesNotMeetLength =
-                username.length < 3 || username.length > 20;
-            const usernameHasIllegalChars = username.match(/[^a-z0-9\-_]/i);
-            if (usernameDoesNotMeetLength) {
-                utils.error(res, 400, "InvalidLengthUsername");
-                return;
-            }
-            if (usernameHasIllegalChars) {
-                utils.error(res, 400, "InvalidUsername");
-                return;
-            }
-
-            const passwordDoesNotMeetLength =
-                password.length < 8 || password.length > 50;
-            const passwordMeetsTextInclude =
-                password.match(/[a-z]/) && password.match(/[A-Z]/);
-            const passwordMeetsSpecialInclude =
-                password.match(/[0-9]/) && password.match(/[^a-z0-9]/i);
-            if (passwordDoesNotMeetLength) {
-                utils.error(res, 400, "InvalidLengthPassword");
-                return;
-            }
-            if (!(passwordMeetsTextInclude && passwordMeetsSpecialInclude)) {
-                utils.error(res, 400, "MissingRequirementsPassword");
-                return;
-            }
-
             if (await utils.UserManager.existsByUsername(username, true)) {
-                utils.error(res, 400, "AccountExists");
-                return;
+                return utils.error(res, 400, "AccountExists");
             }
 
-            if (email) {
-                if (!utils.UserManager.validateEmail(email)) {
-                    utils.error(res, 400, "InvalidEmail");
-                    return;
-                }
-                if (await utils.UserManager.emailInUse(email)) {
-                    utils.error(res, 400, "EmailInUse");
-                    return;
-                }
-            }
-
-            const parsedBirthday = parseBirthday(birthday); // will be null if not provided
-            if (birthday && !parsedBirthday) {
-                utils.error(res, 400, "InvalidBirthday");
-                return;
-            }
-            if (countryCode) {
-                if (typeof countryCode !== "string") {
-                    utils.error(res, 400, "InvalidCountry");
-                    return;
-                }
-                if (!countryLookup.countryCodes.includes(countryCode)) {
-                    utils.error(res, 400, "UnsupportedCountry");
-                    return;
-                }
+            if (email && (await utils.UserManager.emailInUse(email))) {
+                return utils.error(res, 400, "EmailInUse");
             }
 
             const info = await utils.UserManager.createAccount(
                 username,
                 real_username,
-                packet.password,
+                password,
                 email,
                 parsedBirthday,
                 countryCode,
