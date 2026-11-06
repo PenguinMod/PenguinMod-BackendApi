@@ -100,12 +100,6 @@ console.warn = (str) => {
 
 console.real_error = console.error;
 console.error = (...args) => {
-    const str = args[0];
-
-    if (String(str) === "Error: Request aborted") {
-        return;
-    }
-
     const date_str = `(${new Date().toISOString()})`.gray;
 
     console.real_error(
@@ -413,6 +407,10 @@ console.error = (...args) => {
                         `One of your assets is too large. The maximum size is ${Number(process.env.UploadSize) || 5}mb.`,
                     );
             }
+        }
+
+        if (String(err) === "Error: Request aborted") {
+            return;
         }
 
         console.error(
