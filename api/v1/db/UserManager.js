@@ -1010,6 +1010,7 @@ class UserManager {
             username: "",
             token,
             id: "",
+            rank: 0,
             exists: false,
             isDonator: false,
             isMod: false,
@@ -1037,6 +1038,7 @@ class UserManager {
         data.isAdmin = result.admin;
         data.emailVerified = result.emailVerified;
         data.email = result.email;
+        data.rank = result.rank;
 
         if (get_full_meta) {
             data.fullMeta = result;
