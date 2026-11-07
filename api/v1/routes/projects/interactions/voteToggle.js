@@ -39,30 +39,39 @@ module.exports = (app, utils) => {
             const metadata =
                 await utils.UserManager.getProjectMetadata(projectID);
 
+            const authorMeta = await utils.UserManager.getUserData(
+                metadata.author.username,
+            );
+
             if (
                 metadata.votes >= utils.env.FeatureAmount &&
-                !metadata.featured &&
                 !metadata.noFeature
             ) {
                 const author = metadata.author;
-                const title = metadata.title;
 
-                await utils.UserManager.featureProject(projectID, true, false);
-                await utils.UserManager.sendMessage(
-                    author.id,
-                    { type: "projectFeatured" },
-                    false,
-                    projectID,
-                );
+                if (!metadata.featured) {
+                    const title = metadata.title;
 
-                utils.logs.sendFeatureLog(projectID, title, author.username);
+                    await utils.UserManager.featureProject(
+                        projectID,
+                        true,
+                        false,
+                    );
+                    await utils.UserManager.sendMessage(
+                        author.id,
+                        { type: "projectFeatured" },
+                        false,
+                        projectID,
+                    );
 
-                if (
-                    !(await utils.UserManager.hasBadge(
+                    utils.logs.sendFeatureLog(
+                        projectID,
+                        title,
                         author.username,
-                        "featured",
-                    ))
-                ) {
+                    );
+                }
+
+                if (!authorMeta.badges.includes("featured")) {
                     await utils.UserManager.addBadge(
                         author.username,
                         "featured",
@@ -74,12 +83,7 @@ module.exports = (app, utils) => {
                         projectID,
                     );
                 } else {
-                    if (
-                        !(await utils.UserManager.hasBadge(
-                            author.username,
-                            "multifeature",
-                        ))
-                    ) {
+                    if (!authorMeta.badges.includes("multifeature")) {
                         await utils.UserManager.addBadge(
                             author.username,
                             "multifeature",
@@ -98,7 +102,7 @@ module.exports = (app, utils) => {
 
             if (
                 metadata.votes >= utils.env.LoveAmount &&
-                !(await utils.UserManager.hasBadge(author_username, "votes"))
+                !authorMeta.badges.includes("votes")
             ) {
                 await utils.UserManager.addBadge(author_username, "votes");
                 await utils.UserManager.sendMessage(

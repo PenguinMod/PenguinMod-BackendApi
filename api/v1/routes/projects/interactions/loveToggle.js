@@ -38,10 +38,12 @@ module.exports = (app, utils) => {
                 await utils.UserManager.getProjectMetadata(projectID);
             const authorID = projectMeta.author.id;
             const authorUsername = projectMeta.author.username;
+            const authorMeta =
+                await utils.UserManager.getUserData(authorUsername);
 
             if (
                 projectMeta.loves >= utils.env.LoveAmount &&
-                !(await utils.UserManager.hasBadge(authorUsername, "likes"))
+                !authorMeta.badges.includes("likes")
             ) {
                 await utils.UserManager.addBadge(authorUsername, "likes");
                 await utils.UserManager.sendMessage(
