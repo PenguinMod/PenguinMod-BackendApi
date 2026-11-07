@@ -82,7 +82,7 @@ module.exports = (app, utils) => {
                         false,
                         projectID,
                     );
-                } else {
+                } else if (!metadata.featured) {
                     if (!authorMeta.badges.includes("multifeature")) {
                         await utils.UserManager.addBadge(
                             author.username,
