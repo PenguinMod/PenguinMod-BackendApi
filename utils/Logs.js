@@ -540,13 +540,13 @@ function sendCreationLog(username, id, name, type, color = 0x25da5b) {
     }
 }
 
-function sendFeatureLog(id, title, creator, manual = false) {
+function sendFeatureLog(id, title, creator) {
     const projectImage = String(
         `${process.env.ApiURL}/api/v1/projects/getproject?requestType=thumbnail&projectID=${id}`,
     );
     const projectTitle = String(title).substring(0, 250);
     const body = JSON.stringify({
-        content: `⭐ **${projectTitle}** has been **${manual ? "manually" : "community"} featured!** ⭐`,
+        content: `⭐ **${projectTitle}** has been featured!** ⭐`,
         embeds: [
             {
                 title: projectTitle,

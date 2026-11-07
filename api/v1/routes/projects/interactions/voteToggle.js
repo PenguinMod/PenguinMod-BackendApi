@@ -43,61 +43,6 @@ module.exports = (app, utils) => {
                 metadata.author.username,
             );
 
-            if (
-                metadata.votes >= utils.env.FeatureAmount &&
-                !metadata.noFeature
-            ) {
-                const author = metadata.author;
-
-                if (!metadata.featured) {
-                    const title = metadata.title;
-
-                    await utils.UserManager.featureProject(
-                        projectID,
-                        true,
-                        false,
-                    );
-                    await utils.UserManager.sendMessage(
-                        author.id,
-                        { type: "projectFeatured" },
-                        false,
-                        projectID,
-                    );
-
-                    utils.logs.sendFeatureLog(
-                        projectID,
-                        title,
-                        author.username,
-                    );
-                }
-
-                if (!authorMeta.badges.includes("featured")) {
-                    await utils.UserManager.addBadge(
-                        author.username,
-                        "featured",
-                    );
-                    await utils.UserManager.sendMessage(
-                        author.id,
-                        { type: "newBadge", badge: "featured" },
-                        false,
-                        projectID,
-                    );
-                } else if (!metadata.featured) {
-                    if (!authorMeta.badges.includes("multifeature")) {
-                        await utils.UserManager.addBadge(
-                            author.username,
-                            "multifeature",
-                        );
-                        await utils.UserManager.sendMessage(
-                            author.id,
-                            { type: "newBadge", badge: "multifeature" },
-                            false,
-                            projectID,
-                        );
-                    }
-                }
-            }
-
             const author_username = metadata.author.username;
 
             if (
