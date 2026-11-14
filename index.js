@@ -87,15 +87,15 @@ app.use(requestIp.mw());
 const um = new UserManager();
 
 console.real_log = console.log;
-console.log = (str) => {
+console.log = (...data) => {
     const date_str = `(${new Date().toISOString()})`.gray.dim;
-    console.real_log(`${"LOG".bgBlack.blue} ${date_str}: ${str}`);
+    console.real_log(`${"LOG".bgBlack.blue} ${date_str}:`, ...data);
 };
 
 console.real_warn = console.warn;
-console.warn = (str) => {
+console.warn = (...data) => {
     const date_str = `(${new Date().toISOString()})`.gray;
-    console.real_warn(`${"WARNING".bgYellow.white} ${date_str}: ${str}`);
+    console.real_warn(`${"WARNING".bgYellow.white} ${date_str}:`, ...data);
 };
 
 console.real_error = console.error;
