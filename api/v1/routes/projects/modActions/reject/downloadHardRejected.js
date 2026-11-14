@@ -32,7 +32,7 @@ module.exports = (app, utils) => {
                 await utils.UserManager.getProjectMetadata(project);
             const authorID = projectMeta.author.id;
 
-            if (!isAdmin || id !== authorID) {
+            if (!isAdmin && id !== authorID) {
                 return utils.error(res, 401, "Invalid credentials");
             }
 
