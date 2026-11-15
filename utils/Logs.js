@@ -546,7 +546,7 @@ function sendFeatureLog(id, title, creator) {
     );
     const projectTitle = String(title).substring(0, 250);
     const body = JSON.stringify({
-        content: `⭐ **${projectTitle}** has been featured!** ⭐`,
+        content: `⭐ **${projectTitle}** has been featured! ⭐`,
         embeds: [
             {
                 title: projectTitle,
