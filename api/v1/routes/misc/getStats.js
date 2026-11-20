@@ -21,11 +21,7 @@ module.exports = (app, utils) => {
                 if (!data) {
                     // TODO: allow to get arbitrary months back
                     data = await utils.UserManager.getAccountsOverTime(12);
-                    utils.cache.save_cache(
-                        "stats_accountsovertime",
-                        data,
-                        5 * 60,
-                    );
+                    utils.cache.save("stats_accountsovertime", data, 5 * 60);
                 }
                 extra_stats.accountsOverTime = data;
             }
