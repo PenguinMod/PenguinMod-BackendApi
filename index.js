@@ -370,9 +370,17 @@ console.error = (...args) => {
         maybeAuth:
             (um, { allow_banned = false } = {}) =>
             async (req, res, next) => {
-                const token = req.get("Authorization");
+                const header = req.get("Authorization");
 
-                if (token) {
+                if (header) {
+                    const [scheme, token] = header.split(" ");
+
+                    if (scheme?.toLowerCase() !== "bearer" || !token) {
+                        return res
+                            .status(401)
+                            .json({ error: "InvalidAuthformat" });
+                    }
+
                     const login = await um.loginWithToken(
                         token,
                         allow_banned,

@@ -6054,6 +6054,57 @@ class UserManager {
 
         return result.token;
     }
+
+    /**
+     * Accounts created per month, with a running total.
+     * @returns {Promise<{month: string, count: number, total: number}[]>}
+     */
+    async getAccountsOverTime() {
+        const rows = await this.users
+            .aggregate([
+                { $match: { firstLogin: { $type: "number" } } },
+                {
+                    $group: {
+                        _id: {
+                            $dateToString: {
+                                format: "%Y-%m",
+                                date: { $toDate: "$firstLogin" },
+                                timezone: "UTC",
+                            },
+                        },
+                        count: { $sum: 1 },
+                    },
+                },
+                { $sort: { _id: 1 } },
+            ])
+            .toArray();
+
+        const data = [];
+        if (rows.length > 0) {
+            const counts = new Map(rows.map((r) => [r._id, r.count]));
+
+            let [year, month] = rows[0]._id.split("-").map(Number);
+            const now = new Date();
+            const endYear = now.getUTCFullYear();
+            const endMonth = now.getUTCMonth() + 1;
+
+            let total = 0;
+            while (year < endYear || (year === endYear && month <= endMonth)) {
+                const key = `${year}-${String(month).padStart(2, "0")}`;
+                const count = counts.get(key) || 0;
+                total += count;
+                data.push({ month: key, count, total });
+
+                month++;
+                if (month > 12) {
+                    month = 1;
+                    year++;
+                }
+            }
+        }
+
+        return data;
+    }
 }
 
 module.exports = UserManager;
