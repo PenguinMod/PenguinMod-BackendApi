@@ -19,7 +19,8 @@ module.exports = (app, utils) => {
             if (req.login && req.login.isMod) {
                 let data = utils.cache.get("stats_accountsovertime");
                 if (!data) {
-                    data = await utils.UserManager.getAccountsOverTime();
+                    // TODO: allow to get arbitrary months back
+                    data = await utils.UserManager.getAccountsOverTime(12);
                     utils.cache.save_cache(
                         "stats_accountsovertime",
                         data,

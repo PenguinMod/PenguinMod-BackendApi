@@ -6055,14 +6055,42 @@ class UserManager {
         return result.token;
     }
 
+    // in UserManager class
+
     /**
      * Accounts created per month, with a running total.
+     * @param {number|undefined} monthsBack - only return the last N months (including the current one).
      * @returns {Promise<{month: string, count: number, total: number}[]>}
      */
-    async getAccountsOverTime() {
+    async getAccountsOverTime(monthsBack) {
+        const now = new Date();
+        const endYear = now.getUTCFullYear();
+        const endMonth = now.getUTCMonth() + 1;
+
+        const match = { firstLogin: { $type: "number" } };
+        let baseline = 0;
+        let year = null;
+        let month = null;
+
+        if (monthsBack !== undefined) {
+            const startMs = Date.UTC(
+                endYear,
+                endMonth - 1 - (monthsBack - 1),
+                1,
+            );
+            const startDate = new Date(startMs);
+            year = startDate.getUTCFullYear();
+            month = startDate.getUTCMonth() + 1;
+
+            baseline = await this.users.countDocuments({
+                firstLogin: { $type: "number", $lt: startMs },
+            });
+            match.firstLogin = { $type: "number", $gte: startMs };
+        }
+
         const rows = await this.users
             .aggregate([
-                { $match: { firstLogin: { $type: "number" } } },
+                { $match: match },
                 {
                     $group: {
                         _id: {
@@ -6079,27 +6107,27 @@ class UserManager {
             ])
             .toArray();
 
+        const counts = new Map(rows.map((r) => [r._id, r.count]));
+
+        if (year === null) {
+            if (rows.length === 0) {
+                return [];
+            }
+            [year, month] = rows[0]._id.split("-").map(Number);
+        }
+
         const data = [];
-        if (rows.length > 0) {
-            const counts = new Map(rows.map((r) => [r._id, r.count]));
+        let total = baseline;
+        while (year < endYear || (year === endYear && month <= endMonth)) {
+            const key = `${year}-${String(month).padStart(2, "0")}`;
+            const count = counts.get(key) || 0;
+            total += count;
+            data.push({ month: key, count, total });
 
-            let [year, month] = rows[0]._id.split("-").map(Number);
-            const now = new Date();
-            const endYear = now.getUTCFullYear();
-            const endMonth = now.getUTCMonth() + 1;
-
-            let total = 0;
-            while (year < endYear || (year === endYear && month <= endMonth)) {
-                const key = `${year}-${String(month).padStart(2, "0")}`;
-                const count = counts.get(key) || 0;
-                total += count;
-                data.push({ month: key, count, total });
-
-                month++;
-                if (month > 12) {
-                    month = 1;
-                    year++;
-                }
+            month++;
+            if (month > 12) {
+                month = 1;
+                year++;
             }
         }
 
