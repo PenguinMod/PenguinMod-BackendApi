@@ -20,6 +20,11 @@ module.exports = (app, utils) => {
                 let data = utils.cache.get("stats_accountsovertime");
                 if (!data) {
                     data = await utils.UserManager.getAccountsOverTime();
+                    utils.cache.save_cache(
+                        "stats_accountsovertime",
+                        data,
+                        5 * 60,
+                    );
                 }
                 extra_stats.accountsOverTime = data;
             }
