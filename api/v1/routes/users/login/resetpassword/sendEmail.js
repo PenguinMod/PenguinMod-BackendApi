@@ -87,12 +87,12 @@ module.exports = (app, utils) => {
                     ? lastEmailSentID
                     : lastEmailSendIP;
 
+            const emailCooldown = Number(utils.env.EmailCooldown) || 0;
             if (
                 Date.now() - (lastEmailSent ? lastEmailSent : 0) <
-                1000 * 60 * 60 * 2
+                1000 * 60 * emailCooldown
             ) {
-                // 2 hours
-                utils.error(res, 400, "Cooldown");
+                utils.error(res, 429, "Cooldown");
                 return;
             }
 

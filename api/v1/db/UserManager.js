@@ -1039,6 +1039,7 @@ class UserManager {
         data.emailVerified = result.emailVerified;
         data.email = result.email;
         data.rank = result.rank;
+        data.badges = result.badges;
 
         if (get_full_meta) {
             data.fullMeta = result;
