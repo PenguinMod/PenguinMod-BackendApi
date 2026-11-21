@@ -6067,7 +6067,7 @@ class UserManager {
         const endYear = now.getUTCFullYear();
         const endMonth = now.getUTCMonth() + 1;
 
-        const match = { firstLogin: { $type: "number" } };
+        const match = { firstLogin: { $type: "number" }, permBanned: false };
         let baseline = 0;
         let year = null;
         let month = null;
