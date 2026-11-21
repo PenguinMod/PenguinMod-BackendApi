@@ -2,6 +2,8 @@ services:
     app:
         build:
             context: ${DOCKER_CURRENT_DIR_LOCATION}
+        env_file:
+            - .env
         ports:
             - ${PORT}:${PORT}
         volumes:

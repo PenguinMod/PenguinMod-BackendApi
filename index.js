@@ -42,6 +42,9 @@ function error(res, code, error) {
 }
 
 const app = express();
+if (!process.env.PORT) {
+    console.warn("unable to read env probably - do you have a .env file?");
+}
 const PORT = Number(process.env.PORT) || 8080;
 const MAXVIEWS = Number(process.env.MaxViews) || 10000; // it will take up to 10000 views then reset after
 const VIEWRESETRATE = Number(process.env.ViewResetRate) || 1000 * 60 * 60; // reset every hour
