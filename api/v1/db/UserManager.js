@@ -1401,26 +1401,6 @@ class UserManager {
     }
 
     /**
-     * Get a user's featured project
-     * @param {string} username Username of the user
-     * @returns {Promise<number>} ID of the user's favorite project
-     */
-    async getFeaturedProject(username) {
-        username = String(username);
-        const result = await this.users.findOne({ username: username });
-
-        let res;
-        try {
-            res = result.featuredProject;
-        } catch (e) {
-            console.warn(`couldn't find fp??? ${username}`);
-            res = "0";
-        }
-
-        return res;
-    }
-
-    /**
      * Set a user's featured project
      * @param {string} username Username of the user
      * @param {number} id ID of the project
@@ -1436,27 +1416,6 @@ class UserManager {
                 $set: { featuredProject: id },
             },
         );
-    }
-
-    /**
-     * Get a user's featured project title
-     * @param {string} username Username of the user
-     * @returns {Promise<number>} Index of the title in the array of titles
-     * @async
-     */
-    async getFeaturedProjectTitle(username) {
-        username = String(username);
-        const result = await this.users.findOne({ username: username });
-
-        let res;
-        try {
-            res = result.featuredProjectTitle;
-        } catch (e) {
-            console.warn(`couldn't find fp title??? ${username}`);
-            res = -1;
-        }
-
-        return res;
     }
 
     /**
@@ -4495,7 +4454,7 @@ class UserManager {
     }
     async getStats() {
         const userCount =
-            (await this.users.countDocuments({ permBanned: false })) || 0; // dont count perm banned users :tongue:
+            (await this.users.countDocuments({ permBanned: false })) || 0;
         const bannedCount =
             (await this.users.countDocuments({
                 $or: [{ permBanned: true }, { unbanTime: { $gt: Date.now() } }],
@@ -6059,7 +6018,7 @@ class UserManager {
 
     /**
      * Accounts created per month, with a running total.
-     * @param {number|undefined} monthsBack - only return the last N months (including the current one).
+     * @param {number|undefined} monthsBack only return the last N months (including the current one).
      * @returns {Promise<{month: string, count: number, total: number}[]>}
      */
     async getAccountsOverTime(monthsBack) {
@@ -6084,8 +6043,9 @@ class UserManager {
 
             baseline = await this.users.countDocuments({
                 firstLogin: { $type: "number", $lt: startMs },
+                permBanned: false,
             });
-            match.firstLogin = { $type: "number", $gte: startMs };
+            match.firstLogin.$gte = startMs;
         }
 
         const rows = await this.users
