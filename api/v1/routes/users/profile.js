@@ -108,14 +108,12 @@ module.exports = (app, utils) => {
                     (Date.now() - signInDate) / 1000 >= 432000) || // first signed in 5 days ago
                 badges.length > 0; // or we have a badge
 
-            const followers = await utils.UserManager.getFollowerCount(target);
+            const followers = target_data.followers;
 
-            const myFeaturedProject =
-                await utils.UserManager.getFeaturedProject(target);
-            const myFeaturedProjectTitle =
-                await utils.UserManager.getFeaturedProjectTitle(target);
+            const myFeaturedProject = target_data.featuredProject;
+            const myFeaturedProjectTitle = target_data.featuredProjectTitle;
 
-            const bio = await utils.UserManager.getBio(target);
+            const bio = target_data.bio;
 
             user = {
                 success: true,
@@ -134,6 +132,12 @@ module.exports = (app, utils) => {
                 canFollowingSeeProfile,
                 isFollowing: user.isFollowing,
             };
+
+            if (isMod) {
+                user.permBanned = target_data.permBanned;
+                user.unbanTime = target_data.unbanTime;
+                user.banReason = target_data.banReason;
+            }
 
             res.status(200);
             res.header("Content-Type", "application/json");
