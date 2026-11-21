@@ -4738,6 +4738,13 @@ class UserManager {
         return result.banned;
     }
 
+    async isUserIPBanned(id) {
+        id = String(id);
+        const result = await this.loggedIPs.findOne({ id, banned: true });
+
+        return !!result;
+    }
+
     async banIP(ip, toggle) {
         ip = String(ip);
         await this.loggedIPs.updateMany(

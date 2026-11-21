@@ -137,6 +137,8 @@ module.exports = (app, utils) => {
                 user.permBanned = target_data.permBanned;
                 user.unbanTime = target_data.unbanTime;
                 user.banReason = target_data.banReason;
+                user.isIPBanned =
+                    await utils.UserManager.isUserIPBanned(targetID);
             }
 
             res.status(200);
