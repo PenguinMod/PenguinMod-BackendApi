@@ -28,7 +28,7 @@ module.exports = (app, utils) => {
 
             const id = await utils.UserManager.sendMessage(
                 dispute.receiver,
-                { type: "disputeResponse", message },
+                { type: "disputeResponse", message, previous: disputeID },
                 true,
                 dispute.projectID,
             );

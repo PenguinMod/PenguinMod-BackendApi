@@ -6101,6 +6101,71 @@ class UserManager {
 
         return data;
     }
+
+    /**
+     * Get recent
+     * @param {number} page
+     * @param {number} pageSize
+     * @returns {Promise<object[]>}
+     */
+    async getRecentDisputes(page, pageSize) {
+        return await this.messages
+            .aggregate([
+                {
+                    $match: {
+                        dispute: { $exists: true, $ne: "" },
+                    },
+                },
+                {
+                    $sort: {
+                        date: -1,
+                    },
+                },
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: pageSize,
+                },
+            ])
+            .toArray();
+    }
+
+    /**
+     * Get a message thread given any message in the thread
+     * @param {string} messageId
+     * @returns {Promise<object[]>}
+     */
+    async getMessageThread(messageId) {
+        const message = await this.messages.findOne({ id: messageId });
+        const prev = message.message.previous
+            ? await this.getMessageThreadPrev(message.message.previous)
+            : [];
+        const post = await this.getMessageThreadPost(messageId);
+
+        return [...prev, message, ...post];
+    }
+
+    async getMessageThreadPrev(messageId) {
+        const message = await this.messages.findOne({ id: messageId });
+        return message.message.previous
+            ? [
+                  ...(await this.getMessageThreadPrev(
+                      message.message.previous,
+                  )),
+                  message,
+              ]
+            : [message];
+    }
+
+    async getMessageThreadPost(messageId) {
+        const message = await this.messages.findOne({
+            "message.previous": messageId,
+        });
+        return message
+            ? [message, ...(await this.getMessageThreadPost(message.id))]
+            : [];
+    }
 }
 
 module.exports = UserManager;
