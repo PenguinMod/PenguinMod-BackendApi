@@ -15,6 +15,8 @@ module.exports = (app, utils) => {
         async function (req, res) {
             const message = String(req.params.messageID);
 
+            console.log(req.params);
+
             const thread = await utils.UserManager.getMessageThread(message);
 
             res.status(200);
