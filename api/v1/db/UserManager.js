@@ -33,6 +33,8 @@ class UserManager {
      * @async
      */
     async init(maxviews, viewresetrate) {
+        // TODO: add more indexes
+
         this.client = new MongoClient(
             process.env.MongoUri || "mongodb://localhost:27017",
         );
@@ -104,19 +106,18 @@ class UserManager {
         this.projectStats.createIndex({ projectId: -1, type: -1 });
         this.messages = this.db.collection("messages");
         this.messages.createIndex({ receiver: -1, id: -1 });
+        this.messages.createIndex({ "message.previous": 1 });
         this.oauthStates = this.db.collection("oauthStates");
+        await this.oauthStates.createIndex(
+            { createdAt: 1 },
+            { expireAfterSeconds: 60 * 5 },
+        ); // give 5 minutes
         this.oneTimeTkCodes = this.db.collection("ottCodes");
         this.oneTimeTkCodes.createIndex(
             { expiresAt: 1 },
             { expireAfterSeconds: 0 },
         );
-        // await this.oauthStates.dropIndexes();
-        await this.oauthStates.createIndex(
-            { createdAt: 1 },
-            { expireAfterSeconds: 60 * 5 },
-        ); // give 5 minutes
         this.userFeed = this.db.collection("userFeed");
-        // await this.userFeed.dropIndexes();
         await this.userFeed.createIndex(
             { date: 1 },
             { expireAfterSeconds: Number(process.env.FeedExpirationTime) },
@@ -5139,7 +5140,9 @@ class UserManager {
             return false;
         }
 
-        const followers = await this.followers.find({ target: id }).toArray();
+        const followers = await this.followers
+            .find({ target: id, active: true })
+            .toArray();
 
         for (const follower of followers) {
             const user = await this.users.findOne({ id: follower.follower });
@@ -6117,6 +6120,33 @@ class UserManager {
                     },
                 },
                 {
+                    $lookup: {
+                        from: this.messages.collectionName,
+                        let: { currentId: "$id" },
+                        pipeline: [
+                            {
+                                $match: {
+                                    $expr: {
+                                        $eq: [
+                                            "$message.previous",
+                                            "$$currentId",
+                                        ],
+                                    },
+                                },
+                            },
+                            {
+                                $limit: 1,
+                            },
+                        ],
+                        as: "previousReferences",
+                    },
+                },
+                {
+                    $match: {
+                        "previousReferences.0": { $exists: true },
+                    },
+                },
+                {
                     $sort: {
                         date: -1,
                     },
@@ -6126,6 +6156,11 @@ class UserManager {
                 },
                 {
                     $limit: pageSize,
+                },
+                {
+                    $project: {
+                        previousReferences: 0,
+                    },
                 },
             ])
             .toArray();
