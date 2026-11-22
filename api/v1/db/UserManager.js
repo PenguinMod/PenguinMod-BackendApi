@@ -6173,6 +6173,11 @@ class UserManager {
      */
     async getMessageThread(messageId) {
         const message = await this.messages.findOne({ id: messageId });
+
+        if (!message) {
+            return null;
+        }
+
         const prev = message.message.previous
             ? await this.getMessageThreadPrev(message.message.previous)
             : [];
@@ -6183,6 +6188,11 @@ class UserManager {
 
     async getMessageThreadPrev(messageId) {
         const message = await this.messages.findOne({ id: messageId });
+
+        if (!message) {
+            return null;
+        }
+
         return message.message.previous
             ? [
                   ...(await this.getMessageThreadPrev(
