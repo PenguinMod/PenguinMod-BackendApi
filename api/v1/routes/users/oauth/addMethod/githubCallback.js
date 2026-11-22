@@ -70,15 +70,13 @@ module.exports = (app, utils) => {
                 return;
             }
 
-            const username = await utils.UserManager.getUsernameByID(userid);
-
             await utils.UserManager.addOAuthMethod(
                 userid,
                 "github",
                 user.user.id,
             );
 
-            const token = await utils.UserManager.newTokenGen(username);
+            const token = await utils.UserManager.newTokenGen(userid);
 
             const ottCode = await utils.UserManager.genOneTimeTokenCode(token);
 

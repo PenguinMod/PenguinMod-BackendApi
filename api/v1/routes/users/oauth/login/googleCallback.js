@@ -79,9 +79,7 @@ module.exports = (app, utils) => {
             return;
         }
 
-        const username = await utils.UserManager.getUsernameByID(userid);
-
-        const token = await utils.UserManager.newTokenGen(username);
+        const token = await utils.UserManager.newTokenGen(userid);
 
         await utils.UserManager.addIPID(userid, req.realIP);
 

@@ -81,7 +81,7 @@ module.exports = (app, utils) => {
             user.user.user_id,
         );
 
-        const token = await utils.UserManager.newTokenGen(username);
+        const token = await utils.UserManager.newTokenGen(userid);
 
         const ottCode = await utils.UserManager.genOneTimeTokenCode(token);
 

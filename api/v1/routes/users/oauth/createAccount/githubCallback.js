@@ -48,7 +48,7 @@ module.exports = (app, utils) => {
                 })
                 .catch((e) => {
                     utils.error(res, 500, "OAuthServerDidNotRespond");
-                    return new Promise((resolve, reject) => resolve());
+                    return false;
                 });
 
             if (!username) {
@@ -60,13 +60,24 @@ module.exports = (app, utils) => {
                 return;
             }
 
-            if (
-                await utils.UserManager.getUserIDByOAuthID(
-                    "github",
-                    username.user.id,
-                )
-            ) {
-                utils.error(res, 400, "AccountExists");
+            const existing_userid = await utils.UserManager.getUserIDByOAuthID(
+                "github",
+                username.user.id,
+            );
+            if (existing_userid) {
+                // they are stupid. their account already exists. we'll let them be stupid
+                const token =
+                    await utils.UserManager.newTokenGen(existing_userid);
+
+                await utils.UserManager.addIPID(existing_userid, req.realIP);
+
+                const ottCode =
+                    await utils.UserManager.genOneTimeTokenCode(token);
+
+                res.status(200);
+                res.redirect(
+                    `${utils.env.HomeURL}/exchangeottcode?code=${ottCode}`,
+                );
                 return;
             }
 

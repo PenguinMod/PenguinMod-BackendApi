@@ -63,7 +63,7 @@ module.exports = (app, utils) => {
 
         await utils.UserManager.addOAuthMethod(userid, "google", id);
 
-        const token = await utils.UserManager.newTokenGen(username);
+        const token = await utils.UserManager.newTokenGen(userid);
 
         const ottCode = await utils.UserManager.genOneTimeTokenCode(token);
 

@@ -50,8 +50,22 @@ module.exports = (app, utils) => {
         const id = user.data.resourceName.split("/")[1];
         const email = user.data.emailAddresses[0].value;
 
-        if (await utils.UserManager.getUserIDByOAuthID("google", id)) {
-            utils.error(res, 400, "AccountExists");
+        const existing_userid = await utils.UserManager.getUserIDByOAuthID(
+            "google",
+            id,
+        );
+        if (existing_userid) {
+            // they are stupid. their account already exists. we'll let them be stupid
+            const token = await utils.UserManager.newTokenGen(existing_userid);
+
+            await utils.UserManager.addIPID(existing_userid, req.realIP);
+
+            const ottCode = await utils.UserManager.genOneTimeTokenCode(token);
+
+            res.status(200);
+            res.redirect(
+                `${utils.env.HomeURL}/exchangeottcode?code=${ottCode}`,
+            );
             return;
         }
 

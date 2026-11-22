@@ -974,7 +974,7 @@ class UserManager {
         }
 
         if (await bcrypt.compare(password, result.password)) {
-            return await this.newTokenGen(username);
+            return await this.newTokenGen(result.id);
         } else {
             return false;
         }
@@ -3789,14 +3789,14 @@ class UserManager {
 
     /**
      * Make a token for a user
-     * @param {string} username Username of the user to make the token for
+     * @param {string} id ID of the user to make the token for
      * @returns {Promise<string>} the new token
      */
-    async newTokenGen(username) {
+    async newTokenGen(id) {
         const token = randomBytes(32).toString("hex");
 
         await this.users.updateOne(
-            { username: username },
+            { id },
             { $set: { token: token, lastLogin: Date.now() } },
         );
 
