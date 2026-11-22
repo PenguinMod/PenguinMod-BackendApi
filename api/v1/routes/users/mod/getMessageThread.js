@@ -15,7 +15,7 @@ module.exports = (app, utils) => {
         async function (req, res) {
             const message = String(req.params.messageID);
 
-            const thread = utils.UserManager.getMessageThread(message);
+            const thread = await utils.UserManager.getMessageThread(message);
 
             res.status(200);
             res.header("Content-type", "application/json");

@@ -16,7 +16,7 @@ module.exports = (app, utils) => {
             const page = utils.handle_page(req.params.page);
             const pageSize = Number(utils.env.PageSize || 20);
 
-            const disputes = utils.UserManager.getRecentDisputes(
+            const disputes = await utils.UserManager.getRecentDisputes(
                 page,
                 pageSize,
             );
