@@ -6174,6 +6174,8 @@ class UserManager {
     async getMessageThread(messageId) {
         const message = await this.messages.findOne({ id: messageId });
 
+        console.log(message, messageId);
+
         if (!message) {
             return null;
         }
