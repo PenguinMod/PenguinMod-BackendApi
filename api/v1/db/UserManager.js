@@ -6143,7 +6143,7 @@ class UserManager {
                 },
                 {
                     $match: {
-                        "previousReferences.0": { $exists: true },
+                        "previousReferences.0": { $exists: false },
                     },
                 },
                 {
