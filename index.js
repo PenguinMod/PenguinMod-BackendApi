@@ -153,7 +153,7 @@ console.error = (...args) => {
     function file_size_limit(utils) {
         return async function (req, res, next) {
             const unlink = async () => {
-                if (req.files) {
+                if (!req.files) {
                     return;
                 }
 
