@@ -13,9 +13,7 @@ module.exports = (app, utils) => {
         "/api/v1/users/getmessagethread",
         utils.requireAuth(utils.UserManager, { require_mod: true }),
         async function (req, res) {
-            const message = String(req.params.messageID);
-
-            console.log(req.params);
+            const message = String(req.query.messageID);
 
             const thread = await utils.UserManager.getMessageThread(message);
 

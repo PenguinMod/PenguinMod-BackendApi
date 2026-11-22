@@ -13,7 +13,7 @@ module.exports = (app, utils) => {
         "/api/v1/users/getdisputes",
         utils.requireAuth(utils.UserManager, { require_mod: true }),
         async function (req, res) {
-            const page = utils.handle_page(req.params.page);
+            const page = utils.handle_page(req.query.page);
             const pageSize = Number(utils.env.PageSize || 20);
 
             const disputes = await utils.UserManager.getRecentDisputes(
