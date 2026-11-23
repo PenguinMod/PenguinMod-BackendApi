@@ -28,20 +28,11 @@ module.exports = (app, utils) => {
                 {
                     action: `Project's thumbnail has been deleted`,
                     content: `${username} deleted ${projectID}'s thumbnail`,
-                    fields: [
-                        {
-                            name: "Mod",
-                            value: username,
-                        },
-                        {
-                            name: "Project ID",
-                            value: projectID,
-                        },
-                        {
-                            name: "URL",
-                            value: `${utils.env.StudioURL}/#${projectID}`,
-                        },
-                    ],
+                    fields: {
+                        Mod: username,
+                        "Project ID": projectID,
+                        URL: `${utils.env.StudioURL}/#${projectID}`,
+                    },
                 },
                 {
                     name: username,

@@ -28,16 +28,10 @@ module.exports = (app, utils) => {
                 {
                     action: "Account creation has been toggled",
                     content: `${username} toggled account creation to ${toggle}`,
-                    fields: [
-                        {
-                            name: "Admin",
-                            value: username,
-                        },
-                        {
-                            name: "Status",
-                            value: toggle,
-                        },
-                    ],
+                    fields: {
+                        Admin: username,
+                        Status: toggle,
+                    },
                 },
                 {
                     name: username,

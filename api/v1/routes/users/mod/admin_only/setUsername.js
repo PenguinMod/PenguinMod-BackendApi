@@ -32,16 +32,10 @@ module.exports = (app, utils) => {
                 newUsername,
                 `Admin or mod has updated user's username.`,
                 0xf47420,
-                [
-                    {
-                        name: "Old Username",
-                        value: target,
-                    },
-                    {
-                        name: "New Username",
-                        value: newUsername,
-                    },
-                ],
+                {
+                    "Old Username": target,
+                    "New Username": newUsername,
+                },
             );
 
             res.status(200).json({ success: true });

@@ -36,16 +36,10 @@ module.exports = (app, utils) => {
                 {
                     action: `${target}'s IPs have been ${toggle ? "" : "un"}banned`,
                     content: `${username} banned the IPs of ${target}`,
-                    fields: [
-                        {
-                            name: "Mod",
-                            value: username,
-                        },
-                        {
-                            name: "Target",
-                            value: target,
-                        },
-                    ],
+                    fields: {
+                        Mod: username,
+                        Target: target,
+                    },
                 },
                 {
                     name: username,

@@ -48,28 +48,13 @@ module.exports = (app, utils) => {
                 {
                     action: `${username} soft rejected ${projectData.title}`,
                     content: "",
-                    fields: [
-                        {
-                            name: "Mod",
-                            value: username,
-                        },
-                        {
-                            name: "Title",
-                            value: projectData.title,
-                        },
-                        {
-                            name: "Message",
-                            value: `\`\`\`\n${message}\n\`\`\``,
-                        },
-                        {
-                            name: "Author",
-                            value: projectData.author.username,
-                        },
-                        {
-                            name: "URL",
-                            value: `${utils.env.StudioURL}/#${project}`,
-                        },
-                    ],
+                    fields: {
+                        Mod: username,
+                        Title: projectData.title,
+                        Message: `\`\`\`\n${message}\n\`\`\``,
+                        Author: projectData.author.username,
+                        URL: `${utils.env.StudioURL}/#${project}`,
+                    },
                 },
                 {
                     name: username,

@@ -177,27 +177,18 @@ function sendAdminUserLog(
     target,
     action,
     color = 0xff0000,
-    extraFields = [],
+    extraFields = {},
 ) {
     sendAdminLog(
         {
             action,
             content: `${username}: ${action}, Target: ${target}`,
-            fields: [
-                {
-                    name: "Mod",
-                    value: username,
-                },
-                {
-                    name: "Target",
-                    value: target,
-                },
+            fields: {
+                Mod: username,
+                Target: target,
                 ...extraFields,
-                {
-                    name: "URL",
-                    value: `${process.env.HomeURL}/profile?user=${target}`,
-                },
-            ],
+                URL: `${process.env.HomeURL}/profile?user=${target}`,
+            },
         },
         {
             name: username,
@@ -225,7 +216,10 @@ function sendAdminLog(data, author, color = 0xff0000) {
             {
                 title: data.action,
                 color: color,
-                fields: [...data.fields],
+                fields: Object.entries(data.fields).map(([name, value]) => ({
+                    name,
+                    value,
+                })),
                 author,
             },
         ],

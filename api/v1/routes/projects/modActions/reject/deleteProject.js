@@ -53,29 +53,13 @@ module.exports = (app, utils) => {
                     {
                         action: `${username} **full deleted** ${metadata.title}`,
                         content: "",
-                        fields: [
-                            {
-                                name: "Mod",
-                                value: username,
-                            },
-                            {
-                                name: "Reason",
-                                value: `\`\`\`\n${reason}\n\`\`\``,
-                            },
-                            {
-                                name: "Title",
-                                value: metadata.title,
-                            },
-                            {
-                                name: "Author",
-                                value: metadata.author.username,
-                            },
-                            // send url because eventually we'll have the objects expire instead of just deleting them striaight away
-                            {
-                                name: "URL",
-                                value: `${utils.env.StudioURL}/#${projectID}`,
-                            },
-                        ],
+                        fields: {
+                            Mod: username,
+                            Reason: `\`\`\`\n${reason}\n\`\`\``,
+                            Title: metadata.title,
+                            ID: projectID,
+                            Author: metadata.author.username,
+                        },
                     },
                     {
                         name: username,

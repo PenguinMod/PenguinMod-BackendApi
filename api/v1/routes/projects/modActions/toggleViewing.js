@@ -27,16 +27,10 @@ module.exports = (app, utils) => {
                 {
                     action: "Project viewing has been toggled",
                     content: `${username} toggled project viewing to ${toggle}`,
-                    fields: [
-                        {
-                            name: "Admin",
-                            value: username,
-                        },
-                        {
-                            name: "Status",
-                            value: toggle,
-                        },
-                    ],
+                    fields: {
+                        Admin: username,
+                        Status: toggle,
+                    },
                 },
                 {
                     name: username,

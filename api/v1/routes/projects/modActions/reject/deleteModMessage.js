@@ -22,17 +22,12 @@ module.exports = (app, utils) => {
             utils.logs.sendAdminLog({
                 action: `Mod message has been deleted`,
                 content: `${username} deleted mod message ${messageID}`,
-                fields: [
-                    {
-                        name: "Mod",
-                        value: username,
-                    },
-                    {
-                        name: "Message Content",
-                        value: (await utils.UserManager.getMessage(messageID))
-                            .message,
-                    },
-                ],
+                fields: {
+                    Mod: username,
+                    "Message Content": (
+                        await utils.UserManager.getMessage(messageID)
+                    ).message,
+                },
             });
 
             await utils.UserManager.deleteMessage(messageID);

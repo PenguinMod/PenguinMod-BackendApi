@@ -39,20 +39,11 @@ module.exports = (app, utils) => {
                 {
                     action: `Admin has mass ${toggle ? "" : "un"}banned by regex \`${targetRegex}\``,
                     content: `${username} ${toggle ? "" : "un"}banned by regex: \`${targetRegex}\``,
-                    fields: [
-                        {
-                            name: "Mod",
-                            value: username,
-                        },
-                        {
-                            name: "Target Regex",
-                            value: `\`${targetRegex}\``,
-                        },
-                        {
-                            name: "Count banned",
-                            value: `${count}`,
-                        },
-                    ],
+                    fields: {
+                        Mod: username,
+                        "Target Regex": `\`${targetRegex}\``,
+                        "Count banned": `${count}`,
+                    },
                 },
                 {
                     name: username,

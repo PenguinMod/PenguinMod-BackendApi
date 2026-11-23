@@ -82,16 +82,10 @@ module.exports = (app, utils) => {
                 {
                     action: "Profanity list has been set",
                     content: `${username} set the profanity list`,
-                    fields: [
-                        {
-                            name: "Admin",
-                            value: username,
-                        },
-                        {
-                            name: "Difference",
-                            value: diff,
-                        },
-                    ],
+                    fields: {
+                        Admin: username,
+                        Difference: diff,
+                    },
                 },
                 {
                     name: username,

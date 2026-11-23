@@ -40,12 +40,9 @@ module.exports = (app, utils) => {
                 target,
                 "Admin has updated user's badges.",
                 0x3d4ddc,
-                [
-                    {
-                        name: "Badges",
-                        value: badges.join(", "),
-                    },
-                ],
+                {
+                    Badges: badges.join(", "),
+                },
             );
 
             res.status(200).json({ success: true });

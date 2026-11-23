@@ -33,27 +33,15 @@ module.exports = (app, utils) => {
 
             const success = await utils.UserManager.deleteAccount(target);
 
-            const fields = [
-                {
-                    name: "Mod",
-                    value: username,
-                },
-                {
-                    name: "Target",
-                    value: target,
-                },
-            ];
-
-            fields.push({
-                name: "Reason",
-                value: `\`\`\`\n${reason}\n\`\`\``,
-            });
-
             utils.logs.sendAdminLog(
                 {
                     action: `User's account has been deleted`,
                     content: `${username} deleted ${target}'s account`,
-                    fields,
+                    fields: {
+                        Mod: username,
+                        Target: target,
+                        Reason: `\`\`\`\n${reason}\n\`\`\``,
+                    },
                 },
                 {
                     name: username,

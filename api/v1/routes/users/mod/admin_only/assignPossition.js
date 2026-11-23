@@ -32,19 +32,13 @@ module.exports = (app, utils) => {
             await utils.UserManager.setAdmin(target, admin);
             await utils.UserManager.setModerator(target, approver);
 
-            const fields = [];
+            const fields = {};
 
             if (isAdmin !== admin) {
-                fields.push({
-                    name: "Admin",
-                    value: `${isAdmin} -> ${admin}`,
-                });
+                fields.Admin = `${isAdmin} -> ${admin}`;
             }
             if (isModerator !== approver) {
-                fields.push({
-                    name: "Approver",
-                    value: `${isModerator} -> ${approver}`,
-                });
+                fields.Approver = `${isModerator} -> ${approver}`;
             }
 
             utils.logs.sendAdminUserLog(

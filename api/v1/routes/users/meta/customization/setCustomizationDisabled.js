@@ -30,12 +30,9 @@ module.exports = (app, utils) => {
                 target,
                 "Admin has updated user's ability to customize their profile.",
                 0x8c03fc,
-                [
-                    {
-                        name: "Is Enabled?",
-                        value: String(isEnabled),
-                    },
-                ],
+                {
+                    "Is Enabled?": String(isEnabled),
+                },
             );
 
             res.status(200).json({ success: true });

@@ -41,16 +41,10 @@ module.exports = (app, utils) => {
                 target,
                 "Admin or mod has updated user's featured project.",
                 0xc1e518,
-                [
-                    {
-                        name: "Project",
-                        value: project,
-                    },
-                    {
-                        name: "Title",
-                        value: title,
-                    },
-                ],
+                {
+                    Project: project,
+                    Title: title,
+                },
             );
 
             res.status(200).json({ success: true });

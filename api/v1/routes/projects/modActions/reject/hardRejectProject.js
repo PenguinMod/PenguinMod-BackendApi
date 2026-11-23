@@ -55,28 +55,13 @@ module.exports = (app, utils) => {
                 {
                     action: `${username} hard rejected ${projectData.title}`,
                     content: "",
-                    fields: [
-                        {
-                            name: "Mod",
-                            value: username,
-                        },
-                        {
-                            name: "Reason",
-                            value: `\`\`\`\n${message}\n\`\`\``,
-                        },
-                        {
-                            name: "Title",
-                            value: projectData.title,
-                        },
-                        {
-                            name: "ID",
-                            value: project,
-                        },
-                        {
-                            name: "Author",
-                            value: projectData.author.username,
-                        },
-                    ],
+                    fields: {
+                        Mod: username,
+                        Reason: `\`\`\`\n${message}\n\`\`\``,
+                        Title: projectData.title,
+                        ID: project,
+                        Author: projectData.author.username,
+                    },
                 },
                 {
                     name: username,

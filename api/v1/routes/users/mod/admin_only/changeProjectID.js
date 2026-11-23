@@ -40,26 +40,15 @@ module.exports = (app, utils) => {
 
             await utils.UserManager.changeProjectID(target, newId);
 
-            const fields = [
-                {
-                    name: "Admin",
-                    value: username,
-                },
-                {
-                    name: "Title",
-                    value: projectName,
-                },
-                {
-                    name: "URL",
-                    value: `${utils.env.StudioURL}/#${newId}`,
-                },
-            ];
-
             utils.logs.sendAdminLog(
                 {
                     action: `Admin has changed project ${target}'s id to now be ${newId}.`,
                     content: `${username} changed a project's id`,
-                    fields,
+                    fields: {
+                        Admin: username,
+                        Title: projectName,
+                        URL: `${utils.env.StudioURL}/#${newId}`,
+                    },
                 },
                 {
                     name: username,

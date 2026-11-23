@@ -32,20 +32,11 @@ module.exports = (app, utils) => {
                 {
                     action: `Project ${canBeFeatured ? "can" : "cannot"} be featured now`,
                     content: `${username} changed featurability of ${projectID}`,
-                    fields: [
-                        {
-                            name: "Admin",
-                            value: username,
-                        },
-                        {
-                            name: "Project ID",
-                            value: projectID,
-                        },
-                        {
-                            name: "URL",
-                            value: `${utils.env.StudioURL}/#${projectID}`,
-                        },
-                    ],
+                    fields: {
+                        Admin: username,
+                        "Project ID": projectID,
+                        URL: `${utils.env.StudioURL}/#${projectID}`,
+                    },
                 },
                 {
                     name: username,

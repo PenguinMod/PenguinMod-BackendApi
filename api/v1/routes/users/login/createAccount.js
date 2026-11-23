@@ -62,7 +62,6 @@ module.exports = (app, utils) => {
                         {
                             action: "actoin",
                             content: `<@790782926785609728> evil doer is doing evil maybe`,
-                            fields: [],
                         },
                         {
                             name: "System",

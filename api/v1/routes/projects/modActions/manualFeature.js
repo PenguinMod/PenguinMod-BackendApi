@@ -82,24 +82,12 @@ module.exports = (app, utils) => {
                 {
                     action: `Project has been manually ${toggle ? "" : "un"}featured`,
                     content: `${username} manually featured project ${projectID}`,
-                    fields: [
-                        {
-                            name: "Mod",
-                            value: username,
-                        },
-                        {
-                            name: "Project ID",
-                            value: projectID,
-                        },
-                        {
-                            name: "Status",
-                            value: toggle,
-                        },
-                        {
-                            name: "URL",
-                            value: `${utils.env.StudioURL}/#${projectID}`,
-                        },
-                    ],
+                    fields: {
+                        Mod: username,
+                        "Project ID": projectID,
+                        Status: toggle,
+                        URL: `${utils.env.StudioURL}/#${projectID}`,
+                    },
                 },
                 {
                     name: username,

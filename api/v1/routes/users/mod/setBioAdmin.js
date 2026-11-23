@@ -33,24 +33,12 @@ module.exports = (app, utils) => {
                 {
                     action: `${target} had their bio edited`,
                     content: `${target}'s bio was edited by ${username}`,
-                    fields: [
-                        {
-                            name: "Edited by",
-                            value: `${username}`,
-                        },
-                        {
-                            name: "Old Bio",
-                            value: `\`\`\`\n${oldBio}\n\`\`\``,
-                        },
-                        {
-                            name: "New Bio",
-                            value: `\`\`\`\n${bio}\n\`\`\``,
-                        },
-                        {
-                            name: "URL",
-                            value: `${process.env.HomeURL}/profile?user=${target}`,
-                        },
-                    ],
+                    fields: {
+                        "Edited by": `${username}`,
+                        "Old Bio": `\`\`\`\n${oldBio}\n\`\`\``,
+                        "New Bio": `\`\`\`\n${bio}\n\`\`\``,
+                        URL: `${process.env.HomeURL}/profile?user=${target}`,
+                    },
                 },
                 utils.logs.pmUserAuthor(target),
                 0xff0000,

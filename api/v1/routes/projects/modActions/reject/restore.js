@@ -49,20 +49,11 @@ module.exports = (app, utils) => {
                 {
                     action: "Project has been restored",
                     content: `${username} restored project ${project}`,
-                    fields: [
-                        {
-                            name: "Mod",
-                            value: username,
-                        },
-                        {
-                            name: "Project ID",
-                            value: project,
-                        },
-                        {
-                            name: "URL",
-                            value: `${utils.env.StudioURL}/#${project}`,
-                        },
-                    ],
+                    fields: {
+                        Mod: username,
+                        "Project ID": project,
+                        URL: `${utils.env.StudioURL}/#${project}`,
+                    },
                 },
                 {
                     name: username,

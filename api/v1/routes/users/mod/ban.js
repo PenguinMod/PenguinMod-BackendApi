@@ -83,34 +83,17 @@ module.exports = (app, utils) => {
                 );
             }
 
-            const fields = [
-                {
-                    name: "Mod",
-                    value: username,
-                },
-                {
-                    name: "Target",
-                    value: target,
-                },
-            ];
+            const fields = {
+                Mod: username,
+                Target: target,
+            };
 
             if (toggle && time) {
-                fields.push({
-                    name: "Time",
-                    value: `${time / 1000} seconds (${time / (1000 * 60 * 60)} hours)`,
-                });
+                fields.Time = `${time / 1000} seconds (${time / (1000 * 60 * 60)} hours)`;
             }
 
-            fields.push(
-                {
-                    name: "Reason",
-                    value: `\`\`\`\n${reason}\n\`\`\``,
-                },
-                {
-                    name: "URL",
-                    value: `${utils.env.HomeURL}/profile?userid=${targetID}`,
-                },
-            );
+            fields.Reason = `\`\`\`\n${reason}\n\`\`\``;
+            fields.URL = `${utils.env.HomeURL}/profile?userid=${targetID}`;
 
             utils.logs.sendAdminLog(
                 {

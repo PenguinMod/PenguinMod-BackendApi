@@ -39,20 +39,11 @@ module.exports = (app, utils) => {
                 {
                     action: "Last policy update has been set",
                     content: `${username} set the last policy update for ${types}`,
-                    fields: [
-                        {
-                            name: "Admin",
-                            value: username,
-                        },
-                        {
-                            name: "Types",
-                            value: `\`${types}\``,
-                        },
-                        {
-                            name: "Date",
-                            value: new Date().toISOString(),
-                        },
-                    ],
+                    fields: {
+                        Admin: username,
+                        Types: `\`${types}\``,
+                        Date: new Date().toISOString(),
+                    },
                 },
                 {
                     name: username,
