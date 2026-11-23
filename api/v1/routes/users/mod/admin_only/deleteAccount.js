@@ -19,7 +19,7 @@ module.exports = (app, utils) => {
             const reason = String(packet.reason);
 
             if (reason.length > 512) {
-                return utils.error(res, 400, "ReasonTooLong");
+                return res.status(400).json({ error: "ReasonTooLong" });
             }
 
             const username = req.login.username;
@@ -28,7 +28,7 @@ module.exports = (app, utils) => {
                 !target ||
                 !(await utils.UserManager.existsByUsername(target, true))
             ) {
-                return utils.error(res, 404, "TargetNotFound");
+                return res.status(404).json({ error: "TargetNotFound" });
             }
 
             const success = await utils.UserManager.deleteAccount(target);

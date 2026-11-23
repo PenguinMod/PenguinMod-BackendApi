@@ -22,11 +22,11 @@ module.exports = (app, utils) => {
                 ? await utils.UserManager.getReportsByType(
                       type,
                       page,
-                      Number(utils.env.PageSize),
+                      Number(process.env.PageSize),
                   )
                 : await utils.UserManager.getReports(
                       page,
-                      Number(utils.env.PageSize),
+                      Number(process.env.PageSize),
                   );
 
             const final = [];

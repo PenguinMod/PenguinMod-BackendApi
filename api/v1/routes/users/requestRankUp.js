@@ -17,7 +17,7 @@ module.exports = (app, utils) => {
 
             const rank = req.login.rank;
             if (rank !== 0) {
-                utils.error(res, 400, "AlreadyRankedHighest");
+                res.status(400).json({ error: "AlreadyRankedHighest" });
                 return;
             }
 
@@ -39,7 +39,7 @@ module.exports = (app, utils) => {
                 badges.length > 0; // or we have a badge
 
             if (!canRequestRankUp) {
-                utils.error(res, 403, "Ineligble");
+                res.status(403).json({ error: "Ineligble" });
                 return;
             }
 

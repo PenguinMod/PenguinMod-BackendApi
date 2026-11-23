@@ -24,14 +24,14 @@ module.exports = (app, utils) => {
                 !projectID ||
                 !(await utils.UserManager.projectExists(projectID))
             ) {
-                return utils.error(res, 404, "Project not found");
+                return res.status(404).json({ error: "Project not found" });
             }
 
             if (
                 (await utils.UserManager.hasVotedProject(projectID, id)) ===
                 vote
             ) {
-                return utils.error(res, 400, "DoesNothing");
+                return res.status(400).json({ error: "DoesNothing" });
             }
 
             await utils.UserManager.voteProject(projectID, id, vote);
@@ -46,7 +46,7 @@ module.exports = (app, utils) => {
             const author_username = metadata.author.username;
 
             if (
-                metadata.votes >= utils.env.LoveAmount &&
+                metadata.votes >= process.env.LoveAmount &&
                 !authorMeta.badges.includes("votes")
             ) {
                 await utils.UserManager.addBadge(author_username, "votes");

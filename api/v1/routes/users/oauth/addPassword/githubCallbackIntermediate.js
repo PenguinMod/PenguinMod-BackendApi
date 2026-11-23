@@ -18,13 +18,13 @@ module.exports = (app, utils) => {
             const code = String(packet.code);
 
             if (!state || !code) {
-                utils.error(res, 400, "Missing state or code");
+                res.status(400).json({ error: "Missing state or code" });
                 return;
             }
 
             const { valid } = await utils.UserManager.verifyOAuth2State(state);
             if (!valid) {
-                utils.error(res, 400, "Invalid state");
+                res.status(400).json({ error: "Invalid state" });
                 return;
             }
 
@@ -35,13 +35,13 @@ module.exports = (app, utils) => {
             );
 
             if (!response) {
-                utils.error(res, 500, "OAuthServerDidNotRespond");
+                res.status(500).json({ error: "OAuthServerDidNotRespond" });
                 return;
             }
 
             res.status(200);
             res.redirect(
-                `${utils.env.HomeURL}/oauthchangepasswordintermediate?method=github&at=${response.access_token}`,
+                `${process.env.HomeURL}/oauthchangepasswordintermediate?method=github&at=${response.access_token}`,
             );
         },
     );

@@ -15,18 +15,13 @@ module.exports = (app, utils) => {
         async (req, res) => {
             const stats = await utils.UserManager.getStats();
 
-            const extra_stats = {};
             if (req.login && req.login.isMod) {
-                let data = utils.cache.get("stats_accountsovertime");
-                if (!data) {
-                    // TODO: allow to get arbitrary months back
-                    data = await utils.UserManager.getAccountsOverTime(12);
-                    utils.cache.save("stats_accountsovertime", data, 5 * 60);
-                }
-                extra_stats.accountsOverTime = data;
+                // TODO: allow to get arbitrary months back
+                stats.accountsOverTime =
+                    await utils.UserManager.getAccountsOverTime(12);
             }
 
-            res.status(200).json({ ...stats, ...extra_stats });
+            res.status(200).json(stats);
         },
     );
 };

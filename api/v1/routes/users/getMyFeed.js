@@ -17,7 +17,7 @@ module.exports = (app, utils) => {
 
             const feed = await utils.UserManager.getUserFeed(
                 username,
-                Number(utils.env.FeedSize),
+                Number(process.env.FeedSize),
             );
 
             const final = [];

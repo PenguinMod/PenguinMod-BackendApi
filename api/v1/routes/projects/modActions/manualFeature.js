@@ -20,7 +20,7 @@ module.exports = (app, utils) => {
             const username = req.login.username;
 
             if (!(await utils.UserManager.projectExists(projectID))) {
-                return utils.error(res, 404, "Project not found");
+                return res.status(404).json({ error: "Project not found" });
             }
 
             if (!(await utils.UserManager.isFeatured(projectID)) && toggle) {
@@ -86,7 +86,7 @@ module.exports = (app, utils) => {
                         Mod: username,
                         "Project ID": projectID,
                         Status: toggle,
-                        URL: `${utils.env.StudioURL}/#${projectID}`,
+                        URL: `${process.env.StudioURL}/#${projectID}`,
                     },
                 },
                 utils.logs.pmUserAuthor(username),

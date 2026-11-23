@@ -19,7 +19,7 @@ module.exports = (app, utils) => {
             false,
         );
         if (!username) {
-            return utils.error(res, 404, "UserNotFound");
+            return res.status(404).json({ error: "UserNotFound" });
         }
 
         res.status(200);

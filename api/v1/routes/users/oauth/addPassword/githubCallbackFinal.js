@@ -19,7 +19,9 @@ module.exports = (app, utils) => {
             const password = String(packet.password);
 
             if (!access_token || !password) {
-                utils.error(res, 400, "Missing access_token or password");
+                res.status(400).json({
+                    error: "Missing access_token or password",
+                });
                 return;
             }
 
@@ -30,11 +32,11 @@ module.exports = (app, utils) => {
             const passwordMeetsSpecialInclude =
                 password.match(/[0-9]/) && password.match(/[^a-z0-9]/i);
             if (passwordDoesNotMeetLength) {
-                utils.error(res, 400, "InvalidLengthPassword");
+                res.status(400).json({ error: "InvalidLengthPassword" });
                 return;
             }
             if (!(passwordMeetsTextInclude && passwordMeetsSpecialInclude)) {
-                utils.error(res, 400, "MissingRequirementsPassword");
+                res.status(400).json({ error: "MissingRequirementsPassword" });
                 return;
             }
 
@@ -47,7 +49,7 @@ module.exports = (app, utils) => {
                     return { user: await res.json(), status: res.status };
                 })
                 .catch((e) => {
-                    utils.error(res, 500, "OAuthServerDidNotRespond");
+                    res.status(500).json({ error: "OAuthServerDidNotRespond" });
                     return new Promise((resolve, reject) => resolve());
                 });
 
@@ -56,7 +58,7 @@ module.exports = (app, utils) => {
             }
 
             if (user.status !== 200) {
-                utils.error(res, 500, "InternalError");
+                res.status(500).json({ error: "InternalError" });
                 return;
             }
 

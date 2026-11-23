@@ -25,22 +25,18 @@ module.exports = (app, utils) => {
             const projectID = String(packet.projectID);
 
             if (!token || !projectID) {
-                return utils.error(
-                    res,
-                    400,
-                    "Missing username, token, love, or projectID",
-                );
+                return res.status(400).json({ error: "Missing username, token, love, or projectID" });
             }
 
             const login = await utils.UserManager.loginWithToken(token);
             if (!login.success) {
-                utils.error(res, 401, "Reauthenticate");
+                res.status(401).json({ error: "Reauthenticate" });
                 return;
             }
             const username = login.username;
 
             if (!(await utils.UserManager.projectExists(projectID))) {
-                return utils.error(res, 404, "Project not found");
+                return res.status(404).json({ error: "Project not found" });
             }
 
             const id = await utils.UserManager.getIDByUsername(username);

@@ -18,14 +18,14 @@ module.exports = (app, utils) => {
             const code = String(packet.code);
 
             if (!state || !code) {
-                utils.error(res, 400, "Missing state or code");
+                res.status(400).json({ error: "Missing state or code" });
                 return;
             }
 
             const { valid, data } =
                 await utils.UserManager.verifyOAuth2State(state);
             if (!valid) {
-                utils.error(res, 400, "InvalidState");
+                res.status(400).json({ error: "InvalidState" });
                 return;
             }
 
@@ -34,7 +34,7 @@ module.exports = (app, utils) => {
             const methods = await utils.UserManager.getOAuthMethods(userid);
 
             if (methods.includes("github")) {
-                utils.error(res, 400, "Method already added");
+                res.status(400).json({ error: "Method already added" });
                 return;
             }
 
@@ -44,7 +44,7 @@ module.exports = (app, utils) => {
             );
 
             if (!response) {
-                utils.error(res, 500, "OAuthServerDidNotRespond");
+                res.status(500).json({ error: "OAuthServerDidNotRespond" });
                 return;
             }
 
@@ -57,7 +57,7 @@ module.exports = (app, utils) => {
                     return { user: await res.json(), status: res.status };
                 })
                 .catch((e) => {
-                    utils.error(res, 500, "OAuthServerDidNotRespond");
+                    res.status(500).json({ error: "OAuthServerDidNotRespond" });
                     return new Promise((resolve, reject) => resolve());
                 });
 
@@ -66,7 +66,7 @@ module.exports = (app, utils) => {
             }
 
             if (user.status !== 200) {
-                utils.error(res, 500, "InternalError");
+                res.status(500).json({ error: "InternalError" });
                 return;
             }
 
@@ -82,7 +82,7 @@ module.exports = (app, utils) => {
 
             res.status(200);
             res.redirect(
-                `${utils.env.HomeURL}/exchangeottcode?code=${ottCode}`,
+                `${process.env.HomeURL}/exchangeottcode?code=${ottCode}`,
             );
         },
     );

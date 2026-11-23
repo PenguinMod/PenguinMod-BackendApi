@@ -19,7 +19,9 @@ module.exports = (app, utils) => {
             const value = String(packet.value) !== "false";
 
             if (!user || !(await utils.UserManager.existsByUsername(user))) {
-                return utils.error(res, 400, "Thats not a real user buddy");
+                return res
+                    .status(400)
+                    .json({ error: "Thats not a real user buddy" });
             }
 
             await utils.UserManager.setEmailVerified(user, value);

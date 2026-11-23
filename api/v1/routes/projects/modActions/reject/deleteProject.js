@@ -23,12 +23,12 @@ module.exports = (app, utils) => {
             const isAdmin = req.login.isAdmin;
 
             if (!projectID) {
-                return utils.error(res, 404, "Project not found");
+                return res.status(404).json({ error: "Project not found" });
             }
 
             // TODO: just fetch meta once
             if (!(await utils.UserManager.projectExists(projectID, true))) {
-                return utils.error(res, 404, "Project not found");
+                return res.status(404).json({ error: "Project not found" });
             }
 
             const metadata =
@@ -36,16 +36,16 @@ module.exports = (app, utils) => {
 
             if (!metadata) {
                 console.error(`somehow couldn't get metadata for ${projectID}`);
-                return utils.error(res, 500, "InternalError");
+                return res.status(500).json({ error: "InternalError" });
             }
 
             // only admins and the project owner can delete projects, not mods
             if (metadata.author.username !== username && !isAdmin) {
-                return utils.error(
-                    res,
-                    403,
-                    "You are not authorized to delete this project",
-                );
+                return res
+                    .status(403)
+                    .json({
+                        error: "You are not authorized to delete this project",
+                    });
             }
 
             if (metadata.author.username !== username) {

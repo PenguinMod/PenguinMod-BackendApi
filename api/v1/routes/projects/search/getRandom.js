@@ -12,7 +12,7 @@ module.exports = (app, utils) => {
     app.get("/api/v1/projects/getrandomproject", async (req, res) => {
         const packet = req.query;
 
-        const n = Math.min(Number(packet.n || 1), Number(utils.env.PageSize));
+        const n = Math.min(Number(packet.n || 1), Number(process.env.PageSize));
 
         const projects = await utils.UserManager.getRandomProjects(n);
 

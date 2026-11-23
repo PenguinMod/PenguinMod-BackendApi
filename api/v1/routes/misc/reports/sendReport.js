@@ -23,13 +23,13 @@ module.exports = (app, utils) => {
             const type = String(packet.type);
 
             if (!report || !type) {
-                return utils.error(res, 400, "Invalid request");
+                return res.status(400).json({ error: "Invalid request" });
             }
 
             const allowedTypes = ["user", "project"];
 
             if (!allowedTypes.includes(type)) {
-                return utils.error(res, 400, "Invalid type");
+                return res.status(400).json({ error: "Invalid type" });
             }
 
             let targetID = target;
@@ -40,11 +40,11 @@ module.exports = (app, utils) => {
                     false,
                 );
                 if (!targetID) {
-                    return utils.error(res, 404, "User not found");
+                    return res.status(404).json({ error: "User not found" });
                 }
             } else if (type === "project") {
                 if (!(await utils.UserManager.projectExists(target))) {
-                    return utils.error(res, 404, "Project not found");
+                    return res.status(404).json({ error: "Project not found" });
                 }
 
                 target = (await utils.UserManager.getProjectMetadata(target))

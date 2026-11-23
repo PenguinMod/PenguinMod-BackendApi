@@ -22,7 +22,7 @@ module.exports = (app, utils) => {
                 !authorUsername ||
                 !(await utils.UserManager.existsByUsername(authorUsername))
             ) {
-                return utils.error(res, 404, "User not found");
+                return res.status(404).json({ error: "User not found" });
             }
 
             const logged_in = !!req.login;
@@ -42,7 +42,9 @@ module.exports = (app, utils) => {
 
             if (privateProfile) {
                 if (!logged_in) {
-                    return await utils.error(res, 403, "PrivateProfile");
+                    return await res
+                        .status(403)
+                        .json({ error: "PrivateProfile" });
                 }
 
                 const user_id = req.login.id;
@@ -56,7 +58,9 @@ module.exports = (app, utils) => {
                     !(is_following && canFollowingSeeProfile) &&
                     !isMod
                 ) {
-                    return await utils.error(res, 403, "PrivateProfile");
+                    return await res
+                        .status(403)
+                        .json({ error: "PrivateProfile" });
                 }
             }
 
@@ -64,7 +68,7 @@ module.exports = (app, utils) => {
                 await utils.UserManager.getProjectsByAuthor(
                     id,
                     page,
-                    Number(utils.env.PageSize),
+                    Number(process.env.PageSize),
                 )
             ).map((project) => {
                 project.author = {

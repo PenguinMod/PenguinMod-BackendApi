@@ -23,13 +23,13 @@ module.exports = (app, utils) => {
                 !projectID ||
                 !(await utils.UserManager.projectExists(projectID, true))
             ) {
-                return utils.error(res, 404, "Project not found");
+                return res.status(404).json({ error: "Project not found" });
             }
 
             const loves = await utils.UserManager.getWhoInteracted(
                 projectID,
                 page,
-                Number(utils.env.PageSize),
+                Number(process.env.PageSize),
                 "love",
             );
 

@@ -30,16 +30,14 @@ module.exports = (app, utils) => {
         const methods = await utils.UserManager.getOAuthMethods(login.id);
 
         if (!methods) {
-            utils.error(
-                res,
-                400,
-                "No login methods (PLEASE REPORT THIS VIA OUR SUPPORT PAGE)",
-            );
+            res.status(400).json({
+                error: "No login methods (PLEASE REPORT THIS VIA OUR SUPPORT PAGE)",
+            });
             return;
         }
 
         if (!methods.includes(method)) {
-            return utils.error(res, 404, "MethodNotFound");
+            return res.status(404).json({ error: "MethodNotFound" });
         }
 
         // TODO: we need to verify that the person actually sending the step to "final" is this person.
@@ -50,19 +48,19 @@ module.exports = (app, utils) => {
         switch (method) {
             case "scratch":
                 res.redirect(
-                    `https://oauth2.scratch-wiki.info/wiki/Special:ScratchOAuth2/authorize?client_id=${utils.env.ScratchOAuthClientID}&redirect_uri=${utils.env.ApiURL}/api/v1/users/scratchaddpassword&scopes=identify&state=${state}`,
+                    `https://oauth2.scratch-wiki.info/wiki/Special:ScratchOAuth2/authorize?client_id=${process.env.ScratchOAuthClientID}&redirect_uri=${process.env.ApiURL}/api/v1/users/scratchaddpassword&scopes=identify&state=${state}`,
                 );
                 break;
             case "github":
                 res.redirect(
-                    `https://github.com/login/oauth/authorize?client_id=${utils.env.GithubOAuthClientID}&redirect_uri=${utils.env.ApiURL}/api/v1/users/githubcallback/addpassword&state=${state}&scope=read:user`,
+                    `https://github.com/login/oauth/authorize?client_id=${process.env.GithubOAuthClientID}&redirect_uri=${process.env.ApiURL}/api/v1/users/githubcallback/addpassword&state=${state}&scope=read:user`,
                 );
                 break;
             case "google": {
                 const oauth2Client = new utils.googleOAuth2Client(
-                    utils.env.GoogleOAuthClientID,
-                    utils.env.GoogleOAuthClientSecret,
-                    `${utils.env.ApiURL}/api/v1/users/googlecallback/addpassword`,
+                    process.env.GoogleOAuthClientID,
+                    process.env.GoogleOAuthClientSecret,
+                    `${process.env.ApiURL}/api/v1/users/googlecallback/addpassword`,
                 );
 
                 const authorizeUrl = oauth2Client.generateAuthUrl({
@@ -75,7 +73,7 @@ module.exports = (app, utils) => {
                 break;
             }
             default:
-                utils.error(res, 400, "Invalid method");
+                res.status(400).json({ error: "Invalid method" });
                 return;
         }
     });

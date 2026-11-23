@@ -25,7 +25,7 @@ module.exports = (app, utils) => {
                 typeof privateProfile !== "boolean" ||
                 typeof privateToFollowing !== "boolean"
             ) {
-                utils.error(res, 400, "InvalidBody");
+                res.status(400).json({ error: "InvalidBody" });
                 return;
             }
 

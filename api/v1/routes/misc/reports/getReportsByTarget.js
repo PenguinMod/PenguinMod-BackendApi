@@ -21,7 +21,7 @@ module.exports = (app, utils) => {
             const page = utils.handle_page(packet.page);
 
             if (!target) {
-                return utils.error(res, 400, "Missing target");
+                return res.status(400).json({ error: "Missing target" });
             }
 
             target = isValid(target)
@@ -29,13 +29,13 @@ module.exports = (app, utils) => {
                 : await utils.UserManager.getIDByUsername(target, false);
 
             if (!target) {
-                return utils.error(res, 404, "InvalidID");
+                return res.status(404).json({ error: "InvalidID" });
             }
 
             const reports = await utils.UserManager.getReportsByReportee(
                 target,
                 page,
-                Number(utils.env.PageSize),
+                Number(process.env.PageSize),
             );
 
             const final = [];

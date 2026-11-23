@@ -18,7 +18,7 @@ module.exports = (app, utils) => {
             const newUsername = String(packet.newUsername).toLowerCase();
 
             if (!newUsername) {
-                utils.error(res, 400, "Missing token or newUsername");
+                res.status(400).json({ error: "Missing token or newUsername" });
                 return;
             }
 
@@ -32,11 +32,11 @@ module.exports = (app, utils) => {
                 newUsername.length < 3 || newUsername.length > 20;
             const usernameHasIllegalChars = newUsername.match(/[^a-z0-9\-_]/i);
             if (usernameDoesNotMeetLength) {
-                utils.error(res, 400, "InvalidLengthUsername");
+                res.status(400).json({ error: "InvalidLengthUsername" });
                 return;
             }
             if (usernameHasIllegalChars) {
-                utils.error(res, 400, "InvalidUsername");
+                res.status(400).json({ error: "InvalidUsername" });
                 return;
             }
 
@@ -44,7 +44,7 @@ module.exports = (app, utils) => {
                 const trigger =
                     await utils.UserManager.checkForUnsafeUsername(text);
                 if (trigger) {
-                    utils.error(res, 400, "IllegalWordsUsed");
+                    res.status(400).json({ error: "IllegalWordsUsed" });
 
                     const illegalWordIndex =
                         await utils.UserManager.getIndexOfUnsafeUsername(text);
@@ -110,7 +110,7 @@ module.exports = (app, utils) => {
                 true,
             );
             if (exists) {
-                utils.error(res, 404, "UsernameTaken");
+                res.status(404).json({ error: "UsernameTaken" });
                 return;
             }
 

@@ -21,7 +21,7 @@ module.exports = (app, utils) => {
             const username = req.login.username;
 
             if (await utils.UserManager.existsByUsername(newUsername, true)) {
-                utils.error(res, 400, "UsernameInUse");
+                res.status(400).json({ error: "UsernameInUse" });
                 return;
             }
 

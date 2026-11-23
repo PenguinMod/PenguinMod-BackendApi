@@ -18,13 +18,13 @@ module.exports = (app, utils) => {
             const projectID = String(packet.projectID);
 
             if (!projectID) {
-                return utils.error(res, 400, "Missing projectID");
+                return res.status(400).json({ error: "Missing projectID" });
             }
 
             const id = req.login.id;
 
             if (!(await utils.UserManager.projectExists(projectID))) {
-                return utils.error(res, 404, "Project not found");
+                return res.status(404).json({ error: "Project not found" });
             }
 
             const projectMeta =

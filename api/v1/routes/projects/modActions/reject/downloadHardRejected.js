@@ -18,14 +18,14 @@ module.exports = (app, utils) => {
             const project = String(packet.project);
 
             if (!project) {
-                return utils.error(res, 400, "Missing project");
+                return res.status(400).json({ error: "Missing project" });
             }
 
             const isAdmin = req.login.isAdmin;
             const id = req.login.id;
 
             if (!(await utils.UserManager.projectExists(project, true))) {
-                return utils.error(res, 404, "ProjectNotFound");
+                return res.status(404).json({ error: "ProjectNotFound" });
             }
 
             const projectMeta =
@@ -33,11 +33,11 @@ module.exports = (app, utils) => {
             const authorID = projectMeta.author.id;
 
             if (!isAdmin && id !== authorID) {
-                return utils.error(res, 401, "Invalid credentials");
+                return res.status(401).json({ error: "Invalid credentials" });
             }
 
             if (!(await utils.UserManager.isHardRejected(project))) {
-                return utils.error(res, 400, "NotHardRejected");
+                return res.status(400).json({ error: "NotHardRejected" });
             }
 
             const projectPB = await utils.UserManager.getProjectFile(project);

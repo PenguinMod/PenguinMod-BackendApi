@@ -16,7 +16,7 @@ module.exports = (app, utils) => {
 
         const id = await utils.UserManager.getIDByUsername(target, false);
         if (!id) {
-            utils.error(res, 404, "TargetNotFound");
+            res.status(404).json({ error: "TargetNotFound" });
             return;
         }
 

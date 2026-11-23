@@ -19,7 +19,7 @@ module.exports = (app, utils) => {
 
             const targetMeta = await utils.UserManager.getUserData(target);
             if (!targetMeta) {
-                return utils.error(res, 404, "Target not found");
+                return res.status(404).json({ error: "Target not found" });
             }
 
             const user_id = req.login.id;

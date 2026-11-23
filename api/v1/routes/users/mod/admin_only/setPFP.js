@@ -27,7 +27,7 @@ module.exports = (app, utils) => {
             const pictureName = req.file;
 
             if (!pictureName) {
-                return utils.error(res, 400, "InvalidPicture");
+                return res.status(400).json({ error: "InvalidPicture" });
             }
 
             const username = req.login.username;
@@ -37,14 +37,14 @@ module.exports = (app, utils) => {
                 false,
             );
             if (!targetID) {
-                return utils.error(res, 400, "TargetNotFound");
+                return res.status(400).json({ error: "TargetNotFound" });
             }
 
             if (
                 pictureName.size >
                 (Number(process.env.UploadSize) || 5) * 1024 * 1024
             ) {
-                return utils.error(res, 400, "File too large");
+                return res.status(400).json({ error: "File too large" });
             }
 
             const picture = fs.readFileSync(
@@ -58,11 +58,11 @@ module.exports = (app, utils) => {
 
             magic.detect(picture, async (err, result) => {
                 if (err) {
-                    return utils.error(res, 400, "Invalid file type");
+                    return res.status(400).json({ error: "Invalid file type" });
                 }
 
                 if (!allowedTypes.includes(result)) {
-                    return utils.error(res, 400, "Invalid file type");
+                    return res.status(400).json({ error: "Invalid file type" });
                 }
 
                 let resized_picture;
@@ -78,7 +78,7 @@ module.exports = (app, utils) => {
                         .toBuffer();
                 } catch (e) {
                     console.warn(`Sharp error: ${e}`);
-                    return utils.error(res, 400, "Invalid image");
+                    return res.status(400).json({ error: "Invalid image" });
                 }
 
                 await utils.UserManager.setProfilePicture(

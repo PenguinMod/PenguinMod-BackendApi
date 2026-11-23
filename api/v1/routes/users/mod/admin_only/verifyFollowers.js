@@ -20,7 +20,7 @@ module.exports = (app, utils) => {
             const success = await utils.UserManager.verifyFollowers(target);
 
             if (!success) {
-                return utils.error(res, 404, "UserNotFound");
+                return res.status(404).json({ error: "UserNotFound" });
             }
 
             res.status(200).json({ success: true });

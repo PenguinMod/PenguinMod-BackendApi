@@ -24,7 +24,7 @@ module.exports = (app, utils) => {
             const messages = await utils.UserManager.getUnreadMessages(
                 id,
                 page,
-                Number(utils.env.PageSize),
+                Number(process.env.PageSize),
             );
 
             const final = [];

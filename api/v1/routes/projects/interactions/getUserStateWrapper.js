@@ -23,7 +23,7 @@ module.exports = (app, utils) => {
                 !projectID ||
                 !(await utils.UserManager.projectExists(projectID))
             ) {
-                return utils.error(res, 404, "Project not found");
+                return res.status(404).json({ error: "Project not found" });
             }
 
             // TODO: probably condense this into one db operation

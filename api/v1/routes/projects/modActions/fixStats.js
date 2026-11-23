@@ -18,7 +18,7 @@ module.exports = (app, utils) => {
             const projectID = String(packet.projectID);
 
             if (!(await utils.UserManager.projectExists(projectID))) {
-                return utils.error(res, 404, "Project not found");
+                return res.status(404).json({ error: "Project not found" });
             }
 
             await utils.UserManager.fixProjectStats(projectID);

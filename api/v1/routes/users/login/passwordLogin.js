@@ -29,13 +29,13 @@ module.exports = (app, utils) => {
             const password = String(packet.password);
             const captcha_token = String(packet.captcha_token);
 
-            if (utils.env.CFCaptchaEnabled === "false") {
+            if (process.env.CFCaptchaEnabled === "false") {
                 console.warn(
                     "passwordLogin ran with CFCaptchaEnabled set to false",
                 );
             } else {
                 if (captcha_token.length > 2048) {
-                    utils.error(res, 400, "InvalidCaptcha");
+                    res.status(400).json({ error: "InvalidCaptcha" });
                     return;
                 }
 
@@ -46,12 +46,12 @@ module.exports = (app, utils) => {
                         headers: {
                             "Content-Type": "application/x-www-form-urlencoded",
                         },
-                        body: `secret=${utils.env.CFCaptchaSecret}&response=${captcha_token}`,
+                        body: `secret=${process.env.CFCaptchaSecret}&response=${captcha_token}`,
                     },
                 ).then((res) => res.json());
 
                 if (!success.success) {
-                    utils.error(res, 400, "InvalidCaptcha");
+                    res.status(400).json({ error: "InvalidCaptcha" });
                     return;
                 }
             }
@@ -62,7 +62,7 @@ module.exports = (app, utils) => {
                 true,
             );
             if (!token) {
-                utils.error(res, 401, "InvalidCredentials");
+                res.status(401).json({ error: "InvalidCredentials" });
                 return;
             }
 

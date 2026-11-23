@@ -24,12 +24,12 @@ module.exports = (app, utils) => {
                 !target ||
                 !(await utils.UserManager.existsByUsername(target))
             ) {
-                utils.error(res, 404, "UserNotFound");
+                res.status(404).json({ error: "UserNotFound" });
                 return;
             }
 
             if (!Array.isArray(badges)) {
-                utils.error(res, 400, "InvalidBadges");
+                res.status(400).json({ error: "InvalidBadges" });
                 return;
             }
 

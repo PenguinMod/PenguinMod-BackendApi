@@ -1,7 +1,7 @@
 {
     "name": "penguinmod-backendapi",
     "version": "1.0.0",
-    "description": "![PenguinMod Logo](icon.png \"PenguinMod Logo\")",
+    "description": "The Backend API for PenguinMod",
     "homepage": "https://github.com/PenguinMod/PenguinMod-BackendApi#readme",
     "bugs": {
         "url": "https://github.com/PenguinMod/PenguinMod-BackendApi/issues"
@@ -15,10 +15,10 @@
     "type": "commonjs",
     "main": "index.js",
     "scripts": {
-        "dev": "nodemon index.js",
-        "start": "node index.js",
-        "lint": "eslint",
-        "lint-fix": "eslint --fix"
+        "dev": "tsx watch index.ts",
+        "build": "tsc",
+        "start": "node dist/index.js",
+        "typecheck": "tsc --noEmit"
     },
     "dependencies": {
         "bcrypt": "^6.0.0",
@@ -33,7 +33,6 @@
         "google-auth-library": "^9.9.0",
         "ipaddr.js": "^2.2.0",
         "jszip": "^3.10.1",
-        "memory-cache": "^0.2.0",
         "minio": "^8.0.7",
         "mmmagic": "^0.5.3",
         "mongodb": "^6.2.0",
@@ -47,9 +46,17 @@
     },
     "devDependencies": {
         "@eslint/js": "^10.0.1",
+        "@types/bcrypt": "^6.0.0",
+        "@types/cors": "^2.8.19",
+        "@types/express": "^5.0.6",
+        "@types/multer": "^2.3.0",
+        "@types/node": "^26.6.6",
+        "@types/request-ip": "^0.0.41",
         "eslint": "^10.12.0",
         "globals": "^17.13.0",
         "nodemon": "^3.1.3",
-        "protobufjs-cli": "^1.1.3"
+        "protobufjs-cli": "^1.1.3",
+        "tsx": "^4.23.15",
+        "typescript": "^7.0.2"
     }
 }

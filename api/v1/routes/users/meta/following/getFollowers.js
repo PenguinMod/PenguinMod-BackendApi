@@ -19,14 +19,14 @@ module.exports = (app, utils) => {
             !username ||
             !(await utils.UserManager.existsByUsername(username))
         ) {
-            utils.error(res, 404, "User not found");
+            res.status(404).json({ error: "User not found" });
             return;
         }
 
         const followers = await utils.UserManager.getFollowers(
             username,
             page,
-            Number(utils.env.PageSize),
+            Number(process.env.PageSize),
         );
 
         res.status(200);

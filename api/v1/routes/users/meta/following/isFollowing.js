@@ -20,13 +20,13 @@ module.exports = (app, utils) => {
             false,
         );
         if (!agentID) {
-            utils.error(res, 404, "AgentNotFound");
+            res.status(404).json({ error: "AgentNotFound" });
             return;
         }
 
         const targetID = await utils.UserManager.getIDByUsername(target, false);
         if (!targetID) {
-            utils.error(res, 404, "TargetNotFound");
+            res.status(404).json({ error: "TargetNotFound" });
             return;
         }
 

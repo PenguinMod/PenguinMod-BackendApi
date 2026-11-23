@@ -42,7 +42,7 @@ module.exports = (app, utils) => {
                 "loves",
             ];
             if (!valid_sorts.includes(sort)) {
-                return utils.error(res, 400, "InvalidSort");
+                return res.status(400).json({ error: "InvalidSort" });
             }
             const reverse = String(packet.reverse) === "true";
             const before = parseDate(String(packet.before));
@@ -57,18 +57,18 @@ module.exports = (app, utils) => {
                   )
                 : null;
             if (author !== null && !author) {
-                return utils.error(res, 400, "InvalidAuthorUsername");
+                return res.status(400).json({ error: "InvalidAuthorUsername" });
             }
 
             const include_raw = String(packet.include);
             const page = Number(packet.page) || 0;
 
-            const max_page_size = Number(utils.env.PageSize);
+            const max_page_size = Number(process.env.PageSize);
             const limit = Number(packet.pageSize) || max_page_size;
             const page_size = Math.min(max_page_size, limit);
 
             if (page < 0 || page_size < 0) {
-                return utils.error(res, 400, "InvalidPageOrPageSize");
+                return res.status(400).json({ error: "InvalidPageOrPageSize" });
             }
 
             const include_total = String(packet.includeTotal) === "true";
@@ -86,7 +86,9 @@ module.exports = (app, utils) => {
                         break;
 
                     default:
-                        return utils.error(res, 400, "InvalidInclude");
+                        return res
+                            .status(400)
+                            .json({ error: "InvalidInclude" });
                 }
             }
 

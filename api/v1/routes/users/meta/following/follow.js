@@ -22,7 +22,7 @@ module.exports = (app, utils) => {
             const userID = req.login.id;
 
             if (username === target) {
-                utils.error(res, 400, "CannotFollowSelf");
+                res.status(400).json({ error: "CannotFollowSelf" });
                 return;
             }
 
@@ -31,7 +31,7 @@ module.exports = (app, utils) => {
                 false,
             );
             if (!targetID) {
-                utils.error(res, 404, "TargetNotFound");
+                res.status(404).json({ error: "TargetNotFound" });
                 return;
             }
 
@@ -39,13 +39,13 @@ module.exports = (app, utils) => {
                 (await utils.UserManager.isFollowing(userID, targetID)) &&
                 toggle
             ) {
-                utils.error(res, 400, "AlreadyFollowing");
+                res.status(400).json({ error: "AlreadyFollowing" });
                 return;
             } else if (
                 !(await utils.UserManager.isFollowing(userID, targetID)) &&
                 !toggle
             ) {
-                utils.error(res, 400, "NotFollowing");
+                res.status(400).json({ error: "NotFollowing" });
                 return;
             }
 
@@ -66,7 +66,7 @@ module.exports = (app, utils) => {
             const followers = await utils.UserManager.getFollowerCount(target);
 
             if (
-                followers >= utils.env.FollowAmount &&
+                followers >= process.env.FollowAmount &&
                 !(await utils.UserManager.hasBadge(target, "followers"))
             ) {
                 await utils.UserManager.addBadge(target, "followers");

@@ -19,7 +19,7 @@ module.exports = (app, utils) => {
 
             const items = await utils.UserManager.getWorstOffenders(
                 page,
-                Number(utils.env.PageSize) || 20,
+                Number(process.env.PageSize) || 20,
             );
 
             res.status(200);

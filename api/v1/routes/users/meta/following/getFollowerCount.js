@@ -15,7 +15,7 @@ module.exports = (app, utils) => {
         const username = String(packet.username).toLowerCase();
 
         if (!username) {
-            utils.error(res, 400, "Missing username");
+            res.status(400).json({ error: "Missing username" });
             return;
         }
 

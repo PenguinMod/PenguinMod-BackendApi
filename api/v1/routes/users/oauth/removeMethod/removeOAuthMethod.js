@@ -24,16 +24,16 @@ module.exports = (app, utils) => {
             const methods = await utils.UserManager.getOAuthMethods(id);
 
             if (!methods.includes(method)) {
-                utils.error(res, 404, "MethodNotConnected");
+                res.status(404).json({ error: "MethodNotConnected" });
                 return;
             }
 
             if (methods.length === 1 && !hasPassword) {
-                return utils.error(
-                    res,
-                    400,
-                    "You would get locked out of your account",
-                );
+                return res
+                    .status(400)
+                    .json({
+                        error: "You would get locked out of your account",
+                    });
             }
 
             await utils.UserManager.removeOAuthMethod(id, method);

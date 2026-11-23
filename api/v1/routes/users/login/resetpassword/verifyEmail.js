@@ -25,24 +25,22 @@ module.exports = (app, utils) => {
                     true,
                 ))
             ) {
-                utils.error(
-                    res,
-                    401,
-                    "InvalidState. Your link has most likely expired, please try again.",
-                );
+                res.status(401).json({
+                    error: "InvalidState. Your link has most likely expired, please try again.",
+                });
                 return;
             }
 
             const username = await utils.UserManager.getUsernameByEmail(email);
 
             if (!username) {
-                utils.error(res, 400, "InvalidEmail");
+                res.status(400).json({ error: "InvalidEmail" });
                 return;
             }
 
             await utils.UserManager.setEmailVerified(username, true);
 
-            res.redirect(utils.env.HomeURL);
+            res.redirect(process.env.HomeURL);
         },
     );
 };

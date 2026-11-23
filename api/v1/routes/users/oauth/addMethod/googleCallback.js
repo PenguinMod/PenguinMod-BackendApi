@@ -16,14 +16,14 @@ module.exports = (app, utils) => {
         const state = String(packet.state);
 
         if (!state || !code) {
-            utils.error(res, 400, "Missing state or code");
+            res.status(400).json({ error: "Missing state or code" });
             return;
         }
 
         const { valid, data } =
             await utils.UserManager.verifyOAuth2State(state);
         if (!valid) {
-            utils.error(res, 400, "InvalidState");
+            res.status(400).json({ error: "InvalidState" });
             return;
         }
 
@@ -32,13 +32,13 @@ module.exports = (app, utils) => {
         const methods = await utils.UserManager.getOAuthMethods(userid);
 
         if (methods.includes("google")) {
-            utils.error(res, 400, "Method already added");
+            res.status(400).json({ error: "Method already added" });
             return;
         }
 
         const oauth2Client = new utils.googleOAuth2Client(
-            utils.env.GoogleOAuthClientID,
-            utils.env.GoogleOAuthClientSecret,
+            process.env.GoogleOAuthClientID,
+            process.env.GoogleOAuthClientSecret,
             `${process.env.ApiURL}/api/v1/users/googlecallback/addmethod`,
         );
 
@@ -46,7 +46,7 @@ module.exports = (app, utils) => {
         try {
             r = await oauth2Client.getToken(code);
         } catch (e) {
-            utils.error(res, 400, "Invalid code");
+            res.status(400).json({ error: "Invalid code" });
             return;
         }
         const tokens = r.tokens;
@@ -68,6 +68,6 @@ module.exports = (app, utils) => {
         const ottCode = await utils.UserManager.genOneTimeTokenCode(token);
 
         res.status(200);
-        res.redirect(`${utils.env.HomeURL}/exchangeottcode?code=${ottCode}`);
+        res.redirect(`${process.env.HomeURL}/exchangeottcode?code=${ottCode}`);
     });
 };

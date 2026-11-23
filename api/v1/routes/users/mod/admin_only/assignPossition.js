@@ -22,7 +22,7 @@ module.exports = (app, utils) => {
             const username = req.login.username;
 
             if (!(await utils.UserManager.existsByUsername(target))) {
-                utils.error(res, 400, "AccountDoesNotExist");
+                res.status(400).json({ error: "AccountDoesNotExist" });
                 return;
             }
 

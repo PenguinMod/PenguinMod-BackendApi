@@ -25,11 +25,11 @@ module.exports = (app, utils) => {
                 !project ||
                 !(await utils.UserManager.projectExists(project, true))
             ) {
-                return utils.error(res, 404, "ProjectNotFound");
+                return res.status(404).json({ error: "ProjectNotFound" });
             }
 
             if (await utils.UserManager.isSoftRejected(project)) {
-                return utils.error(res, 400, "AlreadySoftRejected");
+                return res.status(400).json({ error: "AlreadySoftRejected" });
             }
 
             await utils.UserManager.softReject(project, true);
@@ -53,7 +53,7 @@ module.exports = (app, utils) => {
                         Title: projectData.title,
                         Message: `\`\`\`\n${message}\n\`\`\``,
                         Author: projectData.author.username,
-                        URL: `${utils.env.StudioURL}/#${project}`,
+                        URL: `${process.env.StudioURL}/#${project}`,
                     },
                 },
                 utils.logs.pmUserAuthor(username),

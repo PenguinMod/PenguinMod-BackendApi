@@ -30,12 +30,12 @@ module.exports = (app, utils) => {
             const after = String(packet.after) || undefined;
 
             if (after && !ObjectId.isValid(after)) {
-                return utils.error(res, 400, "InvalidAfter");
+                return res.status(400).json({ error: "InvalidAfter" });
             }
 
             const { projects, next } =
                 await utils.UserManager.getProjectsUnordered(
-                    Number(utils.env.MaxPageSize),
+                    Number(process.env.MaxPageSize),
                     after,
                     req.login && req.login.isMod,
                 );

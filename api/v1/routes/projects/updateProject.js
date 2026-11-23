@@ -29,7 +29,7 @@ module.exports = (app, utils) => {
                     "uploadingEnabled",
                 ))
             ) {
-                return utils.error(res, 503, "Uploading is disabled");
+                return res.status(503).json({ error: "Uploading is disabled" });
             }
 
             const packet = req.body;
@@ -43,24 +43,27 @@ module.exports = (app, utils) => {
             const now = Date.now();
             const tooSoon = isDonator
                 ? lastUpload > now - 10 * 1000
-                : lastUpload > now - utils.uploadCooldown;
+                : lastUpload >
+                  now - (Number(process.env.UploadCooldown) || 1000 * 60 * 8);
             if (tooSoon && !hasModPerms && !isDonator) {
-                return utils.error(res, 400, "Uploaded in the last 8 minutes");
+                return res
+                    .status(400)
+                    .json({ error: "Uploaded in the last 8 minutes" });
             }
 
             if (!req.login.emailVerified) {
-                return utils.error(
-                    res,
-                    400,
-                    "You must verify your email to upload a project",
-                );
+                return res.status(400).json({
+                    error: "You must verify your email to upload a project",
+                });
             }
 
             const projectID = String(packet.projectID);
 
             // check if the project exists
             if (!(await utils.UserManager.projectExists(projectID))) {
-                return utils.error(res, 400, "Project does not exist");
+                return res
+                    .status(400)
+                    .json({ error: "Project does not exist" });
             }
 
             const project =
@@ -70,14 +73,14 @@ module.exports = (app, utils) => {
                 (project.author.username !== username || project.hardReject) &&
                 !hasModPerms
             ) {
-                return utils.error(res, 403, "Unauthorized");
+                return res.status(403).json({ error: "Unauthorized" });
             }
 
             const illegalWordingError = async (text, type) => {
                 const illegal =
                     await utils.UserManager.checkForIllegalWording(text);
                 if (illegal) {
-                    utils.error(res, 400, "IllegalWordsUsed");
+                    res.status(400).json({ error: "IllegalWordsUsed" });
 
                     const illegalWordIndex =
                         await utils.UserManager.getIndexOfIllegalWording(text);
@@ -140,11 +143,9 @@ module.exports = (app, utils) => {
                 instructions.length > 4096 ||
                 notes.length > 4096
             ) {
-                return utils.error(
-                    res,
-                    400,
-                    "title, instructions, or notes are too long",
-                );
+                return res.status(400).json({
+                    error: "title, instructions, or notes are too long",
+                });
             }
 
             if (await illegalWordingError(title, "projectTitle")) {
@@ -174,7 +175,7 @@ module.exports = (app, utils) => {
                 uploadingProject &&
                 (!req.files.assets || req.files.assets.length === undefined)
             ) {
-                return utils.error(res, 400, "Missing assets");
+                return res.status(400).json({ error: "Missing assets" });
             }
 
             // TODO: make this only update, yk, the things that were updated
@@ -189,7 +190,9 @@ module.exports = (app, utils) => {
                     jsonFile =
                         utils.UserManager.protobufToProjectJson(protobufFile);
                 } catch (e) {
-                    return utils.error(res, 400, "Invalid protobuf file");
+                    return res
+                        .status(400)
+                        .json({ error: "Invalid protobuf file" });
                 }
 
                 // check the extensions
@@ -200,11 +203,9 @@ module.exports = (app, utils) => {
                         req.login,
                     );
                 if (!areExtensionsAllowed) {
-                    return utils.error(
-                        res,
-                        400,
-                        `Extension not allowed: ${blockedExtension}`,
-                    );
+                    return res.status(400).json({
+                        error: `Extension not allowed: ${blockedExtension}`,
+                    });
                 }
             }
 
@@ -226,7 +227,9 @@ module.exports = (app, utils) => {
                           .toBuffer()
                     : null;
             } catch (e) {
-                return utils.error(res, 400, "Invalid thumbnail image");
+                return res
+                    .status(400)
+                    .json({ error: "Invalid thumbnail image" });
             }
 
             // TODO: use mmmagic to verify this is a valid image
@@ -256,7 +259,9 @@ module.exports = (app, utils) => {
             );
 
             if (!success) {
-                return utils.error(res, 500, "Failed to update project");
+                return res
+                    .status(500)
+                    .json({ error: "Failed to update project" });
             }
 
             utils.logs.sendCreationLog(

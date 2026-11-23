@@ -31,7 +31,7 @@ module.exports = (app, utils) => {
         const methods = await utils.UserManager.getOAuthMethods(login.id);
 
         if (methods.includes(method)) {
-            utils.error(res, 400, "Method already added");
+            res.status(400).json({ error: "Method already added" });
             return;
         }
 
@@ -39,18 +39,18 @@ module.exports = (app, utils) => {
         switch (method) {
             case "scratch":
                 res.redirect(
-                    `https://oauth2.scratch-wiki.info/wiki/Special:ScratchOAuth2/authorize?client_id=${utils.env.ScratchOAuthClientID}&redirect_uri=${utils.env.ApiURL}/api/v1/users/addscratchlogin&scopes=identify&state=${state}`,
+                    `https://oauth2.scratch-wiki.info/wiki/Special:ScratchOAuth2/authorize?client_id=${process.env.ScratchOAuthClientID}&redirect_uri=${process.env.ApiURL}/api/v1/users/addscratchlogin&scopes=identify&state=${state}`,
                 );
                 break;
             case "github":
                 res.redirect(
-                    `https://github.com/login/oauth/authorize?client_id=${utils.env.GithubOAuthClientID}&redirect_uri=${utils.env.ApiURL}/api/v1/users/githubcallback/addmethod&state=${state}&scope=read:user`,
+                    `https://github.com/login/oauth/authorize?client_id=${process.env.GithubOAuthClientID}&redirect_uri=${process.env.ApiURL}/api/v1/users/githubcallback/addmethod&state=${state}&scope=read:user`,
                 );
                 break;
             case "google": {
                 const oauth2Client = new utils.googleOAuth2Client(
-                    utils.env.GoogleOAuthClientID,
-                    utils.env.GoogleOAuthClientSecret,
+                    process.env.GoogleOAuthClientID,
+                    process.env.GoogleOAuthClientSecret,
                     `${process.env.ApiURL}/api/v1/users/googlecallback/addmethod`,
                 );
 
@@ -63,7 +63,7 @@ module.exports = (app, utils) => {
                 break;
             }
             default:
-                utils.error(res, 400, "Invalid method");
+                res.status(400).json({ error: "Invalid method" });
                 return;
         }
     });

@@ -1,4 +1,4 @@
-const countryLookup = require("../../../db/country-lookup.json");
+const countryLookup = require("../../../../../static/country-lookup.json");
 /**
  * @typedef {Object} Utils
  * @property {import("../../../db/UserManager")} UserManager
@@ -45,9 +45,9 @@ module.exports = (app, utils) => {
             const packet = req.body;
 
             const limit_timer =
-                Number(utils.env.GlobalAccountCreationTimer) || 60;
+                Number(process.env.GlobalAccountCreationTimer) || 60;
             const limit_amount =
-                Number(utils.env.GlobalAccountCreationLimit) || 5;
+                Number(process.env.GlobalAccountCreationLimit) || 5;
 
             const now = Date.now();
             if (global_creation_counter.end < now) {
@@ -66,9 +66,9 @@ module.exports = (app, utils) => {
                         {
                             name: "System",
                             icon_url: String(
-                                `${utils.env.ApiURL}/api/v1/users/getpfp?username=system`,
+                                `${process.env.ApiURL}/api/v1/users/getpfp?username=system`,
                             ),
-                            url: `${utils.env.HomeURL}/profile?user=system`,
+                            url: `${process.env.HomeURL}/profile?user=system`,
                         },
                         0xcc0000,
                     );
@@ -76,11 +76,15 @@ module.exports = (app, utils) => {
                     global_creation_counter.ping = true;
                 }
 
-                return utils.error(res, 503, "Please try again later.");
+                return res
+                    .status(503)
+                    .json({ error: "Please try again later." });
             }
 
             if (!(await utils.UserManager.canCreateAccount())) {
-                return utils.error(res, 403, "Account creation is not enabled");
+                return res
+                    .status(403)
+                    .json({ error: "Account creation is not enabled" });
             }
 
             if (
@@ -89,11 +93,11 @@ module.exports = (app, utils) => {
                 packet.birthday === null ||
                 packet.country === null
             ) {
-                return utils.error(
-                    res,
-                    400,
-                    "Missing username, password, birthday, or country",
-                );
+                return res
+                    .status(400)
+                    .json({
+                        error: "Missing username, password, birthday, or country",
+                    });
             }
 
             const username = String(packet.username).toLowerCase();
@@ -106,45 +110,47 @@ module.exports = (app, utils) => {
             const captcha_token = String(packet.captcha_token);
 
             if (username.length < 3 || username.length > 20) {
-                return utils.error(res, 400, "InvalidLengthUsername");
+                return res.status(400).json({ error: "InvalidLengthUsername" });
             }
             if (username.match(/[^a-z0-9\-_]/i)) {
-                return utils.error(res, 400, "InvalidUsername");
+                return res.status(400).json({ error: "InvalidUsername" });
             }
 
             if (password.length < 8 || password.length > 50) {
-                return utils.error(res, 400, "InvalidLengthPassword");
+                return res.status(400).json({ error: "InvalidLengthPassword" });
             }
             const passwordMeetsTextInclude =
                 password.match(/[a-z]/) && password.match(/[A-Z]/);
             const passwordMeetsSpecialInclude =
                 password.match(/[0-9]/) && password.match(/[^a-z0-9]/i);
             if (!(passwordMeetsTextInclude && passwordMeetsSpecialInclude)) {
-                return utils.error(res, 400, "MissingRequirementsPassword");
+                return res
+                    .status(400)
+                    .json({ error: "MissingRequirementsPassword" });
             }
 
             if (email && !utils.UserManager.validateEmail(email)) {
-                return utils.error(res, 400, "InvalidEmail");
+                return res.status(400).json({ error: "InvalidEmail" });
             }
 
             const parsedBirthday = parseBirthday(birthday);
             if (!parsedBirthday) {
-                return utils.error(res, 400, "InvalidBirthday");
+                return res.status(400).json({ error: "InvalidBirthday" });
             }
 
             if (!countryLookup.countryCodes.includes(countryCode)) {
-                return utils.error(res, 400, "UnsupportedCountry");
+                return res.status(400).json({ error: "UnsupportedCountry" });
             }
 
             // ---- captcha ----
 
-            if (utils.env.CFCaptchaEnabled !== "false") {
+            if (process.env.CFCaptchaEnabled !== "false") {
                 if (captcha_token.length > 2048) {
-                    return utils.error(res, 400, "InvalidCaptcha");
+                    return res.status(400).json({ error: "InvalidCaptcha" });
                 }
 
                 const captchaBody = {
-                    secret: utils.env.CFCaptchaSecret,
+                    secret: process.env.CFCaptchaSecret,
                     response: captcha_token,
                     remoteip: req.realIPPlain,
                 };
@@ -176,7 +182,9 @@ module.exports = (app, utils) => {
                     );
                 } catch (err) {
                     console.error("Turnstile verification unavailable:", err);
-                    return utils.error(res, 503, "CaptchaServiceUnavailable");
+                    return res
+                        .status(503)
+                        .json({ error: "CaptchaServiceUnavailable" });
                 }
 
                 if (!captchaResult || !captchaResult.success) {
@@ -184,7 +192,7 @@ module.exports = (app, utils) => {
                         "Turnstile rejected:",
                         captchaResult?.["error-codes"],
                     );
-                    return utils.error(res, 400, "InvalidCaptcha");
+                    return res.status(400).json({ error: "InvalidCaptcha" });
                 }
             } else {
                 console.warn(
@@ -193,11 +201,11 @@ module.exports = (app, utils) => {
             }
 
             if (await utils.UserManager.existsByUsername(username, true)) {
-                return utils.error(res, 400, "AccountExists");
+                return res.status(400).json({ error: "AccountExists" });
             }
 
             if (email && (await utils.UserManager.emailInUse(email))) {
-                return utils.error(res, 400, "EmailInUse");
+                return res.status(400).json({ error: "EmailInUse" });
             }
 
             const info = await utils.UserManager.createAccount(

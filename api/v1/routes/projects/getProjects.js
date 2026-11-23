@@ -18,7 +18,7 @@ module.exports = (app, utils) => {
                     "viewingEnabled",
                 ))
             ) {
-                return utils.error(res, 503, "Viewing is disabled");
+                return res.status(503).json({ error: "Viewing is disabled" });
             }
 
             const packet = req.query;
@@ -30,7 +30,7 @@ module.exports = (app, utils) => {
             const projects = await utils.UserManager.getProjects(
                 is_mod,
                 page,
-                Number(utils.env.PageSize),
+                Number(process.env.PageSize),
                 null,
                 reverse,
             );

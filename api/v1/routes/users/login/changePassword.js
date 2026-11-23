@@ -18,14 +18,18 @@ module.exports = (app, utils) => {
             const old_password = String(packet.old_password);
             const new_password = String(packet.new_password);
             if (!old_password || !new_password) {
-                utils.error(res, 400, "Missing old_password or new_password");
+                res.status(400).json({
+                    error: "Missing old_password or new_password",
+                });
                 return;
             }
             if (
                 typeof old_password !== "string" &&
                 typeof new_password !== "string"
             ) {
-                utils.error(res, 400, "Missing old_password or new_password");
+                res.status(400).json({
+                    error: "Missing old_password or new_password",
+                });
                 return;
             }
             const passwordDoesNotMeetLength =
@@ -35,11 +39,11 @@ module.exports = (app, utils) => {
             const passwordMeetsSpecialInclude =
                 new_password.match(/[0-9]/) && new_password.match(/[^a-z0-9]/i);
             if (passwordDoesNotMeetLength) {
-                utils.error(res, 400, "InvalidLengthPassword");
+                res.status(400).json({ error: "InvalidLengthPassword" });
                 return;
             }
             if (!(passwordMeetsTextInclude && passwordMeetsSpecialInclude)) {
-                utils.error(res, 400, "MissingRequirementsPassword");
+                res.status(400).json({ error: "MissingRequirementsPassword" });
                 return;
             }
 
@@ -50,7 +54,7 @@ module.exports = (app, utils) => {
                     old_password,
                 ))
             ) {
-                utils.error(res, 401, "Invalid Login");
+                res.status(401).json({ error: "Invalid Login" });
                 return;
             }
 

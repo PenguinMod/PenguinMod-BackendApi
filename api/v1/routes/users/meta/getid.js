@@ -15,13 +15,13 @@ module.exports = (app, utils) => {
         const username = String(packet.username).toLowerCase();
 
         if (!username) {
-            return utils.error(res, 400, "Missing username");
+            return res.status(400).json({ error: "Missing username" });
         }
 
         const id = await utils.UserManager.getIDByUsername(username, false);
 
         if (!id) {
-            return utils.error(res, 404, "UserNotFound");
+            return res.status(404).json({ error: "UserNotFound" });
         }
 
         res.status(200);

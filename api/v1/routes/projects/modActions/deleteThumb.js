@@ -19,7 +19,7 @@ module.exports = (app, utils) => {
             const username = req.login.username;
 
             if (!(await utils.UserManager.projectExists(projectID))) {
-                return utils.error(res, 404, "Project not found");
+                return res.status(404).json({ error: "Project not found" });
             }
 
             await utils.UserManager.deleteThumb(projectID);
@@ -31,7 +31,7 @@ module.exports = (app, utils) => {
                     fields: {
                         Mod: username,
                         "Project ID": projectID,
-                        URL: `${utils.env.StudioURL}/#${projectID}`,
+                        URL: `${process.env.StudioURL}/#${projectID}`,
                     },
                 },
                 utils.logs.pmUserAuthor(username),

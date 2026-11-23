@@ -22,7 +22,7 @@ module.exports = (app, utils) => {
             const remove_follows = String(packet.remove_follows) !== "false";
 
             if (reason.length > 512) {
-                utils.error(res, 400, "ReasonTooLong");
+                res.status(400).json({ error: "ReasonTooLong" });
                 return;
             }
 
@@ -34,7 +34,7 @@ module.exports = (app, utils) => {
                 false,
             );
             if (!targetID) {
-                utils.error(res, 404, "TargetNotFound");
+                res.status(404).json({ error: "TargetNotFound" });
                 return;
             }
 
@@ -42,7 +42,7 @@ module.exports = (app, utils) => {
                 !req.login.isAdmin &&
                 (await utils.UserManager.hasModPerms(target))
             ) {
-                utils.error(res, 403, "Unauthorized");
+                res.status(403).json({ error: "Unauthorized" });
                 return;
             }
 
@@ -93,7 +93,7 @@ module.exports = (app, utils) => {
             }
 
             fields.Reason = `\`\`\`\n${reason}\n\`\`\``;
-            fields.URL = `${utils.env.HomeURL}/profile?userid=${targetID}`;
+            fields.URL = `${process.env.HomeURL}/profile?userid=${targetID}`;
 
             utils.logs.sendAdminLog(
                 {

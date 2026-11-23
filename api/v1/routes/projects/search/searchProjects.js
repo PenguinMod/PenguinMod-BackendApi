@@ -44,8 +44,8 @@ module.exports = (app, utils) => {
                 query,
                 type,
                 page,
-                Number(utils.env.PageSize),
-                Number(utils.env.MaxPageSize),
+                Number(process.env.PageSize),
+                Number(process.env.MaxPageSize),
                 reverse,
             );
 

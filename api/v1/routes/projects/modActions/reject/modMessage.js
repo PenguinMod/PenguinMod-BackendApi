@@ -27,7 +27,7 @@ module.exports = (app, utils) => {
                 false,
             );
             if (!targetID) {
-                return utils.error(res, 404, "UserNotFound");
+                return res.status(404).json({ error: "UserNotFound" });
             }
 
             const id = await utils.UserManager.sendMessage(

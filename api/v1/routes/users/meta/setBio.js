@@ -20,7 +20,7 @@ module.exports = (app, utils) => {
             const username = req.login.username;
 
             if (bio.length > 2048) {
-                utils.error(res, 400, "BioTooLong");
+                res.status(400).json({ error: "BioTooLong" });
                 return;
             }
 
@@ -28,7 +28,7 @@ module.exports = (app, utils) => {
 
             let trigger = await utils.UserManager.checkForIllegalWording(bio);
             if (trigger) {
-                utils.error(res, 400, "IllegalWordsUsed");
+                res.status(400).json({ error: "IllegalWordsUsed" });
 
                 const illegalWordIndex =
                     await utils.UserManager.getIndexOfIllegalWording(bio);

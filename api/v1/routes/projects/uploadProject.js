@@ -29,7 +29,7 @@ module.exports = (app, utils) => {
                     "uploadingEnabled",
                 ))
             ) {
-                return utils.error(res, 503, "Uploading is disabled");
+                return res.status(503).json({ error: "Uploading is disabled" });
             }
 
             const packet = req.body;
@@ -45,24 +45,25 @@ module.exports = (app, utils) => {
             const now = Date.now();
             const tooSoon = isDonator
                 ? lastUpload > now - 10 * 1000
-                : lastUpload > now - utils.uploadCooldown;
+                : lastUpload >
+                  now - (Number(process.env.UploadCooldown) || 1000 * 60 * 8);
             if (tooSoon && !hasModPerms && !isDonator) {
-                return utils.error(res, 400, "Uploaded in the last 8 minutes");
+                return res
+                    .status(400)
+                    .json({ error: "Uploaded in the last 8 minutes" });
             }
 
             if (!req.login.emailVerified) {
-                return utils.error(
-                    res,
-                    400,
-                    "You must verify your email to upload a project",
-                );
+                return res.status(400).json({
+                    error: "You must verify your email to upload a project",
+                });
             }
 
             const illegalWordingError = async (text, type) => {
                 const trigger =
                     await utils.UserManager.checkForIllegalWording(text);
                 if (trigger) {
-                    utils.error(res, 400, "IllegalWordsUsed");
+                    res.status(400).json({ error: "IllegalWordsUsed" });
 
                     const illegalWordIndex =
                         await utils.UserManager.getIndexOfIllegalWording(text);
@@ -125,11 +126,9 @@ module.exports = (app, utils) => {
                 instructions.length > 4096 ||
                 notes.length > 4096
             ) {
-                return utils.error(
-                    res,
-                    400,
-                    "title, instructions, or notes are too long",
-                );
+                return res.status(400).json({
+                    error: "title, instructions, or notes are too long",
+                });
             }
 
             if (await illegalWordingError(title, "projectTitle")) {
@@ -151,11 +150,9 @@ module.exports = (app, utils) => {
                 !req.files.thumbnail ||
                 !req.files.assets
             ) {
-                return utils.error(
-                    res,
-                    400,
-                    "Missing json file, thumbnail, or assets",
-                );
+                return res
+                    .status(400)
+                    .json({ error: "Missing json file, thumbnail, or assets" });
             }
 
             // the jsonfile is in protobuf format so convert it to json
@@ -165,22 +162,18 @@ module.exports = (app, utils) => {
                 jsonFile =
                     utils.UserManager.protobufToProjectJson(protobufFile);
             } catch (e) {
-                return utils.error(
-                    res,
-                    400,
-                    "Invalid protobuf file: " + (e.message ?? e),
-                );
+                return res.status(400).json({
+                    error: `Invalid protobuf file: ${e.message ?? e}`,
+                });
             }
 
             let remix = String(packet.remix);
 
             if (remix !== "0") {
                 if (!(await utils.UserManager.projectExists(remix))) {
-                    return utils.error(
-                        res,
-                        400,
-                        "Remix project does not exist",
-                    );
+                    return res
+                        .status(400)
+                        .json({ error: "Remix project does not exist" });
                 }
             }
 
@@ -191,11 +184,9 @@ module.exports = (app, utils) => {
                     req.login,
                 );
             if (!areExtensionsAllowed) {
-                return utils.error(
-                    res,
-                    400,
-                    `Extension not allowed: ${blockedExtension}`,
-                );
+                return res.status(400).json({
+                    error: `Extension not allowed: ${blockedExtension}`,
+                });
             }
 
             if (!remix || typeof remix !== "string") {
@@ -217,7 +208,7 @@ module.exports = (app, utils) => {
                     .webp()
                     .toBuffer();
             } catch (e) {
-                return utils.error(res, 400, "Invalid image");
+                return res.status(400).json({ error: "Invalid image" });
             }
 
             // TODO: use mmmagic to verify this is a valid image
@@ -245,7 +236,7 @@ module.exports = (app, utils) => {
             );
 
             if (!projectID) {
-                return utils.error(res, 503);
+                return res.status(503).json({ error: "NoProjectID" });
             }
 
             await potentiallyIllegalWordingError(

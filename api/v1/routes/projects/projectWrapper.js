@@ -20,7 +20,7 @@ module.exports = (app, utils) => {
                     "viewingEnabled",
                 ))
             ) {
-                return utils.error(res, 503, "Viewing is disabled");
+                return res.status(503).json({ error: "Viewing is disabled" });
             }
 
             const packet = req.query;
@@ -28,11 +28,11 @@ module.exports = (app, utils) => {
             const projectId = String(packet.projectId);
 
             if (!projectId) {
-                return utils.error(res, 400, "Missing projectId");
+                return res.status(400).json({ error: "Missing projectId" });
             }
 
             if (!(await utils.UserManager.projectExists(projectId, true))) {
-                return utils.error(res, 404, "Project not found");
+                return res.status(404).json({ error: "Project not found" });
             }
 
             const metadata =
@@ -46,7 +46,7 @@ module.exports = (app, utils) => {
                     !metadata.public ||
                     /*metadata.softRejected ||*/ metadata.hardReject
                 ) {
-                    return utils.error(res, 404, "Project not found");
+                    return res.status(404).json({ error: "Project not found" });
                 }
             }
 

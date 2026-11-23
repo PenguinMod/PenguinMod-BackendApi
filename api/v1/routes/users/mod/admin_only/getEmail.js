@@ -20,7 +20,7 @@ module.exports = (app, utils) => {
             const email = await utils.UserManager.getEmail(target);
 
             if (!email) {
-                return utils.error(res, 404, "UserNotFound");
+                return res.status(404).json({ error: "UserNotFound" });
             }
 
             res.status(200);

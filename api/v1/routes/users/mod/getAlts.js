@@ -22,7 +22,7 @@ module.exports = (app, utils) => {
                 false,
             );
             if (!targetID) {
-                utils.error(res, 404, "NotFound");
+                res.status(404).json({ error: "NotFound" });
                 return;
             }
 

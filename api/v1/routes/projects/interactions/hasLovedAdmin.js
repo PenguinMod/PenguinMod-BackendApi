@@ -20,16 +20,18 @@ module.exports = (app, utils) => {
             const projectID = String(packet.projectID);
 
             if (!projectID || !target) {
-                return utils.error(res, 400, "Missing projectID, or target");
+                return res
+                    .status(400)
+                    .json({ error: "Missing projectID, or target" });
             }
 
             if (!(await utils.UserManager.projectExists(projectID, true))) {
-                return utils.error(res, 404, "Project not found");
+                return res.status(404).json({ error: "Project not found" });
             }
 
             const id = await utils.UserManager.getIDByUsername(target, false);
             if (!id) {
-                return utils.error(res, 404, "UserNotFound");
+                return res.status(404).json({ error: "UserNotFound" });
             }
 
             const has = await utils.UserManager.hasLovedProject(projectID, id);

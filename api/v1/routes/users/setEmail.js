@@ -20,17 +20,17 @@ module.exports = (app, utils) => {
             const username = req.login.username;
 
             if (!utils.UserManager.validateEmail(email)) {
-                utils.error(res, 400, "InvalidEmail");
+                res.status(400).json({ error: "InvalidEmail" });
                 return;
             }
 
             if (email === req.login.email) {
-                utils.error(res, 200, "ThatsTheSameEmailDingus");
+                res.status(200).json({ error: "ThatsTheSameEmailDingus" });
                 return;
             }
 
             if (await utils.UserManager.emailInUse(email)) {
-                utils.error(res, 400, "EmailAlreadyInUse");
+                res.status(400).json({ error: "EmailAlreadyInUse" });
                 return;
             }
 

@@ -18,7 +18,7 @@ module.exports = (app, utils) => {
             const customization = String(packet.customization);
 
             if (!customization) {
-                utils.error(res, 400, "Missing customization");
+                res.status(400).json({ error: "Missing customization" });
                 return;
             }
 
@@ -26,7 +26,7 @@ module.exports = (app, utils) => {
             const isMod = req.login.isMod;
 
             if (!isMod && !req.login.isDonator) {
-                return utils.error(res, 401, "Unauthorized");
+                return res.status(401).json({ error: "Unauthorized" });
             }
 
             // you can change other people's customization if you are a mod
@@ -34,7 +34,7 @@ module.exports = (app, utils) => {
                 ? String(packet.target).toLowerCase()
                 : null;
             if (target && !isMod) {
-                return utils.error(res, 401, "Invalid credentials");
+                return res.status(401).json({ error: "Invalid credentials" });
             }
             if (!target) {
                 if (
@@ -42,7 +42,9 @@ module.exports = (app, utils) => {
                         username,
                     )
                 ) {
-                    utils.error(res, 403, "FeatureDisabledForThisAccount");
+                    res.status(403).json({
+                        error: "FeatureDisabledForThisAccount",
+                    });
                     return;
                 }
             }
@@ -50,7 +52,7 @@ module.exports = (app, utils) => {
             const errorReason =
                 utils.UserManager.verifyCustomizationJson(customization);
             if (errorReason) {
-                return utils.error(res, 400, errorReason);
+                return res.status(400).json({ error: errorReason });
             }
             await utils.UserManager.setUserCustomization(
                 target || username,

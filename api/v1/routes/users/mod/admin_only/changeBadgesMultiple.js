@@ -22,19 +22,19 @@ module.exports = (app, utils) => {
             const username = req.login.username;
 
             if (!Array.isArray(targets)) {
-                utils.error(res, 400, "InvalidTargets");
+                res.status(400).json({ error: "InvalidTargets" });
                 return;
             }
 
             if (!Array.isArray(badges)) {
-                utils.error(res, 400, "InvalidBadges");
+                res.status(400).json({ error: "InvalidBadges" });
                 return;
             }
 
             for (const t of targets) {
                 const target = t.toLowerCase();
                 if (!(await utils.UserManager.existsByUsername(target))) {
-                    utils.error(res, 404, `UserNotFound ${target}`);
+                    res.status(404).json({ error: `UserNotFound ${target}` });
                     return;
                 }
                 const current_badges =

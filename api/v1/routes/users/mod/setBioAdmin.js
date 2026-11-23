@@ -21,7 +21,9 @@ module.exports = (app, utils) => {
             const username = req.login.username;
 
             if (bio.length > 2048) {
-                utils.error(res, 400, "BioLengthMustBeLessThan2048Chars");
+                res.status(400).json({
+                    error: "BioLengthMustBeLessThan2048Chars",
+                });
                 return;
             }
 

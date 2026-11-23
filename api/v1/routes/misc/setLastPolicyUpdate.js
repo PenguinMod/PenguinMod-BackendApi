@@ -30,7 +30,7 @@ module.exports = (app, utils) => {
                         await utils.UserManager.setLastGuidelinesUpdate();
                         break;
                     default:
-                        utils.error(res, 400, "Invalid type");
+                        res.status(400).json({ error: "Invalid type" });
                         return;
                 }
             }

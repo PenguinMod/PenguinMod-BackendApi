@@ -18,7 +18,7 @@ module.exports = (app, utils) => {
             const target = String(packet.target).toLowerCase();
 
             if (!target) {
-                utils.error(res, 400, "Missing target");
+                res.status(400).json({ error: "Missing target" });
                 return;
             }
 
@@ -27,13 +27,13 @@ module.exports = (app, utils) => {
                 false,
             );
             if (!exists) {
-                utils.error(res, 404, "User does not exist");
+                res.status(404).json({ error: "User does not exist" });
                 return;
             }
 
             const badges = await utils.UserManager.getBadges(target);
             if (!badges.includes("donator")) {
-                utils.error(res, 400, "NotDonator");
+                res.status(400).json({ error: "NotDonator" });
                 return;
             }
 

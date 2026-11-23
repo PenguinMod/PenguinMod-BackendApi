@@ -24,7 +24,7 @@ module.exports = (app, utils) => {
                 !target ||
                 !(await utils.UserManager.existsByUsername(target, true))
             ) {
-                utils.error(res, 404, "NotFound");
+                res.status(404).json({ error: "NotFound" });
                 return;
             }
 

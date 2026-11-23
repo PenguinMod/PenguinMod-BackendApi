@@ -19,17 +19,17 @@ module.exports = (app, utils) => {
             const emailVerified = req.login.emailVerified;
 
             if (email === "") {
-                utils.error(res, 400, "EmailInvalid");
+                res.status(400).json({ error: "EmailInvalid" });
                 return;
             }
 
             if (emailVerified) {
-                utils.error(res, 400, "EmailAlreadyVerified");
+                res.status(400).json({ error: "EmailAlreadyVerified" });
                 return;
             }
 
             if (!utils.UserManager.validateEmail(email)) {
-                utils.error(res, 400, "EmailInvalid");
+                res.status(400).json({ error: "EmailInvalid" });
                 return;
             }
 
@@ -44,12 +44,12 @@ module.exports = (app, utils) => {
                     ? lastEmailSentID
                     : lastEmailSendIP;
 
-            const emailCooldown = Number(utils.env.EmailCooldown) || 0;
+            const emailCooldown = Number(process.env.EmailCooldown) || 0;
             if (
                 Date.now() - (lastEmailSent ? lastEmailSent : 0) <
                 1000 * 60 * emailCooldown
             ) {
-                utils.error(res, 429, "Cooldown");
+                res.status(429).json({ error: "Cooldown" });
                 return;
             }
 
@@ -58,7 +58,7 @@ module.exports = (app, utils) => {
                 userid,
                 true,
             );
-            const verifyEmailUrl = `${utils.env.ApiURL}/api/v1/resetpassword/verifyemail?email=${encodeURIComponent(email)}&state=${encodeURIComponent(state)}`;
+            const verifyEmailUrl = `${process.env.ApiURL}/api/v1/resetpassword/verifyemail?email=${encodeURIComponent(email)}&state=${encodeURIComponent(state)}`;
 
             const emailHtml = `<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd">
         <html><body>
@@ -71,7 +71,7 @@ module.exports = (app, utils) => {
         <p style='font-family: "Helvetica Neue", Arial, sans-serif;'>If you did not request for this to be a PenguinMod account's email, you can delete this email or ignore it.</p>
             <p style='font-family: "Helvetica Neue", Arial, sans-serif;'>Do not forward, share, or reply to this email. Replies will not be seen or answered.</p>
 
-        <img src="${utils.env.HomeURL}/favicon.png" alt="PenguinMod" width="64" height="64" style="width: 64px; height: 64px;">
+        <img src="${process.env.HomeURL}/favicon.png" alt="PenguinMod" width="64" height="64" style="width: 64px; height: 64px;">
         </body></html>`;
             const emailPlainText = `PenguinMod Email Verification
 
@@ -109,7 +109,7 @@ module.exports = (app, utils) => {
 
             if (!success) {
                 console.warn(`Sending email to ${email} failed`);
-                utils.error(res, 500, "EmailFailed");
+                res.status(500).json({ error: "EmailFailed" });
                 return;
             }
 

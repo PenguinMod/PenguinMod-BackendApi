@@ -1,4 +1,4 @@
-const countryLookup = require("../../../db/country-lookup.json");
+const countryLookup = require("../../../../../static/country-lookup.json");
 /**
  * @typedef {Object} Utils
  * @property {import("../../../db/UserManager")} UserManager
@@ -43,32 +43,32 @@ module.exports = (app, utils) => {
 
             const parsedBirthday = parseBirthday(birthday); // will be null if not provided
             if (birthday && !parsedBirthday) {
-                utils.error(res, 400, "InvalidBirthday");
+                res.status(400).json({ error: "InvalidBirthday" });
                 return;
             }
             if (countryCode) {
                 if (typeof countryCode !== "string") {
-                    utils.error(res, 400, "InvalidCountry");
+                    res.status(400).json({ error: "InvalidCountry" });
                     return;
                 }
                 if (!countryLookup.countryCodes.includes(countryCode)) {
-                    utils.error(res, 400, "UnsupportedCountry");
+                    res.status(400).json({ error: "UnsupportedCountry" });
                     return;
                 }
             }
 
             if (!parsedBirthday && !countryCode) {
-                utils.error(res, 400, "MissingOneField");
+                res.status(400).json({ error: "MissingOneField" });
                 return;
             }
 
             // ideally people shouldnt just change their birthday or country on a whim
             if (parsedBirthday && user_meta.birthdayEntered) {
-                utils.error(res, 400, "AlreadyEnteredBirthday");
+                res.status(400).json({ error: "AlreadyEnteredBirthday" });
                 return;
             }
             if (countryCode && user_meta.countryEntered) {
-                utils.error(res, 400, "AlreadyEnteredCountry");
+                res.status(400).json({ error: "AlreadyEnteredCountry" });
                 return;
             }
 

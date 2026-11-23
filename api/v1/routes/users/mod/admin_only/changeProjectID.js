@@ -26,11 +26,11 @@ module.exports = (app, utils) => {
                 !target ||
                 !(await utils.UserManager.projectExists(target, true))
             ) {
-                utils.error(res, 404, "NotFound");
+                res.status(404).json({ error: "NotFound" });
                 return;
             }
             if (await utils.UserManager.projectExists(newId, true)) {
-                utils.error(res, 400, "IDTaken");
+                res.status(400).json({ error: "IDTaken" });
                 return;
             }
 
@@ -47,7 +47,7 @@ module.exports = (app, utils) => {
                     fields: {
                         Admin: username,
                         Title: projectName,
-                        URL: `${utils.env.StudioURL}/#${newId}`,
+                        URL: `${process.env.StudioURL}/#${newId}`,
                     },
                 },
                 utils.logs.pmUserAuthor(username),

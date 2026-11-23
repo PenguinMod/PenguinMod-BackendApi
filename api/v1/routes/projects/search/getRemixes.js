@@ -16,13 +16,13 @@ module.exports = (app, utils) => {
         const page = utils.handle_page(packet.page);
 
         if (!projectID) {
-            return utils.error(res, 400, "Missing projectID");
+            return res.status(400).json({ error: "Missing projectID" });
         }
 
         const projects = await utils.UserManager.getRemixes(
             projectID,
             page,
-            Number(utils.env.PageSize),
+            Number(process.env.PageSize),
         );
 
         return res.send(projects);

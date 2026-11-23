@@ -24,14 +24,14 @@ module.exports = (app, utils) => {
                 !projectID ||
                 !(await utils.UserManager.projectExists(projectID))
             ) {
-                return utils.error(res, 404, "Project not found");
+                return res.status(404).json({ error: "Project not found" });
             }
 
             if (
                 (await utils.UserManager.hasLovedProject(projectID, id)) ===
                 love
             ) {
-                return utils.error(res, 400, "DoesNothing");
+                return res.status(400).json({ error: "DoesNothing" });
             }
 
             const projectMeta =
@@ -42,7 +42,7 @@ module.exports = (app, utils) => {
                 await utils.UserManager.getUserData(authorUsername);
 
             if (
-                projectMeta.loves >= utils.env.LoveAmount &&
+                projectMeta.loves >= process.env.LoveAmount &&
                 !authorMeta.badges.includes("likes")
             ) {
                 await utils.UserManager.addBadge(authorUsername, "likes");

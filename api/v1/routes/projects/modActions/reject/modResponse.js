@@ -23,7 +23,7 @@ module.exports = (app, utils) => {
             const dispute = await utils.UserManager.getMessage(disputeID);
 
             if (!dispute) {
-                return utils.error(res, 404, "MessageNotFound");
+                return res.status(404).json({ error: "MessageNotFound" });
             }
 
             const id = await utils.UserManager.sendMessage(

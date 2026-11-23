@@ -21,7 +21,7 @@ module.exports = (app, utils) => {
                 !target ||
                 !(await utils.UserManager.existsByUsername(target, true))
             ) {
-                return utils.error(res, 404, "User not found");
+                return res.status(404).json({ error: "User not found" });
             }
 
             const ips = await utils.UserManager.getIPs(target);

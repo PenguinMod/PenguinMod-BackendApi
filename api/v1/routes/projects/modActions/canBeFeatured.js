@@ -23,7 +23,7 @@ module.exports = (app, utils) => {
                 !projectID ||
                 !(await utils.UserManager.projectExists(projectID))
             ) {
-                return utils.error(res, 404, "Project not found");
+                return res.status(404).json({ error: "Project not found" });
             }
 
             await utils.UserManager.setCanBeFeatured(projectID, canBeFeatured);
@@ -35,7 +35,7 @@ module.exports = (app, utils) => {
                     fields: {
                         Admin: username,
                         "Project ID": projectID,
-                        URL: `${utils.env.StudioURL}/#${projectID}`,
+                        URL: `${process.env.StudioURL}/#${projectID}`,
                     },
                 },
                 utils.logs.pmUserAuthor(username),

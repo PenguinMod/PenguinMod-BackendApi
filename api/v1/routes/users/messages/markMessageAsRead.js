@@ -18,7 +18,7 @@ module.exports = (app, utils) => {
             const messageID = String(packet.messageID);
 
             if (!(await utils.UserManager.messageExists(messageID))) {
-                return utils.error(res, 400, "Invalid message ID");
+                return res.status(400).json({ error: "Invalid message ID" });
             }
 
             // TODO: verify user is recipient of message

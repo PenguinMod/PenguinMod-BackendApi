@@ -16,13 +16,13 @@ module.exports = (app, utils) => {
         const code = String(packet.code);
 
         if (!state || !code) {
-            utils.error(res, 400, "Missing state or code");
+            res.status(400).json({ error: "Missing state or code" });
             return;
         }
 
         const { valid } = await utils.UserManager.verifyOAuth2State(state);
         if (!valid) {
-            utils.error(res, 400, "Invalid state");
+            res.status(400).json({ error: "Invalid state" });
             return;
         }
 
@@ -33,7 +33,7 @@ module.exports = (app, utils) => {
         );
 
         if (!response) {
-            utils.error(res, 500, "OAuthServerDidNotRespond");
+            res.status(500).json({ error: "OAuthServerDidNotRespond" });
             return;
         }
 
@@ -49,7 +49,7 @@ module.exports = (app, utils) => {
                 return { user: await res.json(), status: res.status };
             })
             .catch((e) => {
-                utils.error(res, 500, "OAuthServerDidNotRespond");
+                res.status(500).json({ error: "OAuthServerDidNotRespond" });
                 return false;
             });
 
@@ -58,7 +58,7 @@ module.exports = (app, utils) => {
         }
 
         if (username.status !== 200) {
-            utils.error(res, 500, "InternalError");
+            res.status(500).json({ error: "InternalError" });
             return;
         }
 
@@ -76,7 +76,7 @@ module.exports = (app, utils) => {
 
             res.status(200);
             res.redirect(
-                `${utils.env.HomeURL}/exchangeottcode?code=${ottCode}`,
+                `${process.env.HomeURL}/exchangeottcode?code=${ottCode}`,
             );
             return;
         }
@@ -90,7 +90,7 @@ module.exports = (app, utils) => {
         );
 
         if (!userdata) {
-            utils.error(res, 400, "UnknownError");
+            res.status(400).json({ error: "UnknownError" });
             return;
         }
 
@@ -99,7 +99,7 @@ module.exports = (app, utils) => {
         )
             .then((res) => res.arrayBuffer())
             .catch((e) => {
-                utils.error(res, 500, "InternalError");
+                res.status(500).json({ error: "InternalError" });
                 return new Promise((resolve, reject) => resolve());
             });
 
@@ -125,6 +125,6 @@ module.exports = (app, utils) => {
         const ottCode = await utils.UserManager.genOneTimeTokenCode(token);
 
         res.status(200);
-        res.redirect(`${utils.env.HomeURL}/exchangeottcode?code=${ottCode}`);
+        res.redirect(`${process.env.HomeURL}/exchangeottcode?code=${ottCode}`);
     });
 };

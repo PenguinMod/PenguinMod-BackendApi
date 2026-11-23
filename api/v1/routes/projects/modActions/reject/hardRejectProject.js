@@ -25,11 +25,11 @@ module.exports = (app, utils) => {
                 !project ||
                 !(await utils.UserManager.projectExists(project, true))
             ) {
-                return utils.error(res, 404, "ProjectNotFound");
+                return res.status(404).json({ error: "ProjectNotFound" });
             }
 
             if (await utils.UserManager.isHardRejected(project)) {
-                return utils.error(res, 400, "AlreadyHardRejected");
+                return res.status(400).json({ error: "AlreadyHardRejected" });
             }
 
             await utils.UserManager.hardRejectProject(project);

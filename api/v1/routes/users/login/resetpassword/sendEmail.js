@@ -29,13 +29,13 @@ module.exports = (app, utils) => {
             const captcha_token = String(packet.captcha_token);
 
             if (!email || !captcha_token) {
-                utils.error(res, 400, "MissingFields");
+                res.status(400).json({ error: "MissingFields" });
                 return;
             }
 
-            if (utils.env.CFCaptchaEnabled !== "false") {
+            if (process.env.CFCaptchaEnabled !== "false") {
                 if (captcha_token.length > 2048) {
-                    utils.error(res, 400, "InvalidCaptcha");
+                    res.status(400).json({ error: "InvalidCaptcha" });
                     return;
                 }
 
@@ -46,12 +46,12 @@ module.exports = (app, utils) => {
                         headers: {
                             "Content-Type": "application/x-www-form-urlencoded",
                         },
-                        body: `secret=${utils.env.CFCaptchaSecret}&response=${captcha_token}`,
+                        body: `secret=${process.env.CFCaptchaSecret}&response=${captcha_token}`,
                     },
                 ).then((res) => res.json());
 
                 if (!captcha_success.success) {
-                    utils.error(res, 400, "InvalidCaptcha");
+                    res.status(400).json({ error: "InvalidCaptcha" });
                     return;
                 }
             } else {
@@ -65,7 +65,7 @@ module.exports = (app, utils) => {
             const username = await utils.UserManager.getUsernameByEmail(email);
 
             if (!username) {
-                utils.error(res, 400, "InvalidEmail");
+                res.status(400).json({ error: "InvalidEmail" });
                 return;
             }
 
@@ -82,12 +82,12 @@ module.exports = (app, utils) => {
                     ? lastEmailSentID
                     : lastEmailSendIP;
 
-            const emailCooldown = Number(utils.env.EmailCooldown) || 0;
+            const emailCooldown = Number(process.env.EmailCooldown) || 0;
             if (
                 Date.now() - (lastEmailSent ? lastEmailSent : 0) <
                 1000 * 60 * emailCooldown
             ) {
-                utils.error(res, 429, "Cooldown");
+                res.status(429).json({ error: "Cooldown" });
                 return;
             }
 
@@ -97,7 +97,7 @@ module.exports = (app, utils) => {
                 false,
             );
 
-            const forgotPasswordUrl = `${utils.env.HomeURL}/resetpassword?state=${encodeURIComponent(state)}&email=${encodeURIComponent(email)}`;
+            const forgotPasswordUrl = `${process.env.HomeURL}/resetpassword?state=${encodeURIComponent(state)}&email=${encodeURIComponent(email)}`;
 
             const emailHtml = `<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd">
         <html><body>
@@ -109,7 +109,7 @@ module.exports = (app, utils) => {
         <p style='font-family: "Helvetica Neue", Arial, sans-serif;'>If you did not ask to reset your password, you can delete this email or ignore it.</p>
             <p style='font-family: "Helvetica Neue", Arial, sans-serif;'>Do not forward, share, or reply to this email. Replies will not be seen or answered.</p>
 
-        <img src="${utils.env.HomeURL}/favicon.png" alt="PenguinMod" width="64" height="64" style="width: 64px; height: 64px;">
+        <img src="${process.env.HomeURL}/favicon.png" alt="PenguinMod" width="64" height="64" style="width: 64px; height: 64px;">
         </body></html>`;
             const emailPlainText = `PenguinMod Password Reset
 
@@ -143,7 +143,7 @@ module.exports = (app, utils) => {
             );
 
             if (!success) {
-                utils.error(res, 500, "EmailFailed");
+                res.status(500).json({ error: "EmailFailed" });
                 return;
             }
 

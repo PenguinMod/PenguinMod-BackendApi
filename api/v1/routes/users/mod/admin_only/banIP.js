@@ -25,7 +25,7 @@ module.exports = (app, utils) => {
                 }
                 targetIP = targetIP.toNormalizedString();
             } catch (e) {
-                utils.error(res, 400, "Could not convert to IPv6");
+                res.status(400).json({ error: "Could not convert to IPv6" });
                 return;
             }
 

@@ -16,13 +16,13 @@ module.exports = (app, utils) => {
         const code = String(packet.code);
 
         if (!state || !code) {
-            utils.error(res, 400, "Missing state or code");
+            res.status(400).json({ error: "Missing state or code" });
             return;
         }
 
         const { valid } = await utils.UserManager.verifyOAuth2State(state);
         if (!valid) {
-            utils.error(res, 400, "Invalid state");
+            res.status(400).json({ error: "Invalid state" });
             return;
         }
 
@@ -33,7 +33,7 @@ module.exports = (app, utils) => {
         );
 
         if (!response) {
-            utils.error(res, 500, "OAuthServerDidNotRespond");
+            res.status(500).json({ error: "OAuthServerDidNotRespond" });
             return;
         }
 
@@ -46,7 +46,7 @@ module.exports = (app, utils) => {
                 return { user: await res.json(), status: res.status };
             })
             .catch((e) => {
-                utils.error(res, 500, "OAuthServerDidNotRespond");
+                res.status(500).json({ error: "OAuthServerDidNotRespond" });
                 return new Promise((resolve, reject) => resolve());
             });
 
@@ -55,7 +55,7 @@ module.exports = (app, utils) => {
         }
 
         if (user.status !== 200) {
-            utils.error(res, 500, "OAuthServerError");
+            res.status(500).json({ error: "OAuthServerError" });
             return;
         }
 
@@ -66,7 +66,7 @@ module.exports = (app, utils) => {
 
         if (!userid) {
             // the method is not connected with an account
-            utils.error(res, 400, "MethodNotConnected");
+            res.status(400).json({ error: "MethodNotConnected" });
             return;
         }
 
@@ -77,6 +77,6 @@ module.exports = (app, utils) => {
         const ottCode = await utils.UserManager.genOneTimeTokenCode(token);
 
         res.status(200);
-        res.redirect(`${utils.env.HomeURL}/exchangeottcode?code=${ottCode}`);
+        res.redirect(`${process.env.HomeURL}/exchangeottcode?code=${ottCode}`);
     });
 };

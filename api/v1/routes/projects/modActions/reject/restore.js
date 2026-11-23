@@ -18,18 +18,18 @@ module.exports = (app, utils) => {
             const project = String(packet.project);
 
             if (!project) {
-                return utils.error(res, 400, "Missing project");
+                return res.status(400).json({ error: "Missing project" });
             }
 
             const username = req.login.username;
 
             // TODO: fetch meta once
             if (!(await utils.UserManager.projectExists(project))) {
-                return utils.error(res, 404, "ProjectNotFound");
+                return res.status(404).json({ error: "ProjectNotFound" });
             }
 
             if (!(await utils.UserManager.isSoftRejected(project))) {
-                return utils.error(res, 400, "NotSoftRejected");
+                return res.status(400).json({ error: "NotSoftRejected" });
             }
 
             await utils.UserManager.softReject(project, false);
@@ -52,7 +52,7 @@ module.exports = (app, utils) => {
                     fields: {
                         Mod: username,
                         "Project ID": project,
-                        URL: `${utils.env.StudioURL}/#${project}`,
+                        URL: `${process.env.StudioURL}/#${project}`,
                     },
                 },
                 utils.logs.pmUserAuthor(username),

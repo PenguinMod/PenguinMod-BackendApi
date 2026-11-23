@@ -24,11 +24,11 @@ module.exports = (app, utils) => {
                 false,
             );
             if (!target_id) {
-                return utils.error(res, 404, "Target not found");
+                return res.status(404).json({ error: "Target not found" });
             }
 
             if (user_id === target_id) {
-                return utils.error(res, 401, "Cannot block yourself");
+                return res.status(401).json({ error: "Cannot block yourself" });
             }
 
             const active = String(packet.active) === "true";

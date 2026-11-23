@@ -22,7 +22,7 @@ module.exports = (app, utils) => {
             const projects = await utils.UserManager.getProjectsByAuthor(
                 authorID,
                 page,
-                Number(utils.env.PageSize),
+                Number(process.env.PageSize),
                 true,
                 true,
             );

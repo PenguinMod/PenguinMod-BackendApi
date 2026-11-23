@@ -13,7 +13,7 @@ const path = require("path");
  */
 module.exports = (app, utils) => {
     const projectTemplate = fs
-        .readFileSync(path.join(utils.homeDir, "project.html"))
+        .readFileSync(path.join(utils.homeDir, "static/project.html"))
         .toString();
     app.get("/:id", async function (req, res) {
         const json = await utils.UserManager.getProjectMetadata(
@@ -21,11 +21,11 @@ module.exports = (app, utils) => {
         );
 
         if (!json) {
-            return utils.error(res, 404, "Not Found");
+            return res.status(404).json({ error: "Not Found" });
         }
 
         if (!json.public || json.softRejected || json.hardReject) {
-            return utils.error(res, 404, "Not Found");
+            return res.status(404).json({ error: "Not Found" });
         }
 
         let html = projectTemplate;
@@ -35,8 +35,8 @@ module.exports = (app, utils) => {
                 `{project.${prop}}`,
                 utils.escapeXML(json[prop]),
             );
-            html = html.replaceAll(`{studio_url}`, utils.env.StudioURL);
-            html = html.replaceAll(`{api_url}`, utils.env.ApiURL);
+            html = html.replaceAll(`{studio_url}`, process.env.StudioURL);
+            html = html.replaceAll(`{api_url}`, process.env.ApiURL);
         }
         res.status(200);
         res.send(html);

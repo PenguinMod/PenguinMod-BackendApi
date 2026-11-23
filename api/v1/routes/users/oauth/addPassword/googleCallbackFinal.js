@@ -19,7 +19,9 @@ module.exports = (app, utils) => {
             const password = String(packet.password);
 
             if (!tokens || !password) {
-                utils.error(res, 400, "Missing access token or password");
+                res.status(400).json({
+                    error: "Missing access token or password",
+                });
                 return;
             }
 
@@ -30,24 +32,24 @@ module.exports = (app, utils) => {
             const passwordMeetsSpecialInclude =
                 password.match(/[0-9]/) && password.match(/[^a-z0-9]/i);
             if (passwordDoesNotMeetLength) {
-                utils.error(res, 400, "InvalidLengthPassword");
+                res.status(400).json({ error: "InvalidLengthPassword" });
                 return;
             }
             if (!(passwordMeetsTextInclude && passwordMeetsSpecialInclude)) {
-                utils.error(res, 400, "MissingRequirementsPassword");
+                res.status(400).json({ error: "MissingRequirementsPassword" });
                 return;
             }
 
             const oauth2Client = new utils.googleOAuth2Client(
-                utils.env.GoogleOAuthClientID,
-                utils.env.GoogleOAuthClientSecret,
-                `${utils.env.ApiURL}/api/v1/users/googlecallback/addpassword`,
+                process.env.GoogleOAuthClientID,
+                process.env.GoogleOAuthClientSecret,
+                `${process.env.ApiURL}/api/v1/users/googlecallback/addpassword`,
             );
 
             try {
                 oauth2Client.setCredentials(JSON.parse(tokens));
             } catch (e) {
-                utils.error(res, 400, "Failed to set credentials");
+                res.status(400).json({ error: "Failed to set credentials" });
                 return;
             }
 
@@ -57,7 +59,7 @@ module.exports = (app, utils) => {
             try {
                 user = await oauth2Client.request({ url });
             } catch (e) {
-                utils.error(res, 400, "Failed to request user data");
+                res.status(400).json({ error: "Failed to request user data" });
                 return;
             }
 
@@ -69,7 +71,7 @@ module.exports = (app, utils) => {
             );
 
             if (!userid) {
-                utils.error(res, 400, "User not found");
+                res.status(400).json({ error: "User not found" });
                 return;
             }
 

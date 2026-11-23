@@ -17,7 +17,7 @@ module.exports = (app, utils) => {
         const pfp = await utils.UserManager.getProfilePicture(username);
 
         if (!pfp) {
-            return utils.error(res, 404, "UserNotFound");
+            return res.status(404).json({ error: "UserNotFound" });
         }
 
         res.status(200);

@@ -18,7 +18,7 @@ module.exports = (app, utils) => {
                     "viewingEnabled",
                 ))
             ) {
-                return utils.error(res, 503, "Viewing is disabled");
+                return res.status(503).json({ error: "Viewing is disabled" });
             }
 
             const packet = req.query;
@@ -27,14 +27,14 @@ module.exports = (app, utils) => {
             const projectID = String(packet.projectID);
 
             if (!requestType) {
-                return utils.error(res, 400, "Missing requestType");
+                return res.status(400).json({ error: "Missing requestType" });
             }
 
             if (
                 !projectID ||
                 !(await utils.UserManager.projectExists(projectID, true))
             ) {
-                return utils.error(res, 404, "Project not found");
+                return res.status(404).json({ error: "Project not found" });
             }
 
             const metadata =
@@ -48,7 +48,7 @@ module.exports = (app, utils) => {
                 ((!is_author && !metadata.public) || metadata.hardReject) &&
                 !is_mod
             ) {
-                return utils.error(res, 404, "Project not found");
+                return res.status(404).json({ error: "Project not found" });
             }
 
             switch (requestType) {
@@ -71,7 +71,9 @@ module.exports = (app, utils) => {
                         await utils.UserManager.getProjectFile(projectID);
 
                     if (!project) {
-                        return utils.error(res, 500, "CouldntGetProjectFile");
+                        return res
+                            .status(500)
+                            .json({ error: "CouldntGetProjectFile" });
                     }
 
                     return res
@@ -91,7 +93,9 @@ module.exports = (app, utils) => {
                         await utils.UserManager.getProjectImage(projectID);
 
                     if (!thumbnail) {
-                        return utils.error(res, 404, "Thumbnail not found");
+                        return res
+                            .status(404)
+                            .json({ error: "Thumbnail not found" });
                     }
 
                     res.status(200);
@@ -102,7 +106,9 @@ module.exports = (app, utils) => {
                 case "metadata":
                     return res.send(metadata);
                 default:
-                    return utils.error(res, 400, "Invalid requestType");
+                    return res
+                        .status(400)
+                        .json({ error: "Invalid requestType" });
             }
         },
     );

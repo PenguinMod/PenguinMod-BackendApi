@@ -24,7 +24,7 @@ module.exports = (app, utils) => {
             const target_data = await utils.UserManager.getUserData(target);
 
             if (!target_data) {
-                utils.error(res, 404, "NotFound");
+                res.status(404).json({ error: "NotFound" });
                 return;
             }
 
@@ -34,7 +34,7 @@ module.exports = (app, utils) => {
                 username !== target &&
                 !isMod
             ) {
-                utils.error(res, 404, "NotFound");
+                res.status(404).json({ error: "NotFound" });
                 return;
             }
 

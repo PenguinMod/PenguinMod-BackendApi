@@ -25,7 +25,7 @@ module.exports = (app, utils) => {
                     email,
                 ))
             ) {
-                utils.error(res, 401, "InvalidState");
+                res.status(401).json({ error: "InvalidState" });
                 return;
             }
 
@@ -36,18 +36,18 @@ module.exports = (app, utils) => {
             const passwordMeetsSpecialInclude =
                 password.match(/[0-9]/) && password.match(/[^a-z0-9]/i);
             if (passwordDoesNotMeetLength) {
-                utils.error(res, 400, "InvalidLengthPassword");
+                res.status(400).json({ error: "InvalidLengthPassword" });
                 return;
             }
             if (!(passwordMeetsTextInclude && passwordMeetsSpecialInclude)) {
-                utils.error(res, 400, "MissingRequirementsPassword");
+                res.status(400).json({ error: "MissingRequirementsPassword" });
                 return;
             }
 
             const username = await utils.UserManager.getUsernameByEmail(email);
 
             if (!username) {
-                utils.error(res, 400, "InvalidEmail");
+                res.status(400).json({ error: "InvalidEmail" });
                 return;
             }
 

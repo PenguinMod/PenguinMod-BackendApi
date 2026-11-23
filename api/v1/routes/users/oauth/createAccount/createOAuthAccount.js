@@ -14,13 +14,15 @@ module.exports = (app, utils) => {
         const packet = req.query;
 
         if (!(await utils.UserManager.canCreateAccount())) {
-            return utils.error(res, 403, "Account creation is not enabled");
+            return res
+                .status(403)
+                .json({ error: "Account creation is not enabled" });
         }
 
         const method = String(packet.method);
 
         if (!method) {
-            utils.error(res, 400, "Missing method");
+            res.status(400).json({ error: "Missing method" });
             return;
         }
 
@@ -28,19 +30,19 @@ module.exports = (app, utils) => {
         switch (method) {
             case "scratch":
                 res.redirect(
-                    `https://oauth2.scratch-wiki.info/wiki/Special:ScratchOAuth2/authorize?client_id=${utils.env.ScratchOAuthClientID}&redirect_uri=${utils.env.ApiURL}/api/v1/users/scratchoauthcreate&scopes=identify&state=${state}`,
+                    `https://oauth2.scratch-wiki.info/wiki/Special:ScratchOAuth2/authorize?client_id=${process.env.ScratchOAuthClientID}&redirect_uri=${process.env.ApiURL}/api/v1/users/scratchoauthcreate&scopes=identify&state=${state}`,
                 );
                 break;
             case "github":
                 res.redirect(
-                    `https://github.com/login/oauth/authorize?client_id=${utils.env.GithubOAuthClientID}&redirect_uri=${utils.env.ApiURL}/api/v1/users/githubcallback/createaccount&state=${state}&scope=read:user`,
+                    `https://github.com/login/oauth/authorize?client_id=${process.env.GithubOAuthClientID}&redirect_uri=${process.env.ApiURL}/api/v1/users/githubcallback/createaccount&state=${state}&scope=read:user`,
                 );
                 break;
             case "google": {
                 const oauth2Client = new utils.googleOAuth2Client(
-                    utils.env.GoogleOAuthClientID,
-                    utils.env.GoogleOAuthClientSecret,
-                    `${utils.env.ApiURL}/api/v1/users/googlecallback/createaccount`,
+                    process.env.GoogleOAuthClientID,
+                    process.env.GoogleOAuthClientSecret,
+                    `${process.env.ApiURL}/api/v1/users/googlecallback/createaccount`,
                 );
 
                 // TODO: we don't need the access_type offline. but i don't want to mess with it without testing right now.
@@ -56,7 +58,7 @@ module.exports = (app, utils) => {
                 break;
             }
             default:
-                utils.error(res, 400, "Invalid method");
+                res.status(400).json({ error: "Invalid method" });
                 return;
         }
     });

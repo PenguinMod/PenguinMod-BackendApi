@@ -16,27 +16,27 @@ module.exports = (app, utils) => {
         const state = String(packet.state);
 
         if (!code || !state) {
-            utils.error(res, 400, "Missing code or state");
+            res.status(400).json({ error: "Missing code or state" });
             return;
         }
 
         const { valid } = await utils.UserManager.verifyOAuth2State(state);
         if (!valid) {
-            utils.error(res, 400, "Invalid state");
+            res.status(400).json({ error: "Invalid state" });
             return;
         }
 
         const oauth2Client = new utils.googleOAuth2Client(
-            utils.env.GoogleOAuthClientID,
-            utils.env.GoogleOAuthClientSecret,
-            `${utils.env.ApiURL}/api/v1/users/googlecallback/login`,
+            process.env.GoogleOAuthClientID,
+            process.env.GoogleOAuthClientSecret,
+            `${process.env.ApiURL}/api/v1/users/googlecallback/login`,
         );
 
         let r;
         try {
             r = await oauth2Client.getToken(code);
         } catch (e) {
-            utils.error(res, 400, "Failed to get token");
+            res.status(400).json({ error: "Failed to get token" });
             return;
         }
         const tokens = r.tokens;
@@ -48,7 +48,7 @@ module.exports = (app, utils) => {
         let user;
         const try_user = async (tries) => {
             if (tries > 3) {
-                utils.error(res, 500, "Google api failed to respond");
+                res.status(500).json({ error: "Google api failed to respond" });
                 return false;
             }
 
@@ -75,7 +75,7 @@ module.exports = (app, utils) => {
         const userid = await utils.UserManager.getUserIDByOAuthID("google", id);
 
         if (!userid) {
-            utils.error(res, 400, "UserID not found");
+            res.status(400).json({ error: "UserID not found" });
             return;
         }
 
@@ -86,6 +86,6 @@ module.exports = (app, utils) => {
         const ottCode = await utils.UserManager.genOneTimeTokenCode(token);
 
         res.status(200);
-        res.redirect(`${utils.env.HomeURL}/exchangeottcode?code=${ottCode}`);
+        res.redirect(`${process.env.HomeURL}/exchangeottcode?code=${ottCode}`);
     });
 };

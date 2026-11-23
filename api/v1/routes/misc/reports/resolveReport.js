@@ -21,7 +21,7 @@ module.exports = (app, utils) => {
                 !reportID ||
                 !(await utils.UserManager.reportExists(reportID))
             ) {
-                return utils.error(res, 404, "Report not found");
+                return res.status(404).json({ error: "Report not found" });
             }
 
             await utils.UserManager.resolveReport(reportID);

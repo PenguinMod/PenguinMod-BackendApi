@@ -22,13 +22,13 @@ module.exports = (app, utils) => {
             const username = req.login.username;
 
             if (!project || !(await utils.UserManager.projectExists(project))) {
-                utils.error(res, 400, "InvalidProject");
+                res.status(400).json({ error: "InvalidProject" });
                 return;
             }
 
             // TODO: pretty sure this is not the correct range
             if (packet.title < 0 || packet.title > 500) {
-                utils.error("InvalidTitleType");
+                res.status(400).json({ error: "InvalidTitleType" });
             }
 
             // TODO: verify user exists

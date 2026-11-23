@@ -18,7 +18,7 @@ module.exports = (app, utils) => {
             const messages = await utils.UserManager.getMessages(
                 req.login.id,
                 utils.handle_page(packet.page),
-                Number(utils.env.PageSize),
+                Number(process.env.PageSize),
             );
 
             // TODO: this is copy-pasted between here and getUnreadMessages. This should be done by the DB query.

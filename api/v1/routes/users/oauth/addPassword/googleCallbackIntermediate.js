@@ -18,34 +18,34 @@ module.exports = (app, utils) => {
             const code = String(packet.code);
 
             if (!state || !code) {
-                utils.error(res, 400, "Missing state or code");
+                res.status(400).json({ error: "Missing state or code" });
                 return;
             }
 
             const { valid } = await utils.UserManager.verifyOAuth2State(state);
             if (!valid) {
-                utils.error(res, 400, "Invalid state");
+                res.status(400).json({ error: "Invalid state" });
                 return;
             }
 
             const oauth2Client = new utils.googleOAuth2Client(
-                utils.env.GoogleOAuthClientID,
-                utils.env.GoogleOAuthClientSecret,
-                `${utils.env.ApiURL}/api/v1/users/googlecallback/addpassword`,
+                process.env.GoogleOAuthClientID,
+                process.env.GoogleOAuthClientSecret,
+                `${process.env.ApiURL}/api/v1/users/googlecallback/addpassword`,
             );
 
             let r;
             try {
                 r = await oauth2Client.getToken(code);
             } catch (e) {
-                utils.error(res, 400, "Failed to get token");
+                res.status(400).json({ error: "Failed to get token" });
                 return;
             }
             const tokens = r.tokens;
 
             res.status(200);
             res.redirect(
-                `${utils.env.HomeURL}/oauthchangepasswordintermediate?method=google&at=${JSON.stringify(tokens)}`,
+                `${process.env.HomeURL}/oauthchangepasswordintermediate?method=google&at=${JSON.stringify(tokens)}`,
             );
         },
     );

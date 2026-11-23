@@ -17,7 +17,7 @@ module.exports = (app, utils) => {
         const token = await utils.UserManager.exchangeCodeForToken(code);
 
         if (!token) {
-            return utils.error(res, 404, "UnknownCode");
+            return res.status(404).json({ error: "UnknownCode" });
         }
 
         const username = (await utils.UserManager.loginWithToken(token, true))
