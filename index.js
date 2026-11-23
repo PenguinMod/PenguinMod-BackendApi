@@ -7,12 +7,11 @@ const UserManager = require("./api/v1/db/UserManager");
 const logs = require("./utils/Logs");
 const path = require("path");
 const multer = require("multer");
-const fs = require("fs");
+const fs = require("fs/promises");
 const requestIp = require("request-ip");
 const { OAuth2Client } = require("google-auth-library");
 const ipaddr = require("ipaddr.js");
 const mcache = require("memory-cache");
-const helmet = require("helmet");
 require("colors");
 
 function escapeXML(unsafe) {
@@ -48,8 +47,6 @@ if (!process.env.PORT) {
 const PORT = Number(process.env.PORT) || 8080;
 const MAXVIEWS = Number(process.env.MaxViews) || 10000; // it will take up to 10000 views then reset after
 const VIEWRESETRATE = Number(process.env.ViewResetRate) || 1000 * 60 * 60; // reset every hour
-
-app.use(helmet());
 
 const upload = multer({
     dest: "tmp/uploads/",
