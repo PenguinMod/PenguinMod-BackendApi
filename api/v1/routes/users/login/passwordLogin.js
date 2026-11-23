@@ -34,11 +34,6 @@ module.exports = (app, utils) => {
                     "passwordLogin ran with CFCaptchaEnabled set to false",
                 );
             } else {
-                if (!captcha_token) {
-                    utils.error(res, 400, "MissingCaptchaToken");
-                    return;
-                }
-
                 if (captcha_token.length > 2048) {
                     utils.error(res, 400, "InvalidCaptcha");
                     return;
@@ -59,11 +54,6 @@ module.exports = (app, utils) => {
                     utils.error(res, 400, "InvalidCaptcha");
                     return;
                 }
-            }
-
-            if (!username || !password) {
-                utils.error(res, 400, "Missing username or password");
-                return;
             }
 
             const token = await utils.UserManager.loginWithPassword(

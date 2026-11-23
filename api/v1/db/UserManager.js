@@ -1058,7 +1058,10 @@ class UserManager {
 
         data.success = true;
 
-        this.users.updateOne({ token }, { $set: { lastLogin: Date.now() } });
+        await this.users.updateOne(
+            { token },
+            { $set: { lastLogin: Date.now() } },
+        );
         return data;
     }
 
@@ -2416,7 +2419,7 @@ class UserManager {
                 return false;
             }
 
-            result.push({ id: item.split("_")[1], buffer: file });
+            result.push({ id: item.slice(search_term.length), buffer: file });
         }
 
         return result;

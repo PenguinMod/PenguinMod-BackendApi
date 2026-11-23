@@ -18,18 +18,13 @@ module.exports = (app, utils) => {
         "/api/v1/users/setpfpadmin",
         utils.requireAuth(utils.UserManager, { require_admin: true }),
         utils.upload.single("picture"),
+        utils.unlinkMulter,
         async (req, res) => {
             const packet = req.body;
 
             const target = String(packet.target).toLowerCase();
 
             const pictureName = req.file;
-
-            const unlink = async () => {
-                if (pictureName) {
-                    await utils.unlinkAsync(pictureName.path);
-                }
-            };
 
             if (!pictureName) {
                 return utils.error(res, 400, "InvalidPicture");
@@ -42,7 +37,6 @@ module.exports = (app, utils) => {
                 false,
             );
             if (!targetID) {
-                await unlink();
                 return utils.error(res, 400, "TargetNotFound");
             }
 
@@ -50,14 +44,12 @@ module.exports = (app, utils) => {
                 pictureName.size >
                 (Number(process.env.UploadSize) || 5) * 1024 * 1024
             ) {
-                await unlink();
                 return utils.error(res, 400, "File too large");
             }
 
             const picture = fs.readFileSync(
                 path.join(utils.homeDir, pictureName.path),
             );
-            await unlink();
 
             const allowedImages = ["image/png", "image/jpeg"];
             const allowedAnimated = ["image/gif", "image/webp"];

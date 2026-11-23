@@ -11,8 +11,8 @@ const fs = require("fs");
 const requestIp = require("request-ip");
 const { OAuth2Client } = require("google-auth-library");
 const ipaddr = require("ipaddr.js");
-const { promisify } = require("util");
 const mcache = require("memory-cache");
+const helmet = require("helmet");
 require("colors");
 
 function escapeXML(unsafe) {
@@ -48,6 +48,9 @@ if (!process.env.PORT) {
 const PORT = Number(process.env.PORT) || 8080;
 const MAXVIEWS = Number(process.env.MaxViews) || 10000; // it will take up to 10000 views then reset after
 const VIEWRESETRATE = Number(process.env.ViewResetRate) || 1000 * 60 * 60; // reset every hour
+
+app.use(helmet());
+
 const upload = multer({
     dest: "tmp/uploads/",
     limits: {
@@ -55,21 +58,48 @@ const upload = multer({
     }, // 5mb - max size per asset
 });
 
+function unlinkMulter(req, res, next) {
+    const files = [
+        ...(req.file ? [req.file] : []),
+        ...(Array.isArray(req.files) ? req.files : []),
+        ...(req.files && !Array.isArray(req.files)
+            ? Object.values(req.files).flat()
+            : []),
+    ];
+
+    const paths = files.map((file) => file.path);
+
+    let cleaned = false;
+
+    async function cleanup() {
+        if (cleaned) {
+            return;
+        }
+        cleaned = true;
+
+        await Promise.all(
+            paths.map((path) =>
+                fs.unlink(path).catch((err) => {
+                    if (err.code !== "ENOENT") {
+                        console.error("Failed to delete uploaded file:", err);
+                    }
+                }),
+            ),
+        );
+    }
+
+    res.once("finish", cleanup);
+    res.once("close", cleanup);
+
+    next();
+}
+
+const um = new UserManager();
+
 app.use(
     cors({
         origin: "*", // this gets overwritten by some endpoints (all that use your login)
         utilsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204
-    }),
-);
-app.use(
-    express.json({
-        limit: process.env.ServerSize,
-    }),
-);
-app.use(
-    express.urlencoded({
-        limit: process.env.ServerSize,
-        extended: true,
     }),
 );
 app.set("trust proxy", 1);
@@ -86,8 +116,39 @@ app.use(
     }),
 );
 app.use(requestIp.mw());
+app.use((req, res, next) => {
+    const parsed = ipaddr.process(
+        process.env.isCFTunnel === "true"
+            ? req.get("CF-Connecting-IP")
+            : req.clientIp,
+    );
 
-const um = new UserManager();
+    req.realIPPlain = parsed.toString();
+
+    req.realIP =
+        parsed.kind() === "ipv6"
+            ? parsed.toNormalizedString()
+            : parsed.toIPv4MappedAddress().toNormalizedString();
+
+    next();
+});
+app.use(async (req, res, next) => {
+    if (await um.isIPBanned(req.realIP)) {
+        return error(res, 418, "NanananaBooBoo");
+    }
+    next();
+});
+app.use(
+    express.json({
+        limit: process.env.ServerSize,
+    }),
+);
+app.use(
+    express.urlencoded({
+        limit: process.env.ServerSize,
+        extended: true,
+    }),
+);
 
 console.real_log = console.log;
 console.log = (...data) => {
@@ -121,55 +182,12 @@ console.error = (...args) => {
             .green,
     );
 
-    app.use((req, res, next) => {
-        const parsed = ipaddr.process(
-            process.env.isCFTunnel === "true"
-                ? req.get("CF-Connecting-IP")
-                : req.clientIp,
-        );
-
-        req.realIPPlain = parsed.toString();
-
-        req.realIP =
-            parsed.kind() === "ipv6"
-                ? parsed.toNormalizedString()
-                : parsed.toIPv4MappedAddress().toNormalizedString();
-
-        next();
-    });
-
-    // ip banning
-    app.use(async (req, res, next) => {
-        if (await um.isIPBanned(req.realIP)) {
-            return error(res, 418, "NanananaBooBoo");
-        }
-        next();
-    });
-
     app.get("/robots.txt", (req, res) => {
         res.sendFile(path.join(__dirname, "robots.txt"));
     });
 
     function file_size_limit(utils) {
         return async function (req, res, next) {
-            const unlink = async () => {
-                if (!req.files) {
-                    return;
-                }
-
-                if (req.files.jsonFile) {
-                    await utils.unlinkAsync(req.files.jsonFile[0].path);
-                }
-                if (req.files.thumbnail) {
-                    await utils.unlinkAsync(req.files.thumbnail[0].path);
-                }
-                if (req.files.assets) {
-                    for (const asset of req.files.assets) {
-                        await utils.unlinkAsync(asset.path);
-                    }
-                }
-            };
-
             const maxSingleSize =
                 (Number(process.env.UploadSize) *
                     (req.login.isDonator ? 1.75 : 1) || 5) * 1000000;
@@ -182,7 +200,6 @@ console.error = (...args) => {
                 // TODO: i don't feel like testing rn whether the for in loop is necessary over a for of loop
                 const file = req.files[file_key];
                 if (file.size > maxSingleSize) {
-                    await unlink();
                     return utils.error(res, 400, "Asset too big");
                 }
             }
@@ -206,7 +223,6 @@ console.error = (...args) => {
             }
 
             if (combinedSize > maxCombinedSize) {
-                await unlink();
                 return utils.error(res, 400, "Files too big");
             }
 
@@ -242,7 +258,7 @@ console.error = (...args) => {
         env: process.env,
         upload: upload,
         uploadCooldown: Number(process.env.UploadCooldown) || 1000 * 60 * 8,
-        unlinkAsync: promisify(fs.unlink),
+        unlinkMulter,
         path: path,
         PORT: PORT,
         handle_page,

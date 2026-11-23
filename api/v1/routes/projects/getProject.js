@@ -41,7 +41,7 @@ module.exports = (app, utils) => {
                 await utils.UserManager.getProjectMetadata(projectID);
 
             const is_author =
-                req.login && metadata.author === req.login.username;
+                req.login && metadata.author.username === req.login.username;
             const is_mod = req.login && req.login.isMod;
 
             if (
@@ -95,7 +95,7 @@ module.exports = (app, utils) => {
                     }
 
                     res.status(200);
-                    res.header("Content-Type", "image/png");
+                    res.header("Content-Type", "image/webp");
                     res.header("Cache-Control", "public, max-age=90");
                     return res.send(thumbnail);
                 }

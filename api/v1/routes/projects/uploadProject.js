@@ -22,27 +22,13 @@ module.exports = (app, utils) => {
             { name: "assets", maxCount: Number(process.env.MaxFilesUpload) },
         ]),
         utils.file_size_limit(utils),
+        utils.unlinkMulter,
         async (req, res) => {
-            const unlink = async () => {
-                if (req.files.jsonFile) {
-                    await utils.unlinkAsync(req.files.jsonFile[0].path);
-                }
-                if (req.files.thumbnail) {
-                    await utils.unlinkAsync(req.files.thumbnail[0].path);
-                }
-                if (req.files.assets) {
-                    for (const asset of req.files.assets) {
-                        await utils.unlinkAsync(asset.path);
-                    }
-                }
-            };
-
             if (
                 !(await utils.UserManager.getRuntimeConfigItem(
                     "uploadingEnabled",
                 ))
             ) {
-                await unlink();
                 return utils.error(res, 503, "Uploading is disabled");
             }
 
@@ -61,12 +47,10 @@ module.exports = (app, utils) => {
                 ? lastUpload > now - 10 * 1000
                 : lastUpload > now - utils.uploadCooldown;
             if (tooSoon && !hasModPerms && !isDonator) {
-                await unlink();
                 return utils.error(res, 400, "Uploaded in the last 8 minutes");
             }
 
             if (!req.login.emailVerified) {
-                await unlink();
                 return utils.error(
                     res,
                     400,
@@ -141,7 +125,6 @@ module.exports = (app, utils) => {
                 instructions.length > 4096 ||
                 notes.length > 4096
             ) {
-                await unlink();
                 return utils.error(
                     res,
                     400,
@@ -150,19 +133,16 @@ module.exports = (app, utils) => {
             }
 
             if (await illegalWordingError(title, "projectTitle")) {
-                await unlink();
                 return;
             }
 
             if (
                 await illegalWordingError(instructions, "projectInstructions")
             ) {
-                await unlink();
                 return;
             }
 
             if (await illegalWordingError(notes, "projectNotes")) {
-                await unlink();
                 return;
             }
 
@@ -171,7 +151,6 @@ module.exports = (app, utils) => {
                 !req.files.thumbnail ||
                 !req.files.assets
             ) {
-                await unlink();
                 return utils.error(
                     res,
                     400,
@@ -186,7 +165,6 @@ module.exports = (app, utils) => {
                 jsonFile =
                     utils.UserManager.protobufToProjectJson(protobufFile);
             } catch (e) {
-                await unlink();
                 return utils.error(
                     res,
                     400,
@@ -198,7 +176,6 @@ module.exports = (app, utils) => {
 
             if (remix !== "0") {
                 if (!(await utils.UserManager.projectExists(remix))) {
-                    await unlink();
                     return utils.error(
                         res,
                         400,
@@ -207,7 +184,6 @@ module.exports = (app, utils) => {
                 }
             }
 
-            // check the extensions
             const [areExtensionsAllowed, blockedExtension] =
                 await utils.UserManager.validateAreProjectExtensionsAllowed(
                     jsonFile.extensions,
@@ -215,7 +191,6 @@ module.exports = (app, utils) => {
                     req.login,
                 );
             if (!areExtensionsAllowed) {
-                await unlink();
                 return utils.error(
                     res,
                     400,
@@ -255,7 +230,6 @@ module.exports = (app, utils) => {
                 assets.push({ id: id, buffer: asset });
             }
 
-            // upload the project
             const projectID = await utils.UserManager.publishProject(
                 protobufFile,
                 assets,
@@ -270,9 +244,7 @@ module.exports = (app, utils) => {
                 priv,
             );
 
-            // failure
             if (!projectID) {
-                await unlink();
                 return utils.error(res, 503);
             }
 
@@ -311,8 +283,6 @@ module.exports = (app, utils) => {
             await utils.UserManager.setLastUpload(username, Date.now());
 
             if (remix !== "0" && !priv) {
-                // get original creator
-
                 const originalProject =
                     await utils.UserManager.getProjectMetadata(remix);
 
@@ -328,8 +298,6 @@ module.exports = (app, utils) => {
                     projectID,
                 );
             }
-
-            await unlink();
 
             res.status(200).json({ id: projectID });
         },

@@ -29,6 +29,7 @@ module.exports = (app, utils) => {
         }
 
         let html = projectTemplate;
+        json.author = json.author.username;
         for (const prop in json) {
             html = html.replaceAll(
                 `{project.${prop}}`,

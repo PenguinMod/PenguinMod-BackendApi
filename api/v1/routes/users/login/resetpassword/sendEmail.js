@@ -60,11 +60,6 @@ module.exports = (app, utils) => {
                 );
             }
 
-            if (!(await utils.UserManager.emailInUse(email))) {
-                utils.error(res, 400, "EmailNotFound");
-                return;
-            }
-
             // TODO: make this return more info than just username.
             // we later fetch the id. thats an extra, unneeded db query.
             const username = await utils.UserManager.getUsernameByEmail(email);
