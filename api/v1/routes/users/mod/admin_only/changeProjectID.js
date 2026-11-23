@@ -50,13 +50,7 @@ module.exports = (app, utils) => {
                         URL: `${utils.env.StudioURL}/#${newId}`,
                     },
                 },
-                {
-                    name: username,
-                    icon_url: String(
-                        `${utils.env.ApiURL}/api/v1/users/getpfp?username=${username}`,
-                    ),
-                    url: `${utils.env.HomeURL}/profile?user=${username}`,
-                },
+                utils.logs.pmUserAuthor(username),
                 0xc6be27,
             );
 

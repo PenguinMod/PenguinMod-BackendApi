@@ -63,13 +63,7 @@ function sendRenameLog(old_username, new_username, id) {
                         value: `${process.env.HomeURL}/profile?user=${new_username}`,
                     },
                 ],
-                author: {
-                    name: new_username,
-                    icon_url: String(
-                        `${process.env.ApiURL}/api/v1/users/getpfp?username=${new_username}`,
-                    ),
-                    url: `${process.env.HomeURL}/profile?user=${new_username}`,
-                },
+                author: pmUserAuthor(new_username),
                 timestamp: new Date().toISOString(),
             },
         ],
@@ -101,13 +95,7 @@ function sendReportLog(type, username, targetID, target, reason) {
                         value: `\`\`\`\n${reason}\n\`\`\``,
                     },
                 ],
-                author: {
-                    name: target,
-                    icon_url: String(
-                        `${process.env.ApiURL}/api/v1/users/getpfp?username=${target}`,
-                    ),
-                    url: `${process.env.HomeURL}/profile?user=${target}`,
-                },
+                author: pmUserAuthor(target),
                 timestamp: new Date().toISOString(),
             },
         ],
@@ -149,13 +137,7 @@ function sendMultiReportLog(username, id, target, targetID, reason) {
                         value: `${process.env.HomeURL}/profile?user=${username}`,
                     },
                 ],
-                author: {
-                    name: target,
-                    icon_url: String(
-                        `${process.env.ApiURL}/api/v1/users/getpfp?username=${target}`,
-                    ),
-                    url: `${process.env.HomeURL}/profile?user=${target}`,
-                },
+                author: pmUserAuthor(target),
                 timestamp: new Date().toISOString(),
             },
         ],
@@ -190,13 +172,7 @@ function sendAdminUserLog(
                 URL: `${process.env.HomeURL}/profile?user=${target}`,
             },
         },
-        {
-            name: username,
-            icon_url: String(
-                `${process.env.ApiURL}/api/v1/users/getpfp?username=${username}`,
-            ),
-            url: `${process.env.HomeURL}/profile?user=${username}`,
-        },
+        pmUserAuthor(username),
         color,
     );
 }
@@ -258,13 +234,7 @@ function disputeLog(
                         value: `${projectID ? projectID : "(not applicable)"}`,
                     },
                 ],
-                author: {
-                    name: username,
-                    icon_url: String(
-                        `${process.env.ApiURL}/api/v1/users/getpfp?username=${username}`,
-                    ),
-                    url: `${process.env.HomeURL}/profile?user=${username}`,
-                },
+                author: pmUserAuthor(username),
                 timestamp: new Date().toISOString(),
             },
         ],
@@ -308,13 +278,7 @@ function modResponse(
                         value: `\`(${messageID})\``,
                     },
                 ],
-                author: {
-                    name: approver,
-                    icon_url: String(
-                        `${process.env.ApiURL}/api/v1/users/getpfp?username=${approver}`,
-                    ),
-                    url: `${process.env.HomeURL}/profile?user=${approver}`,
-                },
+                author: pmUserAuthor(approver),
                 timestamp: new Date().toISOString(),
             },
         ],
@@ -348,13 +312,7 @@ function modMessage(approver, target, messageID, message, color = 0x70066e) {
                         value: `\`(${messageID})\``,
                     },
                 ],
-                author: {
-                    name: approver,
-                    icon_url: String(
-                        `${process.env.ApiURL}/api/v1/users/getpfp?username=${approver}`,
-                    ),
-                    url: `${process.env.HomeURL}/profile?user=${approver}`,
-                },
+                author: pmUserAuthor(approver),
                 timestamp: new Date().toISOString(),
             },
         ],
@@ -404,13 +362,7 @@ function sendCreationLog(username, id, name, type, color = 0x25da5b) {
                               value: `${process.env.StudioURL}/#${id}`,
                           },
                 ],
-                author: {
-                    name: String(username).substring(0, 50),
-                    icon_url: String(
-                        `${process.env.ApiURL}/api/v1/users/getpfp?username=${String(username).substring(0, 50)}`,
-                    ),
-                    url: `${process.env.HomeURL}/profile?user=${username}`,
-                },
+                author: pmUserAuthor(username),
                 description: type === "account" ? "" : `Project ID: \`${id}\``,
                 timestamp: new Date().toISOString(),
             },
@@ -451,13 +403,7 @@ function sendFeatureLog(id, title, creator) {
                 image: { url: projectImage },
                 color: 16771677,
                 url: `${process.env.StudioURL}/#${id}`,
-                author: {
-                    name: String(creator).substring(0, 50),
-                    icon_url: String(
-                        `${process.env.ApiURL}/api/v1/users/getpfp?username=${String(creator).substring(0, 50)}`,
-                    ),
-                    url: `${process.env.HomeURL}/profile?user=${creator}`,
-                },
+                author: pmUserAuthor(creator),
             },
         ],
     });
@@ -487,13 +433,7 @@ const watchlist = {
                     image: { url: projectImage },
                     color: 0xbf8939,
                     url: `${process.env.StudioURL}/#${id}`,
-                    author: {
-                        name: String(creator).substring(0, 50),
-                        icon_url: String(
-                            `${process.env.ApiURL}/api/v1/users/getpfp?username=${String(creator).substring(0, 50)}`,
-                        ),
-                        url: `${process.env.HomeURL}/profile?user=${creator}`,
-                    },
+                    author: pmUserAuthor(creator),
                 },
             ],
         });
@@ -522,13 +462,7 @@ const watchlist = {
                     image: { url: projectImage },
                     color: 0xbf8939,
                     url: `${process.env.StudioURL}/#${id}`,
-                    author: {
-                        name: String(creator).substring(0, 50),
-                        icon_url: String(
-                            `${process.env.ApiURL}/api/v1/users/getpfp?username=${String(creator).substring(0, 50)}`,
-                        ),
-                        url: `${process.env.HomeURL}/profile?user=${creator}`,
-                    },
+                    author: pmUserAuthor(creator),
                 },
             ],
         });
@@ -552,13 +486,7 @@ const watchlist = {
                     description: `User ID: \`${id}\``,
                     color: 0xcecd77,
                     url: `${process.env.HomeURL}/profile?id=${id}`,
-                    author: {
-                        name: String(new_username),
-                        icon_url: String(
-                            `${process.env.ApiURL}/api/v1/users/getpfp?username=${String(new_username).substring(0, 50)}`,
-                        ),
-                        url: `${process.env.HomeURL}/profile?user=${new_username}`,
-                    },
+                    author: pmUserAuthor(new_username),
                 },
             ],
         });
@@ -581,13 +509,7 @@ const watchlist = {
                     title: `${user} is now on the watchlist`,
                     color: 0xdba678,
                     url: `${process.env.HomeURL}/profile?user=${user}`,
-                    author: {
-                        name: String(admin).substring(0, 50),
-                        icon_url: String(
-                            `${process.env.ApiURL}/api/v1/users/getpfp?username=${String(admin).substring(0, 50)}`,
-                        ),
-                        url: `${process.env.HomeURL}/profile?user=${String(admin).substring(0, 50)}`,
-                    },
+                    author: pmUserAuthor(admin),
                 },
             ],
         });

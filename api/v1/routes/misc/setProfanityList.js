@@ -87,13 +87,7 @@ module.exports = (app, utils) => {
                         Difference: diff,
                     },
                 },
-                {
-                    name: username,
-                    icon_url: String(
-                        `${utils.env.ApiURL}/api/v1/users/getpfp?username=${username}`,
-                    ),
-                    url: `${utils.env.HomeURL}/profile?user=${username}`,
-                },
+                utils.logs.pmUserAuthor(username),
                 0x3ddc5b,
             );
 

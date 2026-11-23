@@ -101,13 +101,7 @@ module.exports = (app, utils) => {
                     content: `${username} ${toggle ? "" : "un"}banned ${target}`,
                     fields,
                 },
-                {
-                    name: username,
-                    icon_url: String(
-                        `${utils.env.ApiURL}/api/v1/users/getpfp?username=${username}`,
-                    ),
-                    url: `${utils.env.HomeURL}/profile?user=${username}`,
-                },
+                utils.logs.pmUserAuthor(username),
                 toggle ? 0xc40404 : 0x45efc6,
             );
 

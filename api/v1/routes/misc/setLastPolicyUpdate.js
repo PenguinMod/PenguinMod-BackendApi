@@ -45,13 +45,7 @@ module.exports = (app, utils) => {
                         Date: new Date().toISOString(),
                     },
                 },
-                {
-                    name: username,
-                    icon_url: String(
-                        `${utils.env.ApiURL}/api/v1/users/getpfp?username=${username}`,
-                    ),
-                    url: `${utils.env.HomeURL}/profile?user=${username}`,
-                },
+                utils.logs.pmUserAuthor(username),
                 0xff33de,
             );
 
