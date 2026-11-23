@@ -29,7 +29,15 @@ module.exports = (app, utils) => {
 
             await utils.UserManager.setBio(target, bio);
 
-            utils.logs.sendBioUpdateLog(username, target, oldBio, bio);
+            utils.logs.sendAdminLog(
+                {
+                    action: `${target} had their bio edited`,
+                    content: `${target}'s bio was edited by ${username}`,
+                    fields: [],
+                },
+                utils.logs.pmUserAuthor(target),
+                0xff0000,
+            );
 
             res.status(200).json({ success: true });
         },

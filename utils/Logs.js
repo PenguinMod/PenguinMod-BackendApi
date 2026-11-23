@@ -1,10 +1,10 @@
 require("dotenv").config();
 
+// TODO: remove single use functions from here. generally shorten the code and DRY or something.
+
 const heatWebhook = process.env.HeatWebhook;
 const reportWebhook = process.env.ReportWebhook;
-const modWebhook = process.env.ModWebhook;
 const adminWebhook = process.env.AdminWebhook;
-const apiUpdatesWebhook = process.env.ApiUpdatesWebhook;
 const creationWebhook = process.env.CreationWebhook;
 const featuredWebhook = process.env.FeaturedWebhook;
 const websiteInfoWebhook = process.env.WebsiteInfoWebhook;
@@ -12,7 +12,7 @@ const messagesWebhook = process.env.MessagesWebhook;
 const watchlistWebhook = process.env.WatchlistWebhook;
 
 function sendHeatLog(text, trigger, type, location, color = 0xff0000) {
-    const body = JSON.stringify({
+    postWebhook(heatWebhook, {
         embeds: [
             {
                 title: `Filter Triggered`,
@@ -36,19 +36,10 @@ function sendHeatLog(text, trigger, type, location, color = 0xff0000) {
             },
         ],
     });
-    try {
-        fetch(heatWebhook, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body,
-        });
-    } catch (e) {
-        console.error(e);
-    }
 }
 
 function sendRenameLog(old_username, new_username, id) {
-    const body = JSON.stringify({
+    postWebhook(websiteInfoWebhook, {
         embeds: [
             {
                 title: "User has new name",
@@ -83,62 +74,6 @@ function sendRenameLog(old_username, new_username, id) {
             },
         ],
     });
-    try {
-        fetch(websiteInfoWebhook, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body,
-        });
-    } catch (e) {
-        console.error(e);
-    }
-}
-
-function sendBioUpdateLog(username, target, oldBio, newBio) {
-    const body = JSON.stringify({
-        content: `${target}'s bio was edited by ${username}`,
-        embeds: [
-            {
-                title: `${target} had their bio edited`,
-                color: 0xff0000,
-                fields: [
-                    {
-                        name: "Edited by",
-                        value: `${username}`,
-                    },
-                    {
-                        name: "Old Bio",
-                        value: `\`\`\`\n${oldBio}\n\`\`\``,
-                    },
-                    {
-                        name: "New Bio",
-                        value: `\`\`\`\n${newBio}\n\`\`\``,
-                    },
-                    {
-                        name: "URL",
-                        value: `${process.env.HomeURL}/profile?user=${target}`,
-                    },
-                ],
-                author: {
-                    name: target,
-                    icon_url: String(
-                        `${process.env.ApiURL}/api/v1/users/getpfp?username=${target}`,
-                    ),
-                    url: `${process.env.HomeURL}/profile?user=${target}`,
-                },
-                timestamp: new Date().toISOString(),
-            },
-        ],
-    });
-    try {
-        fetch(adminWebhook, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body,
-        });
-    } catch (e) {
-        console.error(e);
-    }
 }
 
 function sendReportLog(type, username, targetID, target, reason) {
@@ -284,27 +219,17 @@ function sendAdminUserLog(
  * @param {Object} author - Author part of log
  */
 function sendAdminLog(data, author, color = 0xff0000) {
-    const body = JSON.stringify({
+    postWebhook(adminWebhook, {
         content: data.content,
         embeds: [
             {
-                title: `${data.action}`,
+                title: data.action,
                 color: color,
                 fields: [...data.fields],
                 author,
             },
         ],
     });
-
-    try {
-        fetch(adminWebhook, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body,
-        });
-    } catch (e) {
-        console.error(e);
-    }
 }
 
 function disputeLog(
@@ -443,28 +368,6 @@ function modMessage(approver, target, messageID, message, color = 0x70066e) {
 
     try {
         fetch(messagesWebhook, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body,
-        });
-    } catch (e) {
-        console.error(e);
-    }
-}
-
-function sendServerLog(text, color = 0xff0000) {
-    const body = JSON.stringify({
-        embeds: [
-            {
-                title: `Server Log`,
-                color: color,
-                description: `\`\`\`ansi\n${text}\n\`\`\``,
-                timestamp: new Date().toISOString(),
-            },
-        ],
-    });
-    try {
-        return fetch(apiUpdatesWebhook, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body,
@@ -706,9 +609,31 @@ const watchlist = {
     },
 };
 
+async function postWebhook(url, body) {
+    if (!url) {
+        console.warn("Invalid webhook url");
+        return;
+    }
+
+    await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+    }).catch(console.error);
+}
+
+function pmUserAuthor(username) {
+    return {
+        name: username,
+        icon_url: String(
+            `${process.env.ApiURL}/api/v1/users/getpfp?username=${username}`,
+        ),
+        url: `${process.env.HomeURL}/profile?user=${username}`,
+    };
+}
+
 module.exports = {
     sendHeatLog,
-    sendBioUpdateLog,
     sendReportLog,
     sendMultiReportLog,
     sendAdminUserLog,
@@ -716,9 +641,9 @@ module.exports = {
     disputeLog,
     modResponse,
     modMessage,
-    sendServerLog,
     sendCreationLog,
     sendFeatureLog,
     sendRenameLog,
     watchlist,
+    pmUserAuthor,
 };
