@@ -92,19 +92,19 @@ app.use(
 );
 
 const real_log = console.log;
-console.log = (...data) => {
+console.log = (...data): void => {
     const date_str = `(${new Date().toISOString()})`.gray.dim;
     real_log(`${"LOG".bgBlack.blue} ${date_str}:`, ...data);
 };
 
 const real_warn = console.warn;
-console.warn = (...data) => {
+console.warn = (...data): void => {
     const date_str = `(${new Date().toISOString()})`.gray;
     real_warn(`${"WARNING".bgYellow.white} ${date_str}:`, ...data);
 };
 
 const real_error = console.error;
-console.error = (...args) => {
+console.error = (...args): void => {
     const date_str = `(${new Date().toISOString()})`.gray;
 
     real_error(
@@ -113,7 +113,7 @@ console.error = (...args) => {
     );
 };
 
-(async function () {
+(async function (): Promise<void> {
     await manager.init();
 
     // TODO: should timezone be dynamic? It's Central because I'm in Central, but thats maybe not amazing practice
@@ -130,7 +130,7 @@ console.error = (...args) => {
         req: AuthenticatedRequest,
         res: express.Response,
         next: express.NextFunction,
-    ) {
+    ): Promise<void> {
         const multiplier = req.login.isDonator ? 1.75 : 1;
 
         const maxSingleSize =
@@ -144,7 +144,8 @@ console.error = (...args) => {
             !req.files ||
             (Array.isArray(req.files) && req.files.length === 0)
         ) {
-            return res.status(400).json({ error: "What??" });
+            res.status(400).json({ error: "What??" });
+            return;
         }
 
         const files: Express.Multer.File[] = Array.isArray(req.files)
@@ -152,26 +153,26 @@ console.error = (...args) => {
             : Object.values(req.files).flat();
 
         if (files.length === 0) {
-            return res.status(400).json({ error: "What??" });
+            res.status(400).json({ error: "What??" });
+            return;
         }
 
         let combinedSize = 0;
 
         for (const file of files) {
-            // Individual file size limit
             if (file.size > maxSingleSize) {
-                return res.status(400).json({ error: "Asset too big" });
+                res.status(400).json({ error: "Asset too big" });
+                return;
             }
 
-            // Only count jsonFile and assets toward the combined limit.
-            // Thumbnail remains excluded, matching your original code.
             if (file.fieldname === "jsonFile" || file.fieldname === "assets") {
                 combinedSize += file.size;
             }
         }
 
         if (combinedSize > maxCombinedSize) {
-            return res.status(400).json({ error: "Files too big" });
+            res.status(400).json({ error: "Files too big" });
+            return;
         }
 
         return next();
@@ -192,12 +193,7 @@ console.error = (...args) => {
 
     endpointLoader(app, "v1/routes", utils);
 
-    app.use(function (
-        err: Error,
-        req: express.Request,
-        res: express.Response,
-        next: express.NextFunction,
-    ) {
+    app.use(function (err: Error, req: express.Request, res: express.Response) {
         if (err instanceof multer.MulterError) {
             switch (err.code) {
                 case "LIMIT_UNEXPECTED_FILE":

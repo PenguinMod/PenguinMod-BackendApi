@@ -5,56 +5,51 @@ import Minio from "minio";
 import { ulid } from "ulid";
 import { createHash } from "node:crypto";
 import { retryIfFailure } from "../../../utils/misc";
-
-const using_backblaze = String(process.env.UseBackblaze) === "true";
-
-interface BBUploadURL {
-    url: string;
-    token: string;
-    expires: number;
-    in_use: boolean;
-    index: string;
-}
-
-interface BBListFileNames {
-    files: {
-        accountId: string;
-        action: "start" | "upload" | "hide" | "folder";
-        bucketId: string;
-        contentLength: number;
-        contentSha1: string;
-        contentMd5: string;
-        contentType: string;
-        fileId: string;
-        fileInfo: object;
-        fileName: string;
-        uploadTimestamp: number;
-    }[];
-    nextFileName: string;
-}
+import {
+    BBListFileNames,
+    BBUploadURL,
+    FeedItem,
+    FollowingData,
+    IllegalListEntry,
+    LoggedIP,
+    Message,
+    OAuthID,
+    OAuthState,
+    OTTCode,
+    PasswordResetState,
+    PolicyUpdateInfo,
+    ProjectData,
+    ProjectStatItem,
+    Report,
+    RuntimeConfigItem,
+    SentEmail,
+    TagWeight,
+    UserBlock,
+    UserData,
+} from "./types";
 
 export class DBController {
     client: MongoClient;
     db: mongodb.Db;
-    users: mongodb.Collection;
+    users: mongodb.Collection<UserData>;
     accountCustomization: mongodb.Collection;
-    loggedIPs: mongodb.Collection;
-    passwordResetStates: mongodb.Collection;
-    sentEmails: mongodb.Collection;
-    followers: mongodb.Collection;
-    oauthIDs: mongodb.Collection;
-    reports: mongodb.Collection;
-    runtimeConfig: mongodb.Collection;
-    projects: mongodb.Collection;
-    projectStats: mongodb.Collection;
-    messages: mongodb.Collection;
-    oauthStates: mongodb.Collection;
-    oneTimeTkCodes: mongodb.Collection;
-    userFeed: mongodb.Collection;
-    illegalList: mongodb.Collection;
-    lastPolicyUpdates: mongodb.Collection;
-    blocking: mongodb.Collection;
-    tagWeights: mongodb.Collection;
+    loggedIPs: mongodb.Collection<LoggedIP>;
+    passwordResetStates: mongodb.Collection<PasswordResetState>;
+    sentEmails: mongodb.Collection<SentEmail>;
+    followers: mongodb.Collection<FollowingData>;
+    oauthIDs: mongodb.Collection<OAuthID>;
+    reports: mongodb.Collection<Report>;
+    runtimeConfig: mongodb.Collection<RuntimeConfigItem>;
+    projects: mongodb.Collection<ProjectData>;
+    projectStats: mongodb.Collection<ProjectStatItem>;
+    messages: mongodb.Collection<Message>;
+    oauthStates: mongodb.Collection<OAuthState>;
+    oneTimeTkCodes: mongodb.Collection<OTTCode>;
+    userFeed: mongodb.Collection<FeedItem>;
+    illegalList: mongodb.Collection<IllegalListEntry>;
+    lastPolicyUpdates: mongodb.Collection<PolicyUpdateInfo>;
+    blocking: mongodb.Collection<UserBlock>;
+    tagWeights: mongodb.Collection<TagWeight>;
     performance_logging: mongodb.Collection;
 
     minioClient: Minio.Client;
@@ -64,6 +59,8 @@ export class DBController {
     bb_api_url: string = "";
     bb_download_url: string = "";
     bb_upload_urls: Record<string, BBUploadURL> = {};
+
+    using_backblaze = String(process.env.UseBackblaze) === "true";
 
     constructor() {
         // TODO: add more indexes
@@ -103,13 +100,6 @@ export class DBController {
         this.lastPolicyUpdates = this.db.collection("lastPolicyUpdates");
 
         this.blocking = this.db.collection("blocking");
-        this.prevReset = Date.now();
-        // TODO: use a set - gotta worry about JS equality BS though
-        this.views = [];
-
-        this.maxviews = Number(process.env.MaxViews) || 10000;
-        this.viewresetrate =
-            Number(process.env.ViewResetRate) || 1000 * 60 * 60;
 
         this.tagWeights = this.db.collection("tagWeights");
         this.performance_logging = this.db.collection("system.profile");
@@ -128,7 +118,7 @@ export class DBController {
         });
     }
 
-    async init() {
+    async init(): Promise<void> {
         await this.client.connect();
         await this.users.createIndex({ username: 1 }, { unique: true });
         await this.users.createIndex({ id: 1 }, { unique: true });
@@ -297,12 +287,12 @@ export class DBController {
         // pfp bucket
         await this.makeBucket("profile-pictures");
 
-        if (using_backblaze) {
+        if (this.using_backblaze) {
             await this.generateBBAuthToken();
         }
     }
 
-    async generateBBAuthToken() {
+    async generateBBAuthToken(): Promise<void> {
         const key_id = process.env.BackblazeKeyID;
         const key = process.env.BackblazeKey;
 
@@ -336,11 +326,7 @@ export class DBController {
         await this.generateBBUploadURL();
     }
 
-    /**
-     * Generates an upload url
-     * @returns {Promise<object>}
-     */
-    async generateBBUploadURL() {
+    async generateBBUploadURL(): Promise<BBUploadURL | null> {
         const headers = new Headers();
         headers.set("Authorization", await this.getBBAuthToken());
 
@@ -369,15 +355,11 @@ export class DBController {
             return this.bb_upload_urls[index];
         } catch (e) {
             console.error(`failed to get BB upload url: ${e}`);
-            return false;
+            return null;
         }
     }
 
-    /**
-     * Gets the Backblaze auth token or fetches it if its expired
-     * @returns {Promise<string>}
-     */
-    async getBBAuthToken() {
+    async getBBAuthToken(): Promise<string> {
         if (this.need_new_bb_auth_token <= Date.now()) {
             await this.generateBBAuthToken();
         }
@@ -385,11 +367,7 @@ export class DBController {
         return this.bb_auth_token;
     }
 
-    /**
-     * Gets the Backblaze upload url or fetches it if its expired
-     * @returns {Promise<object|false>}
-     */
-    async getBBUploadUrl() {
+    async getBBUploadUrl(): Promise<BBUploadURL | null> {
         for (const key in this.bb_upload_urls) {
             const url_data = this.bb_upload_urls[key];
             if (Date.now() > url_data.expires) {
@@ -408,18 +386,18 @@ export class DBController {
         const data = await this.generateBBUploadURL();
 
         if (!data) {
-            return false;
+            return null;
         }
 
         this.bb_upload_urls[data.index].in_use = true;
         return data;
     }
 
-    async doneWithBBUpload(url_data: BBUploadURL) {
+    async doneWithBBUpload(url_data: BBUploadURL): Promise<void> {
         this.bb_upload_urls[url_data.index].in_use = false;
     }
 
-    async removeBBUrl(url_data: BBUploadURL) {
+    async removeBBUrl(url_data: BBUploadURL): Promise<void> {
         delete this.bb_upload_urls[url_data.index];
     }
 
@@ -552,7 +530,7 @@ export class DBController {
     async renameObjectBackblaze(
         old_name: string,
         new_name: string,
-    ): Promise<undefined> {
+    ): Promise<void> {
         const id = await this.getBBFileID(old_name);
 
         await this.copyObjectBackblazeID(id, new_name);
@@ -562,7 +540,7 @@ export class DBController {
     async copyObjectBackblazeID(
         file_id: string,
         new_name: string,
-    ): Promise<undefined> {
+    ): Promise<void> {
         const auth_token = await this.getBBAuthToken();
         const api_url = this.bb_api_url;
 
@@ -594,7 +572,7 @@ export class DBController {
     async deleteFileBackblazeID(
         fileName: string,
         fileId: string,
-    ): Promise<undefined> {
+    ): Promise<void> {
         const auth_token = await this.getBBAuthToken();
         const api_url = this.bb_api_url;
 
@@ -640,7 +618,7 @@ export class DBController {
     async deleteMultipleObjectsBackblaze(
         prefix: string,
         n = 1000,
-    ): Promise<undefined> {
+    ): Promise<void> {
         const objects = await this.listDataWithPrefixBackblaze(prefix, n);
 
         for (const obj of objects.files) {
@@ -648,9 +626,99 @@ export class DBController {
         }
     }
 
-    async makeBucket(bucketName: string): Promise<undefined> {
+    async makeBucket(bucketName: string): Promise<void> {
         if (!(await this.minioClient.bucketExists(bucketName))) {
             await this.minioClient.makeBucket(bucketName);
         }
+    }
+
+    async readObjectFromBucket(
+        bucketName: string,
+        objectName: string,
+    ): Promise<Buffer> {
+        const stream = await this.minioClient.getObject(bucketName, objectName);
+
+        const chunks: Buffer[] = [];
+
+        return new Promise((resolve, reject) => {
+            stream.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
+            stream.on("end", () => resolve(Buffer.concat(chunks)));
+            stream.on("error", (err) => {
+                console.error(`Error reading from bucket: ${err}`);
+                reject(err);
+            });
+        });
+    }
+
+    async deleteMultipleObjects(
+        bucketName: string,
+        prefix: string,
+    ): Promise<void> {
+        // TODO: this still errors because currently the minio sdk
+        // has an "outdated" version of fast-xml-parser
+        // basically its paging has the wrong limit
+        // so its like "no this is too long"
+        // and then it doesnt page because the JS ecosystem sucks
+        const stream = this.minioClient.listObjectsV2(bucketName, prefix, true);
+
+        const chunks: string[] = [];
+
+        return new Promise((resolve, reject) => {
+            stream.on("data", (chunk) => {
+                if (chunk.name) {
+                    chunks.push(chunk.name);
+                }
+            });
+            stream.on("error", (err) =>
+                console.error(`Error listing objects: ${err}`),
+            );
+            stream.on("end", () => {
+                const names = chunks.map((chunk) => {
+                    return chunk.split("_")[1];
+                });
+                this.minioClient
+                    .removeObjects(bucketName, names)
+                    .then(() => resolve());
+            });
+        });
+    }
+
+    async renameObjectMinio(
+        bucket: string,
+        old_key: string,
+        new_key: string,
+    ): Promise<void> {
+        try {
+            await this.minioClient.copyObject(
+                bucket,
+                new_key,
+                `/${bucket}/${old_key}`,
+            );
+            await this.minioClient.removeObject(bucket, old_key);
+        } catch (err) {
+            console.error(`Error renaming object: ${err}`);
+        }
+    }
+
+    listWithPrefix(bucket: string, prefix: string): Promise<string[]> {
+        return new Promise((resolve, reject) => {
+            const objectNames: string[] = [];
+
+            const stream = this.minioClient.listObjects(bucket, prefix, true);
+
+            stream.on("data", (obj) => {
+                if (obj.name) {
+                    objectNames.push(obj.name);
+                }
+            });
+
+            stream.on("error", (err) => {
+                reject(err);
+            });
+
+            stream.on("end", () => {
+                resolve(objectNames);
+            });
+        });
     }
 }

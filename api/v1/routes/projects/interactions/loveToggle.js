@@ -60,7 +60,6 @@ module.exports = (app, utils) => {
             const concatted = instructions + "\n\n" + notes;
 
             await utils.UserManager.loveProject(projectID, id, love);
-            await utils.UserManager.collectAndInteractLove(id, concatted, love);
 
             res.status(200).json({ success: true });
         },

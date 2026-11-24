@@ -21,34 +21,39 @@ export const requireAuth = (
 ): RequestHandler[] => [
     corsMW,
 
-    async (req, res, next) => {
+    async (req, res, next): Promise<void> => {
         const header = req.get("Authorization");
 
         if (!header) {
-            return res.status(401).json({ error: "MissingAuthHeader" });
+            res.status(401).json({ error: "MissingAuthHeader" });
+            return;
         }
 
         const [scheme, token] = header.split(" ");
 
         if (scheme?.toLowerCase() !== "bearer" || !token) {
-            return res.status(401).json({ error: "InvalidAuthformat" });
+            res.status(401).json({ error: "InvalidAuthformat" });
+            return;
         }
 
         const login = await auth.loginWithToken(token, allow_banned, true);
 
         if (!login.success) {
-            return res.status(401).json({ error: "InvalidToken" });
+            res.status(401).json({ error: "InvalidToken" });
+            return;
         }
 
         if (
             (require_admin && !login.isAdmin) ||
             (require_mod && !login.isMod)
         ) {
-            return res.status(401).json({ error: "Unauthorized" });
+            res.status(401).json({ error: "Unauthorized" });
+            return;
         }
 
         if (require_supporter && !login.isDonator) {
-            return res.status(401).json({ error: "SupporterRequired" });
+            res.status(401).json({ error: "SupporterRequired" });
+            return;
         }
 
         (req as AuthenticatedRequest).login = login;

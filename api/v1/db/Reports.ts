@@ -1,0 +1,199 @@
+import { ulid } from "ulid";
+import { DBController } from "./DBController";
+import Manager from "./Manager";
+import { ProjectId, reportId, ReportId, UserId } from "./new-types";
+import { Report, ReportType } from "./types";
+
+export class Reports {
+    db: DBController;
+    manager: Manager;
+
+    constructor(db: DBController, manager: Manager) {
+        this.db = db;
+        this.manager = manager;
+    }
+
+    /**
+     * Report something
+     * @param {number} type Type of report. 0 = user, 1 = project
+     * @param {string} reportee ID of the person/project being reported
+     * @param {string} reason Reason for the report
+     * @param {string} reporter ID of the person reporting
+     * @async
+     */
+    async report(
+        type: ReportType,
+        reportee: UserId | ProjectId,
+        reason: string,
+        reporter: UserId,
+    ): Promise<void> {
+        await this.db.reports.insertOne({
+            type: type,
+            reportee: reportee,
+            reason: reason,
+            reporter: reporter,
+            date: Date.now(),
+            id: reportId(ulid()),
+            resolved: false,
+        });
+    }
+
+    async getReport(id: ReportId): Promise<Report | null> {
+        return await this.db.reports.findOne({ id: id });
+    }
+
+    /**
+     * Get reports by type
+     * @param {number} type The type of reports to get
+     * @param {number} page The page of reports to get
+     * @param {number} pageSize The amount of reports to get
+     * @returns {Promise<Array<object>>} Array of reports of the specified type
+     * @async
+     */
+    async getReportsByType(
+        type: ReportType,
+        page: number,
+        pageSize: number,
+    ): Promise<Report[]> {
+        const result = await this.db.reports
+            .aggregate<Report>([
+                {
+                    $match: { type: type, resolved: { $ne: true } },
+                },
+                {
+                    $sort: { date: -1 },
+                },
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: pageSize,
+                },
+                {
+                    $unset: "_id",
+                },
+            ])
+            .toArray();
+
+        return result;
+    }
+
+    /**
+     * Get reports by reportee
+     * @param {string} reportee ID of the person/project being reported
+     * @param {number} page The page of reports to get
+     * @param {number} pageSize The amount of reports to get
+     * @returns {Promise<Array<object>>} Array of reports on the specified reportee
+     * @async
+     */
+    async getReportsByReportee(
+        reportee: UserId,
+        page: number,
+        pageSize: number,
+    ): Promise<Report[]> {
+        const result = await this.db.reports
+            .aggregate<Report>([
+                {
+                    $match: { reportee: reportee, resolved: { $ne: true } },
+                },
+                {
+                    $sort: { date: -1 },
+                },
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: pageSize,
+                },
+            ])
+            .toArray();
+
+        return result;
+    }
+
+    async resolveReports(type: ReportType, id: UserId): Promise<number> {
+        return (
+            await this.db.reports.updateMany(
+                { id: id, type: type },
+                { $set: { resolved: true } },
+            )
+        ).modifiedCount;
+    }
+
+    /**
+     * Get reports by reporter
+     * @param {string} reporter ID of the person reporting
+     * @param {number} page The page of reports to get
+     * @param {number} pageSize The amount of reports to get
+     * @returns {Promise<Array<object>>} Array of reports by the specified reporter
+     * @async
+     */
+    async getReportsByReporter(
+        reporter: UserId,
+        page: number,
+        pageSize: number,
+    ): Promise<Report[]> {
+        const result = await this.db.reports
+            .aggregate<Report>([
+                {
+                    $match: { reporter: reporter, resolved: true },
+                },
+                {
+                    $sort: { date: -1 },
+                },
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: pageSize,
+                },
+            ])
+            .toArray();
+
+        return result;
+    }
+
+    async hasAlreadyReported(
+        reporter: UserId,
+        reportee: UserId,
+    ): Promise<boolean> {
+        const result = await this.db.reports.findOne({
+            reporter: reporter,
+            reportee: reportee,
+        });
+
+        return result ? true : false;
+    }
+
+    async getReports(page: number, pageSize: number): Promise<Report[]> {
+        const result = await this.db.reports
+            .aggregate<Report>([
+                {
+                    $match: { resolved: { $ne: true } },
+                },
+                {
+                    $sort: { date: -1 },
+                },
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: pageSize,
+                },
+            ])
+            .toArray();
+
+        return result;
+    }
+
+    async resolveReport(id: ReportId): Promise<boolean> {
+        return (
+            (
+                await this.db.reports.updateOne(
+                    { id: id },
+                    { $set: { resolved: true } },
+                )
+            ).modifiedCount > 0
+        );
+    }
+}

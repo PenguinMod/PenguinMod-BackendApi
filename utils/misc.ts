@@ -1,16 +1,17 @@
 import express from "express";
 import fs from "fs/promises";
 import cors from "cors";
+import disposableDomains from "disposable-email-domains";
 
-function handle_page(page: number): number {
+export function handle_page(page: number): number {
     return Math.max(0, Number(page) || 0);
 }
 
-function unlinkMulter(
+export function unlinkMulter(
     req: express.Request,
     res: express.Response,
     next: express.NextFunction,
-) {
+): void {
     const files = [
         ...(req.file ? [req.file] : []),
         ...(Array.isArray(req.files) ? req.files : []),
@@ -23,7 +24,7 @@ function unlinkMulter(
 
     let cleaned = false;
 
-    async function cleanup() {
+    async function cleanup(): Promise<void> {
         if (cleaned) {
             return;
         }
@@ -46,7 +47,7 @@ function unlinkMulter(
     next();
 }
 
-function escapeXML(unsafe: string): string {
+export function escapeXML(unsafe: string): string {
     return unsafe.replace(/[<>&'"\n]/g, (c): string => {
         switch (c) {
             case "<":
@@ -67,7 +68,7 @@ function escapeXML(unsafe: string): string {
     });
 }
 
-const corsMW = cors({
+export const corsMW = cors({
     origin: function (origin, callback) {
         const whitelist = [process.env.HomeURL, "http://localhost:5173"];
         const idxWebPreview = ".cloudworkstations.dev"; //project idx sigma development
@@ -83,11 +84,11 @@ const corsMW = cors({
     },
 });
 
-async function retryIfFailure<T>(
+export async function retryIfFailure<T>(
     todo: () => T | Promise<T>,
     retries: number,
     delay: number,
-    onFail: ((arg: any) => any) | null = null,
+    onFail: ((arg: unknown) => void) | null = null,
 ): Promise<T> {
     for (let attempt = 0; ; attempt++) {
         try {
@@ -110,4 +111,132 @@ async function retryIfFailure<T>(
     }
 }
 
-export { handle_page, unlinkMulter, escapeXML, corsMW, retryIfFailure };
+export interface NeedleMatch {
+    needle: string;
+    index: number;
+    length: number;
+}
+
+export function findMatches(
+    text: string,
+    needles: string[],
+    keep: RegExp = /[\p{L}\p{N}]/u,
+): NeedleMatch[] {
+    const ignoreCase = true;
+
+    const norm = (s: string): string => (ignoreCase ? s.toLowerCase() : s);
+
+    let stripped = "";
+    const indexMap: number[] = [];
+
+    let i = 0;
+    for (const ch of text) {
+        if (keep.test(ch)) {
+            const n = norm(ch);
+            for (let k = 0; k < n.length; k++) {
+                indexMap.push(i);
+            }
+            stripped += n;
+        }
+        i += ch.length;
+    }
+
+    const results: NeedleMatch[] = [];
+
+    for (const needle of needles) {
+        let cleanNeedle = "";
+        for (const ch of needle) {
+            if (keep.test(ch)) {
+                cleanNeedle += norm(ch);
+            }
+        }
+        if (!cleanNeedle) {
+            continue;
+        }
+
+        let pos = stripped.indexOf(cleanNeedle);
+        while (pos !== -1) {
+            const start = indexMap[pos];
+            const lastIdx = indexMap[pos + cleanNeedle.length - 1];
+            const lastCodePoint = text.codePointAt(lastIdx)!;
+            const end = lastIdx + (lastCodePoint > 0xffff ? 2 : 1);
+
+            results.push({ needle, index: start, length: end - start });
+
+            // allow overlapping matches
+            pos = stripped.indexOf(cleanNeedle, pos + 1);
+        }
+    }
+
+    return results;
+}
+
+export function genHighlightedText(
+    text: string,
+    needles: NeedleMatch[],
+    color: "red" | "yellow",
+): string {
+    const non_over_needles = [];
+    needles = needles.sort((a, b) => b.length - a.length);
+    while (needles.length > 0) {
+        const cur = needles.pop();
+        if (!cur) {
+            throw "destroy universe";
+        }
+        if (needles.length === 0) {
+            non_over_needles.push(cur);
+            break;
+        }
+        if (needles[needles.length - 1].index <= cur.index + cur.length) {
+            cur.length += needles.pop()?.length || 0;
+        }
+    }
+
+    let color_code;
+    switch (color) {
+        case "red":
+            color_code = 31;
+            break;
+        case "yellow":
+            color_code = 33;
+    }
+    const color_start = `\x1b[${color_code};1m`;
+    const color_end = "\x1b[0m";
+
+    let res = "";
+    let idx = 0;
+    for (const needle of non_over_needles) {
+        res += text.slice(idx, needle.index);
+        res += color_start;
+        res += text.slice(needle.index, needle.index + needle.length);
+        res += color_end;
+
+        idx = needle.index + needle.length;
+    }
+    res += text;
+
+    return res;
+}
+
+export function validateEmail(email: string): boolean {
+    if (
+        !email.match(
+            /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/,
+        )
+    ) {
+        return false;
+    }
+
+    // TODO: emails should be made lowercase. this is kinda a big issue
+
+    const domain = email.split("@").pop()?.toLowerCase() || "";
+    if (disposableDomains.includes(domain)) {
+        return false;
+    }
+
+    return true;
+}
+
+export function escapeRegex(input: string): string {
+    return String(input).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}

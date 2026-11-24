@@ -1,16 +1,18 @@
 import * as bcrypt from "bcrypt";
 import { ulid } from "ulid";
 import { randomBytes } from "crypto";
-import * as logs from "../../../utils/logs";
 import { readFileSync } from "fs";
 import path from "path";
 import { DBController } from "./DBController";
 import Manager from "./Manager";
+import { OAuthMethod } from "./types";
+import { UserId, userId } from "./new-types";
+import { err, ok, Result } from "../../../utils/Result";
 const basePFP = readFileSync(
     path.join(__dirname, "../../../static/penguin.png"),
 );
 
-const REMOVE_SYMBOLS_REGEX = /[\s._*!-+/]+/g;
+type AccountCreationError = "AccountExists" | "IllegalWordingError";
 
 export interface Login {
     success: boolean;
@@ -72,7 +74,7 @@ export class Authentication {
         data.isMod = result.moderator || result.admin;
         data.isAdmin = result.admin;
         data.emailVerified = result.emailVerified;
-        data.email = result.email;
+        data.email = result.email || "";
         data.rank = result.rank;
         data.badges = result.badges;
 
@@ -103,24 +105,26 @@ export class Authentication {
         username: string,
         password: string,
         allowBanned: boolean,
-    ): Promise<string | false> {
+    ): Promise<
+        Result<string, "UserNotFound" | "Banned" | "PasswordIncorrect">
+    > {
         const result = await this.db.users.findOne({ username: username });
 
         if (!result) {
-            return false;
+            return err("UserNotFound");
         }
 
         if (
             (result.permBanned || result.unbanTime > Date.now()) &&
             !allowBanned
         ) {
-            return false;
+            return err("Banned");
         }
 
         if (await bcrypt.compare(password, result.password)) {
-            return await this.newTokenGen(result.id);
+            return ok(await this.newTokenGen(result.id));
         } else {
-            return false;
+            return err("PasswordIncorrect");
         }
     }
 
@@ -133,79 +137,42 @@ export class Authentication {
         country: string | undefined,
         is_studio: boolean,
         check_username: boolean = false,
-    ): Promise<{ token: string; id: string } | false> {
+    ): Promise<Result<{ token: string; id: UserId }, AccountCreationError>> {
         const result = await this.db.users.findOne({ username: username });
         if (result) {
-            throw new Error("AccountExists");
+            return err("AccountExists");
         }
 
-        const illegalWordingError = async (text, type) => {
-            const trigger = await this.checkForUnsafeUsername(text);
-            if (trigger) {
-                const illegalWordIndex =
-                    await this.getIndexOfUnsafeUsername(text);
-
-                const before = text.substring(0, illegalWordIndex[0]);
-                const after = text.substring(illegalWordIndex[1]);
-                const illegalWord = text.substring(
-                    illegalWordIndex[0],
-                    illegalWordIndex[1],
-                );
-
-                logs.sendHeatLog(
-                    before + "\x1b[31;1m" + illegalWord + "\x1b[0m" + after,
-                    trigger,
-                    type,
+        if (check_username) {
+            if (
+                await this.manager.misc.illegalWordingError(
                     username,
-                );
-
-                throw new Error("IllegalWordsUsed");
+                    "username",
+                    (
+                        await this.db.illegalList.findOne({
+                            id: "unsafeUsernames",
+                        })
+                    )?.items,
+                )
+            ) {
+                return err("IllegalWordingError");
             }
-        };
-
-        const potentiallyIllegalWordingError = async (text, type) => {
-            const trigger = await this.checkForPotentiallyUnsafeUsername(text);
-            if (trigger) {
-                const illegalWordIndex =
-                    await this.getIndexOfPotentiallyUnsafeUsername(text);
-
-                const before = text.substring(0, illegalWordIndex[0]);
-                const after = text.substring(illegalWordIndex[1]);
-                const illegalWord = text.substring(
-                    illegalWordIndex[0],
-                    illegalWordIndex[1],
-                );
-
-                logs.sendHeatLog(
-                    before + "\x1b[33;1m" + illegalWord + "\x1b[0m" + after,
-                    trigger,
-                    type,
-                    username,
-                    0xffbb00,
-                );
-                return true;
-            }
-            return false;
-        };
-
-        if (
-            check_username &&
-            (await illegalWordingError(username, "username"))
-        ) {
-            return false;
+            await this.manager.misc.maybeIllegalWordingError(
+                username,
+                "username",
+                (
+                    await this.db.illegalList.findOne({
+                        id: "potentiallyUnsafeUsernames",
+                    })
+                )?.items,
+            );
         }
 
-        await potentiallyIllegalWordingError(username, "username");
-
-        let email = email_data;
-        let emailVerified = false;
-        if (email_data && typeof email_data === "object") {
-            email = email_data.email;
-            emailVerified = email_data.verify;
-        }
+        const email = email_data ? email_data.email : null;
+        const emailVerified = email_data ? email_data.verified : false;
 
         const hash = password ? await bcrypt.hash(password, 10) : "";
-        const id = ulid();
+        const id = userId(ulid());
         const token = randomBytes(32).toString("hex");
         const current_time = Date.now();
         await this.db.users.insertOne({
@@ -225,7 +192,7 @@ export class Authentication {
             followers: 0,
             bio: "",
             featuredProjectTitle: -1,
-            featuredProject: -1,
+            featuredProject: "",
             cubes: 0,
             firstLogin: current_time,
             lastLogin: current_time,
@@ -247,7 +214,7 @@ export class Authentication {
 
         await this.db.minioClient.putObject("profile-pictures", id, basePFP);
 
-        return { token, id };
+        return ok({ token, id });
     }
 
     /**
@@ -258,21 +225,18 @@ export class Authentication {
             await this.db.runtimeConfig.findOne({
                 id: "accountCreationEnabled",
             })
-        )?.value;
+        )?.value as boolean;
     }
 
-    /**
-     * Create an account with some data from an OAuth method
-     * @param {"google"|"github"|"scratch"} method The method used
-     * @param {object} data The data given by the method
-     * @param {*} utils
-     * @param {*} res
-     * @returns
-     */
     async makeOAuth2Account(
-        method: "google" | "github" | "scratch",
+        method: OAuthMethod,
         data: { oauth_username: string; oauth_id: string; email?: string },
-    ) {
+    ): Promise<
+        Result<
+            { token: string; username: string; id: UserId },
+            AccountCreationError
+        >
+    > {
         let username = data.oauth_username.toLowerCase();
         let real_username = data.oauth_username;
         const id = data.oauth_id;
@@ -301,39 +265,15 @@ export class Authentication {
             check_username,
         );
 
-        if (!info) {
-            console.error(`failed to create oauth account: ${username}`);
-            return false;
+        if (!info.ok) {
+            return err(info.error);
         }
 
-        await this.addOAuthMethod(info.id, method, id);
-        return { token: info.token, username, id: info.id };
+        await this.addOAuthMethod(info.value.id, method, id);
+        return ok({ token: info.value.token, username, id: info.value.id });
     }
 
-    async checkForUnsafeUsername(username: string): Promise<string> {
-        const basicTrigger = await this.checkForIllegalWording(username);
-        if (basicTrigger) {
-            return basicTrigger;
-        }
-
-        let unsafeUsernames = (
-            await this.db.illegalList.findOne({ id: "unsafeUsernames" })
-        )?.items;
-
-        unsafeUsernames = unsafeUsernames || [];
-
-        const no_spaces = username.replace(REMOVE_SYMBOLS_REGEX, "");
-
-        for (const item of unsafeUsernames) {
-            if (no_spaces.includes(item)) {
-                return item;
-            }
-        }
-
-        return "";
-    }
-
-    async newTokenGen(id: string): Promise<string> {
+    async newTokenGen(id: UserId): Promise<string> {
         const token = randomBytes(32).toString("hex");
 
         await this.db.users.updateOne(
@@ -344,19 +284,19 @@ export class Authentication {
         return token;
     }
 
-    async getOAuthMethods(id: string): Promise<string[]> {
+    async getOAuthMethods(id: UserId): Promise<OAuthMethod[]> {
         const result = (await this.db.oauthIDs.find({ id }).toArray()).map(
-            (x: any) => x.method,
+            (x) => x.method,
         );
 
         return result;
     }
 
     async addOAuthMethod(
-        id: string,
-        method: string,
+        id: UserId,
+        method: OAuthMethod,
         code: string,
-    ): Promise<undefined> {
+    ): Promise<void> {
         await this.db.oauthIDs.insertOne({
             id: id,
             method: method,
@@ -364,23 +304,194 @@ export class Authentication {
         });
     }
 
-    async removeOAuthMethod(id: string, method: string): Promise<undefined> {
+    async removeOAuthMethod(id: UserId, method: OAuthMethod): Promise<void> {
         await this.db.oauthIDs.deleteOne({ id, method });
     }
 
     async getUserIDByOAuthID(
-        method: string,
+        method: OAuthMethod,
         id: string,
-    ): Promise<string | false> {
+    ): Promise<string | null> {
         const result = await this.db.oauthIDs.findOne({
-            method: method,
+            method,
             code: id,
         });
 
         if (!result) {
-            return false;
+            return null;
         }
 
         return result.id;
+    }
+
+    async verifyOAuth2State(
+        state: string,
+    ): Promise<{ valid: boolean; data: unknown }> {
+        const result = await this.db.oauthStates.findOneAndDelete({
+            state: state,
+            createdAt: { $lt: new Date(Date.now() + 1000 * 60 * 5) },
+        });
+
+        return { valid: !!result, data: result ? result.data : undefined };
+    }
+
+    async generateOAuth2State(data: string): Promise<string> {
+        const state = randomBytes(32).toString("base64").replaceAll("+", "-");
+
+        await this.db.oauthStates.insertOne({
+            state: state,
+            data,
+            createdAt: new Date(),
+        });
+
+        return state;
+    }
+
+    async makeOAuth2Request(
+        code: string,
+        method: OAuthMethod,
+    ): Promise<{ access_token: string } | null> {
+        let response;
+        try {
+            switch (method) {
+                case "scratch":
+                    response = await fetch(
+                        `https://oauth2.scratch-wiki.info/w/rest.php/soa2/v0/tokens`,
+                        {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify({
+                                client_id: Number(
+                                    process.env.ScratchOAuthClientID,
+                                ),
+                                client_secret:
+                                    process.env.ScratchOAuthClientSecret,
+                                code: code,
+                                scopes: ["identify"],
+                            }),
+                        },
+                    ).then((res) => res.json());
+                    return response;
+                case "github":
+                    response = await fetch(
+                        `https://github.com/login/oauth/access_token`,
+                        {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                Accept: "application/json",
+                            },
+                            body: JSON.stringify({
+                                client_id: process.env.GithubOAuthClientID,
+                                client_secret:
+                                    process.env.GithubOAuthClientSecret,
+                                code: code,
+                            }),
+                        },
+                    ).then((res) => res.json());
+                    return response;
+            }
+        } catch (e) {
+            console.error("OAuth2 request failed:", e);
+        }
+
+        return null;
+    }
+
+    async changePassword(
+        username: string,
+        newPassword: string,
+    ): Promise<string> {
+        const password = await bcrypt.hash(newPassword, 10);
+        const token = randomBytes(32).toString("hex");
+        await this.db.users.updateOne(
+            { username },
+            { $set: { password, token } },
+        );
+
+        return token;
+    }
+
+    async canPasswordLogin(username: string): Promise<boolean> {
+        const result = await this.db.users.findOne({ username: username });
+
+        return result?.password ? true : false;
+    }
+
+    async genOneTimeTokenCode(token: string): Promise<string> {
+        const code = randomBytes(32).toString("hex");
+
+        await this.db.oneTimeTkCodes.insertOne({
+            _id: code,
+            token,
+            expiresAt: new Date(Date.now() + 60_000),
+        });
+
+        return code;
+    }
+
+    async exchangeCodeForToken(code: string): Promise<string | null> {
+        const result = await this.db.oneTimeTkCodes.findOneAndDelete({
+            _id: code,
+            expiresAt: { $gt: new Date() },
+        });
+
+        if (!result) {
+            return null;
+        }
+
+        return result.token;
+    }
+
+    async generatePasswordResetState(
+        email: string,
+        userid: UserId,
+        is_verify_email: boolean = false,
+    ): Promise<string> {
+        const state =
+            randomBytes(32).toString("hex") + (is_verify_email ? "_VE" : "");
+
+        await this.db.passwordResetStates.insertOne({
+            state: state,
+            email: email,
+            id: userid,
+            createdAt: new Date(),
+        });
+
+        return state;
+    }
+
+    async verifyPasswordResetState(
+        state: string,
+        email: string,
+        is_verify_email: boolean = false,
+    ): Promise<boolean> {
+        if (!state || !email) {
+            return false;
+        }
+
+        if (!state || state.endsWith("_VE") !== is_verify_email) {
+            console.warn(
+                (state.endsWith("_VE")
+                    ? "says ve but not ve"
+                    : "ve but says not ve") +
+                    ` - ${state.slice(-4)} (${email})`,
+            );
+            return false;
+        }
+
+        const result = await this.db.passwordResetStates.findOneAndDelete({
+            state: state,
+            email: email,
+            createdAt: {
+                $lt: new Date(
+                    Date.now() + Number(process.env.LinkExpire) * 60 * 1000,
+                ),
+            },
+        });
+
+        return !!result;
     }
 }

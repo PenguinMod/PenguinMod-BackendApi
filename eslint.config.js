@@ -56,6 +56,7 @@ module.exports = defineConfig([
                     caughtErrors: "none",
                 },
             ],
+            "@typescript-eslint/explicit-function-return-type": "error",
         },
     },
 ]);

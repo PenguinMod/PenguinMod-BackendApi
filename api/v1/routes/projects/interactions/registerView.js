@@ -35,8 +35,6 @@ module.exports = (app, utils) => {
 
             const concatted = instructions + "\n\n" + notes;
 
-            await utils.UserManager.collectAndInteractView(id, concatted);
-
             res.status(200).json({ success: true });
         },
     );

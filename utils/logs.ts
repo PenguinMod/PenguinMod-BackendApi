@@ -87,9 +87,8 @@ async function postWebhook(
 
 function sendHeatLog(
     text: string,
-    trigger: string,
-    type: string,
-    location: unknown,
+    triggers: string[],
+    location: string,
     color = 0xff0000,
 ): void {
     postWebhook(webhooks.heat, {
@@ -99,13 +98,10 @@ function sendHeatLog(
                 color,
                 description: codeBlock(text),
                 fields: [
-                    { name: "Type", value: `\`${type}\`` },
-                    { name: "Trigger", value: `\`${trigger}\`` },
+                    { name: "Location", value: `\`${location}\`` },
                     {
-                        name: "Location",
-                        value:
-                            JSON.stringify(location, null, 2) ??
-                            String(location),
+                        name: "Triggers",
+                        value: `\`${JSON.stringify(triggers)}\``,
                     },
                 ],
                 timestamp: new Date().toISOString(),
