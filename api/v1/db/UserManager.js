@@ -5910,7 +5910,7 @@ class UserManager {
         };
 
         for (const r of result) {
-            if (formatted.hasOwn(r.range)) {
+            if (Object.hasOwn(formatted, r.range)) {
                 formatted[r.range] = r.count;
             }
         }
