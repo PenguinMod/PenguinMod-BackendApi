@@ -91,6 +91,7 @@ function sendHeatLog(
     text: string,
     triggers: string[],
     location: string,
+    user_info: unknown,
     color = 0xff0000,
 ): void {
     postWebhook(webhooks.heat, {
@@ -101,6 +102,7 @@ function sendHeatLog(
                 description: codeBlock(text),
                 fields: [
                     { name: "Location", value: `\`${location}\`` },
+                    { name: "Info", value: `\`${JSON.stringify(user_info)}\`` },
                     {
                         name: "Triggers",
                         value: `\`${JSON.stringify(triggers)}\``,

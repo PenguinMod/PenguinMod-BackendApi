@@ -23,8 +23,11 @@ export default function (app: Application, utils: Utils): void {
                 return;
             }
 
-            await utils.UserManager.setPrivateProfile(username, privateProfile);
-            await utils.UserManager.setFollowingSeeProfile(
+            await utils.manager.users.setPrivateProfile(
+                username,
+                privateProfile,
+            );
+            await utils.manager.users.setFollowingSeeProfile(
                 username,
                 privateToFollowing,
             );

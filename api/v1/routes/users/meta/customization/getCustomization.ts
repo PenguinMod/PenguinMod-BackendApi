@@ -2,6 +2,7 @@ import type { Application } from "express";
 import type { Utils } from "../../../../../../index";
 
 export default function (app: Application, utils: Utils): void {
+    /*
     app.get(
         "/api/v1/users/customization/getCustomization",
         utils.requireAuth(utils.UserManager, { require_supporter: true }),
@@ -44,4 +45,5 @@ export default function (app: Application, utils: Utils): void {
             res.send({ customization });
         },
     );
+    */
 }

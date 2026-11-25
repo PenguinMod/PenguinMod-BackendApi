@@ -18,57 +18,21 @@ export default function (app: Application, utils: Utils): void {
                 return;
             }
 
-            const userID = res.locals.login.id;
-
-            let trigger = await utils.UserManager.checkForIllegalWording(bio);
-            if (trigger) {
-                res.status(400).json({ error: "IllegalWordsUsed" });
-
-                const illegalWordIndex =
-                    await utils.UserManager.getIndexOfIllegalWording(bio);
-
-                const before = bio.substring(0, illegalWordIndex[0]);
-                const after = bio.substring(illegalWordIndex[1], bio.length);
-                const illegalWord = bio.substring(
-                    illegalWordIndex[0],
-                    illegalWordIndex[1],
-                );
-
-                utils.logs.sendHeatLog(
-                    before + "\x1b[31;1m" + illegalWord + "\x1b[0m" + after,
-                    trigger,
-                    "profileBio",
-                    [username, userID],
-                );
-
-                return;
+            if (
+                await utils.manager.misc.illegalWordingError(bio, "bio", {
+                    username,
+                    id: res.locals.login.id,
+                })
+            ) {
+                return res.status(400).json({ error: "IllegalWordsUsed" });
             }
 
-            trigger =
-                await utils.UserManager.checkForPotentiallyIllegalWording(bio);
-            if (trigger) {
-                const illegalWordIndex =
-                    await utils.UserManager.getIndexOfPotentiallyIllegalWording(
-                        bio,
-                    );
+            await utils.manager.misc.maybeIllegalWordingError(bio, "bio", {
+                username,
+                id: res.locals.login.id,
+            });
 
-                const before = bio.substring(0, illegalWordIndex[0]);
-                const after = bio.substring(illegalWordIndex[1], bio.length);
-                const illegalWord = bio.substring(
-                    illegalWordIndex[0],
-                    illegalWordIndex[1],
-                );
-
-                utils.logs.sendHeatLog(
-                    before + "\x1b[33;1m" + illegalWord + "\x1b[0m" + after,
-                    trigger,
-                    "profileBio",
-                    [username, userID],
-                    0xffbb00,
-                );
-            }
-
-            await utils.UserManager.setBio(username, bio);
+            await utils.manager.users.setBio(username, bio);
 
             res.status(200).json({ success: true });
         },

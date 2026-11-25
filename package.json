@@ -52,6 +52,7 @@
         "@types/cors": "^2.8.19",
         "@types/disposable-email-domains": "^1.0.6",
         "@types/express": "^5.0.6",
+        "@types/mmmagic": "^0.4.33",
         "@types/multer": "^2.3.0",
         "@types/node": "^26.6.6",
         "@types/request-ip": "^0.0.41",

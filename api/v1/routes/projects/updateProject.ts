@@ -83,7 +83,7 @@ export default function (app: Application, utils: Utils): void {
                 });
             }
 
-            const basicProjLoc = {
+            const projectInfo = {
                 projectID,
                 username,
                 userID: res.locals.login.id,
@@ -91,10 +91,8 @@ export default function (app: Application, utils: Utils): void {
             if (
                 await utils.manager.misc.illegalWordingError(
                     title,
-                    JSON.stringify({
-                        ...basicProjLoc,
-                        location: "projectTitle",
-                    }),
+                    "projectTitle",
+                    projectInfo,
                 )
             ) {
                 return res.status(400).json({ error: "IllegalWordsUsed" });
@@ -103,10 +101,8 @@ export default function (app: Application, utils: Utils): void {
             if (
                 await utils.manager.misc.illegalWordingError(
                     instructions,
-                    JSON.stringify({
-                        ...basicProjLoc,
-                        location: "projectInstructions",
-                    }),
+                    "projectInstructions",
+                    projectInfo,
                 )
             ) {
                 return res.status(400).json({ error: "IllegalWordsUsed" });
@@ -115,10 +111,8 @@ export default function (app: Application, utils: Utils): void {
             if (
                 await utils.manager.misc.illegalWordingError(
                     notes,
-                    JSON.stringify({
-                        ...basicProjLoc,
-                        location: "projectNotes",
-                    }),
+                    "projectNotes",
+                    projectInfo,
                 )
             ) {
                 return res.status(400).json({ error: "IllegalWordsUsed" });
@@ -126,23 +120,21 @@ export default function (app: Application, utils: Utils): void {
 
             await utils.manager.misc.maybeIllegalWordingError(
                 title,
-                JSON.stringify({ ...basicProjLoc, location: "projectTitle" }),
+                "projectTitle",
+                projectInfo,
             );
             await utils.manager.misc.maybeIllegalWordingError(
                 instructions,
-                JSON.stringify({
-                    ...basicProjLoc,
-                    location: "projectInstructions",
-                }),
+                "projectInstructions",
+                projectInfo,
             );
             await utils.manager.misc.maybeIllegalWordingError(
                 notes,
-                JSON.stringify({ ...basicProjLoc, location: "projectNotes" }),
+                "projectNotes",
+                projectInfo,
             );
 
             // TODO: make this only update, yk, the things that were updated
-
-            // the jsonfile is in protobuf format so convert it to json
 
             if (Array.isArray(req.files)) {
                 throw new Error("Somehow req.files is an array. you MORON");

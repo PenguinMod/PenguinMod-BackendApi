@@ -17,6 +17,7 @@ export default function (app: Application, utils: Utils): void {
             if (
                 !(await utils.manager.messages.markMessageAsRead(
                     messageID,
+                    res.locals.login.id,
                     true,
                 ))
             ) {

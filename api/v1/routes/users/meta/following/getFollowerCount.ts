@@ -12,7 +12,7 @@ export default function (app: Application, utils: Utils): void {
             return;
         }
 
-        const count = await utils.UserManager.getFollowerCount(username);
+        const count = await utils.manager.users.getFollowerCount(username);
 
         res.status(200);
         res.header("Content-Type", "application/json");

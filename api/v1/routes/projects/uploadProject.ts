@@ -70,10 +70,14 @@ export default function (app: Application, utils: Utils): void {
                 });
             }
 
+            const illegalProjectInfo = {
+                author: { id: userid, username: username },
+            };
             if (
                 await utils.manager.misc.illegalWordingError(
                     title,
                     "projectTitle",
+                    illegalProjectInfo,
                 )
             ) {
                 return res.status(400).json({ error: "IllegalWordsUsed" });
@@ -83,6 +87,7 @@ export default function (app: Application, utils: Utils): void {
                 await utils.manager.misc.illegalWordingError(
                     instructions,
                     "projectInstructions",
+                    illegalProjectInfo,
                 )
             ) {
                 return res.status(400).json({ error: "IllegalWordsUsed" });
@@ -92,6 +97,7 @@ export default function (app: Application, utils: Utils): void {
                 await utils.manager.misc.illegalWordingError(
                     notes,
                     "projectNotes",
+                    illegalProjectInfo,
                 )
             ) {
                 return res.status(400).json({ error: "IllegalWordsUsed" });
@@ -200,17 +206,24 @@ export default function (app: Application, utils: Utils): void {
                 return res.status(503).json({ error: "NoProjectID" });
             }
 
+            const projectInfo = {
+                id: projectID,
+                author: illegalProjectInfo.author,
+            };
             await utils.manager.misc.maybeIllegalWordingError(
                 title,
-                `projectTitle (${projectID})`,
+                "projectTitle",
+                projectInfo,
             );
             await utils.manager.misc.maybeIllegalWordingError(
                 instructions,
-                `projectInstructions (${projectID})`,
+                "projectInstructions",
+                projectInfo,
             );
             await utils.manager.misc.maybeIllegalWordingError(
                 notes,
-                `projectNotes (${projectID})`,
+                "projectNotes",
+                projectInfo,
             );
 
             sendCreationLog(username, projectID, title, "upload", 0x4a7fb5);

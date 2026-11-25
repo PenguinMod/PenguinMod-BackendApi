@@ -1,6 +1,7 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../index";
 import { requireAuth } from "../../../../../utils/auth";
+import { sendRenameLog, watchlist } from "../../../../../utils/logs";
 
 export default function (app: Application, utils: Utils): void {
     app.post(
@@ -34,72 +35,28 @@ export default function (app: Application, utils: Utils): void {
                 return;
             }
 
-            const illegalWordingError = async (text, type) => {
-                const trigger =
-                    await utils.UserManager.checkForUnsafeUsername(text);
-                if (trigger) {
-                    res.status(400).json({ error: "IllegalWordsUsed" });
-
-                    const illegalWordIndex =
-                        await utils.UserManager.getIndexOfUnsafeUsername(text);
-
-                    const before = text.substring(0, illegalWordIndex[0]);
-                    const after = text.substring(illegalWordIndex[1]);
-                    const illegalWord = text.substring(
-                        illegalWordIndex[0],
-                        illegalWordIndex[1],
-                    );
-
-                    utils.logs.sendHeatLog(
-                        before + "\x1b[31;1m" + illegalWord + "\x1b[0m" + after,
-                        trigger,
-                        type,
-                        [res.locals.login.id, username],
-                    );
-
-                    return true;
-                }
-                return false;
+            const userData = {
+                id: res.locals.login.id,
+                oldUsername: res.locals.login.username,
             };
-
-            const potentiallyIllegalWordingError = async (text, type) => {
-                const trigger =
-                    await utils.UserManager.checkForPotentiallyUnsafeUsername(
-                        text,
-                    );
-                if (trigger) {
-                    const illegalWordIndex =
-                        await utils.UserManager.getIndexOfPotentiallyUnsafeUsername(
-                            text,
-                        );
-
-                    const before = text.substring(0, illegalWordIndex[0]);
-                    const after = text.substring(illegalWordIndex[1]);
-                    const illegalWord = text.substring(
-                        illegalWordIndex[0],
-                        illegalWordIndex[1],
-                    );
-
-                    utils.logs.sendHeatLog(
-                        before + "\x1b[33;1m" + illegalWord + "\x1b[0m" + after,
-                        trigger,
-                        type,
-                        [res.locals.login.id, username],
-                        0xffbb00,
-                    );
-                    return true;
-                }
-                return false;
-            };
-
-            if (await illegalWordingError(newUsername, "username")) {
+            if (
+                await utils.manager.misc.illegalWordingError(
+                    newUsername,
+                    "username",
+                    userData,
+                )
+            ) {
                 // function already errors
                 return;
             }
 
-            await potentiallyIllegalWordingError(newUsername, "username");
+            await utils.manager.misc.maybeIllegalWordingError(
+                newUsername,
+                "username",
+                userData,
+            );
 
-            const exists = await utils.UserManager.existsByUsername(
+            const exists = await utils.manager.users.existsByUsername(
                 newUsername,
                 true,
             );
@@ -110,17 +67,13 @@ export default function (app: Application, utils: Utils): void {
 
             const id = res.locals.login.id;
 
-            utils.logs.sendRenameLog(username, newUsername, id);
+            sendRenameLog(username, newUsername, id);
 
-            if (await utils.UserManager.isOnWatchlist(username)) {
-                utils.logs.watchlist.sendUsernameUpdateLog(
-                    username,
-                    newUsername,
-                    id,
-                );
+            if (await utils.manager.users.isOnWatchlist(username)) {
+                watchlist.sendUsernameUpdateLog(username, newUsername, id);
             }
 
-            await utils.UserManager.changeUsername(
+            await utils.manager.users.changeUsername(
                 username,
                 newUsername,
                 String(packet.newUsername),

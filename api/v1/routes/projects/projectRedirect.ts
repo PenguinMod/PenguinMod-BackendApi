@@ -1,6 +1,6 @@
 import { Application } from "express";
 import { readFileSync } from "fs";
-import path from "path/win32";
+import path from "path";
 import { Utils } from "../../../../index";
 import { projectId } from "../../db/new-types";
 import { escapeXML } from "../../../../utils/misc";

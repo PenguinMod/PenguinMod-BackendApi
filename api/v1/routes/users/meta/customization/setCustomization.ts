@@ -3,6 +3,7 @@ import type { Utils } from "../../../../../../index";
 import { requireAuth } from "../../../../../../utils/auth";
 
 export default function (app: Application, utils: Utils): void {
+    /*
     app.post(
         "/api/v1/users/customization/setCustomization",
         ...requireAuth(utils.manager.auth),
@@ -56,4 +57,5 @@ export default function (app: Application, utils: Utils): void {
             res.status(200).json({ success: true });
         },
     );
+    */
 }

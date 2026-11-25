@@ -349,6 +349,7 @@ export class Misc {
     async illegalWordingError(
         text: string,
         location: string,
+        user_info: unknown,
         extra_terms?: string[],
     ): Promise<boolean> {
         const terms = [
@@ -364,6 +365,7 @@ export class Misc {
                 highlighted_text,
                 needles.map((n) => n.needle),
                 location,
+                user_info,
             );
         }
         return needles.length > 0;
@@ -373,6 +375,7 @@ export class Misc {
     async maybeIllegalWordingError(
         text: string,
         location: string,
+        user_info: unknown,
         extra_terms?: string[],
     ): Promise<boolean> {
         const terms = [
@@ -392,6 +395,7 @@ export class Misc {
                 highlighted_text,
                 needles.map((n) => n.needle),
                 location,
+                user_info,
             );
         }
         return needles.length > 0;

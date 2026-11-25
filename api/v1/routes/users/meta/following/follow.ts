@@ -20,23 +20,26 @@ export default function (app: Application, utils: Utils): void {
                 return;
             }
 
-            const targetID = await utils.UserManager.getIDByUsername(
-                target,
-                false,
-            );
-            if (!targetID) {
+            const targetData = await utils.manager.users.getUserData(target);
+            if (!targetData || targetData.permBanned) {
                 res.status(404).json({ error: "TargetNotFound" });
                 return;
             }
 
             if (
-                (await utils.UserManager.isFollowing(userID, targetID)) &&
+                (await utils.manager.users.isFollowing(
+                    userID,
+                    targetData.id,
+                )) &&
                 toggle
             ) {
                 res.status(400).json({ error: "AlreadyFollowing" });
                 return;
             } else if (
-                !(await utils.UserManager.isFollowing(userID, targetID)) &&
+                !(await utils.manager.users.isFollowing(
+                    userID,
+                    targetData.id,
+                )) &&
                 !toggle
             ) {
                 res.status(400).json({ error: "NotFollowing" });
@@ -44,31 +47,34 @@ export default function (app: Application, utils: Utils): void {
             }
 
             if (
-                !(await utils.UserManager.hasFollowed(userID, targetID)) &&
+                !(await utils.manager.users.hasFollowed(
+                    userID,
+                    targetData.id,
+                )) &&
                 toggle
             ) {
                 await utils.manager.messages.sendMessage(
-                    targetID,
+                    targetData.id,
                     { type: "followerAdded", user: userID },
                     false,
-                    null,
+                    undefined,
                 );
             }
 
-            await utils.UserManager.followUser(userID, targetID, toggle);
+            await utils.manager.users.followUser(userID, targetData.id, toggle);
 
-            const followers = await utils.UserManager.getFollowerCount(target);
+            const followers = targetData.followers;
 
             if (
-                followers >= process.env.FollowAmount &&
-                !(await utils.UserManager.hasBadge(target, "followers"))
+                followers >= Number(process.env.FollowAmount) &&
+                !targetData.badges.includes("followers")
             ) {
                 await utils.manager.users.addBadge(target, "followers");
                 await utils.manager.messages.sendMessage(
-                    targetID,
+                    targetData.id,
                     { type: "newBadge", badge: "followers" },
                     false,
-                    null,
+                    undefined,
                 );
             }
 

@@ -1,27 +1,20 @@
+import { Application } from "express";
 import { requireAuth } from "../../../../../utils/auth";
+import Magic from "mmmagic";
+import { Utils } from "../../../../../index";
+import { unlinkMulter } from "../../../../../utils/misc";
+import { readFileSync } from "fs";
+import sharp from "sharp";
 
-const fs = require("fs");
-const path = require("path");
-const sharp = require("sharp");
-const Magic = require("mmmagic");
 const magic = new Magic.Magic(Magic.MAGIC_MIME_TYPE);
-/**
- * @typedef {Object} Utils
- * @property {import("../../../db/UserManager")} UserManager
- */
 
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
+export default function (app: Application, utils: Utils): void {
     app.post(
         "/api/v1/users/setpfp",
         ...requireAuth(utils.manager.auth),
         utils.upload.single("picture"),
-        utils.unlinkMulter,
-        async (req, res) => {
+        unlinkMulter,
+        async function (req, res) {
             const pictureName = req.file;
 
             const id = res.locals.login.id;
@@ -39,21 +32,19 @@ module.exports = (app, utils) => {
                 return res.status(400).json({ error: "File too large" });
             }
 
-            const picture = fs.readFileSync(
-                path.join(utils.homeDir, pictureName.path),
-            );
+            const picture = readFileSync(pictureName.path);
 
             const allowedImages = ["image/png", "image/jpeg"];
             const allowedAnimated = ["image/gif", "image/webp"];
 
             const allowedTypes = allowedImages.concat(allowedAnimated);
 
-            magic.detect(picture, async (err, result) => {
+            magic.detect(picture, async function (err, result) {
                 if (err) {
                     return res.status(400).json({ error: "Invalid file type" });
                 }
 
-                if (!allowedTypes.includes(result)) {
+                if (Array.isArray(result) || !allowedTypes.includes(result)) {
                     return res.status(400).json({ error: "Invalid file type" });
                 }
 
@@ -73,10 +64,13 @@ module.exports = (app, utils) => {
                     return res.status(400).json({ error: "Invalid image" });
                 }
 
-                await utils.UserManager.setProfilePicture(id, resized_picture);
+                await utils.manager.users.setProfilePicture(
+                    id,
+                    resized_picture,
+                );
 
                 res.status(200).json({ success: true });
             });
         },
     );
-};
+}

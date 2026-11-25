@@ -1,6 +1,7 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../index";
 import { requireAuth } from "../../../../../utils/auth";
+import { projectId } from "../../../db/new-types";
 
 export default function (app: Application, utils: Utils): void {
     app.post(
@@ -14,20 +15,17 @@ export default function (app: Application, utils: Utils): void {
 
             const username = res.locals.login.username;
 
-            if (
-                !project ||
-                !(await utils.manager.projects.projectExists(project))
-            ) {
+            if (!(await utils.manager.projects.projectExists(project, false))) {
                 res.status(400).json({ error: "InvalidProject" });
                 return;
             }
 
-            if (packet.title < 0 || packet.title > 500) {
+            if (title < 0 || title > 500) {
                 res.status(400).json({ error: "InvalidTitle" });
             }
 
-            await utils.UserManager.setFeaturedProject(username, project);
-            await utils.UserManager.setFeaturedProjectTitle(username, title);
+            await utils.manager.users.setFeaturedProject(username, project);
+            await utils.manager.users.setFeaturedProjectTitle(username, title);
 
             res.status(200).json({ success: true });
         },

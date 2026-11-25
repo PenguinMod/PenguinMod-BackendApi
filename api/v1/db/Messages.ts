@@ -292,11 +292,15 @@ export class Messages {
         });
     }
 
-    async markMessageAsRead(id: MessageId, read: boolean): Promise<boolean> {
+    async markMessageAsRead(
+        id: MessageId,
+        owner: UserId,
+        read: boolean,
+    ): Promise<boolean> {
         return (
             (
                 await this.db.messages.updateOne(
-                    { id: id },
+                    { id: id, receiver: owner },
                     { $set: { read: read } },
                 )
             ).matchedCount > 0

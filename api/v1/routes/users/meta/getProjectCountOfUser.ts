@@ -7,13 +7,15 @@ export default function (app: Application, utils: Utils): void {
 
         const target = String(packet.target).toLowerCase();
 
-        const id = await utils.UserManager.getIDByUsername(target, false);
-        if (!id) {
+        const userData = await utils.manager.users.getUserData(target);
+        if (!userData || userData.permBanned) {
             res.status(404).json({ error: "TargetNotFound" });
             return;
         }
 
-        const count = await utils.UserManager.getProjectCountOfUser(id);
+        const count = await utils.manager.projects.getProjectCountOfUser(
+            userData.id,
+        );
 
         res.status(200);
         res.header("Content-Type", "application/json");

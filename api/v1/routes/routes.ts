@@ -85,67 +85,65 @@ import r80 from "./users/meta/following/follow"; // users/meta/following/follow
 import r81 from "./users/meta/following/getFollowerCount"; // users/meta/following/getFollowerCount
 import r82 from "./users/meta/following/getFollowers"; // users/meta/following/getFollowers
 import r83 from "./users/meta/following/isFollowing"; // users/meta/following/isFollowing
-import r84 from "./users/meta/getBadges"; // users/meta/getBadges
-import r85 from "./users/meta/getProjectCountOfUser"; // users/meta/getProjectCountOfUser
-import r86 from "./users/meta/getid"; // users/meta/getid
-import r87 from "./users/meta/getusername"; // users/meta/getusername
-import r88 from "./users/meta/privateProfile"; // users/meta/privateProfile
-import r89 from "./users/meta/setBio"; // users/meta/setBio
-import r90 from "./users/meta/setMyFeaturedProject"; // users/meta/setMyFeaturedProject
-import r91 from "./users/meta/setPFP"; // users/meta/setPFP
-import r92 from "./users/mod/admin_only/assignPossition"; // users/mod/admin_only/assignPossition
-import r93 from "./users/mod/admin_only/banIP"; // users/mod/admin_only/banIP
-import r94 from "./users/mod/admin_only/banUserIP"; // users/mod/admin_only/banUserIP
-import r95 from "./users/mod/admin_only/changeBadgesMultiple"; // users/mod/admin_only/changeBadgesMultiple
-import r96 from "./users/mod/admin_only/changeProjectID"; // users/mod/admin_only/changeProjectID
-import r97 from "./users/mod/admin_only/deleteAccount"; // users/mod/admin_only/deleteAccount
-import r98 from "./users/mod/admin_only/getAllAccountsWithIP"; // users/mod/admin_only/getAllAccountsWithIP
-import r99 from "./users/mod/admin_only/getAllIPs"; // users/mod/admin_only/getAllIPs
-import r100 from "./users/mod/admin_only/getEmail"; // users/mod/admin_only/getEmail
-import r101 from "./users/mod/admin_only/getUserStats"; // users/mod/admin_only/getUserStats
-import r102 from "./users/mod/admin_only/getperformancemongostuff"; // users/mod/admin_only/getperformancemongostuff
-import r103 from "./users/mod/admin_only/massBan"; // users/mod/admin_only/massBan
-import r104 from "./users/mod/admin_only/setBadges"; // users/mod/admin_only/setBadges
-import r105 from "./users/mod/admin_only/setEmailVerified"; // users/mod/admin_only/setEmailVerified
-import r106 from "./users/mod/admin_only/setPFP"; // users/mod/admin_only/setPFP
-import r107 from "./users/mod/admin_only/verifyFollowers"; // users/mod/admin_only/verifyFollowers
-import r108 from "./users/mod/ban"; // users/mod/ban
-import r109 from "./users/mod/getAlts"; // users/mod/getAlts
-import r110 from "./users/mod/getDisputes"; // users/mod/getDisputes
-import r111 from "./users/mod/getMessageThread"; // users/mod/getMessageThread
-import r112 from "./users/mod/getadmins"; // users/mod/getadmins
-import r113 from "./users/mod/getmods"; // users/mod/getmods
-import r114 from "./users/mod/putOnWatchlist"; // users/mod/putOnWatchlist
-import r115 from "./users/mod/setBioAdmin"; // users/mod/setBioAdmin
-import r116 from "./users/mod/setFeaturedProjectAdmin"; // users/mod/setFeaturedProjectAdmin
-import r117 from "./users/mod/setUsername"; // users/mod/setUsername
-import r118 from "./users/oauth/addMethod/addOAuthMethod"; // users/oauth/addMethod/addOAuthMethod
-import r119 from "./users/oauth/addMethod/githubCallback"; // users/oauth/addMethod/githubCallback
-import r120 from "./users/oauth/addMethod/googleCallback"; // users/oauth/addMethod/googleCallback
-import r121 from "./users/oauth/addMethod/scratchCallback"; // users/oauth/addMethod/scratchCallback
-import r122 from "./users/oauth/addPassword/addPassword"; // users/oauth/addPassword/addPassword
-import r123 from "./users/oauth/addPassword/githubCallbackFinal"; // users/oauth/addPassword/githubCallbackFinal
-import r124 from "./users/oauth/addPassword/githubCallbackIntermediate"; // users/oauth/addPassword/githubCallbackIntermediate
-import r125 from "./users/oauth/addPassword/googleCallbackFinal"; // users/oauth/addPassword/googleCallbackFinal
-import r126 from "./users/oauth/addPassword/googleCallbackIntermediate"; // users/oauth/addPassword/googleCallbackIntermediate
-import r127 from "./users/oauth/addPassword/scratchCallbackFinal"; // users/oauth/addPassword/scratchCallbackFinal
-import r128 from "./users/oauth/addPassword/scratchCallbackIntermediate"; // users/oauth/addPassword/scratchCallbackIntermediate
-import r129 from "./users/oauth/createAccount/createOAuthAccount"; // users/oauth/createAccount/createOAuthAccount
-import r130 from "./users/oauth/createAccount/githubCallback"; // users/oauth/createAccount/githubCallback
-import r131 from "./users/oauth/createAccount/googleCallback"; // users/oauth/createAccount/googleCallback
-import r132 from "./users/oauth/createAccount/scratchCallback"; // users/oauth/createAccount/scratchCallback
-import r133 from "./users/oauth/getottcode"; // users/oauth/getottcode
-import r134 from "./users/oauth/gettokenfromonetimecode"; // users/oauth/gettokenfromonetimecode
-import r135 from "./users/oauth/login/githubCallback"; // users/oauth/login/githubCallback
-import r136 from "./users/oauth/login/googleCallback"; // users/oauth/login/googleCallback
-import r137 from "./users/oauth/login/loginOAuthAccount"; // users/oauth/login/loginOAuthAccount
-import r138 from "./users/oauth/login/scratchCallback"; // users/oauth/login/scratchCallback
-import r139 from "./users/oauth/removeMethod/removeOAuthMethod"; // users/oauth/removeMethod/removeOAuthMethod
-import r140 from "./users/profile"; // users/profile
-import r141 from "./users/requestRankUp"; // users/requestRankUp
-import r142 from "./users/setEmail"; // users/setEmail
-import r143 from "./users/userExists"; // users/userExists
-import r144 from "./users/userFromCode"; // users/userFromCode
+import r84 from "./users/meta/getProjectCountOfUser"; // users/meta/getProjectCountOfUser
+import r85 from "./users/meta/getusername"; // users/meta/getusername
+import r86 from "./users/meta/privateProfile"; // users/meta/privateProfile
+import r87 from "./users/meta/setBio"; // users/meta/setBio
+import r88 from "./users/meta/setMyFeaturedProject"; // users/meta/setMyFeaturedProject
+import r89 from "./users/meta/setPFP"; // users/meta/setPFP
+import r90 from "./users/mod/admin_only/assignPossition"; // users/mod/admin_only/assignPossition
+import r91 from "./users/mod/admin_only/banIP"; // users/mod/admin_only/banIP
+import r92 from "./users/mod/admin_only/banUserIP"; // users/mod/admin_only/banUserIP
+import r93 from "./users/mod/admin_only/changeBadgesMultiple"; // users/mod/admin_only/changeBadgesMultiple
+import r94 from "./users/mod/admin_only/changeProjectID"; // users/mod/admin_only/changeProjectID
+import r95 from "./users/mod/admin_only/deleteAccount"; // users/mod/admin_only/deleteAccount
+import r96 from "./users/mod/admin_only/getAllAccountsWithIP"; // users/mod/admin_only/getAllAccountsWithIP
+import r97 from "./users/mod/admin_only/getAllIPs"; // users/mod/admin_only/getAllIPs
+import r98 from "./users/mod/admin_only/getEmail"; // users/mod/admin_only/getEmail
+import r99 from "./users/mod/admin_only/getUserStats"; // users/mod/admin_only/getUserStats
+import r100 from "./users/mod/admin_only/getperformancemongostuff"; // users/mod/admin_only/getperformancemongostuff
+import r101 from "./users/mod/admin_only/massBan"; // users/mod/admin_only/massBan
+import r102 from "./users/mod/admin_only/setBadges"; // users/mod/admin_only/setBadges
+import r103 from "./users/mod/admin_only/setEmailVerified"; // users/mod/admin_only/setEmailVerified
+import r104 from "./users/mod/admin_only/setPFP"; // users/mod/admin_only/setPFP
+import r105 from "./users/mod/admin_only/verifyFollowers"; // users/mod/admin_only/verifyFollowers
+import r106 from "./users/mod/ban"; // users/mod/ban
+import r107 from "./users/mod/getAlts"; // users/mod/getAlts
+import r108 from "./users/mod/getDisputes"; // users/mod/getDisputes
+import r109 from "./users/mod/getMessageThread"; // users/mod/getMessageThread
+import r110 from "./users/mod/getadmins"; // users/mod/getadmins
+import r111 from "./users/mod/getmods"; // users/mod/getmods
+import r112 from "./users/mod/putOnWatchlist"; // users/mod/putOnWatchlist
+import r113 from "./users/mod/setBioAdmin"; // users/mod/setBioAdmin
+import r114 from "./users/mod/setFeaturedProjectAdmin"; // users/mod/setFeaturedProjectAdmin
+import r115 from "./users/mod/setUsername"; // users/mod/setUsername
+import r116 from "./users/oauth/addMethod/addOAuthMethod"; // users/oauth/addMethod/addOAuthMethod
+import r117 from "./users/oauth/addMethod/githubCallback"; // users/oauth/addMethod/githubCallback
+import r118 from "./users/oauth/addMethod/googleCallback"; // users/oauth/addMethod/googleCallback
+import r119 from "./users/oauth/addMethod/scratchCallback"; // users/oauth/addMethod/scratchCallback
+import r120 from "./users/oauth/addPassword/addPassword"; // users/oauth/addPassword/addPassword
+import r121 from "./users/oauth/addPassword/githubCallbackFinal"; // users/oauth/addPassword/githubCallbackFinal
+import r122 from "./users/oauth/addPassword/githubCallbackIntermediate"; // users/oauth/addPassword/githubCallbackIntermediate
+import r123 from "./users/oauth/addPassword/googleCallbackFinal"; // users/oauth/addPassword/googleCallbackFinal
+import r124 from "./users/oauth/addPassword/googleCallbackIntermediate"; // users/oauth/addPassword/googleCallbackIntermediate
+import r125 from "./users/oauth/addPassword/scratchCallbackFinal"; // users/oauth/addPassword/scratchCallbackFinal
+import r126 from "./users/oauth/addPassword/scratchCallbackIntermediate"; // users/oauth/addPassword/scratchCallbackIntermediate
+import r127 from "./users/oauth/createAccount/createOAuthAccount"; // users/oauth/createAccount/createOAuthAccount
+import r128 from "./users/oauth/createAccount/githubCallback"; // users/oauth/createAccount/githubCallback
+import r129 from "./users/oauth/createAccount/googleCallback"; // users/oauth/createAccount/googleCallback
+import r130 from "./users/oauth/createAccount/scratchCallback"; // users/oauth/createAccount/scratchCallback
+import r131 from "./users/oauth/getottcode"; // users/oauth/getottcode
+import r132 from "./users/oauth/gettokenfromonetimecode"; // users/oauth/gettokenfromonetimecode
+import r133 from "./users/oauth/login/githubCallback"; // users/oauth/login/githubCallback
+import r134 from "./users/oauth/login/googleCallback"; // users/oauth/login/googleCallback
+import r135 from "./users/oauth/login/loginOAuthAccount"; // users/oauth/login/loginOAuthAccount
+import r136 from "./users/oauth/login/scratchCallback"; // users/oauth/login/scratchCallback
+import r137 from "./users/oauth/removeMethod/removeOAuthMethod"; // users/oauth/removeMethod/removeOAuthMethod
+import r138 from "./users/profile"; // users/profile
+import r139 from "./users/requestRankUp"; // users/requestRankUp
+import r140 from "./users/setEmail"; // users/setEmail
+import r141 from "./users/userExists"; // users/userExists
+import r142 from "./users/userFromCode"; // users/userFromCode
 
 export const routes: Array<(app: Express, utils: Utils) => void> = [
   r0,
@@ -291,8 +289,6 @@ export const routes: Array<(app: Express, utils: Utils) => void> = [
   r140,
   r141,
   r142,
-  r143,
-  r144,
 ];
 
 export function registerRoutes(app: Express, utils: Utils): void {
