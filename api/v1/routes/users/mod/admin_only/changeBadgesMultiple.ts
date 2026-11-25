@@ -1,6 +1,7 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../../index";
 import { requireAuth } from "../../../../../../utils/auth";
+import { sendAdminUserLog } from "../../../../../../utils/logs";
 
 export default function (app: Application, utils: Utils): void {
     app.post(
@@ -27,21 +28,25 @@ export default function (app: Application, utils: Utils): void {
 
             for (const t of targets) {
                 const target = t.toLowerCase();
-                if (!(await utils.UserManager.existsByUsername(target))) {
-                    res.status(404).json({ error: `UserNotFound ${target}` });
+                const targetData =
+                    await utils.manager.users.getUserData(target);
+                if (!targetData) {
+                    res.status(404).json({
+                        error: `UserNotFound`,
+                        user: target,
+                    });
                     return;
                 }
-                const current_badges =
-                    await utils.UserManager.getBadges(target);
+                const current_badges = targetData.badges;
                 const merged = removing
                     ? current_badges.filter((x) => !badges.includes(x))
                     : badges.concat(current_badges);
                 const uniqueOnly = [...new Set(merged)];
 
-                await utils.UserManager.setBadges(target, uniqueOnly);
+                await utils.manager.users.setBadges(target, uniqueOnly);
             }
 
-            utils.logs.sendAdminUserLog(
+            sendAdminUserLog(
                 username,
                 targets[0],
                 `Admin has updated ${targets.length} user's badges.`,

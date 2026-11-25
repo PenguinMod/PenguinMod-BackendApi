@@ -11,17 +11,14 @@ export default function (app: Application, utils: Utils): void {
 
             const target = String(packet.target).toLowerCase();
 
-            const targetID = await utils.UserManager.getIDByUsername(
-                target,
-                false,
-            );
-            if (!targetID) {
+            const targetData = await utils.manager.users.getUserData(target);
+            if (!targetData) {
                 res.status(404).json({ error: "NotFound" });
                 return;
             }
 
-            const alts = await utils.UserManager.getAlts(targetID);
-            const usernames = await utils.UserManager.idListToUsernames(alts);
+            const alts = await utils.manager.users.getAlts(targetData.id);
+            const usernames = await utils.manager.users.idListToUsernames(alts);
 
             res.status(200);
             res.header("Content-Type", "application/json");

@@ -1,6 +1,7 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../index";
 import { requireAuth } from "../../../../../utils/auth";
+import { watchlist } from "../../../../../utils/logs";
 
 export default function (app: Application, utils: Utils): void {
     app.post(
@@ -14,9 +15,9 @@ export default function (app: Application, utils: Utils): void {
 
             const username = res.locals.login.username;
 
-            await utils.UserManager.toggleWatchlist(target, enabled);
+            await utils.manager.users.toggleWatchlist(target, enabled);
 
-            utils.logs.watchlist.putOnWatchlist(target, username);
+            watchlist.putOnWatchlist(target, username);
 
             res.status(200).json({ success: true });
         },

@@ -18,6 +18,7 @@ export default function (app: Application, utils: Utils): void {
 
             return;
 
+            /*
             const toggle = String(packet.toggle) === "true";
 
             const targetRegex = packet.targetRegex;
@@ -46,6 +47,7 @@ export default function (app: Application, utils: Utils): void {
             res.status(200);
             res.header("Content-Type", "application/json");
             res.send({ success: true, count });
+            */
         },
     );
 }

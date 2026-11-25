@@ -11,14 +11,12 @@ export default function (app: Application, utils: Utils): void {
 
             const target = String(packet.target);
 
-            if (
-                !target ||
-                !(await utils.UserManager.existsByUsername(target, true))
-            ) {
+            const targetData = await utils.manager.users.getUserData(target);
+            if (!targetData) {
                 return res.status(404).json({ error: "User not found" });
             }
 
-            const ips = await utils.UserManager.getIPs(target);
+            const ips = await utils.manager.users.getIpsByID(targetData.id);
 
             res.status(200);
             res.header("Content-Type", "application/json");

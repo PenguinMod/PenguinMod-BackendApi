@@ -11,7 +11,8 @@ export default function (app: Application, utils: Utils): void {
 
             const target = String(packet.target);
 
-            const users = await utils.UserManager.getAllAccountsWithIP(target);
+            const users =
+                await utils.manager.users.getAllAccountsWithIP(target);
 
             res.status(200);
             res.header("Content-Type", "application/json");

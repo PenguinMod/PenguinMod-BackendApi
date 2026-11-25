@@ -1,6 +1,7 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../index";
 import { requireAuth } from "../../../../../utils/auth";
+import { pmUserAuthor, sendAdminLog } from "../../../../../utils/logs";
 
 export default function (app: Application, utils: Utils): void {
     app.post(
@@ -21,9 +22,12 @@ export default function (app: Application, utils: Utils): void {
                 return;
             }
 
-            const oldBio = await utils.UserManager.getBio(target);
+            const userData = await utils.manager.users.getUserData(target);
+            if (!userData) {
+                return res.status(404).json({ error: "UserNotFound" });
+            }
 
-            await utils.UserManager.setBio(target, bio);
+            await utils.manager.users.setBio(target, bio);
 
             sendAdminLog(
                 {
@@ -31,7 +35,7 @@ export default function (app: Application, utils: Utils): void {
                     content: `${target}'s bio was edited by ${username}`,
                     fields: {
                         "Edited by": `${username}`,
-                        "Old Bio": `\`\`\`\n${oldBio}\n\`\`\``,
+                        "Old Bio": `\`\`\`\n${userData.bio}\n\`\`\``,
                         "New Bio": `\`\`\`\n${bio}\n\`\`\``,
                         URL: `${process.env.HomeURL}/profile?user=${target}`,
                     },

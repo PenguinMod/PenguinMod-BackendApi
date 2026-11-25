@@ -1,6 +1,7 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../index";
 import { requireAuth } from "../../../../../utils/auth";
+import { sendAdminUserLog } from "../../../../../utils/logs";
 
 export default function (app: Application, utils: Utils): void {
     app.post(
@@ -14,14 +15,18 @@ export default function (app: Application, utils: Utils): void {
 
             const username = res.locals.login.username;
 
-            if (await utils.UserManager.existsByUsername(newUsername, true)) {
+            if (await utils.manager.users.existsByUsername(newUsername, true)) {
                 res.status(400).json({ error: "UsernameInUse" });
                 return;
             }
 
-            await utils.UserManager.changeUsername(target, newUsername);
+            await utils.manager.users.changeUsername(
+                target,
+                newUsername,
+                String(packet.newUsername),
+            );
 
-            utils.logs.sendAdminUserLog(
+            sendAdminUserLog(
                 username,
                 newUsername,
                 `Admin or mod has updated user's username.`,

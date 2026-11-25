@@ -1,6 +1,7 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../../index";
 import { requireAuth } from "../../../../../../utils/auth";
+import { pmUserAuthor, sendAdminLog } from "../../../../../../utils/logs";
 
 export default function (app: Application, utils: Utils): void {
     app.post(
@@ -18,14 +19,11 @@ export default function (app: Application, utils: Utils): void {
 
             const username = res.locals.login.username;
 
-            if (
-                !target ||
-                !(await utils.UserManager.existsByUsername(target, true))
-            ) {
+            if (!(await utils.manager.users.existsByUsername(target, true))) {
                 return res.status(404).json({ error: "TargetNotFound" });
             }
 
-            const success = await utils.UserManager.deleteAccount(target);
+            const success = await utils.manager.users.deleteAccount(target);
 
             sendAdminLog(
                 {

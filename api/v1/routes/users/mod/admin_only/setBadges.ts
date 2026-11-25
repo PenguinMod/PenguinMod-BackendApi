@@ -1,6 +1,7 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../../index";
 import { requireAuth } from "../../../../../../utils/auth";
+import { sendAdminUserLog } from "../../../../../../utils/logs";
 
 export default function (app: Application, utils: Utils): void {
     app.post(
@@ -14,10 +15,8 @@ export default function (app: Application, utils: Utils): void {
 
             const username = res.locals.login.username;
 
-            if (
-                !target ||
-                !(await utils.UserManager.existsByUsername(target))
-            ) {
+            const data = await utils.manager.users.getUserData(target);
+            if (!data) {
                 res.status(404).json({ error: "UserNotFound" });
                 return;
             }
@@ -27,15 +26,27 @@ export default function (app: Application, utils: Utils): void {
                 return;
             }
 
-            await utils.UserManager.setBadges(target, badges);
+            await utils.manager.users.setBadges(target, badges);
 
-            utils.logs.sendAdminUserLog(
+            const old_badges = res.locals.login.badges;
+
+            let diff = "```diff\n";
+            const newDiff = badges.filter((x) => !old_badges?.includes(x));
+            const oldDiff = old_badges.filter((x) => !badges.includes(x));
+            for (const word of newDiff) {
+                diff += `+ ${word}\n`;
+            }
+            for (const word of oldDiff) {
+                diff += `- ${word}\n`;
+            }
+
+            sendAdminUserLog(
                 username,
                 target,
                 "Admin has updated user's badges.",
                 0x3d4ddc,
                 {
-                    Badges: badges.join(", "),
+                    Badges: diff,
                 },
             );
 

@@ -12,13 +12,13 @@ export default function (app: Application, utils: Utils): void {
             const user = String(packet.user);
             const value = String(packet.value) !== "false";
 
-            if (!user || !(await utils.UserManager.existsByUsername(user))) {
+            if (!user || !(await utils.manager.users.existsByUsername(user))) {
                 return res
                     .status(400)
                     .json({ error: "Thats not a real user buddy" });
             }
 
-            await utils.UserManager.setEmailVerified(user, value);
+            await utils.manager.users.setEmailVerified(user, value);
 
             res.status(200).json({ success: true });
         },

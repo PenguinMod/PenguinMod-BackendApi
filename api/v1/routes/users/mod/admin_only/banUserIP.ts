@@ -1,6 +1,7 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../../index";
 import { requireAuth } from "../../../../../../utils/auth";
+import { pmUserAuthor, sendAdminLog } from "../../../../../../utils/logs";
 
 export default function (app: Application, utils: Utils): void {
     app.post(
@@ -14,17 +15,15 @@ export default function (app: Application, utils: Utils): void {
 
             const username = res.locals.login.username;
 
-            if (
-                !target ||
-                !(await utils.UserManager.existsByUsername(target, true))
-            ) {
-                res.status(404).json({ error: "NotFound" });
+            const userData = await utils.manager.users.getUserData(target);
+            if (!userData) {
+                res.status(404).json({ error: "UserNotFound" });
                 return;
             }
 
             // dont send a message since they cant access the site anyways :bleh:
 
-            await utils.UserManager.banUserIP(target, toggle);
+            await utils.manager.users.banUserIP(userData.id, toggle);
 
             sendAdminLog(
                 {

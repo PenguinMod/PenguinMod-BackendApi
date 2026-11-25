@@ -11,11 +11,12 @@ export default function (app: Application, utils: Utils): void {
 
             const target = String(packet.target);
 
-            const success = await utils.UserManager.verifyFollowers(target);
-
-            if (!success) {
+            const userData = await utils.manager.users.getUserData(target);
+            if (!userData) {
                 return res.status(404).json({ error: "UserNotFound" });
             }
+
+            await utils.manager.users.verifyFollowers(userData.id);
 
             res.status(200).json({ success: true });
         },

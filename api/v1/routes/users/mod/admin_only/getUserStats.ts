@@ -2,7 +2,7 @@ import type { Application } from "express";
 import type { Utils } from "../../../../../../index";
 import { requireAuth } from "../../../../../../utils/auth";
 
-const cached = {
+const cached: { item: null | object; time: number } = {
     item: null,
     time: 0,
 };
@@ -21,7 +21,7 @@ export default function (app: Application, utils: Utils): void {
                 return;
             }
 
-            const stats = await utils.UserManager.getUserStats();
+            const stats = await utils.manager.misc.getUserStats();
 
             cached.item = stats;
             cached.time = Date.now();

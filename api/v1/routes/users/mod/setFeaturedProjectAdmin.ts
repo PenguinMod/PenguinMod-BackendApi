@@ -1,6 +1,8 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../index";
 import { requireAuth } from "../../../../../utils/auth";
+import { projectId } from "../../../db/new-types";
+import { sendAdminUserLog } from "../../../../../utils/logs";
 
 export default function (app: Application, utils: Utils): void {
     app.post(
@@ -15,32 +17,29 @@ export default function (app: Application, utils: Utils): void {
 
             const username = res.locals.login.username;
 
-            if (
-                !project ||
-                !(await utils.manager.projects.projectExists(project))
-            ) {
+            if (!(await utils.manager.projects.projectExists(project, true))) {
                 res.status(400).json({ error: "InvalidProject" });
                 return;
             }
 
             // TODO: pretty sure this is not the correct range
-            if (packet.title < 0 || packet.title > 500) {
+            if (title < 0 || title > 500) {
                 res.status(400).json({ error: "InvalidTitleType" });
             }
 
             // TODO: verify user exists
 
-            await utils.UserManager.setFeaturedProject(target, project);
-            await utils.UserManager.setFeaturedProjectTitle(target, title);
+            await utils.manager.users.setFeaturedProject(target, project);
+            await utils.manager.users.setFeaturedProjectTitle(target, title);
 
-            utils.logs.sendAdminUserLog(
+            sendAdminUserLog(
                 username,
                 target,
                 "Admin or mod has updated user's featured project.",
                 0xc1e518,
                 {
                     Project: project,
-                    Title: title,
+                    Title: String(title),
                 },
             );
 

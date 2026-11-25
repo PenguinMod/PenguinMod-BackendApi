@@ -7,7 +7,7 @@ export default function (app: Application, utils: Utils): void {
         "/api/v1/users/getmods",
         ...requireAuth(utils.manager.auth, { require_mod: true }),
         async function (req, res) {
-            const mods = await utils.UserManager.getAllModerators();
+            const mods = await utils.manager.users.getAllModerators();
 
             res.status(200);
             res.header("Content-type", "application/json");

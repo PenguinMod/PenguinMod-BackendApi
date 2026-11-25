@@ -1,6 +1,9 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../../index";
 import { requireAuth } from "../../../../../../utils/auth";
+import { sendAdminUserLog } from "../../../../../../utils/logs";
+
+// TODO: position is spelled wrong here. needs matching frontend change
 
 export default function (app: Application, utils: Utils): void {
     app.post(
@@ -15,18 +18,20 @@ export default function (app: Application, utils: Utils): void {
 
             const username = res.locals.login.username;
 
-            if (!(await utils.UserManager.existsByUsername(target))) {
+            const targetData = await utils.manager.users.getUserData(target);
+            if (!targetData) {
                 res.status(400).json({ error: "AccountDoesNotExist" });
                 return;
             }
 
-            const isAdmin = await utils.UserManager.isAdmin(target);
-            const isModerator = await utils.UserManager.isModerator(target);
+            const isAdmin = targetData.admin;
+            const isModerator = targetData.moderator || targetData.admin;
 
-            await utils.UserManager.setAdmin(target, admin);
-            await utils.UserManager.setModerator(target, approver);
+            // TODO: combine to one db request
+            await utils.manager.users.setAdmin(target, admin);
+            await utils.manager.users.setModerator(target, approver);
 
-            const fields = {};
+            const fields: Record<string, string> = {};
 
             if (isAdmin !== admin) {
                 fields.Admin = `${isAdmin} -> ${admin}`;
@@ -35,7 +40,7 @@ export default function (app: Application, utils: Utils): void {
                 fields.Approver = `${isModerator} -> ${approver}`;
             }
 
-            utils.logs.sendAdminUserLog(
+            sendAdminUserLog(
                 username,
                 target,
                 "Admin or mod has updated user's permissions.",

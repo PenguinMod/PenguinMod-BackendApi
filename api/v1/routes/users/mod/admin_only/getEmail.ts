@@ -11,15 +11,15 @@ export default function (app: Application, utils: Utils): void {
 
             const target = String(packet.target).toLowerCase();
 
-            const email = await utils.UserManager.getEmail(target);
+            const data = await utils.manager.users.getUserData(target);
 
-            if (!email) {
+            if (!data) {
                 return res.status(404).json({ error: "UserNotFound" });
             }
 
             res.status(200);
             res.header("Content-type", "application/json");
-            res.send({ email });
+            res.send({ email: data.email });
         },
     );
 }

@@ -1,27 +1,20 @@
 import { requireAuth } from "../../../../../../utils/auth";
-
-const fs = require("fs");
-const path = require("path");
-const sharp = require("sharp");
-const Magic = require("mmmagic");
+import sharp from "sharp";
+import Magic from "mmmagic";
+import { readFileSync } from "fs";
+import { Application } from "express";
+import { Utils } from "../../../../../../index";
+import { unlinkMulter } from "../../../../../../utils/misc";
+import { pmUserAuthor, sendAdminLog } from "../../../../../../utils/logs";
 const magic = new Magic.Magic(Magic.MAGIC_MIME_TYPE);
-/**
- * @typedef {Object} Utils
- * @property {import("../../../../db/UserManager")} UserManager
- */
 
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
+export default function (app: Application, utils: Utils): void {
     app.post(
         "/api/v1/users/setpfpadmin",
         ...requireAuth(utils.manager.auth, { require_admin: true }),
         utils.upload.single("picture"),
-        utils.unlinkMulter,
-        async (req, res) => {
+        unlinkMulter,
+        async function (req, res) {
             const packet = req.body;
 
             const target = String(packet.target).toLowerCase();
@@ -34,11 +27,8 @@ module.exports = (app, utils) => {
 
             const username = res.locals.login.username;
 
-            const targetID = await utils.UserManager.getIDByUsername(
-                target,
-                false,
-            );
-            if (!targetID) {
+            const targetData = await utils.manager.users.getUserData(target);
+            if (!targetData) {
                 return res.status(400).json({ error: "TargetNotFound" });
             }
 
@@ -49,9 +39,7 @@ module.exports = (app, utils) => {
                 return res.status(400).json({ error: "File too large" });
             }
 
-            const picture = fs.readFileSync(
-                path.join(utils.homeDir, pictureName.path),
-            );
+            const picture = readFileSync(pictureName.path);
 
             const allowedImages = ["image/png", "image/jpeg"];
             const allowedAnimated = ["image/gif", "image/webp"];
@@ -63,7 +51,7 @@ module.exports = (app, utils) => {
                     return res.status(400).json({ error: "Invalid file type" });
                 }
 
-                if (!allowedTypes.includes(result)) {
+                if (Array.isArray(result) || !allowedTypes.includes(result)) {
                     return res.status(400).json({ error: "Invalid file type" });
                 }
 
@@ -83,15 +71,18 @@ module.exports = (app, utils) => {
                     return res.status(400).json({ error: "Invalid image" });
                 }
 
-                await utils.UserManager.setProfilePicture(
-                    targetID,
+                await utils.manager.users.setProfilePicture(
+                    targetData.id,
                     resized_picture,
                 );
 
-                utils.logs.sendAdminUserLog(
-                    username,
-                    target,
-                    "Admin or mod has updated user's profile picture.",
+                sendAdminLog(
+                    {
+                        action: "Admin or mod has updated user's profile picture.",
+                        content: `${target}'s PFP has been updated by ${username}`,
+                        fields: {},
+                    },
+                    pmUserAuthor(username),
                     0xf4a220,
                 );
 
@@ -99,4 +90,4 @@ module.exports = (app, utils) => {
             });
         },
     );
-};
+}

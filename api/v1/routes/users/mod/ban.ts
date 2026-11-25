@@ -1,6 +1,7 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../index";
 import { requireAuth } from "../../../../../utils/auth";
+import { pmUserAuthor, sendAdminLog } from "../../../../../utils/logs";
 
 export default function (app: Application, utils: Utils): void {
     app.post(
@@ -22,32 +23,28 @@ export default function (app: Application, utils: Utils): void {
 
             const username = res.locals.login.username;
 
-            // TODO: we're making 4 separate db requests that really all get the same info. combine to one
-            const targetID = await utils.UserManager.getIDByUsername(
-                target,
-                false,
-            );
-            if (!targetID) {
+            const targetData = await utils.manager.users.getUserData(target);
+            if (!targetData) {
                 res.status(404).json({ error: "TargetNotFound" });
                 return;
             }
 
             if (
                 !res.locals.login.isAdmin &&
-                (await utils.UserManager.hasModPerms(target))
+                (targetData.moderator || targetData.admin)
             ) {
                 res.status(403).json({ error: "Unauthorized" });
                 return;
             }
 
-            const isTempBanned = await utils.UserManager.isTempBanned(target);
+            const isTempBanned = targetData.unbanTime > Date.now();
             if (!toggle && isTempBanned) {
-                await utils.UserManager.unTempBan(target);
+                await utils.manager.users.unTempBan(target);
             } else if (toggle && time) {
-                await utils.UserManager.tempBanUser(target, reason, time);
+                await utils.manager.users.tempBanUser(target, reason, time);
             } else {
-                await utils.UserManager.setPermBanned(
-                    target,
+                await utils.manager.users.setPermBanned(
+                    targetData.id,
                     toggle,
                     reason,
                     remove_follows,
@@ -56,28 +53,25 @@ export default function (app: Application, utils: Utils): void {
 
             if (toggle && time) {
                 await utils.manager.messages.sendMessage(
-                    targetID,
+                    targetData.id,
                     { type: `tempban`, time: time, reason: reason },
                     false,
-                    0,
                 );
             } else if (toggle) {
                 await utils.manager.messages.sendMessage(
-                    targetID,
+                    targetData.id,
                     { type: "ban", reason: reason },
                     false,
-                    0,
                 );
             } else {
                 await utils.manager.messages.sendMessage(
-                    targetID,
+                    targetData.id,
                     { type: "unban" },
                     false,
-                    0,
                 );
             }
 
-            const fields = {
+            const fields: Record<string, string> = {
                 Mod: username,
                 Target: target,
             };
@@ -87,7 +81,7 @@ export default function (app: Application, utils: Utils): void {
             }
 
             fields.Reason = `\`\`\`\n${reason}\n\`\`\``;
-            fields.URL = `${process.env.HomeURL}/profile?userid=${targetID}`;
+            fields.URL = `${process.env.HomeURL}/profile?userid=${targetData.id}`;
 
             sendAdminLog(
                 {
@@ -99,7 +93,7 @@ export default function (app: Application, utils: Utils): void {
                 toggle ? 0xc40404 : 0x45efc6,
             );
 
-            await utils.UserManager.resolveReports("user", targetID);
+            await utils.manager.reports.resolveReports("user", targetData.id);
 
             res.status(200).json({ success: true });
         },

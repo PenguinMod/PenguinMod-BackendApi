@@ -1001,4 +1001,55 @@ export class Users {
             guidelines: result.lastGuidelinesRead,
         };
     }
+
+    async deleteAccount(username: string): Promise<boolean> {
+        const result = await this.db.users.findOne({ username: username });
+
+        if (!result) {
+            return false;
+        }
+
+        const deletionSuccess =
+            (
+                await this.db.users.deleteOne({
+                    username: username,
+                })
+            ).deletedCount > 0;
+
+        if (!deletionSuccess) {
+            return false;
+        }
+
+        await this.db.minioClient.removeObject("profile-pictures", result.id);
+
+        const user_id = result.id;
+        const projects = await this.db.projects
+            .find({ author: user_id })
+            .toArray();
+
+        for (const project of projects) {
+            await this.manager.projects.deleteProject(project.id);
+        }
+
+        // delete all references to the user in the followers collection
+        await this.db.followers.deleteMany({ target: user_id });
+        const target_deletes = this.db.followers.find({ follower: user_id });
+
+        for await (const target of target_deletes) {
+            await this.db.followers.deleteOne({ _id: target._id });
+            await this.db.users.updateOne(
+                { id: target.target },
+                { $inc: { followers: -1 } },
+            );
+        }
+
+        await this.db.reports.deleteMany({ reporter: user_id });
+        await this.db.reports.deleteMany({ reportee: user_id });
+
+        await this.db.oauthIDs.deleteMany({ id: user_id });
+
+        await this.db.loggedIPs.deleteMany({ id: user_id });
+
+        return true;
+    }
 }

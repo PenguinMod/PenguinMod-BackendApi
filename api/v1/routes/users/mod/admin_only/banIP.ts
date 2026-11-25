@@ -1,6 +1,8 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../../index";
 import { requireAuth } from "../../../../../../utils/auth";
+import * as ipaddr from "ipaddr.js";
+import { pmUserAuthor, sendAdminLog } from "../../../../../../utils/logs";
 
 export default function (app: Application, utils: Utils): void {
     app.post(
@@ -13,8 +15,8 @@ export default function (app: Application, utils: Utils): void {
 
             let targetIP;
             try {
-                targetIP = utils.ipaddr.parse(String(packet.targetIP));
-                if (targetIP.kind() === "ipv4") {
+                targetIP = ipaddr.parse(String(packet.targetIP));
+                if (targetIP instanceof ipaddr.IPv4) {
                     targetIP = targetIP.toIPv4MappedAddress();
                 }
                 targetIP = targetIP.toNormalizedString();
@@ -27,7 +29,7 @@ export default function (app: Application, utils: Utils): void {
 
             // dont send a message since they cant access the site anyways :bleh:
 
-            await utils.UserManager.banIP(targetIP, toggle);
+            await utils.manager.users.banIP(targetIP, toggle);
 
             // TODO: should we log this ip or not?
             sendAdminLog(
