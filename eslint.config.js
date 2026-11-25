@@ -13,6 +13,12 @@ const commonRules = {
 };
 
 module.exports = defineConfig([
+    // Ignore generated files and dependencies
+    {
+        ignores: ["dist/**", "node_modules/**"],
+    },
+
+    // JavaScript
     {
         files: ["**/*.{js,cjs,mjs,jsx}"],
         extends: [js.configs.recommended],
@@ -41,6 +47,11 @@ module.exports = defineConfig([
         languageOptions: {
             globals: {
                 ...globals.node,
+            },
+            parser: tseslint.parser,
+            parserOptions: {
+                project: "./tsconfig.json",
+                tsconfigRootDir: __dirname,
             },
         },
         rules: {
