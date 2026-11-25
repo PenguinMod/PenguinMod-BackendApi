@@ -6,7 +6,7 @@ import path from "path";
 import { DBController } from "./DBController";
 import Manager from "./Manager";
 import { OAuthMethod, UserData } from "./types";
-import { UserId, userId } from "./new-types";
+import { projectId, UserId, userId } from "./new-types";
 import { err, ok, Result } from "../../../utils/Result";
 const basePFP = readFileSync(
     path.join(__dirname, "../../../static/penguin.png"),
@@ -185,7 +185,7 @@ export class Authentication {
             followers: 0,
             bio: "",
             featuredProjectTitle: -1,
-            featuredProject: "",
+            featuredProject: projectId(""),
             cubes: 0,
             firstLogin: current_time,
             lastLogin: current_time,

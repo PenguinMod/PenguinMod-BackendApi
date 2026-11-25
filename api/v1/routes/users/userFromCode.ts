@@ -18,19 +18,21 @@ export default function (app: Application, utils: Utils): void {
 
             const projs_to_rankup = 3;
 
-            const [userProjects, loginMethods] = await Promise.all([
-                // avoid doing the check if we're already ranked up
-                rank > 0
-                    ? new Promise((resolve) => resolve(projs_to_rankup))
-                    : utils.UserManager.quickProjectCountCheck(
-                          id,
-                          projs_to_rankup,
-                      ),
-                utils.manager.auth.getOAuthMethods(id),
-            ]);
+            const [userProjects, loginMethods]: [number, string[]] =
+                await Promise.all([
+                    // avoid doing the check if we're already ranked up
+                    rank > 0
+                        ? projs_to_rankup
+                        : utils.manager.projects.quickProjectCountCheck(
+                              id,
+                              projs_to_rankup,
+                          ),
+                    utils.manager.auth.getOAuthMethods(id),
+                ]);
 
             const isDonator = badges.includes("donator");
-            const isBanned = user_meta.permBanned || user_meta > Date.now();
+            const isBanned =
+                user_meta.permBanned || user_meta.unbanTime > Date.now();
 
             const signUpDate = user_meta.firstLogin;
 
@@ -80,7 +82,7 @@ export default function (app: Application, utils: Utils): void {
             }
 
             const messageCount =
-                await utils.UserManager.getUnreadMessageCount(id);
+                await utils.manager.messages.getUnreadMessageCount(id);
 
             const user = {
                 id,
@@ -96,7 +98,7 @@ export default function (app: Application, utils: Utils): void {
                 myFeaturedProjectTitle,
                 followers: followers,
                 canrankup: canRequestRankUp && rank === 0,
-                viewable: userProjects.length > 0,
+                viewable: userProjects > 0,
                 loginMethods: loginMethods,
                 lastPolicyRead: lastPolicyRead,
                 privateProfile,

@@ -1,6 +1,7 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../../index";
 import { requireAuth } from "../../../../../../utils/auth";
+import { modMessage } from "../../../../../../utils/logs";
 
 export default function (app: Application, utils: Utils): void {
     app.post(
@@ -16,22 +17,18 @@ export default function (app: Application, utils: Utils): void {
 
             const username = res.locals.login.username;
 
-            const targetID = await utils.UserManager.getIDByUsername(
-                target,
-                false,
-            );
-            if (!targetID) {
+            const targetData = await utils.manager.users.getUserData(target);
+            if (!targetData) {
                 return res.status(404).json({ error: "UserNotFound" });
             }
 
             const id = await utils.manager.messages.sendMessage(
-                targetID,
+                targetData.id,
                 { type: "modMessage", message },
                 disputable,
-                0,
             );
 
-            utils.logs.modMessage(username, target, id, message);
+            modMessage(username, target, id, message);
 
             res.status(200).json({ success: true });
         },

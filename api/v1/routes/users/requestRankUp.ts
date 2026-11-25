@@ -19,13 +19,14 @@ export default function (app: Application, utils: Utils): void {
 
             const signInDate = res.locals.login.fullMeta.firstLogin;
             // TODO: probably not the best way to do this
-            const userProjects = await utils.UserManager.getProjectsByAuthor(
-                user_id,
-                0,
-                3,
-                true,
-                true,
-            );
+            const userProjects =
+                await utils.manager.projects.getProjectsByAuthor(
+                    user_id,
+                    0,
+                    3,
+                    true,
+                    true,
+                );
 
             const canRequestRankUp =
                 (userProjects.length >= 3 && // if we have 3 projects and
@@ -38,8 +39,8 @@ export default function (app: Application, utils: Utils): void {
             }
 
             const PENGUIN_RANK = 1;
-            await utils.UserManager.setRank(
-                res.locals.login.username,
+            await utils.manager.users.setRank(
+                res.locals.login.id,
                 PENGUIN_RANK,
             );
 

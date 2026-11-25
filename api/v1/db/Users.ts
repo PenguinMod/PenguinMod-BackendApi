@@ -2,7 +2,7 @@ import { escapeRegex } from "../../../utils/misc";
 import { err, ok, Result } from "../../../utils/Result";
 import { DBController } from "./DBController";
 import Manager from "./Manager";
-import { UserId } from "./new-types";
+import { ProjectId, UserId } from "./new-types";
 import { EmailType, ExtFeedItem, FeedType, UserData } from "./types";
 import Mailjet from "node-mailjet";
 
@@ -113,7 +113,7 @@ export class Users {
         );
     }
 
-    async setFeaturedProject(username: string, id: string): Promise<void> {
+    async setFeaturedProject(username: string, id: ProjectId): Promise<void> {
         await this.db.users.updateOne(
             {
                 username: username,
@@ -844,10 +844,9 @@ export class Users {
     }
 
     async getUserFeed(id: UserId, size: number): Promise<ExtFeedItem[]> {
-        const feed = await this.db.followers
+        return await this.db.followers
             .aggregate<ExtFeedItem>([
                 { $match: { follower: id, active: true } },
-
                 {
                     $lookup: {
                         from: "userFeed",
@@ -861,10 +860,8 @@ export class Users {
                         as: "items",
                     },
                 },
-
                 { $unwind: "$items" },
                 { $replaceRoot: { newRoot: "$items" } },
-
                 { $sort: { date: -1 } },
                 { $limit: size },
 
@@ -874,20 +871,70 @@ export class Users {
                         localField: "userID",
                         foreignField: "id",
                         pipeline: [{ $project: { _id: 0, username: 1 } }],
-                        as: "userInfo",
+                        as: "author",
                     },
                 },
                 {
-                    $addFields: {
-                        username: { $arrayElemAt: ["$userInfo.username", 0] },
-                        id: "$userID",
+                    $lookup: {
+                        from: "users",
+                        localField: "data",
+                        foreignField: "id",
+                        pipeline: [{ $project: { _id: 0, username: 1 } }],
+                        as: "targetUser",
                     },
                 },
-                { $unset: ["userInfo"] },
+                {
+                    $lookup: {
+                        from: "projects",
+                        localField: "data",
+                        foreignField: "id",
+                        pipeline: [{ $project: { _id: 0, title: 1 } }],
+                        as: "targetProject",
+                    },
+                },
+
+                {
+                    $addFields: {
+                        username: { $arrayElemAt: ["$author.username", 0] },
+                        id: "$userID",
+                        data: {
+                            $switch: {
+                                branches: [
+                                    {
+                                        case: { $eq: ["$type", "follow"] },
+                                        then: {
+                                            id: "$data",
+                                            username: {
+                                                $arrayElemAt: [
+                                                    "$targetUser.username",
+                                                    0,
+                                                ],
+                                            },
+                                        },
+                                    },
+                                    {
+                                        case: {
+                                            $in: ["$type", ["upload", "remix"]],
+                                        },
+                                        then: {
+                                            id: "$data",
+                                            name: {
+                                                $arrayElemAt: [
+                                                    "$targetProject.title",
+                                                    0,
+                                                ],
+                                            },
+                                        },
+                                    },
+                                ],
+                                default: "$data",
+                            },
+                        },
+                    },
+                },
+                { $unset: ["_id", "author", "targetUser", "targetProject"] },
             ])
             .toArray();
-
-        return feed;
     }
 
     async setProfilePicture(id: UserId, buffer: Buffer): Promise<void> {

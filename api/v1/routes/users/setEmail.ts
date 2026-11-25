@@ -1,6 +1,7 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../index";
 import { requireAuth } from "../../../../utils/auth";
+import { validateEmail } from "../../../../utils/misc";
 
 export default function (app: Application, utils: Utils): void {
     app.post(
@@ -13,7 +14,7 @@ export default function (app: Application, utils: Utils): void {
 
             const username = res.locals.login.username;
 
-            if (!utils.UserManager.validateEmail(email)) {
+            if (!validateEmail(email)) {
                 res.status(400).json({ error: "InvalidEmail" });
                 return;
             }
@@ -23,12 +24,12 @@ export default function (app: Application, utils: Utils): void {
                 return;
             }
 
-            if (await utils.UserManager.emailInUse(email)) {
+            if (await utils.manager.users.getUserByEmail(email)) {
                 res.status(400).json({ error: "EmailAlreadyInUse" });
                 return;
             }
 
-            await utils.UserManager.setEmail(username, email);
+            await utils.manager.users.setEmail(username, email);
 
             res.status(200).json({ success: true });
         },

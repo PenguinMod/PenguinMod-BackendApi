@@ -7,7 +7,7 @@ export default function (app: Application, utils: Utils): void {
 
         const username = String(packet.username).toLowerCase();
 
-        const pfp = await utils.UserManager.getProfilePicture(username);
+        const pfp = await utils.manager.users.getProfilePicture(username);
 
         if (!pfp) {
             return res.status(404).json({ error: "UserNotFound" });

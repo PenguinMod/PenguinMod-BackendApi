@@ -1,6 +1,6 @@
 import "dotenv/config";
-import "colors";
 
+import colors from "colors/safe";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
 import express from "express";
@@ -88,22 +88,25 @@ app.use(
 
 const real_log = console.log;
 console.log = (...data): void => {
-    const date_str = `(${new Date().toISOString()})`.gray.dim;
-    real_log(`${"LOG".bgBlack.blue} ${date_str}:`, ...data);
+    const date_str = colors.dim(colors.gray(`(${new Date().toISOString()})`));
+    real_log(`${colors.blue(colors.bgBlack("LOG"))} ${date_str}:`, ...data);
 };
 
 const real_warn = console.warn;
 console.warn = (...data): void => {
-    const date_str = `(${new Date().toISOString()})`.gray;
-    real_warn(`${"WARNING".bgYellow.white} ${date_str}:`, ...data);
+    const date_str = colors.gray(`(${new Date().toISOString()})`);
+    real_warn(
+        `${colors.white(colors.bgYellow("WARNING"))} ${date_str}:`,
+        ...data,
+    );
 };
 
 const real_error = console.error;
 console.error = (...args): void => {
-    const date_str = `(${new Date().toISOString()})`.gray;
+    const date_str = colors.gray(`(${new Date().toISOString()})`);
 
     real_error(
-        `${"ERORR".bgRed.white} ${date_str}:`,
+        `${colors.white(colors.bgRed("ERROR"))} ${date_str}:`,
         ...args.map((arg) => (arg instanceof Error ? arg.stack : arg)),
     );
 };
@@ -118,8 +121,9 @@ export interface Utils {
 
     // TODO: should timezone be dynamic? It's Central because I'm in Central, but thats maybe not amazing practice
     console.log(
-        `Starting at ${new Date().toLocaleString("en-US", { timeZone: "CST" })} CST...`
-            .green,
+        colors.green(
+            `Starting at ${new Date().toLocaleString("en-US", { timeZone: "CST" })} CST...`,
+        ),
     );
 
     app.get("/robots.txt", function (req, res) {

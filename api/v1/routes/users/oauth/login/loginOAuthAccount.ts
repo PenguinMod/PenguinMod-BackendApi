@@ -1,5 +1,6 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../../index";
+import { OAuth2Client } from "google-auth-library";
 
 export default function (app: Application, utils: Utils): void {
     app.get("/api/v1/users/loginoauthaccount", async function (req, res) {
@@ -26,7 +27,7 @@ export default function (app: Application, utils: Utils): void {
                 );
                 break;
             case "google": {
-                const oauth2Client = new utils.googleOAuth2Client(
+                const oauth2Client = new OAuth2Client(
                     process.env.GoogleOAuthClientID,
                     process.env.GoogleOAuthClientSecret,
                     `${process.env.ApiURL}/api/v1/users/googlecallback/login`,

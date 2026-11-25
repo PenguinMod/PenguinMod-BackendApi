@@ -44,7 +44,7 @@ export interface UserData {
     followers: number;
     bio: string;
     featuredProjectTitle: number;
-    featuredProject: string;
+    featuredProject: ProjectId;
     cubes: number;
     firstLogin: number;
     lastLogin: number;
@@ -104,9 +104,16 @@ export interface FeedItem {
     date: Date;
 }
 
-export interface ExtFeedItem extends FeedItem {
-    id: UserId;
+export interface ExtFeedItem extends Omit<FeedItem, "data"> {
     username: string;
+    id: UserId;
+    data:
+        | {
+              id: string;
+              username?: string;
+              name?: string;
+          }
+        | string;
 }
 
 export interface LoggedIP {

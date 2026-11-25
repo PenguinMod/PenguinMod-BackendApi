@@ -13,21 +13,18 @@ export default function (app: Application, utils: Utils): void {
 
             const target = String(packet.target);
 
-            const target_id = await utils.UserManager.getIDByUsername(
-                target,
-                false,
-            );
-            if (!target_id) {
-                return res.status(404).json({ error: "Target not found" });
+            const targetData = await utils.manager.users.getUserData(target);
+            if (!targetData) {
+                return res.status(404).json({ error: "TargetNotFound" });
             }
 
-            if (user_id === target_id) {
+            if (user_id === targetData.id) {
                 return res.status(401).json({ error: "Cannot block yourself" });
             }
 
             const active = String(packet.active) === "true";
 
-            await utils.UserManager.blockUser(user_id, target_id, active);
+            await utils.manager.users.blockUser(user_id, targetData.id, active);
 
             res.status(200).json({ success: true });
         },

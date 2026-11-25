@@ -7,7 +7,6 @@ export default function (app: Application, utils: Utils): void {
         "/api/v1/users/extrainfostatus",
         ...requireAuth(utils.manager.auth, { allow_banned: true }),
         async function (req, res) {
-            req.local;
             const user_meta = res.locals.login.fullMeta;
 
             const birthdayEntered = user_meta.birthdayEntered;

@@ -19,7 +19,7 @@ export default function (app: Application, utils: Utils): void {
             const user_id = res.locals.login.id;
             const target_id = targetMeta.id;
 
-            const has_blocked = await utils.UserManager.hasBlocked(
+            const has_blocked = await utils.manager.users.hasBlocked(
                 user_id,
                 target_id,
             );
