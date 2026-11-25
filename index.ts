@@ -137,7 +137,12 @@ export interface Utils {
 
     registerRoutes(app, utils);
 
-    app.use(function (err: Error, req: express.Request, res: express.Response) {
+    app.use(function (
+        err: Error,
+        req: express.Request,
+        res: express.Response,
+        next: express.NextFunction,
+    ) {
         if (err instanceof multer.MulterError) {
             switch (err.code) {
                 case "LIMIT_UNEXPECTED_FILE":
