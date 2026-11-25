@@ -1,6 +1,7 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../index";
 import { requireAuth } from "../../../../../utils/auth";
+import { pmUserAuthor, sendAdminLog } from "../../../../../utils/logs";
 
 export default function (app: Application, utils: Utils): void {
     app.post(
@@ -12,21 +13,21 @@ export default function (app: Application, utils: Utils): void {
             const toggle = String(packet.toggle) === "true";
             const username = res.locals.login.username;
 
-            await utils.UserManager.setRuntimeConfigItem(
+            await utils.manager.misc.setRuntimeConfigItem(
                 "viewingEnabled",
                 toggle,
             );
 
-            utils.logs.sendAdminLog(
+            sendAdminLog(
                 {
                     action: "Project viewing has been toggled",
                     content: `${username} toggled project viewing to ${toggle}`,
                     fields: {
                         Admin: username,
-                        Status: toggle,
+                        Status: String(toggle),
                     },
                 },
-                utils.logs.pmUserAuthor(username),
+                pmUserAuthor(username),
                 0xaf1157,
             );
 

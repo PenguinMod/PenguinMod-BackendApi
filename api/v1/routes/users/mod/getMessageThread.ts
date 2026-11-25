@@ -9,7 +9,8 @@ export default function (app: Application, utils: Utils): void {
         async function (req, res) {
             const message = String(req.query.messageID);
 
-            const thread = await utils.UserManager.getMessageThread(message);
+            const thread =
+                await utils.manager.messages.getMessageThread(message);
 
             res.status(200);
             res.header("Content-type", "application/json");

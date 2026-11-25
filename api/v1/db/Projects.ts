@@ -2,7 +2,14 @@ import { randomInt } from "crypto";
 import { DBController } from "./DBController";
 import Manager from "./Manager";
 import { ProjectId, projectId, UserId } from "./new-types";
-import { ExtProjectData, ProjectData, ProjectInteraction } from "./types";
+import {
+    ExtProjectData,
+    OldSearchType,
+    ProjectData,
+    ProjectInteraction,
+    SearchInclude,
+    Sort,
+} from "./types";
 import * as mongodb from "mongodb";
 import { escapeRegex } from "../../../utils/misc";
 import { readFileSync } from "fs";
@@ -30,20 +37,6 @@ export class Projects {
         this.prev_view_reset = Date.now();
     }
 
-    /**
-     * Publish a project
-     * @param {Buffer} projectBuffer The json file buffer for the project.
-     * @param {Array<Object>} assetBuffers Objects containing the 1. id of the asset and 2. the buffer of the asset.
-     * @param {string} author The ID of the author of the project.
-     * @param {string} title Title of the project.
-     * @param {Buffer} imageBuffer The file buffer for the thumbnail.
-     * @param {string} instructions The instructions for the project.
-     * @param {string} notes The notes for the project
-     * @param {string} remix ID of the project this is a remix of. Undefined if not a remix.
-     * @param {string} rating Rating of the project.
-     * @returns {Promise<string|false>} if false, it failed. else it returns the id
-     * @async
-     */
     async publishProject(
         projectBuffer: Buffer,
         assetBuffers: { buffer: Buffer; id: string }[],
@@ -115,6 +108,8 @@ export class Projects {
             impressions: 0,
             noFeature: false,
             authorRank: author_rank,
+            loves: 0,
+            votes: 0,
         });
 
         if (!priv) {
@@ -279,10 +274,14 @@ export class Projects {
     async setCanBeFeatured(
         projectID: ProjectId,
         canBeFeatured: boolean,
-    ): Promise<void> {
-        await this.db.projects.updateOne(
-            { id: projectID },
-            { $set: { noFeature: !canBeFeatured } },
+    ): Promise<boolean> {
+        return (
+            (
+                await this.db.projects.updateOne(
+                    { id: projectID },
+                    { $set: { noFeature: !canBeFeatured } },
+                )
+            ).matchedCount > 0
         );
     }
 
@@ -504,11 +503,6 @@ export class Projects {
         return file;
     }
 
-    /**
-     * Get a project image
-     * @param {number} id ID of the project image wanted.
-     * @returns {Promise<Buffer>} The project image file.
-     */
     async getProjectImage(id: ProjectId): Promise<Buffer | null> {
         try {
             const file = await this.db.readObjectFromBucket(
@@ -575,13 +569,6 @@ export class Projects {
         return !!result;
     }
 
-    /**
-     * Love/unlove a project
-     * @param {number} id ID of the project.
-     * @param {string} userId ID of the person loving the project.
-     * @param {boolean} love True if loving, false if unloving.
-     * @async
-     */
     async loveProject(
         id: ProjectId,
         userId: UserId,
@@ -604,14 +591,6 @@ export class Projects {
         }
     }
 
-    /**
-     * Get who loved a project
-     * @param {string} projectID ID of the project
-     * @param {number} page Page to get
-     * @param {number} pageSize Page size
-     * @param {"love"|"vote"} type The type of interaction
-     * @returns {Promise<Array<string>>} Array of user ids
-     */
     async getWhoInteracted(
         projectID: ProjectId,
         page: number,
@@ -683,13 +662,6 @@ export class Projects {
         }
     }
 
-    /**
-     * Get a list of featured projects to a specified size
-     * @param {number} page page of projects to get
-     * @param {number} pageSize amount of projects to get
-     * @returns {Promise<Array<Object>>} Array of all projects
-     * @async
-     */
     async getFeaturedProjects(
         page: number,
         pageSize: number,
@@ -751,13 +723,6 @@ export class Projects {
         return aggResult;
     }
 
-    /**
-     * Feature/unfeature a project
-     * @param {number} id ID of the project.
-     * @param {boolean} feature True if featuring, false if unfeaturing.
-     * @param {boolean} manuallyFeatured True if it was featured manually
-     * @async
-     */
     async featureProject(id: ProjectId, feature: boolean): Promise<void> {
         await this.db.projects.updateOne(
             { id: id },
@@ -828,16 +793,9 @@ export class Projects {
         await this.db.userFeed.deleteMany({ data: projectID }); // right now, user feed is just project uploads. so the data field will always be a project id.
     }
 
-    /**
-     * Get some projects. Order is "implementation defined", i.e. mongo's ordering so upload date basically
-     * @param {number} pageSize Page size
-     * @param {undefined|string} after Internal mongo ID
-     * @param {boolean} showAll Whether to show all projects, or not (i.e. private/softrejected/hardrejected)
-     * @returns {Promise<{projects:string[],next:string}>} projects is an array of project IDs
-     */
     async getProjectsUnordered(
         pageSize: number,
-        after: mongodb.ObjectId | undefined,
+        after: mongodb.ObjectId | null,
         showAll: boolean,
     ): Promise<{ projects: ProjectId[]; next: mongodb.ObjectId | null }> {
         const filter: mongodb.Document = {};
@@ -870,7 +828,11 @@ export class Projects {
     async projectExists(id: ProjectId, nonPublic: boolean): Promise<boolean> {
         const result = nonPublic
             ? await this.db.projects.findOne({ id })
-            : await this.db.projects.findOne({ id, public: true });
+            : await this.db.projects.findOne({
+                  id,
+                  public: true,
+                  hardReject: false,
+              });
 
         return !!result;
     }
@@ -1018,11 +980,6 @@ export class Projects {
         );
     }
 
-    /**
-     * Set a project to private/not private
-     * @param {string} id ID of the project
-     * @param {boolean} toggle True if making private, false if not
-     */
     async privateProject(id: ProjectId, toggle: boolean): Promise<void> {
         await this.db.projects.updateOne(
             { id: id },
@@ -1068,14 +1025,14 @@ export class Projects {
 
     async searchProjectsNew(
         query: string,
-        sort: "newest-update" | "newest-upload" | "views" | "votes" | "loves",
+        sort: Sort,
         reverse: boolean,
         before: Date | undefined,
         after: Date | undefined,
         remix: ProjectId | undefined,
         featured: boolean | undefined,
         author: UserId | undefined,
-        include: "all" | "all-allowed" | "ranked" | "unranked" | "rejected",
+        include: SearchInclude,
         page: number,
         page_size: number,
         include_total: boolean = false,
@@ -1237,26 +1194,10 @@ export class Projects {
         };
     }
 
-    /**
-     * Search project names/instructions/notes by query
-     * @param {boolean} show_unranked Show unranked users
-     * @param {string} query Query to search for
-     * @param {number} page Page of projects to get
-     * @param {number} pageSize Amount of projects to get
-     * @param {boolean} reverse Reverse the results
-     * @returns {Promise<Array<object>>} Array of projects
-     */
     async searchProjects(
         show_unranked: boolean,
         query: string,
-        type:
-            | "featured"
-            | "newest"
-            | "uploaddate"
-            | "views"
-            | "loves"
-            | "votes"
-            | "",
+        type: OldSearchType,
         page: number,
         pageSize: number,
         reverse = false,
@@ -1329,7 +1270,6 @@ export class Projects {
                     $sort: { date: -1 * rev },
                 });
                 break;
-            default:
             case "views":
                 aggregateList.push({
                     $sort: { views: -1 * rev },

@@ -1,6 +1,7 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../index";
 import { requireAuth } from "../../../../../utils/auth";
+import { pmUserAuthor, sendAdminLog } from "../../../../../utils/logs";
 
 export default function (app: Application, utils: Utils): void {
     app.post(
@@ -13,21 +14,21 @@ export default function (app: Application, utils: Utils): void {
 
             const username = res.locals.login.username;
 
-            await utils.UserManager.setRuntimeConfigItem(
+            await utils.manager.misc.setRuntimeConfigItem(
                 "accountCreationEnabled",
                 toggle,
             );
 
-            utils.logs.sendAdminLog(
+            sendAdminLog(
                 {
                     action: "Account creation has been toggled",
                     content: `${username} toggled account creation to ${toggle}`,
                     fields: {
                         Admin: username,
-                        Status: toggle,
+                        Status: String(toggle),
                     },
                 },
-                utils.logs.pmUserAuthor(username),
+                pmUserAuthor(username),
                 0xaf1157,
             );
 

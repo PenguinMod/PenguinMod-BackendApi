@@ -1,5 +1,7 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../index";
+import { maybeAuth } from "../../../../utils/auth";
+import { projectId } from "../../db/new-types";
 
 // TODO: kill this?
 
@@ -9,7 +11,7 @@ export default function (app: Application, utils: Utils): void {
         maybeAuth(utils.manager.auth),
         async function (req, res) {
             if (
-                !(await utils.UserManager.getRuntimeConfigItem(
+                !(await utils.manager.misc.getRuntimeConfigItem(
                     "viewingEnabled",
                 ))
             ) {
@@ -18,18 +20,14 @@ export default function (app: Application, utils: Utils): void {
 
             const packet = req.query;
 
-            const projectId = String(packet.projectId);
-
-            if (!projectId) {
-                return res.status(400).json({ error: "Missing projectId" });
-            }
-
-            if (!(await utils.UserManager.projectExists(projectId, true))) {
-                return res.status(404).json({ error: "Project not found" });
-            }
+            const projectID = projectId(String(packet.projectId));
 
             const metadata =
-                await utils.UserManager.getProjectMetadata(projectId);
+                await utils.manager.projects.getProjectMetadata(projectID);
+
+            if (!metadata) {
+                return res.status(404).json({ error: "ProjectNotFound" });
+            }
 
             const is_author =
                 !!res.locals.login &&
@@ -40,22 +38,22 @@ export default function (app: Application, utils: Utils): void {
                     !metadata.public ||
                     /*metadata.softRejected ||*/ metadata.hardReject
                 ) {
-                    return res.status(404).json({ error: "Project not found" });
+                    return res.status(404).json({ error: "ProjectNotFound" });
                 }
             }
 
-            if (
-                !(await utils.UserManager.hasSeenProject(
-                    projectId,
+            if (req.clientIp) {
+                await utils.manager.projects.projectView(
+                    projectID,
                     req.clientIp,
-                ))
-            ) {
-                await utils.UserManager.projectView(projectId, req.clientIp);
+                );
             }
 
-            const project = await utils.UserManager.getProjectFile(projectId);
+            const project =
+                await utils.manager.projects.getProjectFile(projectID);
 
-            const assets = await utils.UserManager.getProjectAssets(projectId);
+            const assets =
+                await utils.manager.projects.getProjectAssets(projectID);
 
             return res.send({ project, assets });
         },

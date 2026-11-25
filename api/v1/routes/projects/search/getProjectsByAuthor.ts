@@ -1,5 +1,8 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../index";
+import { maybeAuth } from "../../../../../utils/auth";
+import { handle_page } from "../../../../../utils/misc";
+import { ExtProjectData } from "../../../db/types";
 
 export default function (app: Application, utils: Utils): void {
     app.get(
@@ -9,39 +12,29 @@ export default function (app: Application, utils: Utils): void {
             const packet = req.query;
 
             const authorUsername = String(packet.authorUsername).toLowerCase();
-            const page = utils.handle_page(packet.page);
-
-            if (
-                !authorUsername ||
-                !(await utils.UserManager.existsByUsername(authorUsername))
-            ) {
-                return res.status(404).json({ error: "User not found" });
-            }
-
-            const logged_in = !!res.locals.login;
-            const username = logged_in ? res.locals.login.username : null;
+            const page = handle_page(packet.page);
 
             const target_data =
-                await utils.UserManager.getUserData(authorUsername);
-            let isMod = false;
-            if (logged_in) {
-                const user_data = await utils.UserManager.getUserData(username);
-                isMod = user_data.moderator || user_data.admin;
+                await utils.manager.users.getUserData(authorUsername);
+            if (!target_data) {
+                return res.status(404).json({ error: "UserNotFound" });
             }
+
+            const username = res.locals.login?.username || null;
+
+            const isMod = res.locals.login?.isMod || false;
 
             const id = target_data.id;
             const privateProfile = target_data.privateProfile;
             const canFollowingSeeProfile = target_data.allowFollowingView;
 
             if (privateProfile) {
-                if (!logged_in) {
-                    return await res
-                        .status(403)
-                        .json({ error: "PrivateProfile" });
+                if (!res.locals.login) {
+                    return res.status(403).json({ error: "PrivateProfile" });
                 }
 
                 const user_id = res.locals.login.id;
-                const is_following = await utils.UserManager.isFollowing(
+                const is_following = await utils.manager.users.isFollowing(
                     id,
                     user_id,
                 );
@@ -51,29 +44,31 @@ export default function (app: Application, utils: Utils): void {
                     !(is_following && canFollowingSeeProfile) &&
                     !isMod
                 ) {
-                    return await res
-                        .status(403)
-                        .json({ error: "PrivateProfile" });
+                    return res.status(403).json({ error: "PrivateProfile" });
                 }
             }
 
             const projects = (
-                await utils.UserManager.getProjectsByAuthor(
+                await utils.manager.projects.getProjectsByAuthor(
                     id,
                     page,
                     Number(process.env.PageSize),
                 )
             ).map((project) => {
-                project.author = {
-                    username: authorUsername,
-                    id: id,
+                const new_proj: ExtProjectData = {
+                    ...project,
+                    author: {
+                        username: authorUsername,
+                        id,
+                    },
+                    fromDonator: target_data.badges.includes("donator"),
                 };
 
-                return project;
+                return new_proj;
             });
 
             for (const project of projects) {
-                await utils.UserManager.addImpression(project.id);
+                await utils.manager.projects.addImpression(project.id);
             }
 
             return res.send(projects);

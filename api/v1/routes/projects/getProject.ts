@@ -1,5 +1,7 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../index";
+import { maybeAuth } from "../../../../utils/auth";
+import { projectId } from "../../db/new-types";
 
 export default function (app: Application, utils: Utils): void {
     app.get(
@@ -7,7 +9,7 @@ export default function (app: Application, utils: Utils): void {
         maybeAuth(utils.manager.auth),
         async function (req, res) {
             if (
-                !(await utils.UserManager.getRuntimeConfigItem(
+                !(await utils.manager.misc.getRuntimeConfigItem(
                     "viewingEnabled",
                 ))
             ) {
@@ -17,21 +19,13 @@ export default function (app: Application, utils: Utils): void {
             const packet = req.query;
 
             const requestType = String(packet.requestType);
-            const projectID = String(packet.projectID);
-
-            if (!requestType) {
-                return res.status(400).json({ error: "Missing requestType" });
-            }
-
-            if (
-                !projectID ||
-                !(await utils.UserManager.projectExists(projectID, true))
-            ) {
-                return res.status(404).json({ error: "Project not found" });
-            }
+            const projectID = projectId(String(packet.projectID));
 
             const metadata =
-                await utils.UserManager.getProjectMetadata(projectID);
+                await utils.manager.projects.getProjectMetadata(projectID);
+            if (!metadata) {
+                return res.status(404).json({ error: "ProjectNotFound" });
+            }
 
             const is_author =
                 res.locals.login &&
@@ -42,27 +36,22 @@ export default function (app: Application, utils: Utils): void {
                 ((!is_author && !metadata.public) || metadata.hardReject) &&
                 !is_mod
             ) {
-                return res.status(404).json({ error: "Project not found" });
+                return res.status(404).json({ error: "ProjectNotFound" });
             }
 
             switch (requestType) {
                 case "protobuf": {
                     // views get checked here because projects have to be gotten from here
                     // or projectwrapper but we don't use that rn
-                    const has_seen = await utils.UserManager.hasSeenProject(
-                        projectID,
-                        req.clientIp,
-                    );
-
-                    if (!has_seen) {
-                        await utils.UserManager.projectView(
+                    if (req.clientIp) {
+                        await utils.manager.projects.projectView(
                             projectID,
                             req.clientIp,
                         );
                     }
 
                     const project =
-                        await utils.UserManager.getProjectFile(projectID);
+                        await utils.manager.projects.getProjectFile(projectID);
 
                     if (!project) {
                         return res
@@ -77,14 +66,16 @@ export default function (app: Application, utils: Utils): void {
                 }
                 case "assets": {
                     const assets =
-                        await utils.UserManager.getProjectAssets(projectID);
+                        await utils.manager.projects.getProjectAssets(
+                            projectID,
+                        );
 
                     res.header("Cache-Control", "public, max-age=90");
                     return res.send(assets);
                 }
                 case "thumbnail": {
                     const thumbnail =
-                        await utils.UserManager.getProjectImage(projectID);
+                        await utils.manager.projects.getProjectImage(projectID);
 
                     if (!thumbnail) {
                         return res

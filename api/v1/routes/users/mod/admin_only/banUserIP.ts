@@ -26,7 +26,7 @@ export default function (app: Application, utils: Utils): void {
 
             await utils.UserManager.banUserIP(target, toggle);
 
-            utils.logs.sendAdminLog(
+            sendAdminLog(
                 {
                     action: `${target}'s IPs have been ${toggle ? "" : "un"}banned`,
                     content: `${username} banned the IPs of ${target}`,
@@ -35,7 +35,7 @@ export default function (app: Application, utils: Utils): void {
                         Target: target,
                     },
                 },
-                utils.logs.pmUserAuthor(username),
+                pmUserAuthor(username),
                 toggle ? 0xc40404 : 0x45efc6,
             );
 

@@ -1,44 +1,40 @@
-const fs = require("fs");
-const path = require("path");
+import { Application } from "express";
+import { readFileSync } from "fs";
+import path from "path/win32";
+import { Utils } from "../../../../index";
+import { projectId } from "../../db/new-types";
+import { escapeXML } from "../../../../utils/misc";
+import { ExtProjectData } from "../../db/types";
 
-/**
- * @typedef {Object} Utils
- * @property {import("../../db/UserManager")} UserManager
- */
-
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
-    const projectTemplate = fs
-        .readFileSync(path.join(utils.homeDir, "static/project.html"))
-        .toString();
+export default function (app: Application, utils: Utils): void {
+    const projectTemplate = readFileSync(
+        path.join(__dirname, "../../../../static/project.html"),
+    ).toString();
     app.get("/:id", async function (req, res) {
-        const json = await utils.UserManager.getProjectMetadata(
-            String(req.params.id),
+        const json = await utils.manager.projects.getProjectMetadata(
+            projectId(String(req.params.id)),
         );
 
-        if (!json) {
-            return res.status(404).json({ error: "Not Found" });
-        }
-
-        if (!json.public || json.softRejected || json.hardReject) {
-            return res.status(404).json({ error: "Not Found" });
+        if (!json || !json.public || json.softRejected || json.hardReject) {
+            return res.status(404).json({ error: "ProjectNotFound" });
         }
 
         let html = projectTemplate;
-        json.author = json.author.username;
         for (const prop in json) {
+            // high intelligence programming
+            const value =
+                prop === "username"
+                    ? json.author.username
+                    : String(json[prop as keyof ExtProjectData]);
+
+            html = html.replaceAll(`{project.${prop}}`, escapeXML(value));
             html = html.replaceAll(
-                `{project.${prop}}`,
-                utils.escapeXML(json[prop]),
+                `{studio_url}`,
+                String(process.env.StudioURL),
             );
-            html = html.replaceAll(`{studio_url}`, process.env.StudioURL);
-            html = html.replaceAll(`{api_url}`, process.env.ApiURL);
+            html = html.replaceAll(`{api_url}`, String(process.env.ApiURL));
         }
         res.status(200);
         res.send(html);
     });
-};
+}

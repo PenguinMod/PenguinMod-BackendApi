@@ -1,4 +1,6 @@
 import "dotenv/config";
+import { BaseMessage } from "../api/v1/db/types";
+import { MessageId, ProjectId, UserId } from "../api/v1/db/new-types";
 
 type WebhookField = { name: string; value: string; inline?: boolean };
 type WebhookAuthor = { name: string; icon_url?: string; url?: string };
@@ -38,11 +40,11 @@ function profileUrl(username: string): string {
     return `${homeUrl}/profile?user=${encodeURIComponent(username)}`;
 }
 
-function projectUrl(id: string | number): string {
+function projectUrl(id: ProjectId): string {
     return `${studioUrl}/#${encodeURIComponent(String(id))}`;
 }
 
-function projectThumbnailUrl(id: string | number, cacheBust = false): string {
+function projectThumbnailUrl(id: ProjectId, cacheBust = false): string {
     const base = `${apiUrl}/api/v1/projects/getproject?requestType=thumbnail&projectID=${encodeURIComponent(String(id))}`;
     return cacheBust ? `${base}&rnd=${Math.random()}` : base;
 }
@@ -113,7 +115,7 @@ function sendHeatLog(
 function sendRenameLog(
     oldUsername: string,
     newUsername: string,
-    id: string,
+    id: UserId,
 ): void {
     postWebhook(webhooks.websiteInfo, {
         embeds: [
@@ -137,7 +139,7 @@ function sendRenameLog(
 function sendReportLog(
     type: string,
     username: string,
-    targetID: string,
+    targetID: UserId | ProjectId,
     target: string,
     reason: string,
 ): void {
@@ -162,9 +164,9 @@ function sendReportLog(
 
 function sendMultiReportLog(
     username: string,
-    id: string,
+    id: UserId,
     target: string,
-    targetID: string,
+    targetID: UserId,
     reason: string,
 ): void {
     postWebhook(webhooks.report, {
@@ -232,10 +234,10 @@ function sendAdminLog(
 
 function disputeLog(
     username: string,
-    originalID: string,
-    originalReason: { message: string } | undefined,
+    originalID: MessageId,
+    originalReason: BaseMessage,
     reply: string,
-    projectID = 0,
+    projectID: ProjectId | null,
     color = 0x8fdc3d,
 ): void {
     postWebhook(webhooks.messages, {
@@ -320,7 +322,7 @@ function modMessage(
 
 function sendCreationLog(
     username: string,
-    id: string,
+    id: ProjectId,
     name: string,
     type: string,
     color = 0x25da5b,
@@ -362,11 +364,7 @@ function sendCreationLog(
     });
 }
 
-function sendFeatureLog(
-    id: string | number,
-    title: string,
-    creator: string,
-): void {
+function sendFeatureLog(id: ProjectId, title: string, creator: string): void {
     const projectTitle = title.substring(0, 250);
 
     postWebhook(webhooks.featured, {
@@ -385,11 +383,7 @@ function sendFeatureLog(
 }
 
 const watchlist = {
-    sendProjectUploadLog(
-        id: string | number,
-        title: string,
-        creator: string,
-    ): void {
+    sendProjectUploadLog(id: ProjectId, title: string, creator: string): void {
         const projectTitle = title.substring(0, 250);
         postWebhook(webhooks.watchlist, {
             content: `**${projectTitle}** has been uploaded by ${creator}`,
@@ -406,11 +400,7 @@ const watchlist = {
         });
     },
 
-    sendProjectUpdateLog(
-        id: string | number,
-        title: string,
-        creator: string,
-    ): void {
+    sendProjectUpdateLog(id: ProjectId, title: string, creator: string): void {
         const projectTitle = title.substring(0, 250);
         postWebhook(webhooks.watchlist, {
             content: `**${projectTitle}** has been updated by ${creator}`,
@@ -430,7 +420,7 @@ const watchlist = {
     sendUsernameUpdateLog(
         oldUsername: string,
         newUsername: string,
-        id: string,
+        id: UserId,
     ): void {
         postWebhook(webhooks.watchlist, {
             content: `**${oldUsername}** has changed their username to **${newUsername}**`,

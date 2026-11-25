@@ -1,19 +1,14 @@
+import { Application } from "express";
 import { requireAuth } from "../../../../utils/auth";
+import { Utils } from "../../../../index";
+import { file_size_limit, unlinkMulter } from "../../../../utils/misc";
+import { projectId } from "../../db/new-types";
+import { readFileSync } from "fs";
+import { protobufToJson } from "pmp-protobuf";
+import sharp from "sharp";
+import { sendCreationLog, watchlist } from "../../../../utils/logs";
 
-const fs = require("fs");
-const sharp = require("sharp");
-
-/**
- * @typedef {Object} Utils
- * @property {import("../../db/UserManager")} UserManager
- */
-
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
+export default function (app: Application, utils: Utils): void {
     app.post(
         "/api/v1/projects/updateProject",
         ...requireAuth(utils.manager.auth),
@@ -23,11 +18,11 @@ module.exports = (app, utils) => {
             // assets
             { name: "assets" },
         ]),
-        utils.file_size_limit(utils),
-        utils.unlinkMulter,
-        async (req, res) => {
+        file_size_limit,
+        unlinkMulter,
+        async function (req, res) {
             if (
-                !(await utils.UserManager.getRuntimeConfigItem(
+                !(await utils.manager.misc.getRuntimeConfigItem(
                     "uploadingEnabled",
                 ))
             ) {
@@ -41,7 +36,7 @@ module.exports = (app, utils) => {
             const hasModPerms = res.locals.login.isMod;
 
             // TODO: just use meta
-            const lastUpload = await utils.UserManager.getLastUpload(username);
+            const lastUpload = res.locals.login.fullMeta.lastUpload;
             const now = Date.now();
             const tooSoon = isDonator
                 ? lastUpload > now - 10 * 1000
@@ -59,17 +54,13 @@ module.exports = (app, utils) => {
                 });
             }
 
-            const projectID = String(packet.projectID);
-
-            // check if the project exists
-            if (!(await utils.UserManager.projectExists(projectID))) {
-                return res
-                    .status(400)
-                    .json({ error: "Project does not exist" });
-            }
+            const projectID = projectId(String(packet.projectID));
 
             const project =
-                await utils.UserManager.getProjectMetadata(projectID);
+                await utils.manager.projects.getProjectMetadata(projectID);
+            if (!project) {
+                return res.status(404).json({ error: "ProjectNotFound" });
+            }
 
             if (
                 (project.author.username !== username || project.hardReject) &&
@@ -77,64 +68,6 @@ module.exports = (app, utils) => {
             ) {
                 return res.status(403).json({ error: "Unauthorized" });
             }
-
-            const illegalWordingError = async (text, type) => {
-                const illegal =
-                    await utils.UserManager.checkForIllegalWording(text);
-                if (illegal) {
-                    res.status(400).json({ error: "IllegalWordsUsed" });
-
-                    const illegalWordIndex =
-                        await utils.UserManager.getIndexOfIllegalWording(text);
-
-                    const before = text.substring(0, illegalWordIndex[0]);
-                    const after = text.substring(illegalWordIndex[1]);
-                    const illegalWord = text.substring(
-                        illegalWordIndex[0],
-                        illegalWordIndex[1],
-                    );
-
-                    utils.logs.sendHeatLog(
-                        before + "\x1b[31;1m" + illegalWord + "\x1b[0m" + after,
-                        illegal,
-                        type,
-                        { projectID, username, userID: res.locals.login.id },
-                    );
-
-                    return true;
-                }
-                return false;
-            };
-
-            const potentiallyIllegalWordingError = async (text, type) => {
-                const trigger =
-                    await utils.UserManager.checkForPotentiallyIllegalWording(
-                        text,
-                    );
-                if (trigger) {
-                    const illegalWordIndex =
-                        await utils.UserManager.getIndexOfPotentiallyIllegalWording(
-                            text,
-                        );
-
-                    const before = text.substring(0, illegalWordIndex[0]);
-                    const after = text.substring(illegalWordIndex[1]);
-                    const illegalWord = text.substring(
-                        illegalWordIndex[0],
-                        illegalWordIndex[1],
-                    );
-
-                    utils.logs.sendHeatLog(
-                        before + "\x1b[33;1m" + illegalWord + "\x1b[0m" + after,
-                        trigger,
-                        type,
-                        { projectID, username, userID: res.locals.login.id },
-                        0xffbb00,
-                    );
-                    return true;
-                }
-                return false;
-            };
 
             const title = String(packet.title);
             const instructions = String(packet.instructions);
@@ -150,73 +83,115 @@ module.exports = (app, utils) => {
                 });
             }
 
-            if (await illegalWordingError(title, "projectTitle")) {
-                return;
+            const basicProjLoc = {
+                projectID,
+                username,
+                userID: res.locals.login.id,
+            };
+            if (
+                await utils.manager.misc.illegalWordingError(
+                    title,
+                    JSON.stringify({
+                        ...basicProjLoc,
+                        location: "projectTitle",
+                    }),
+                )
+            ) {
+                return res.status(400).json({ error: "IllegalWordsUsed" });
             }
 
             if (
-                await illegalWordingError(instructions, "projectInstructions")
+                await utils.manager.misc.illegalWordingError(
+                    instructions,
+                    JSON.stringify({
+                        ...basicProjLoc,
+                        location: "projectInstructions",
+                    }),
+                )
             ) {
-                return;
+                return res.status(400).json({ error: "IllegalWordsUsed" });
             }
 
-            if (await illegalWordingError(notes, "projectNotes")) {
-                return;
+            if (
+                await utils.manager.misc.illegalWordingError(
+                    notes,
+                    JSON.stringify({
+                        ...basicProjLoc,
+                        location: "projectNotes",
+                    }),
+                )
+            ) {
+                return res.status(400).json({ error: "IllegalWordsUsed" });
             }
 
-            await potentiallyIllegalWordingError(title, "projectTitle");
-            await potentiallyIllegalWordingError(
-                instructions,
-                "projectInstructions",
+            await utils.manager.misc.maybeIllegalWordingError(
+                title,
+                JSON.stringify({ ...basicProjLoc, location: "projectTitle" }),
             );
-            await potentiallyIllegalWordingError(notes, "projectNotes");
-
-            const uploadingProject = !!req.files.jsonFile;
-
-            if (
-                uploadingProject &&
-                (!req.files.assets || req.files.assets.length === undefined)
-            ) {
-                return res.status(400).json({ error: "Missing assets" });
-            }
+            await utils.manager.misc.maybeIllegalWordingError(
+                instructions,
+                JSON.stringify({
+                    ...basicProjLoc,
+                    location: "projectInstructions",
+                }),
+            );
+            await utils.manager.misc.maybeIllegalWordingError(
+                notes,
+                JSON.stringify({ ...basicProjLoc, location: "projectNotes" }),
+            );
 
             // TODO: make this only update, yk, the things that were updated
 
             // the jsonfile is in protobuf format so convert it to json
 
-            let protobufFile = null;
-            if (uploadingProject) {
-                protobufFile = fs.readFileSync(req.files.jsonFile[0].path);
+            if (Array.isArray(req.files)) {
+                throw new Error("Somehow req.files is an array. you MORON");
+            }
+
+            let uploadData = null;
+            if (req.files && req.files.jsonFile) {
+                const protobufFile = readFileSync(req.files.jsonFile[0].path);
                 let jsonFile;
                 try {
-                    jsonFile =
-                        utils.UserManager.protobufToProjectJson(protobufFile);
+                    jsonFile = protobufToJson(protobufFile);
                 } catch (e) {
                     return res
                         .status(400)
                         .json({ error: "Invalid protobuf file" });
                 }
 
-                // check the extensions
-                const [areExtensionsAllowed, blockedExtension] =
-                    await utils.UserManager.validateAreProjectExtensionsAllowed(
-                        jsonFile.extensions,
-                        jsonFile.extensionURLs,
-                        res.locals.login,
-                    );
-                if (!areExtensionsAllowed) {
-                    return res.status(400).json({
-                        error: `Extension not allowed: ${blockedExtension}`,
-                    });
+                if (res.locals.login.rank < 1 && !res.locals.login.isMod) {
+                    const [areExtensionsAllowed, blockedExtension] =
+                        await utils.manager.projects.validateAreProjectExtensionsAllowed(
+                            jsonFile.extensions || [],
+                            jsonFile.extensionURLs || {},
+                        );
+                    if (!areExtensionsAllowed) {
+                        return res.status(400).json({
+                            error: `Extension not allowed: ${blockedExtension}`,
+                        });
+                    }
                 }
+
+                const assets = [];
+                for (let i = 0; i < req.files.assets.length; i++) {
+                    const asset = readFileSync(req.files.assets[i].path);
+                    const id = req.files.assets[i].originalname;
+                    assets.push({ id: id, buffer: asset });
+                }
+
+                uploadData = {
+                    project: protobufFile,
+                    assets: assets,
+                };
             }
 
             if (!packet.rating || typeof packet.rating !== "string") {
                 packet.rating = "";
             }
 
-            const unsized_thumbnail = req.files.thumbnail
-                ? fs.readFileSync(req.files.thumbnail[0].path)
+            const unsized_thumbnail = req.files?.thumbnail
+                ? readFileSync(req.files.thumbnail[0].path)
                 : null;
 
             // resize
@@ -236,28 +211,15 @@ module.exports = (app, utils) => {
 
             // TODO: use mmmagic to verify this is a valid image
 
-            // get the assets and their ids
-            let assets = null;
-            if (uploadingProject) {
-                assets = [];
-
-                for (let i = 0; i < req.files.assets.length; i++) {
-                    const asset = fs.readFileSync(req.files.assets[i].path);
-                    const id = req.files.assets[i].originalname;
-                    assets.push({ id: id, buffer: asset });
-                }
-            }
-
             // upload the project
-            const success = await utils.UserManager.updateProject(
+            const success = await utils.manager.projects.updateProject(
                 projectID,
-                protobufFile,
-                assets,
+                uploadData,
                 title,
                 thumbnail,
                 instructions,
                 notes,
-                packet.rating,
+                String(packet.rating),
             );
 
             if (!success) {
@@ -266,25 +228,15 @@ module.exports = (app, utils) => {
                     .json({ error: "Failed to update project" });
             }
 
-            utils.logs.sendCreationLog(
-                username,
-                projectID,
-                title,
-                "update",
-                0x3dc2ad,
-            );
+            sendCreationLog(username, projectID, title, "update", 0x3dc2ad);
 
-            if (await utils.UserManager.isOnWatchlist(username)) {
-                utils.logs.watchlist.sendProjectUpdateLog(
-                    projectID,
-                    title,
-                    username,
-                );
+            if (await utils.manager.users.isOnWatchlist(username)) {
+                watchlist.sendProjectUpdateLog(projectID, title, username);
             }
 
-            await utils.UserManager.setLastUpload(username, Date.now());
+            await utils.manager.users.setLastUpload(username, Date.now());
 
             res.status(200).json({ success: true });
         },
     );
-};
+}

@@ -1,6 +1,7 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../../index";
 import { requireAuth } from "../../../../../../utils/auth";
+import { projectId } from "../../../../db/new-types";
 
 export default function (app: Application, utils: Utils): void {
     app.get(
@@ -9,7 +10,8 @@ export default function (app: Application, utils: Utils): void {
         async function (req, res) {
             const packet = req.query;
 
-            const project = String(packet.project);
+            const project = projectId(String(packet.project));
+            const getAssets = String(packet.getAssets) === "true";
 
             if (!project) {
                 return res.status(400).json({ error: "Missing project" });
@@ -18,24 +20,27 @@ export default function (app: Application, utils: Utils): void {
             const isAdmin = res.locals.login.isAdmin;
             const id = res.locals.login.id;
 
-            if (!(await utils.UserManager.projectExists(project, true))) {
+            const projectMeta =
+                await utils.manager.projects.getProjectMetadata(project);
+            if (!projectMeta) {
                 return res.status(404).json({ error: "ProjectNotFound" });
             }
 
-            const projectMeta =
-                await utils.UserManager.getProjectMetadata(project);
             const authorID = projectMeta.author.id;
 
             if (!isAdmin && id !== authorID) {
                 return res.status(401).json({ error: "Invalid credentials" });
             }
 
-            if (!(await utils.UserManager.isHardRejected(project))) {
+            if (!projectMeta.hardReject) {
                 return res.status(400).json({ error: "NotHardRejected" });
             }
 
-            const projectPB = await utils.UserManager.getProjectFile(project);
-            const assets = await utils.UserManager.getProjectAssets(project);
+            const projectPB =
+                await utils.manager.projects.getProjectFile(project);
+            const assets = getAssets
+                ? await utils.manager.projects.getProjectAssets(project)
+                : null;
 
             res.status(200).json({ project: projectPB, assets });
         },

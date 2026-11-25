@@ -1,6 +1,8 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../../index";
 import { requireAuth } from "../../../../../../utils/auth";
+import { projectId } from "../../../../db/new-types";
+import { pmUserAuthor, sendAdminLog } from "../../../../../../utils/logs";
 
 export default function (app: Application, utils: Utils): void {
     app.post(
@@ -9,7 +11,7 @@ export default function (app: Application, utils: Utils): void {
         async function (req, res) {
             const packet = req.body;
 
-            const project = String(packet.project);
+            const project = projectId(String(packet.project));
 
             if (!project) {
                 return res.status(400).json({ error: "Missing project" });
@@ -17,29 +19,28 @@ export default function (app: Application, utils: Utils): void {
 
             const username = res.locals.login.username;
 
-            // TODO: fetch meta once
-            if (!(await utils.UserManager.projectExists(project))) {
+            const projectData =
+                await utils.manager.projects.getProjectMetadata(project);
+            if (!projectData) {
                 return res.status(404).json({ error: "ProjectNotFound" });
             }
 
-            if (!(await utils.UserManager.isSoftRejected(project))) {
+            if (!projectData.softRejected) {
                 return res.status(400).json({ error: "NotSoftRejected" });
             }
 
-            await utils.UserManager.softReject(project, false);
+            await utils.manager.projects.softReject(project, false);
 
-            const projectData =
-                await utils.UserManager.getProjectMetadata(project);
             const author = projectData.author.id;
 
-            await utils.UserManager.sendMessage(
+            await utils.manager.messages.sendMessage(
                 author,
                 { type: "restored" },
                 false,
                 project,
             );
 
-            utils.logs.sendAdminLog(
+            sendAdminLog(
                 {
                     action: "Project has been restored",
                     content: `${username} restored project ${project}`,
@@ -49,7 +50,7 @@ export default function (app: Application, utils: Utils): void {
                         URL: `${process.env.StudioURL}/#${project}`,
                     },
                 },
-                utils.logs.pmUserAuthor(username),
+                pmUserAuthor(username),
                 0x2de65d,
             );
 

@@ -24,7 +24,7 @@ export default function (app: Application, utils: Utils): void {
                 return res.status(404).json({ error: "UserNotFound" });
             }
 
-            const id = await utils.UserManager.sendMessage(
+            const id = await utils.manager.messages.sendMessage(
                 targetID,
                 { type: "modMessage", message },
                 disputable,

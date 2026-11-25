@@ -34,7 +34,7 @@ export default function (app: Application, utils: Utils): void {
                         item.data = {
                             id: item.data,
                             name: (
-                                await utils.UserManager.getProjectMetadata(
+                                await utils.manager.projects.getProjectMetadata(
                                     item.data,
                                 )
                             ).title,

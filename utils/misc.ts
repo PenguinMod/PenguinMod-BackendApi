@@ -290,3 +290,11 @@ export const file_size_limit: AuthHandler = async (
 
     next();
 };
+
+export function assertNonNull<T>(val: T | null | undefined): T {
+    if (val === null || val === undefined) {
+        throw new Error("Failed assert, was null :(");
+    }
+
+    return val;
+}

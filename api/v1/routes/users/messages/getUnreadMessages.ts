@@ -43,7 +43,7 @@ export default function (app: Application, utils: Utils): void {
                             project: {
                                 id: item.projectID,
                                 title: (
-                                    await utils.UserManager.getProjectMetadata(
+                                    await utils.manager.projects.getProjectMetadata(
                                         item.projectID,
                                     )
                                 ).title,
@@ -58,7 +58,7 @@ export default function (app: Application, utils: Utils): void {
                                 project: {
                                     id: item.projectID,
                                     title: (
-                                        await utils.UserManager.getProjectMetadata(
+                                        await utils.manager.projects.getProjectMetadata(
                                             item.projectID,
                                         )
                                     ).title,
@@ -78,7 +78,7 @@ export default function (app: Application, utils: Utils): void {
                             oldProject: {
                                 id: item.message.projectID,
                                 title: (
-                                    await utils.UserManager.getProjectMetadata(
+                                    await utils.manager.projects.getProjectMetadata(
                                         String(item.message.projectID),
                                     )
                                 ).title,
@@ -86,7 +86,7 @@ export default function (app: Application, utils: Utils): void {
                             newProject: {
                                 id: item.projectID,
                                 title: (
-                                    await utils.UserManager.getProjectMetadata(
+                                    await utils.manager.projects.getProjectMetadata(
                                         String(item.projectID),
                                     )
                                 ).title,
@@ -100,7 +100,7 @@ export default function (app: Application, utils: Utils): void {
                             project: {
                                 id: item.projectID,
                                 title: (
-                                    await utils.UserManager.getProjectMetadata(
+                                    await utils.manager.projects.getProjectMetadata(
                                         item.projectID,
                                     )
                                 ).title,

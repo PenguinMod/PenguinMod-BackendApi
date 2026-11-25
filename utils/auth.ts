@@ -58,9 +58,9 @@ export const requireAuth = (
             return;
         }
 
-        const login = await auth.loginWithToken(token, allow_banned, true);
+        const login = await auth.loginWithToken(token, allow_banned);
 
-        if (!login.success) {
+        if (!login) {
             res.status(401).json({ error: "InvalidToken" });
             return;
         }
@@ -105,9 +105,7 @@ export const maybeAuth =
             return;
         }
 
-        const login = await um.loginWithToken(token, allow_banned, true);
-
-        res.locals.login = login.success ? login : null;
+        res.locals.login = await um.loginWithToken(token, allow_banned);
 
         next();
     };

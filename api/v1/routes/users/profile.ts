@@ -14,7 +14,7 @@ export default function (app: Application, utils: Utils): void {
             const isMod = loggedIn && res.locals.login.isMod;
             const username = loggedIn ? res.locals.login.username : null;
 
-            const target_data = await utils.UserManager.getUserData(target);
+            const target_data = await utils.manager.users.getUserData(target);
 
             if (!target_data) {
                 res.status(404).json({ error: "NotFound" });

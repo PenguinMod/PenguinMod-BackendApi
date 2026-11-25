@@ -1,19 +1,14 @@
+import { Application } from "express";
 import { requireAuth } from "../../../../utils/auth";
+import { Utils } from "../../../../index";
+import { file_size_limit, unlinkMulter } from "../../../../utils/misc";
+import { protobufToJson } from "pmp-protobuf";
+import { projectId } from "../../db/new-types";
+import { sendCreationLog, watchlist } from "../../../../utils/logs";
+import { readFileSync } from "fs";
+import sharp from "sharp";
 
-const fs = require("fs");
-const sharp = require("sharp");
-
-/**
- * @typedef {Object} Utils
- * @property {import("../../db/UserManager")} UserManager
- */
-
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
+export default function (app: Application, utils: Utils): void {
     app.post(
         "/api/v1/projects/uploadProject",
         ...requireAuth(utils.manager.auth),
@@ -23,11 +18,11 @@ module.exports = (app, utils) => {
             // assets
             { name: "assets", maxCount: Number(process.env.MaxFilesUpload) },
         ]),
-        utils.file_size_limit(utils),
-        utils.unlinkMulter,
-        async (req, res) => {
+        file_size_limit,
+        unlinkMulter,
+        async function (req, res) {
             if (
-                !(await utils.UserManager.getRuntimeConfigItem(
+                !(await utils.manager.misc.getRuntimeConfigItem(
                     "uploadingEnabled",
                 ))
             ) {
@@ -43,7 +38,7 @@ module.exports = (app, utils) => {
 
             const priv = String(packet.private) === "true" && hasModPerms;
 
-            const lastUpload = await utils.UserManager.getLastUpload(username);
+            const lastUpload = res.locals.login.fullMeta.lastUpload;
             const now = Date.now();
             const tooSoon = isDonator
                 ? lastUpload > now - 10 * 1000
@@ -61,64 +56,6 @@ module.exports = (app, utils) => {
                 });
             }
 
-            const illegalWordingError = async (text, type) => {
-                const trigger =
-                    await utils.UserManager.checkForIllegalWording(text);
-                if (trigger) {
-                    res.status(400).json({ error: "IllegalWordsUsed" });
-
-                    const illegalWordIndex =
-                        await utils.UserManager.getIndexOfIllegalWording(text);
-
-                    const before = text.substring(0, illegalWordIndex[0]);
-                    const after = text.substring(illegalWordIndex[1]);
-                    const illegalWord = text.substring(
-                        illegalWordIndex[0],
-                        illegalWordIndex[1],
-                    );
-
-                    utils.logs.sendHeatLog(
-                        before + "\x1b[31;1m" + illegalWord + "\x1b[0m" + after,
-                        trigger,
-                        type,
-                        [userid, username],
-                    );
-
-                    return true;
-                }
-                return false;
-            };
-
-            const potentiallyIllegalWordingError = async (text, type, id) => {
-                const trigger =
-                    await utils.UserManager.checkForPotentiallyIllegalWording(
-                        text,
-                    );
-                if (trigger) {
-                    const illegalWordIndex =
-                        await utils.UserManager.getIndexOfPotentiallyIllegalWording(
-                            text,
-                        );
-
-                    const before = text.substring(0, illegalWordIndex[0]);
-                    const after = text.substring(illegalWordIndex[1]);
-                    const illegalWord = text.substring(
-                        illegalWordIndex[0],
-                        illegalWordIndex[1],
-                    );
-
-                    utils.logs.sendHeatLog(
-                        before + "\x1b[33;1m" + illegalWord + "\x1b[0m" + after,
-                        trigger,
-                        type,
-                        [id, username],
-                        0xffbb00,
-                    );
-                    return true;
-                }
-                return false;
-            };
-
             const title = String(packet.title);
             const instructions = String(packet.instructions);
             const notes = String(packet.notes);
@@ -133,21 +70,36 @@ module.exports = (app, utils) => {
                 });
             }
 
-            if (await illegalWordingError(title, "projectTitle")) {
-                return;
-            }
-
             if (
-                await illegalWordingError(instructions, "projectInstructions")
+                await utils.manager.misc.illegalWordingError(
+                    title,
+                    "projectTitle",
+                )
             ) {
-                return;
-            }
-
-            if (await illegalWordingError(notes, "projectNotes")) {
-                return;
+                return res.status(400).json({ error: "IllegalWordsUsed" });
             }
 
             if (
+                await utils.manager.misc.illegalWordingError(
+                    instructions,
+                    "projectInstructions",
+                )
+            ) {
+                return res.status(400).json({ error: "IllegalWordsUsed" });
+            }
+
+            if (
+                await utils.manager.misc.illegalWordingError(
+                    notes,
+                    "projectNotes",
+                )
+            ) {
+                return res.status(400).json({ error: "IllegalWordsUsed" });
+            }
+
+            if (
+                !req.files ||
+                Array.isArray(req.files) ||
                 !req.files.jsonFile ||
                 !req.files.thumbnail ||
                 !req.files.assets
@@ -158,50 +110,57 @@ module.exports = (app, utils) => {
             }
 
             // the jsonfile is in protobuf format so convert it to json
-            const protobufFile = fs.readFileSync(req.files.jsonFile[0].path);
+            const protobufFile = readFileSync(req.files.jsonFile[0].path);
             let jsonFile;
             try {
-                jsonFile =
-                    utils.UserManager.protobufToProjectJson(protobufFile);
+                jsonFile = protobufToJson(protobufFile);
             } catch (e) {
+                const message =
+                    e instanceof Error
+                        ? e.message
+                        : e && typeof e === "object" && "message" in e
+                          ? e.message
+                          : e;
                 return res.status(400).json({
-                    error: `Invalid protobuf file: ${e.message ?? e}`,
+                    error: `Invalid protobuf file: ${message}`,
                 });
             }
 
-            let remix = String(packet.remix);
-
-            if (remix !== "0") {
-                if (!(await utils.UserManager.projectExists(remix))) {
+            const remix = projectId(String(packet.remix));
+            let original_remix_project = null;
+            if (remix) {
+                original_remix_project =
+                    await utils.manager.projects.getProjectMetadata(remix);
+                if (
+                    !original_remix_project ||
+                    !original_remix_project.public ||
+                    original_remix_project.hardReject
+                ) {
                     return res
                         .status(400)
                         .json({ error: "Remix project does not exist" });
                 }
             }
 
-            const [areExtensionsAllowed, blockedExtension] =
-                await utils.UserManager.validateAreProjectExtensionsAllowed(
-                    jsonFile.extensions,
-                    jsonFile.extensionURLs,
-                    res.locals.login,
-                );
-            if (!areExtensionsAllowed) {
-                return res.status(400).json({
-                    error: `Extension not allowed: ${blockedExtension}`,
-                });
-            }
-
-            if (!remix || typeof remix !== "string") {
-                remix = "0";
+            if (res.locals.login.rank < 1 && !res.locals.login.isMod) {
+                const illegalExtensions =
+                    await utils.manager.projects.validateAreProjectExtensionsAllowed(
+                        jsonFile.extensions || [],
+                        jsonFile.extensionURLs || {},
+                    );
+                if (illegalExtensions.length > 0) {
+                    return res.status(400).json({
+                        error: `ExtensionsNotAllowed`,
+                        extensions: illegalExtensions,
+                    });
+                }
             }
 
             if (!packet.rating || typeof packet.rating !== "string") {
                 packet.rating = "";
             }
 
-            const unsized_thumbnail = fs.readFileSync(
-                req.files.thumbnail[0].path,
-            );
+            const unsized_thumbnail = readFileSync(req.files.thumbnail[0].path);
 
             let thumbnail;
             try {
@@ -218,12 +177,12 @@ module.exports = (app, utils) => {
             const assets = [];
 
             for (let i = 0; i < req.files.assets.length; i++) {
-                const asset = fs.readFileSync(req.files.assets[i].path);
+                const asset = readFileSync(req.files.assets[i].path);
                 const id = req.files.assets[i].originalname;
                 assets.push({ id: id, buffer: asset });
             }
 
-            const projectID = await utils.UserManager.publishProject(
+            const projectID = await utils.manager.projects.publishProject(
                 protobufFile,
                 assets,
                 userid,
@@ -233,7 +192,7 @@ module.exports = (app, utils) => {
                 instructions,
                 notes,
                 remix,
-                packet.rating,
+                String(packet.rating),
                 priv,
             );
 
@@ -241,47 +200,31 @@ module.exports = (app, utils) => {
                 return res.status(503).json({ error: "NoProjectID" });
             }
 
-            await potentiallyIllegalWordingError(
+            await utils.manager.misc.maybeIllegalWordingError(
                 title,
-                "projectTitle",
-                projectID,
+                `projectTitle (${projectID})`,
             );
-            await potentiallyIllegalWordingError(
+            await utils.manager.misc.maybeIllegalWordingError(
                 instructions,
-                "projectInstructions",
-                projectID,
+                `projectInstructions (${projectID})`,
             );
-            await potentiallyIllegalWordingError(
+            await utils.manager.misc.maybeIllegalWordingError(
                 notes,
-                "projectNotes",
-                projectID,
+                `projectNotes (${projectID})`,
             );
 
-            utils.logs.sendCreationLog(
-                username,
-                projectID,
-                title,
-                "upload",
-                0x4a7fb5,
-            );
+            sendCreationLog(username, projectID, title, "upload", 0x4a7fb5);
 
-            if (await utils.UserManager.isOnWatchlist(username)) {
-                utils.logs.watchlist.sendProjectUploadLog(
-                    projectID,
-                    title,
-                    username,
-                );
+            if (await utils.manager.users.isOnWatchlist(username)) {
+                watchlist.sendProjectUploadLog(projectID, title, username);
             }
 
-            await utils.UserManager.setLastUpload(username, Date.now());
+            await utils.manager.users.setLastUpload(username, Date.now());
 
-            if (remix !== "0" && !priv) {
-                const originalProject =
-                    await utils.UserManager.getProjectMetadata(remix);
+            if (original_remix_project && !priv) {
+                const original_creator = original_remix_project.author.id;
 
-                const original_creator = originalProject.author.id;
-
-                await utils.UserManager.sendMessage(
+                await utils.manager.messages.sendMessage(
                     original_creator,
                     {
                         type: "remix",
@@ -295,4 +238,4 @@ module.exports = (app, utils) => {
             res.status(200).json({ id: projectID });
         },
     );
-};
+}

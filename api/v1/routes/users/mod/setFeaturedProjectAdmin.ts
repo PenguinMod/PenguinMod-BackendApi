@@ -10,12 +10,15 @@ export default function (app: Application, utils: Utils): void {
             const packet = req.body;
 
             const target = String(packet.target).toLowerCase();
-            const project = String(packet.project);
+            const project = projectId(String(packet.project));
             const title = Number(packet.title);
 
             const username = res.locals.login.username;
 
-            if (!project || !(await utils.UserManager.projectExists(project))) {
+            if (
+                !project ||
+                !(await utils.manager.projects.projectExists(project))
+            ) {
                 res.status(400).json({ error: "InvalidProject" });
                 return;
             }

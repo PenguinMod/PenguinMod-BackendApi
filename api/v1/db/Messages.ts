@@ -141,14 +141,6 @@ export class Messages {
         return id;
     }
 
-    /**
-     * Get messages sent to a person
-     * @param {string} receiver ID of the person receiving the message
-     * @param {number} page page of messages to get
-     * @param {number} pageSize amount of messages to get
-     * @returns {Promise<Array<Object>>} Array of the messages sent to the person
-     * @async
-     */
     async getMessages(
         receiver: UserId,
         page: number,
@@ -172,11 +164,6 @@ export class Messages {
             .toArray();
     }
 
-    /**
-     * Get the amount of messages sent to a person
-     * @param {string} receiver ID of the person who received the messages
-     * @returns {Promise<number>} Amount of messages sent to the person
-     */
     async getMessageCount(receiver: UserId): Promise<number> {
         return await this.db.messages.countDocuments({
             receiver: receiver,
@@ -187,12 +174,6 @@ export class Messages {
         return await this.db.messages.findOne({ id: messageID });
     }
 
-    /**
-     * Get unread messages sent to a person
-     * @param {string} receiver ID of the person you're getting the messages from
-     * @returns {Promise<Array<Object>>} Array of the unread messages sent to the person
-     * @async
-     */
     async getUnreadMessages(
         receiver: UserId,
         page: number,
@@ -223,11 +204,6 @@ export class Messages {
         });
     }
 
-    /**
-     * Mark a message as read
-     * @param {string} id ID of the message
-     * @param {boolean} read Toggle between read and not read
-     */
     async markMessageAsRead(id: MessageId, read: boolean): Promise<void> {
         await this.db.messages.updateOne({ id: id }, { $set: { read: read } });
     }
@@ -238,10 +214,6 @@ export class Messages {
         return !!result;
     }
 
-    /**
-     * Mark all messages sent to a user as read
-     * @param {string} receiver ID of the person receiving the messages
-     */
     async markAllMessagesAsRead(receiver: UserId): Promise<void> {
         await this.db.messages.updateMany(
             { receiver: receiver },

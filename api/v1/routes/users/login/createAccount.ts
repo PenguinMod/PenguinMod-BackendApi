@@ -58,7 +58,7 @@ module.exports = (app, utils) => {
             } else if (global_creation_counter.count >= limit_amount) {
                 if (!global_creation_counter.ping) {
                     // TODO: don't hardcode my discord ID
-                    utils.logs.sendAdminLog(
+                    sendAdminLog(
                         {
                             action: "actoin",
                             content: `<@790782926785609728> evil doer is doing evil maybe`,

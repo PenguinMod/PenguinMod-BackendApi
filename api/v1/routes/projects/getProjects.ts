@@ -1,5 +1,7 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../index";
+import { maybeAuth } from "../../../../utils/auth";
+import { handle_page } from "../../../../utils/misc";
 
 export default function (app: Application, utils: Utils): void {
     app.get(
@@ -7,7 +9,7 @@ export default function (app: Application, utils: Utils): void {
         maybeAuth(utils.manager.auth),
         async function (req, res) {
             if (
-                !(await utils.UserManager.getRuntimeConfigItem(
+                !(await utils.manager.misc.getRuntimeConfigItem(
                     "viewingEnabled",
                 ))
             ) {
@@ -15,12 +17,12 @@ export default function (app: Application, utils: Utils): void {
             }
 
             const packet = req.query;
-            const page = utils.handle_page(packet.page);
+            const page = handle_page(packet.page);
             const reverse = String(packet.reverse || false) === "true";
 
-            const is_mod = res.locals.login && res.locals.login.isMod;
+            const is_mod = res.locals.login?.isMod || false;
 
-            const projects = await utils.UserManager.getProjects(
+            const projects = await utils.manager.projects.getRecentProjects(
                 is_mod,
                 page,
                 Number(process.env.PageSize),
@@ -29,7 +31,7 @@ export default function (app: Application, utils: Utils): void {
             );
 
             for (const project of projects) {
-                await utils.UserManager.addImpression(project.id);
+                await utils.manager.projects.addImpression(project.id);
             }
 
             res.status(200).json(projects);

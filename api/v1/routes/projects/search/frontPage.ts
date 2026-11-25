@@ -1,5 +1,17 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../index";
+import { maybeAuth } from "../../../../../utils/auth";
+import { ExtProjectData } from "../../../db/types";
+import { UserId } from "../../../db/new-types";
+
+type Response = {
+    featured: ExtProjectData[];
+    voted: ExtProjectData[];
+    tagged: ExtProjectData[];
+    latest: ExtProjectData[];
+    selectedTag: string;
+    blocked: UserId[];
+};
 
 export default function (app: Application, utils: Utils): void {
     // if less than 0, no wait time, else if it exists then set it to that else 5 minutes
@@ -10,29 +22,33 @@ export default function (app: Application, utils: Utils): void {
               ? Number(process.env.FrontPageCacheTime)
               : 5 * 60;
 
-    const cachinator = (refreshTime) => ({
-        curr: null,
-        lastRefresh: 0,
-        get: async (else_then) => {
-            if (!this.curr || this.lastRefresh + refreshTime < Date.now()) {
-                this.curr = await else_then();
-                this.lastRefresh = Date.now();
-            }
+    const cachinator = <T>(
+        refreshTime: number,
+    ): { get: (else_then: () => Promise<T>) => Promise<T> } => {
+        let curr: T | null = null;
+        let lastRefresh = 0;
 
-            return this.curr;
-        },
-    });
+        return {
+            get: async (else_then: () => Promise<T>): Promise<T> => {
+                if (curr === null || lastRefresh + refreshTime < Date.now()) {
+                    curr = await else_then();
+                    lastRefresh = Date.now();
+                }
 
-    const normal_cache = cachinator(1000 * cache_time);
-    const mod_cache = cachinator(1000 * cache_time);
+                return curr;
+            },
+        };
+    };
+
+    const normal_cache = cachinator<Response>(1000 * cache_time);
+    const mod_cache = cachinator<Response>(1000 * cache_time);
 
     app.get(
         "/api/v1/projects/frontpage",
         maybeAuth(utils.manager.auth),
         async function (req, res) {
-            const logged_in = !!res.locals.login;
-            const is_mod = logged_in && res.locals.login.isMod;
-            const user_id = logged_in ? res.locals.login.id : null;
+            const is_mod = res.locals.login?.isMod || false;
+            const user_id = res.locals.login?.id || null;
 
             const page = await (is_mod ? mod_cache : normal_cache).get(
                 async () => {
@@ -68,25 +84,23 @@ export default function (app: Application, utils: Utils): void {
 
                     const [featured, almostFeatured, fitsTags, latest] =
                         await Promise.all([
-                            utils.UserManager.getFeaturedProjects(
+                            utils.manager.projects.getFeaturedProjects(
                                 0,
                                 Number(process.env.PageSize),
                             ),
-                            utils.UserManager.almostFeatured(
+                            utils.manager.projects.almostFeatured(
                                 0,
                                 Number(process.env.PageSize) || 20,
-                                Number(process.env.MaxPageSize) || 100,
                             ),
                             // TODO: this should check for blocked users (although not here)
-                            utils.UserManager.searchProjects(
+                            utils.manager.projects.searchProjects(
                                 is_mod,
                                 tag,
                                 "newest",
                                 0,
                                 Number(process.env.PageSize),
-                                Number(process.env.MaxPageSize),
                             ),
-                            utils.UserManager.getProjects(
+                            utils.manager.projects.getRecentProjects(
                                 is_mod,
                                 0,
                                 Number(process.env.PageSize) * 2,
@@ -101,17 +115,17 @@ export default function (app: Application, utils: Utils): void {
                         voted: almostFeatured,
                         tagged: fitsTags,
                         latest: latest,
+                        selectedTag: tag,
+                        blocked: [],
                     };
-
-                    page.selectedTag = tag;
 
                     return page;
                 },
             );
 
             // TODO: if you block a shit ton of users this will have problems. Perhaps we can get list of all authors being shown and union in the db?
-            if (logged_in) {
-                page.blocked = await utils.UserManager.getAllBlocked(user_id);
+            if (user_id) {
+                page.blocked = await utils.manager.users.getAllBlocked(user_id);
             }
 
             res.header("Cache-Control", "public, max-age=90");
@@ -122,7 +136,7 @@ export default function (app: Application, utils: Utils): void {
                 .filter((i) => typeof i !== "string")
                 .map((i) => i.id);
 
-            utils.UserManager.addImpressionsMany(pids).catch((e) => {
+            utils.manager.projects.addImpressionsMany(pids).catch((e) => {
                 console.error(`FAILED TO ADD IMPRESSIONS: ${e}`);
             });
         },

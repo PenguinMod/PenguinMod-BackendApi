@@ -5,7 +5,7 @@ import { readFileSync } from "fs";
 import path from "path";
 import { DBController } from "./DBController";
 import Manager from "./Manager";
-import { OAuthMethod } from "./types";
+import { OAuthMethod, UserData } from "./types";
 import { UserId, userId } from "./new-types";
 import { err, ok, Result } from "../../../utils/Result";
 const basePFP = readFileSync(
@@ -15,7 +15,6 @@ const basePFP = readFileSync(
 type AccountCreationError = "AccountExists" | "IllegalWordingError";
 
 export interface Login {
-    success: boolean;
     username: string;
     token: string;
     id: UserId;
@@ -26,7 +25,7 @@ export interface Login {
     emailVerified: boolean;
     badges: string[];
     rank: number;
-    fullMeta: object;
+    fullMeta: UserData;
 }
 
 export class Authentication {
@@ -41,46 +40,30 @@ export class Authentication {
     async loginWithToken(
         token: string,
         allowBanned: boolean,
-        get_full_meta: boolean = false,
-    ): Promise<Login> {
-        const data: Login = {
-            success: false,
-            username: "",
-            token,
-            id: userId(""),
-            rank: 0,
-            isDonator: false,
-            isMod: false,
-            isAdmin: false,
-            emailVerified: false,
-            email: "",
-            badges: [],
-            fullMeta: {},
-        };
-
+    ): Promise<Login | null> {
         if (token === "undefined") {
-            return data;
+            return null;
         }
 
         const result = await this.db.users.findOne({ token });
 
         if (!result) {
-            return data;
+            return null;
         }
 
-        data.username = result.username;
-        data.id = result.id;
-        data.isDonator = result.badges.includes("donator");
-        data.isMod = result.moderator || result.admin;
-        data.isAdmin = result.admin;
-        data.emailVerified = result.emailVerified;
-        data.email = result.email || "";
-        data.rank = result.rank;
-        data.badges = result.badges;
-
-        if (get_full_meta) {
-            data.fullMeta = result;
-        }
+        const data: Login = {
+            username: result.real_username,
+            token,
+            id: result.id,
+            rank: result.rank,
+            isDonator: result.badges.includes("donator"),
+            isMod: result.moderator || result.admin,
+            isAdmin: result.admin,
+            emailVerified: result.emailVerified,
+            email: result.email || "",
+            badges: result.badges,
+            fullMeta: result,
+        };
 
         if (
             ((result.permBanned || result.unbanTime > Date.now()) &&
@@ -89,10 +72,8 @@ export class Authentication {
                 (Number(process.env.LoginInvalidationTime) || 259200000) <
                 Date.now()
         ) {
-            return data;
+            return null;
         }
-
-        data.success = true;
 
         await this.db.users.updateOne(
             { token },
@@ -217,9 +198,6 @@ export class Authentication {
         return ok({ token, id });
     }
 
-    /**
-     * @returns {Promise<boolean>}
-     */
     async canCreateAccount(): Promise<boolean> {
         return (
             await this.db.runtimeConfig.findOne({

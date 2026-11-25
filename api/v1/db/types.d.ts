@@ -83,6 +83,8 @@ export interface ProjectData {
     impressions: number;
     noFeature: boolean;
     authorRank: number;
+    loves: number;
+    votes: number;
 }
 
 export interface ExtProjectData extends ProjectData {
@@ -178,6 +180,7 @@ export interface Message {
     read: boolean;
     id: MessageId;
     projectID: ProejctId;
+    dispute?: string;
 }
 
 export interface OAuthState {
@@ -234,3 +237,12 @@ export interface ExtReport extends Report {
         username: string;
     };
 }
+
+export type Sort =
+    "newest-update" | "newest-upload" | "views" | "votes" | "loves";
+
+export type SearchInclude =
+    "all" | "all-allowed" | "ranked" | "unranked" | "rejected";
+
+export type OldSearchType =
+    "featured" | "newest" | "uploaddate" | "views" | "loves" | "votes";

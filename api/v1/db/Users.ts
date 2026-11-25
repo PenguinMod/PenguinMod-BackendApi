@@ -674,16 +674,6 @@ export class Users {
         });
     }
 
-    /**
-     * Send an email
-     * @param {string} userid ID of who you're sending it to
-     * @param {string} userip IP of who you're sending it to (ipv6)
-     * @param {string} email Email of who you're sending it to
-     * @param {string} subject Subject of the email
-     * @param {string} message Message of the email
-     * @param {string} messageHtml Message of the email but html (use this as primary)
-     * @returns {Promise<boolean>} Success or not
-     */
     async sendEmail(
         userid: UserId,
         userip: string,
@@ -778,13 +768,6 @@ export class Users {
         );
     }
 
-    /**
-     * Temporarily ban a user
-     * @param {string} username Username of the user
-     * @param {string} reason Reason for temp ban
-     * @param {number} length Length of ban in milliseconds
-     * @returns {Promise<void>}
-     */
     async tempBanUser(
         username: string,
         reason: string,

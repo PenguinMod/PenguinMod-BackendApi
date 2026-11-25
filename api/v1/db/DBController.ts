@@ -511,11 +511,6 @@ export class DBController {
         }
     }
 
-    /**
-     * Download a file from the backblaze asset storage
-     * @param {string} name The name of the requested file
-     * @returns {Promise<Buffer>}
-     */
     async downloadFromBackblaze(name: string): Promise<Buffer> {
         const url = `${this.bb_download_url}/file/${process.env.BackblazeBucketName}/${name}`;
 
@@ -600,21 +595,11 @@ export class DBController {
         }
     }
 
-    /**
-     * Get the ID of a file from Backblaze
-     * @param {string} name The name of the file
-     * @returns {Promise<string>}
-     */
     async getBBFileID(name: string): Promise<string> {
         // boy do i hate backblaze
         return (await this.listNamesWithPrefixBackblaze(name, 1))[0];
     }
 
-    /**
-     * Delete multiple objects from Backblaze given a prefix
-     * @param {string} prefix The prefix to search for
-     * @param {number} n The number of objects to search for. Cannot exceed 10000.
-     */
     async deleteMultipleObjectsBackblaze(
         prefix: string,
         n = 1000,

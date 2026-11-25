@@ -7,7 +7,7 @@ export default function (app: Application, utils: Utils): void {
 
         const n = Math.min(Number(packet.n || 1), Number(process.env.PageSize));
 
-        const projects = await utils.UserManager.getRandomProjects(n);
+        const projects = await utils.manager.projects.getRandomProjects(n);
 
         res.status(200).json(projects);
     });

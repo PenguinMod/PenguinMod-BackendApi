@@ -1,6 +1,13 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../index";
 import { requireAuth } from "../../../../../utils/auth";
+import { projectId } from "../../../db/new-types";
+import {
+    pmUserAuthor,
+    sendAdminLog,
+    sendFeatureLog,
+} from "../../../../../utils/logs";
+import { assertNonNull } from "../../../../../utils/misc";
 
 export default function (app: Application, utils: Utils): void {
     app.post(
@@ -10,57 +17,50 @@ export default function (app: Application, utils: Utils): void {
             const packet = req.body;
 
             const toggle = String(packet.toggle) === "true";
-            const projectID = String(packet.projectID);
+            const projectID = projectId(String(packet.projectID));
             const username = res.locals.login.username;
 
-            if (!(await utils.UserManager.projectExists(projectID))) {
-                return res.status(404).json({ error: "Project not found" });
+            const metadata =
+                await utils.manager.projects.getProjectMetadata(projectID);
+            if (!metadata) {
+                return res.status(404).json({ error: "ProjectNotFound" });
             }
 
-            if (!(await utils.UserManager.isFeatured(projectID)) && toggle) {
-                const metadata =
-                    await utils.UserManager.getProjectMetadata(projectID);
+            if (!metadata.featured && toggle) {
                 const author = metadata.author;
                 const title = metadata.title;
 
-                await utils.UserManager.sendMessage(
+                await utils.manager.messages.sendMessage(
                     author.id,
                     { type: "projectFeatured" },
                     false,
                     projectID,
                 );
 
-                await utils.UserManager.featureProject(projectID, true, true);
-                utils.logs.sendFeatureLog(projectID, title, author.username);
+                await utils.manager.projects.featureProject(projectID, true);
+                sendFeatureLog(projectID, title, author.username);
 
-                if (
-                    !(await utils.UserManager.hasBadge(
-                        author.username,
-                        "featured",
-                    ))
-                ) {
-                    await utils.UserManager.addBadge(
+                const authorMeta = assertNonNull(
+                    await utils.manager.users.getUserDataByID(author.id),
+                );
+                if (!authorMeta.badges.includes("featured")) {
+                    await utils.manager.users.addBadge(
                         author.username,
                         "featured",
                     );
-                    await utils.UserManager.sendMessage(
+                    await utils.manager.messages.sendMessage(
                         author.id,
                         { type: "newBadge", badge: "featured" },
                         false,
                         projectID,
                     );
                 } else {
-                    if (
-                        !(await utils.UserManager.hasBadge(
-                            author.username,
-                            "multifeature",
-                        ))
-                    ) {
-                        await utils.UserManager.addBadge(
+                    if (!authorMeta.badges.includes("multifeature")) {
+                        await utils.manager.users.addBadge(
                             author.username,
                             "multifeature",
                         );
-                        await utils.UserManager.sendMessage(
+                        await utils.manager.messages.sendMessage(
                             author.id,
                             { type: "newBadge", badge: "multifeature" },
                             false,
@@ -70,20 +70,20 @@ export default function (app: Application, utils: Utils): void {
                 }
             }
 
-            await utils.UserManager.featureProject(projectID, toggle);
+            await utils.manager.projects.featureProject(projectID, toggle);
 
-            utils.logs.sendAdminLog(
+            sendAdminLog(
                 {
                     action: `Project has been manually ${toggle ? "" : "un"}featured`,
                     content: `${username} manually featured project ${projectID}`,
                     fields: {
                         Mod: username,
                         "Project ID": projectID,
-                        Status: toggle,
+                        Status: String(toggle),
                         URL: `${process.env.StudioURL}/#${projectID}`,
                     },
                 },
-                utils.logs.pmUserAuthor(username),
+                pmUserAuthor(username),
                 0xe5df18,
             );
 

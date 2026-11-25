@@ -7,7 +7,7 @@ export default function (app: Application, utils: Utils): void {
         "/api/v1/users/getmessagecount",
         ...requireAuth(utils.manager.auth, { allow_banned: true }),
         async function (req, res) {
-            const count = await utils.UserManager.getMessageCount(
+            const count = await utils.manager.messages.getMessageCount(
                 res.locals.login.id,
             );
 

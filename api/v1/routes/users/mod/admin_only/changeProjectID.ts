@@ -18,23 +18,23 @@ export default function (app: Application, utils: Utils): void {
 
             if (
                 !target ||
-                !(await utils.UserManager.projectExists(target, true))
+                !(await utils.manager.projects.projectExists(target, true))
             ) {
                 res.status(404).json({ error: "NotFound" });
                 return;
             }
-            if (await utils.UserManager.projectExists(newId, true)) {
+            if (await utils.manager.projects.projectExists(newId, true)) {
                 res.status(400).json({ error: "IDTaken" });
                 return;
             }
 
             const projectName = (
-                await utils.UserManager.getProjectMetadata(target)
+                await utils.manager.projects.getProjectMetadata(target)
             ).title;
 
             await utils.UserManager.changeProjectID(target, newId);
 
-            utils.logs.sendAdminLog(
+            sendAdminLog(
                 {
                     action: `Admin has changed project ${target}'s id to now be ${newId}.`,
                     content: `${username} changed a project's id`,
@@ -44,7 +44,7 @@ export default function (app: Application, utils: Utils): void {
                         URL: `${process.env.StudioURL}/#${newId}`,
                     },
                 },
-                utils.logs.pmUserAuthor(username),
+                pmUserAuthor(username),
                 0xc6be27,
             );
 

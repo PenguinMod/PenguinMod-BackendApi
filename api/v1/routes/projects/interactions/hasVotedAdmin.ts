@@ -1,6 +1,7 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../index";
 import { requireAuth } from "../../../../../utils/auth";
+import { projectId } from "../../../db/new-types";
 
 export default function (app: Application, utils: Utils): void {
     app.get(
@@ -11,24 +12,23 @@ export default function (app: Application, utils: Utils): void {
 
             const target = String(packet.target).toLowerCase();
 
-            const projectID = String(packet.projectID);
+            const projectID = projectId(String(packet.projectID));
 
-            if (!projectID || !target) {
-                return res
-                    .status(400)
-                    .json({ error: "Missing projectID, or target" });
+            if (
+                !(await utils.manager.projects.projectExists(projectID, true))
+            ) {
+                return res.status(404).json({ error: "ProjectNotFound" });
             }
 
-            if (!(await utils.UserManager.projectExists(projectID))) {
-                return res.status(404).json({ error: "Project not found" });
-            }
-
-            const id = await utils.UserManager.getIDByUsername(target, false);
-            if (!id) {
+            const data = await utils.manager.users.getUserData(target);
+            if (!data) {
                 return res.status(404).json({ error: "UserNotFound" });
             }
 
-            const has = await utils.UserManager.hasVotedProject(projectID, id);
+            const has = await utils.manager.projects.hasVotedProject(
+                projectID,
+                data.id,
+            );
 
             return res.send({ hasVoted: has });
         },

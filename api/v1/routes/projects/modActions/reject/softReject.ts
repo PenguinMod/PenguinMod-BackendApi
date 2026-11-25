@@ -1,6 +1,8 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../../index";
 import { requireAuth } from "../../../../../../utils/auth";
+import { projectId } from "../../../../db/new-types";
+import { pmUserAuthor, sendAdminLog } from "../../../../../../utils/logs";
 
 export default function (app: Application, utils: Utils): void {
     app.post(
@@ -9,36 +11,31 @@ export default function (app: Application, utils: Utils): void {
         async function (req, res) {
             const packet = req.body;
 
-            const project = String(packet.project);
+            const project = projectId(String(packet.project));
             const message = String(packet.message);
 
             const username = res.locals.login.username;
 
-            // multiple DB queries being made (wasteful)
-            if (
-                !project ||
-                !(await utils.UserManager.projectExists(project, true))
-            ) {
+            const projectData =
+                await utils.manager.projects.getProjectMetadata(project);
+            if (!projectData) {
                 return res.status(404).json({ error: "ProjectNotFound" });
             }
 
-            if (await utils.UserManager.isSoftRejected(project)) {
+            if (projectData.softRejected) {
                 return res.status(400).json({ error: "AlreadySoftRejected" });
             }
 
-            await utils.UserManager.softReject(project, true);
+            await utils.manager.projects.softReject(project, true);
 
-            const projectData =
-                await utils.UserManager.getProjectMetadata(project);
-
-            await utils.UserManager.sendMessage(
+            await utils.manager.messages.sendMessage(
                 projectData.author.id,
                 { type: "reject", message, hardReject: false },
                 true,
                 project,
             );
 
-            utils.logs.sendAdminLog(
+            sendAdminLog(
                 {
                     action: `${username} soft rejected ${projectData.title}`,
                     content: "",
@@ -50,11 +47,11 @@ export default function (app: Application, utils: Utils): void {
                         URL: `${process.env.StudioURL}/#${project}`,
                     },
                 },
-                utils.logs.pmUserAuthor(username),
+                pmUserAuthor(username),
                 0xffae33,
             );
 
-            await utils.UserManager.resolveReports("project", project);
+            await utils.manager.reports.resolveReports("project", project);
 
             res.status(200).json({ success: true });
         },

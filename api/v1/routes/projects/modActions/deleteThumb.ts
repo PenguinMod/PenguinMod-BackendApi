@@ -1,6 +1,8 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../index";
 import { requireAuth } from "../../../../../utils/auth";
+import { projectId } from "../../../db/new-types";
+import { pmUserAuthor, sendAdminLog } from "../../../../../utils/logs";
 
 export default function (app: Application, utils: Utils): void {
     app.post(
@@ -9,16 +11,18 @@ export default function (app: Application, utils: Utils): void {
         async function (req, res) {
             const packet = req.body;
 
-            const projectID = String(packet.projectID);
+            const projectID = projectId(String(packet.projectID));
             const username = res.locals.login.username;
 
-            if (!(await utils.UserManager.projectExists(projectID))) {
-                return res.status(404).json({ error: "Project not found" });
+            if (
+                !(await utils.manager.projects.projectExists(projectID, true))
+            ) {
+                return res.status(404).json({ error: "ProjectNotFound" });
             }
 
-            await utils.UserManager.deleteThumb(projectID);
+            await utils.manager.projects.deleteThumb(projectID);
 
-            utils.logs.sendAdminLog(
+            sendAdminLog(
                 {
                     action: `Project's thumbnail has been deleted`,
                     content: `${username} deleted ${projectID}'s thumbnail`,
@@ -28,7 +32,7 @@ export default function (app: Application, utils: Utils): void {
                         URL: `${process.env.StudioURL}/#${projectID}`,
                     },
                 },
-                utils.logs.pmUserAuthor(username),
+                pmUserAuthor(username),
                 0xc96800,
             );
 

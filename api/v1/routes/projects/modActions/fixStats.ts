@@ -1,6 +1,7 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../index";
 import { requireAuth } from "../../../../../utils/auth";
+import { projectId } from "../../../db/new-types";
 
 export default function (app: Application, utils: Utils): void {
     app.post(
@@ -9,13 +10,15 @@ export default function (app: Application, utils: Utils): void {
         async function (req, res) {
             const packet = req.body;
 
-            const projectID = String(packet.projectID);
+            const projectID = projectId(String(packet.projectID));
 
-            if (!(await utils.UserManager.projectExists(projectID))) {
-                return res.status(404).json({ error: "Project not found" });
+            if (
+                !(await utils.manager.projects.projectExists(projectID, true))
+            ) {
+                return res.status(404).json({ error: "ProjectNotFound" });
             }
 
-            await utils.UserManager.fixProjectStats(projectID);
+            await utils.manager.projects.fixProjectStats(projectID);
 
             res.status(200).json({ success: true });
         },

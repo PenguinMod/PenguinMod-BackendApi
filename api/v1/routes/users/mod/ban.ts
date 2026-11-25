@@ -55,21 +55,21 @@ export default function (app: Application, utils: Utils): void {
             }
 
             if (toggle && time) {
-                await utils.UserManager.sendMessage(
+                await utils.manager.messages.sendMessage(
                     targetID,
                     { type: `tempban`, time: time, reason: reason },
                     false,
                     0,
                 );
             } else if (toggle) {
-                await utils.UserManager.sendMessage(
+                await utils.manager.messages.sendMessage(
                     targetID,
                     { type: "ban", reason: reason },
                     false,
                     0,
                 );
             } else {
-                await utils.UserManager.sendMessage(
+                await utils.manager.messages.sendMessage(
                     targetID,
                     { type: "unban" },
                     false,
@@ -89,13 +89,13 @@ export default function (app: Application, utils: Utils): void {
             fields.Reason = `\`\`\`\n${reason}\n\`\`\``;
             fields.URL = `${process.env.HomeURL}/profile?userid=${targetID}`;
 
-            utils.logs.sendAdminLog(
+            sendAdminLog(
                 {
                     action: `User has been ${toggle && time ? "temp " : ""}${toggle ? "" : "un"}banned`,
                     content: `${username} ${toggle ? "" : "un"}banned ${target}`,
                     fields,
                 },
-                utils.logs.pmUserAuthor(username),
+                pmUserAuthor(username),
                 toggle ? 0xc40404 : 0x45efc6,
             );
 

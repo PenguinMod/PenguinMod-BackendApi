@@ -1,12 +1,14 @@
-import { isValid } from "ulid";
+// import { isValid } from "ulid";
 
 type Guid<DataType> = string & { __guid: DataType };
 
 function createULIDConstructor<G>(name: string): (input: string) => G {
     return function (input: string): G {
+        /*
         if (!isValid(input)) {
             throw new Error(`Cannot create ${name}: invalid ulid`);
         }
+        */
 
         return input as G;
     };

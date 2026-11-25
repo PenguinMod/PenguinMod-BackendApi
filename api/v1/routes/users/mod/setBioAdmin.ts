@@ -25,7 +25,7 @@ export default function (app: Application, utils: Utils): void {
 
             await utils.UserManager.setBio(target, bio);
 
-            utils.logs.sendAdminLog(
+            sendAdminLog(
                 {
                     action: `${target} had their bio edited`,
                     content: `${target}'s bio was edited by ${username}`,
@@ -36,7 +36,7 @@ export default function (app: Application, utils: Utils): void {
                         URL: `${process.env.HomeURL}/profile?user=${target}`,
                     },
                 },
-                utils.logs.pmUserAuthor(target),
+                pmUserAuthor(target),
                 0xff0000,
             );
 

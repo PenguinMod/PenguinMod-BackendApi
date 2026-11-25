@@ -1,6 +1,8 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../index";
 import { requireAuth } from "../../../../../utils/auth";
+import { projectId } from "../../../db/new-types";
+import { pmUserAuthor, sendAdminLog } from "../../../../../utils/logs";
 
 export default function (app: Application, utils: Utils): void {
     app.post(
@@ -9,20 +11,20 @@ export default function (app: Application, utils: Utils): void {
         async function (req, res) {
             const packet = req.body;
 
-            const projectID = String(packet.projectID);
+            const projectID = projectId(String(packet.projectID));
             const canBeFeatured = String(packet.toggle) === "true";
             const username = res.locals.login.username;
 
             if (
-                !projectID ||
-                !(await utils.UserManager.projectExists(projectID))
+                !(await utils.manager.projects.setCanBeFeatured(
+                    projectID,
+                    canBeFeatured,
+                ))
             ) {
-                return res.status(404).json({ error: "Project not found" });
+                return res.status(404).json({ error: "ProjectNotFound" });
             }
 
-            await utils.UserManager.setCanBeFeatured(projectID, canBeFeatured);
-
-            utils.logs.sendAdminLog(
+            sendAdminLog(
                 {
                     action: `Project ${canBeFeatured ? "can" : "cannot"} be featured now`,
                     content: `${username} changed featurability of ${projectID}`,
@@ -32,7 +34,7 @@ export default function (app: Application, utils: Utils): void {
                         URL: `${process.env.StudioURL}/#${projectID}`,
                     },
                 },
-                utils.logs.pmUserAuthor(username),
+                pmUserAuthor(username),
                 0xc8e847,
             );
 

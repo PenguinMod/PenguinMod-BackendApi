@@ -27,7 +27,7 @@ export default function (app: Application, utils: Utils): void {
 
             const success = await utils.UserManager.deleteAccount(target);
 
-            utils.logs.sendAdminLog(
+            sendAdminLog(
                 {
                     action: `User's account has been deleted`,
                     content: `${username} deleted ${target}'s account`,
@@ -37,7 +37,7 @@ export default function (app: Application, utils: Utils): void {
                         Reason: `\`\`\`\n${reason}\n\`\`\``,
                     },
                 },
-                utils.logs.pmUserAuthor(username),
+                pmUserAuthor(username),
                 0xc40404,
             );
 

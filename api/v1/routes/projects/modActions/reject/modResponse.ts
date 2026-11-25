@@ -1,6 +1,9 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../../index";
 import { requireAuth } from "../../../../../../utils/auth";
+import { messageId } from "../../../../db/new-types";
+import { assertNonNull } from "../../../../../../utils/misc";
+import { modResponse } from "../../../../../../utils/logs";
 
 export default function (app: Application, utils: Utils): void {
     app.post(
@@ -9,33 +12,33 @@ export default function (app: Application, utils: Utils): void {
         async function (req, res) {
             const packet = req.body;
 
-            const disputeID = String(packet.disputeID);
+            const disputeID = messageId(String(packet.disputeID));
             const message = String(packet.message);
 
             const username = res.locals.login.username;
 
-            const dispute = await utils.UserManager.getMessage(disputeID);
+            const dispute = await utils.manager.messages.getMessage(disputeID);
 
             if (!dispute) {
                 return res.status(404).json({ error: "MessageNotFound" });
             }
 
-            const id = await utils.UserManager.sendMessage(
+            const id = await utils.manager.messages.sendMessage(
                 dispute.receiver,
                 { type: "disputeResponse", message, previous: disputeID },
                 true,
                 dispute.projectID,
             );
 
-            const disputer = await utils.UserManager.getUsernameByID(
-                dispute.receiver,
-            );
+            const disputer = assertNonNull(
+                await utils.manager.users.getUserData(dispute.receiver),
+            ).id;
 
-            utils.logs.modResponse(
+            modResponse(
                 username,
                 disputer,
                 id,
-                dispute.dispute,
+                assertNonNull(dispute.dispute),
                 message,
             );
 

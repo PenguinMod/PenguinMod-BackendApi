@@ -1,18 +1,16 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../index";
+import { projectId } from "../../../db/new-types";
+import { handle_page } from "../../../../../utils/misc";
 
 export default function (app: Application, utils: Utils): void {
     app.get("/api/v1/projects/getremixes", async function (req, res) {
         const packet = req.query;
 
-        const projectID = String(packet.projectID);
-        const page = utils.handle_page(packet.page);
+        const projectID = projectId(String(packet.projectID));
+        const page = handle_page(packet.page);
 
-        if (!projectID) {
-            return res.status(400).json({ error: "Missing projectID" });
-        }
-
-        const projects = await utils.UserManager.getRemixes(
+        const projects = await utils.manager.projects.getRemixes(
             projectID,
             page,
             Number(process.env.PageSize),

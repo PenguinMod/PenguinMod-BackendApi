@@ -13,14 +13,6 @@ export class Reports {
         this.manager = manager;
     }
 
-    /**
-     * Report something
-     * @param {number} type Type of report. 0 = user, 1 = project
-     * @param {string} reportee ID of the person/project being reported
-     * @param {string} reason Reason for the report
-     * @param {string} reporter ID of the person reporting
-     * @async
-     */
     async report(
         type: ReportType,
         reportee: UserId | ProjectId,
@@ -42,14 +34,6 @@ export class Reports {
         return await this.db.reports.findOne({ id: id });
     }
 
-    /**
-     * Get reports by type
-     * @param {number} type The type of reports to get
-     * @param {number} page The page of reports to get
-     * @param {number} pageSize The amount of reports to get
-     * @returns {Promise<Array<object>>} Array of reports of the specified type
-     * @async
-     */
     async getReportsByType(
         type: ReportType,
         page: number,
@@ -142,7 +126,10 @@ export class Reports {
         return result;
     }
 
-    async resolveReports(type: ReportType, id: UserId): Promise<number> {
+    async resolveReports(
+        type: ReportType,
+        id: UserId | ProjectId,
+    ): Promise<number> {
         return (
             await this.db.reports.updateMany(
                 { id: id, type: type },
@@ -151,14 +138,6 @@ export class Reports {
         ).modifiedCount;
     }
 
-    /**
-     * Get reports by reporter
-     * @param {string} reporter ID of the person reporting
-     * @param {number} page The page of reports to get
-     * @param {number} pageSize The amount of reports to get
-     * @returns {Promise<Array<object>>} Array of reports by the specified reporter
-     * @async
-     */
     async getReportsByReporter(
         reporter: UserId,
         page: number,

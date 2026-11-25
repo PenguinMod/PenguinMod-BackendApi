@@ -47,7 +47,7 @@ export default function (app: Application, utils: Utils): void {
                 !(await utils.UserManager.hasFollowed(userID, targetID)) &&
                 toggle
             ) {
-                await utils.UserManager.sendMessage(
+                await utils.manager.messages.sendMessage(
                     targetID,
                     { type: "followerAdded", user: userID },
                     false,
@@ -63,8 +63,8 @@ export default function (app: Application, utils: Utils): void {
                 followers >= process.env.FollowAmount &&
                 !(await utils.UserManager.hasBadge(target, "followers"))
             ) {
-                await utils.UserManager.addBadge(target, "followers");
-                await utils.UserManager.sendMessage(
+                await utils.manager.users.addBadge(target, "followers");
+                await utils.manager.messages.sendMessage(
                     targetID,
                     { type: "newBadge", badge: "followers" },
                     false,

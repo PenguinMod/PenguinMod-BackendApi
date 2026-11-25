@@ -29,7 +29,7 @@ export default function (app: Application, utils: Utils): void {
                 toggle,
             );
 
-            utils.logs.sendAdminLog(
+            sendAdminLog(
                 {
                     action: `Admin has mass ${toggle ? "" : "un"}banned by regex \`${targetRegex}\``,
                     content: `${username} ${toggle ? "" : "un"}banned by regex: \`${targetRegex}\``,
@@ -39,7 +39,7 @@ export default function (app: Application, utils: Utils): void {
                         "Count banned": `${count}`,
                     },
                 },
-                utils.logs.pmUserAuthor(username),
+                pmUserAuthor(username),
                 toggle ? 0xc40404 : 0x45efc6,
             );
 

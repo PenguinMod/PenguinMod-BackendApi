@@ -11,7 +11,7 @@ export default function (app: Application, utils: Utils): void {
 
             const target = String(packet.target).toLowerCase();
 
-            const targetMeta = await utils.UserManager.getUserData(target);
+            const targetMeta = await utils.manager.users.getUserData(target);
             if (!targetMeta) {
                 return res.status(404).json({ error: "Target not found" });
             }

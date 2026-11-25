@@ -1,6 +1,8 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../index";
 import { requireAuth } from "../../../../../utils/auth";
+import { projectId } from "../../../db/new-types";
+import { assertNonNull } from "../../../../../utils/misc";
 
 export default function (app: Application, utils: Utils): void {
     app.post(
@@ -10,41 +12,39 @@ export default function (app: Application, utils: Utils): void {
             const packet = req.body;
 
             const vote = String(packet.toggle) === "true";
-            const projectID = String(packet.projectId);
+            const projectID = projectId(String(packet.projectId));
 
             const id = res.locals.login.id;
 
             if (
-                !projectID ||
-                !(await utils.UserManager.projectExists(projectID))
-            ) {
-                return res.status(404).json({ error: "Project not found" });
-            }
-
-            if (
-                (await utils.UserManager.hasVotedProject(projectID, id)) ===
-                vote
+                (await utils.manager.projects.hasVotedProject(
+                    projectID,
+                    id,
+                )) === vote
             ) {
                 return res.status(400).json({ error: "DoesNothing" });
             }
 
-            await utils.UserManager.voteProject(projectID, id, vote);
+            await utils.manager.projects.voteProject(projectID, id, vote);
 
             const metadata =
-                await utils.UserManager.getProjectMetadata(projectID);
+                await utils.manager.projects.getProjectMetadata(projectID);
+            if (!metadata) {
+                return res.status(404).json({ error: "ProjectNotFound" });
+            }
 
-            const authorMeta = await utils.UserManager.getUserData(
-                metadata.author.username,
+            const authorMeta = assertNonNull(
+                await utils.manager.users.getUserData(metadata.author.username),
             );
 
             const author_username = metadata.author.username;
 
             if (
-                metadata.votes >= process.env.LoveAmount &&
+                metadata.votes >= Number(process.env.LoveAmount) &&
                 !authorMeta.badges.includes("votes")
             ) {
-                await utils.UserManager.addBadge(author_username, "votes");
-                await utils.UserManager.sendMessage(
+                await utils.manager.users.addBadge(author_username, "votes");
+                await utils.manager.messages.sendMessage(
                     metadata.author.id,
                     { type: "newBadge", badge: "votes" },
                     false,
