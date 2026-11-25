@@ -1,30 +1,24 @@
-/**
- * @typedef {Object} Utils
- * @property {import("../../../db/UserManager")} UserManager
- */
+import type { Application } from "express";
+import type { Utils } from "../../../../../index";
+import { requireAuth } from "../../../../../utils/auth";
 
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
+export default function (app: Application, utils: Utils): void {
     app.post(
         "/api/v1/users/setBio",
-        utils.requireAuth(utils.UserManager),
+        ...requireAuth(utils.manager.auth),
         async function (req, res) {
             const packet = req.body;
 
             const bio = String(packet.bio);
 
-            const username = req.login.username;
+            const username = res.locals.login.username;
 
             if (bio.length > 2048) {
                 res.status(400).json({ error: "BioTooLong" });
                 return;
             }
 
-            const userID = req.login.id;
+            const userID = res.locals.login.id;
 
             let trigger = await utils.UserManager.checkForIllegalWording(bio);
             if (trigger) {
@@ -79,4 +73,4 @@ module.exports = (app, utils) => {
             res.status(200).json({ success: true });
         },
     );
-};
+}

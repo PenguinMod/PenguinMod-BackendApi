@@ -1,29 +1,23 @@
-/**
- * @typedef {Object} Utils
- * @property {import("../../db/UserManager")} UserManager
- */
+import type { Application } from "express";
+import type { Utils } from "../../../../index";
+import { requireAuth } from "../../../../utils/auth";
 
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
+export default function (app: Application, utils: Utils): void {
     app.post(
         "/api/v1/users/requestrankup",
-        utils.requireAuth(utils.UserManager),
+        ...requireAuth(utils.manager.auth),
         async function (req, res) {
-            const badges = req.login.badges;
+            const badges = res.locals.login.badges;
 
-            const rank = req.login.rank;
+            const rank = res.locals.login.rank;
             if (rank !== 0) {
                 res.status(400).json({ error: "AlreadyRankedHighest" });
                 return;
             }
 
-            const user_id = req.login.id;
+            const user_id = res.locals.login.id;
 
-            const signInDate = req.login.fullMeta.firstLogin;
+            const signInDate = res.locals.login.fullMeta.firstLogin;
             // TODO: probably not the best way to do this
             const userProjects = await utils.UserManager.getProjectsByAuthor(
                 user_id,
@@ -44,9 +38,12 @@ module.exports = (app, utils) => {
             }
 
             const PENGUIN_RANK = 1;
-            await utils.UserManager.setRank(req.login.username, PENGUIN_RANK);
+            await utils.UserManager.setRank(
+                res.locals.login.username,
+                PENGUIN_RANK,
+            );
 
             res.status(200).json({ success: true });
         },
     );
-};
+}

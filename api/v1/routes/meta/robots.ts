@@ -1,11 +1,8 @@
-const path = require("path");
+import { Application } from "express";
+import { Utils } from "../../../../index";
 
-module.exports = function (app, utils) {
-    app.get("/api/v1/robots.txt", (req, res) => {
-        res.sendFile(path.join(utils.homeDir, "/robots.txt"));
-    });
-
+export default function (app: Application, utils: Utils): void {
     app.get("/robots.txt", (req, res) => {
-        res.sendFile(path.join(utils.homeDir, "/robots.txt"));
+        res.sendFile(path.join(__dirname, "../../../../robots.txt"));
     });
-};
+}

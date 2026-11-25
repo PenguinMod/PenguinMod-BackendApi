@@ -1,17 +1,11 @@
-/**
- * @typedef {Object} Utils
- * @property {import("../../../db/UserManager")} UserManager
- */
+import type { Application } from "express";
+import type { Utils } from "../../../../../index";
+import { requireAuth } from "../../../../../utils/auth";
 
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
+export default function (app: Application, utils: Utils): void {
     app.get(
         "/api/v1/users/getdisputes",
-        utils.requireAuth(utils.UserManager, { require_mod: true }),
+        ...requireAuth(utils.manager.auth, { require_mod: true }),
         async function (req, res) {
             const page = utils.handle_page(req.query.page);
             const pageSize = Number(process.env.PageSize || 20);
@@ -26,4 +20,4 @@ module.exports = (app, utils) => {
             res.send({ disputes });
         },
     );
-};
+}

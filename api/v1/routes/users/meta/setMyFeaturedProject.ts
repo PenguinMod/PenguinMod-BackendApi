@@ -1,24 +1,18 @@
-/**
- * @typedef {Object} Utils
- * @property {import("../../../db/UserManager")} UserManager
- */
+import type { Application } from "express";
+import type { Utils } from "../../../../../index";
+import { requireAuth } from "../../../../../utils/auth";
 
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
+export default function (app: Application, utils: Utils): void {
     app.post(
         "/api/v1/users/setmyfeaturedproject",
-        utils.requireAuth(utils.UserManager),
+        ...requireAuth(utils.manager.auth),
         async function (req, res) {
             const packet = req.body;
 
             const project = String(packet.project);
             const title = Number(packet.title);
 
-            const username = req.login.username;
+            const username = res.locals.login.username;
 
             if (!project || !(await utils.UserManager.projectExists(project))) {
                 res.status(400).json({ error: "InvalidProject" });
@@ -35,4 +29,4 @@ module.exports = (app, utils) => {
             res.status(200).json({ success: true });
         },
     );
-};
+}

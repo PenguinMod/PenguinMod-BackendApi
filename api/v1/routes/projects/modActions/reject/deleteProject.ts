@@ -1,26 +1,20 @@
-/**
- * @typedef {Object} Utils
- * @property {import("../../../../db/UserManager")} UserManager
- */
+import type { Application } from "express";
+import type { Utils } from "../../../../../../index";
+import { requireAuth } from "../../../../../../utils/auth";
 
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
+export default function (app: Application, utils: Utils): void {
     app.post(
         "/api/v1/projects/hardDeleteProject",
-        utils.requireAuth(utils.UserManager),
-        async (req, res) => {
+        ...requireAuth(utils.manager.auth),
+        async function (req, res) {
             const packet = req.body;
 
             const projectID = String(packet.projectID);
 
             const reason = String(packet.reason);
 
-            const username = req.login.username;
-            const isAdmin = req.login.isAdmin;
+            const username = res.locals.login.username;
+            const isAdmin = res.locals.login.isAdmin;
 
             if (!projectID) {
                 return res.status(404).json({ error: "Project not found" });
@@ -41,11 +35,9 @@ module.exports = (app, utils) => {
 
             // only admins and the project owner can delete projects, not mods
             if (metadata.author.username !== username && !isAdmin) {
-                return res
-                    .status(403)
-                    .json({
-                        error: "You are not authorized to delete this project",
-                    });
+                return res.status(403).json({
+                    error: "You are not authorized to delete this project",
+                });
             }
 
             if (metadata.author.username !== username) {
@@ -80,4 +72,4 @@ module.exports = (app, utils) => {
             res.status(200).json({ success: true });
         },
     );
-};
+}

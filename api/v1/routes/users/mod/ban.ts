@@ -1,17 +1,11 @@
-/**
- * @typedef {Object} Utils
- * @property {import("../../../db/UserManager")} UserManager
- */
+import type { Application } from "express";
+import type { Utils } from "../../../../../index";
+import { requireAuth } from "../../../../../utils/auth";
 
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
+export default function (app: Application, utils: Utils): void {
     app.post(
         "/api/v1/users/ban",
-        utils.requireAuth(utils.UserManager, { require_mod: true }),
+        ...requireAuth(utils.manager.auth, { require_mod: true }),
         async function (req, res) {
             const packet = req.body;
 
@@ -26,7 +20,7 @@ module.exports = (app, utils) => {
                 return;
             }
 
-            const username = req.login.username;
+            const username = res.locals.login.username;
 
             // TODO: we're making 4 separate db requests that really all get the same info. combine to one
             const targetID = await utils.UserManager.getIDByUsername(
@@ -39,7 +33,7 @@ module.exports = (app, utils) => {
             }
 
             if (
-                !req.login.isAdmin &&
+                !res.locals.login.isAdmin &&
                 (await utils.UserManager.hasModPerms(target))
             ) {
                 res.status(403).json({ error: "Unauthorized" });
@@ -110,4 +104,4 @@ module.exports = (app, utils) => {
             res.status(200).json({ success: true });
         },
     );
-};
+}

@@ -1,14 +1,7 @@
-/**
- * @typedef {Object} Utils
- * @property {import("../../../db/UserManager")} UserManager
- */
+import type { Application } from "express";
+import type { Utils } from "../../../../../index";
 
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
+export default function (app: Application, utils: Utils): void {
     // if less than 0, no wait time, else if it exists then set it to that else 5 minutes
     const cache_time =
         Number(process.env.FrontPageCacheTime) < 0
@@ -35,11 +28,11 @@ module.exports = (app, utils) => {
 
     app.get(
         "/api/v1/projects/frontpage",
-        utils.maybeAuth(utils.UserManager),
-        async (req, res) => {
-            const logged_in = !!req.login;
-            const is_mod = logged_in && req.login.isMod;
-            const user_id = logged_in ? req.login.id : null;
+        maybeAuth(utils.manager.auth),
+        async function (req, res) {
+            const logged_in = !!res.locals.login;
+            const is_mod = logged_in && res.locals.login.isMod;
+            const user_id = logged_in ? res.locals.login.id : null;
 
             const page = await (is_mod ? mod_cache : normal_cache).get(
                 async () => {
@@ -134,4 +127,4 @@ module.exports = (app, utils) => {
             });
         },
     );
-};
+}

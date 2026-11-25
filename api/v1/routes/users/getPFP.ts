@@ -1,15 +1,8 @@
-/**
- * @typedef {Object} Utils
- * @property {import("../../db/UserManager")} UserManager
- */
+import type { Application } from "express";
+import type { Utils } from "../../../../index";
 
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
-    app.get("/api/v1/users/getpfp", async (req, res) => {
+export default function (app: Application, utils: Utils): void {
+    app.get("/api/v1/users/getpfp", async function (req, res) {
         const packet = req.query;
 
         const username = String(packet.username).toLowerCase();
@@ -25,4 +18,4 @@ module.exports = (app, utils) => {
         res.header("Cache-Control", "public, max-age=90");
         res.send(pfp);
     });
-};
+}

@@ -1,3 +1,5 @@
+import { requireAuth } from "../../../../../../utils/auth";
+
 const fs = require("fs");
 const path = require("path");
 const sharp = require("sharp");
@@ -16,7 +18,7 @@ const magic = new Magic.Magic(Magic.MAGIC_MIME_TYPE);
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/users/setpfpadmin",
-        utils.requireAuth(utils.UserManager, { require_admin: true }),
+        ...requireAuth(utils.manager.auth, { require_admin: true }),
         utils.upload.single("picture"),
         utils.unlinkMulter,
         async (req, res) => {
@@ -30,7 +32,7 @@ module.exports = (app, utils) => {
                 return res.status(400).json({ error: "InvalidPicture" });
             }
 
-            const username = req.login.username;
+            const username = res.locals.login.username;
 
             const targetID = await utils.UserManager.getIDByUsername(
                 target,

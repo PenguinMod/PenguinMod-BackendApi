@@ -1,15 +1,8 @@
-/**
- * @typedef {Object} Utils
- * @property {import("../../../db/UserManager")} UserManager
- */
+import type { Application } from "express";
+import type { Utils } from "../../../../../index";
 
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
-    app.post("/api/v1/users/getprojectcountofuser", async (req, res) => {
+export default function (app: Application, utils: Utils): void {
+    app.post("/api/v1/users/getprojectcountofuser", async function (req, res) {
         const packet = req.body;
 
         const target = String(packet.target).toLowerCase();
@@ -26,4 +19,4 @@ module.exports = (app, utils) => {
         res.header("Content-Type", "application/json");
         res.send({ count });
     });
-};
+}

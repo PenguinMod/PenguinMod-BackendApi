@@ -2,9 +2,9 @@ import express from "express";
 import fs from "fs/promises";
 import cors from "cors";
 import disposableDomains from "disposable-email-domains";
-import { AuthenticatedRequest } from "../types/express/AuthenticatedRequest";
+import { AuthHandler } from "./auth";
 
-export function handle_page(page: number): number {
+export function handle_page(page: unknown): number {
     return Math.max(0, Number(page) || 0);
 }
 
@@ -242,12 +242,12 @@ export function escapeRegex(input: string): string {
     return String(input).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-export async function file_size_limit(
-    req: AuthenticatedRequest,
-    res: express.Response,
-    next: express.NextFunction,
-): Promise<void> {
-    const multiplier = req.login.isDonator ? 1.75 : 1;
+export const file_size_limit: AuthHandler = async (
+    req,
+    res,
+    next,
+): Promise<void> => {
+    const multiplier = res.locals.login.isDonator ? 1.75 : 1;
 
     const maxSingleSize =
         (Number(process.env.UploadSize) * multiplier || 5) * 1_000_000;
@@ -288,5 +288,5 @@ export async function file_size_limit(
         return;
     }
 
-    return next();
-}
+    next();
+};

@@ -1,24 +1,18 @@
-/**
- * @typedef {Object} Utils
- * @property {import("../../../../db/UserManager")} UserManager
- */
+import type { Application } from "express";
+import type { Utils } from "../../../../../../index";
+import { requireAuth } from "../../../../../../utils/auth";
 
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
+export default function (app: Application, utils: Utils): void {
     app.post(
         "/api/v1/projects/softreject",
-        utils.requireAuth(utils.UserManager, { require_mod: true }),
-        async (req, res) => {
+        ...requireAuth(utils.manager.auth, { require_mod: true }),
+        async function (req, res) {
             const packet = req.body;
 
             const project = String(packet.project);
             const message = String(packet.message);
 
-            const username = req.login.username;
+            const username = res.locals.login.username;
 
             // multiple DB queries being made (wasteful)
             if (
@@ -65,4 +59,4 @@ module.exports = (app, utils) => {
             res.status(200).json({ success: true });
         },
     );
-};
+}

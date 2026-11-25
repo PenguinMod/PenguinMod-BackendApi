@@ -1,18 +1,12 @@
-/**
- * @typedef {Object} Utils
- * @property {import("../../../db/UserManager")} UserManager
- */
+import type { Application } from "express";
+import type { Utils } from "../../../../../index";
+import { requireAuth } from "../../../../../utils/auth";
 
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
+export default function (app: Application, utils: Utils): void {
     app.post(
         "/api/v1/users/changeUsername",
-        utils.requireAuth(utils.UserManager),
-        async (req, res) => {
+        ...requireAuth(utils.manager.auth),
+        async function (req, res) {
             const packet = req.body;
 
             const newUsername = String(packet.newUsername).toLowerCase();
@@ -22,7 +16,7 @@ module.exports = (app, utils) => {
                 return;
             }
 
-            const username = req.login.username;
+            const username = res.locals.login.username;
 
             if (newUsername === username) {
                 return res.status(200).json({ success: true });
@@ -60,7 +54,7 @@ module.exports = (app, utils) => {
                         before + "\x1b[31;1m" + illegalWord + "\x1b[0m" + after,
                         trigger,
                         type,
-                        [req.login.id, username],
+                        [res.locals.login.id, username],
                     );
 
                     return true;
@@ -90,7 +84,7 @@ module.exports = (app, utils) => {
                         before + "\x1b[33;1m" + illegalWord + "\x1b[0m" + after,
                         trigger,
                         type,
-                        [req.login.id, username],
+                        [res.locals.login.id, username],
                         0xffbb00,
                     );
                     return true;
@@ -114,7 +108,7 @@ module.exports = (app, utils) => {
                 return;
             }
 
-            const id = req.login.id;
+            const id = res.locals.login.id;
 
             utils.logs.sendRenameLog(username, newUsername, id);
 
@@ -135,4 +129,4 @@ module.exports = (app, utils) => {
             res.status(200).json({ success: true });
         },
     );
-};
+}

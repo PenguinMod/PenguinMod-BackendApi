@@ -1,23 +1,17 @@
-/**
- * @typedef {Object} Utils
- * @property {import("../../../../db/UserManager")} UserManager
- */
+import type { Application } from "express";
+import type { Utils } from "../../../../../../index";
+import { requireAuth } from "../../../../../../utils/auth";
 
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
+export default function (app: Application, utils: Utils): void {
     app.post(
         "/api/v1/projects/deletemodmessage",
-        utils.requireAuth(utils.UserManager, { require_admin: true }),
-        async (req, res) => {
+        ...requireAuth(utils.manager.auth, { require_admin: true }),
+        async function (req, res) {
             const packet = req.body;
 
             const messageID = String(packet.messageID);
 
-            const username = req.login.username;
+            const username = res.locals.login.username;
 
             utils.logs.sendAdminLog({
                 action: `Mod message has been deleted`,
@@ -35,4 +29,4 @@ module.exports = (app, utils) => {
             res.status(200).json({ success: true });
         },
     );
-};
+}

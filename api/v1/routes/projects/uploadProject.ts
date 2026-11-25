@@ -1,3 +1,5 @@
+import { requireAuth } from "../../../../utils/auth";
+
 const fs = require("fs");
 const sharp = require("sharp");
 
@@ -14,7 +16,7 @@ const sharp = require("sharp");
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/projects/uploadProject",
-        utils.requireAuth(utils.UserManager),
+        ...requireAuth(utils.manager.auth),
         utils.upload.fields([
             { name: "jsonFile", maxCount: 1 },
             { name: "thumbnail", maxCount: 1 },
@@ -34,10 +36,10 @@ module.exports = (app, utils) => {
 
             const packet = req.body;
 
-            const username = req.login.username;
-            const userid = req.login.id;
-            const isDonator = req.login.isDonator;
-            const hasModPerms = req.login.isMod;
+            const username = res.locals.login.username;
+            const userid = res.locals.login.id;
+            const isDonator = res.locals.login.isDonator;
+            const hasModPerms = res.locals.login.isMod;
 
             const priv = String(packet.private) === "true" && hasModPerms;
 
@@ -53,7 +55,7 @@ module.exports = (app, utils) => {
                     .json({ error: "Uploaded in the last 8 minutes" });
             }
 
-            if (!req.login.emailVerified) {
+            if (!res.locals.login.emailVerified) {
                 return res.status(400).json({
                     error: "You must verify your email to upload a project",
                 });
@@ -181,7 +183,7 @@ module.exports = (app, utils) => {
                 await utils.UserManager.validateAreProjectExtensionsAllowed(
                     jsonFile.extensions,
                     jsonFile.extensionURLs,
-                    req.login,
+                    res.locals.login,
                 );
             if (!areExtensionsAllowed) {
                 return res.status(400).json({
@@ -225,7 +227,7 @@ module.exports = (app, utils) => {
                 protobufFile,
                 assets,
                 userid,
-                req.login.rank,
+                res.locals.login.rank,
                 title,
                 thumbnail,
                 instructions,

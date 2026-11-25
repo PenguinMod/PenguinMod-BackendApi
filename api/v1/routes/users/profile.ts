@@ -1,25 +1,18 @@
-/**
- * @typedef {Object} Utils
- * @property {import("../../db/UserManager")} UserManager
- */
+import type { Application } from "express";
+import type { Utils } from "../../../../index";
 
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
+export default function (app: Application, utils: Utils): void {
     app.get(
         "/api/v1/users/profile",
-        utils.maybeAuth(utils.UserManager),
+        maybeAuth(utils.manager.auth),
         async function (req, res) {
             const packet = req.query;
 
             const target = String(packet.target).toLowerCase();
 
-            const loggedIn = !!req.login;
-            const isMod = loggedIn && req.login.isMod;
-            const username = loggedIn ? req.login.username : null;
+            const loggedIn = !!res.locals.login;
+            const isMod = loggedIn && res.locals.login.isMod;
+            const username = loggedIn ? res.locals.login.username : null;
 
             const target_data = await utils.UserManager.getUserData(target);
 
@@ -61,7 +54,7 @@ module.exports = (app, utils) => {
 
             const targetID = target_data.id;
             if (loggedIn) {
-                const usernameID = req.login.id;
+                const usernameID = res.locals.login.id;
                 user.isFollowing = await utils.UserManager.isFollowing(
                     targetID,
                     usernameID,
@@ -146,4 +139,4 @@ module.exports = (app, utils) => {
             res.send(user);
         },
     );
-};
+}

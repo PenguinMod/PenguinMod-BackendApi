@@ -227,3 +227,10 @@ export interface Report {
     id: ReportId;
     resolved: boolean;
 }
+
+export interface ExtReport extends Report {
+    reporter: {
+        id: UserId;
+        username: string;
+    };
+}

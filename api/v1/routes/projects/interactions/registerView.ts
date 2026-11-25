@@ -1,18 +1,12 @@
-/**
- * @typedef {Object} Utils
- * @property {import("../../../db/UserManager")} UserManager
- */
+import type { Application } from "express";
+import type { Utils } from "../../../../../index";
+import { requireAuth } from "../../../../../utils/auth";
 
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
+export default function (app: Application, utils: Utils): void {
     app.post(
         "/api/v1/projects/interactions/registerView",
-        utils.requireAuth(utils.UserManager),
-        async (req, res) => {
+        ...requireAuth(utils.manager.auth),
+        async function (req, res) {
             const packet = req.body;
 
             const projectID = String(packet.projectID);
@@ -21,7 +15,7 @@ module.exports = (app, utils) => {
                 return res.status(400).json({ error: "Missing projectID" });
             }
 
-            const id = req.login.id;
+            const id = res.locals.login.id;
 
             if (!(await utils.UserManager.projectExists(projectID))) {
                 return res.status(404).json({ error: "Project not found" });
@@ -38,4 +32,4 @@ module.exports = (app, utils) => {
             res.status(200).json({ success: true });
         },
     );
-};
+}

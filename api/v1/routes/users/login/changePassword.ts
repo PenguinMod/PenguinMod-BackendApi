@@ -1,17 +1,11 @@
-/**
- * @typedef {Object} Utils
- * @property {import("../../../db/UserManager")} UserManager
- */
+import type { Application } from "express";
+import type { Utils } from "../../../../../index";
+import { requireAuth } from "../../../../../utils/auth";
 
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
+export default function (app: Application, utils: Utils): void {
     app.post(
         "/api/v1/users/changePassword",
-        utils.requireAuth(utils.UserManager),
+        ...requireAuth(utils.manager.auth),
         async function (req, res) {
             const packet = req.body;
 
@@ -47,7 +41,7 @@ module.exports = (app, utils) => {
                 return;
             }
 
-            const username = req.login.username;
+            const username = res.locals.login.username;
             if (
                 !(await utils.UserManager.loginWithPassword(
                     username,
@@ -68,4 +62,4 @@ module.exports = (app, utils) => {
             res.status(200).json({ token: newToken });
         },
     );
-};
+}

@@ -1,23 +1,17 @@
-/**
- * @typedef {Object} Utils
- * @property {import("../../../db/UserManager")} UserManager
- */
+import type { Application } from "express";
+import type { Utils } from "../../../../../index";
+import { requireAuth } from "../../../../../utils/auth";
 
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
+export default function (app: Application, utils: Utils): void {
     app.get(
         "/api/v1/projects/getuserstatewrapper",
-        utils.requireAuth(utils.UserManager),
-        async (req, res) => {
+        ...requireAuth(utils.manager.auth),
+        async function (req, res) {
             const packet = req.query;
 
             const projectID = String(packet.projectId);
 
-            const id = req.login.id;
+            const id = res.locals.login.id;
 
             if (
                 !projectID ||
@@ -39,4 +33,4 @@ module.exports = (app, utils) => {
             return res.send({ hasLoved, hasVoted });
         },
     );
-};
+}

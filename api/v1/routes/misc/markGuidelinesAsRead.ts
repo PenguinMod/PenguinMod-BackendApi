@@ -1,21 +1,17 @@
-/**
- * @typedef {Object} Utils
- * @property {import("../../db/UserManager")} UserManager
- */
+import type { Application } from "express";
+import type { Utils } from "../../../../index";
+import { requireAuth } from "../../../../utils/auth";
 
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
+export default function (app: Application, utils: Utils): void {
     app.post(
         "/api/v1/misc/markGuidelinesAsRead",
-        utils.requireAuth(utils.UserManager),
+        ...requireAuth(utils.manager.auth),
         async function (req, res) {
-            await utils.UserManager.markGuidelinesAsRead(req.login.username);
+            await utils.manager.users.markGuidelinesAsRead(
+                res.locals.login.username,
+            );
 
             res.status(200).json({ success: true });
         },
     );
-};
+}

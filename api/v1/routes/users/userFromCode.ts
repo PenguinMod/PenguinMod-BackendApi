@@ -1,19 +1,13 @@
-/**
- * @typedef {Object} Utils
- * @property {import("../../db/UserManager")} UserManager
- */
+import type { Application } from "express";
+import type { Utils } from "../../../../index";
+import { requireAuth } from "../../../../utils/auth";
 
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
+export default function (app: Application, utils: Utils): void {
     app.get(
         "/api/v1/users/userfromcode",
-        utils.requireAuth(utils.UserManager, { allow_banned: true }),
+        ...requireAuth(utils.manager.auth, { allow_banned: true }),
         async function (req, res) {
-            const login = req.login;
+            const login = res.locals.login;
 
             const username = login.username;
             const id = login.id;
@@ -122,4 +116,4 @@ module.exports = (app, utils) => {
             res.send(user);
         },
     );
-};
+}

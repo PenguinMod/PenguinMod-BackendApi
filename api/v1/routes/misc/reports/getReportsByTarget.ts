@@ -1,69 +1,82 @@
-/**
- * @typedef {Object} Utils
- * @property {import("../../../db/UserManager")} UserManager
- */
+import { Application } from "express";
+import { requireAuth } from "../../../../../utils/auth";
+import { Utils } from "../../../../../index";
+import { handle_page } from "../../../../../utils/misc";
+import { isValid } from "ulid";
+import { ProjectId, UserId, userId } from "../../../db/new-types";
+import { ExtReport } from "../../../db/types";
 
-const { isValid } = require("ulid");
+type ReportResponse = {
+    reporter: ExtReport["reporter"];
+    target: string;
+    targetID: ExtReport["reportee"];
+    report: ExtReport["reason"];
+    author: string;
+    date: ExtReport["date"];
+    type: ExtReport["type"];
+    id: ExtReport["id"];
+};
 
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
+export default function (app: Application, utils: Utils): void {
     app.get(
         "/api/v1/reports/getReportsByTarget",
-        utils.requireAuth(utils.UserManager, { require_mod: true }),
-        async (req, res) => {
+        ...requireAuth(utils.manager.auth, { require_mod: true }),
+        async function (req, res): Promise<void> {
             const packet = req.query;
 
-            let target = String(packet.target);
-            const page = utils.handle_page(packet.page);
+            const target = String(packet.target);
+            const page = handle_page(packet.page);
 
-            if (!target) {
-                return res.status(400).json({ error: "Missing target" });
+            const targetId = isValid(target)
+                ? userId(target) // NOTE: this could be a project or a user, but in this case it doesn't really matter that we only cast it to one
+                : (await utils.manager.users.getUserData(target))?.id;
+
+            if (!targetId) {
+                res.status(404).json({ error: "InvalidID" });
+                return;
             }
 
-            target = isValid(target)
-                ? target
-                : await utils.UserManager.getIDByUsername(target, false);
-
-            if (!target) {
-                return res.status(404).json({ error: "InvalidID" });
-            }
-
-            const reports = await utils.UserManager.getReportsByReportee(
-                target,
+            const reports = await utils.manager.reports.getReportsByReportee(
+                targetId,
                 page,
                 Number(process.env.PageSize),
             );
 
-            const final = [];
+            const final: ReportResponse[] = [];
 
             for (const report of reports) {
-                // TODO: getting of the username should be done in the DB query
                 const pushing = {
-                    reporter: await utils.UserManager.getUsernameByID(
-                        report.reporter,
-                    ),
-                    target: report.reportee,
+                    reporter: report.reporter,
+                    target: "",
                     targetID: report.reportee,
                     report: report.reason,
                     date: report.date,
                     type: report.type,
                     id: report.id,
+                    author: "",
                 };
 
+                // TODO: maybe move this into db query?
                 if (pushing.type === "user") {
-                    pushing.target = await utils.UserManager.getUsernameByID(
-                        pushing.targetID,
-                    );
+                    pushing.target =
+                        (
+                            await utils.manager.users.getUserDataByID(
+                                pushing.targetID as UserId,
+                            )
+                        )?.username || "";
                 } else {
-                    pushing.target = (
-                        await utils.UserManager.getProjectMetadata(
-                            pushing.targetID,
-                        )
-                    ).title;
+                    const metadata =
+                        await utils.manager.projects.getProjectMetadata(
+                            pushing.targetID as ProjectId,
+                        );
+
+                    if (!metadata) {
+                        await utils.manager.reports.resolveReport(pushing.id);
+                        continue;
+                    }
+
+                    pushing.target = metadata.title;
+                    pushing.author = metadata.author.username;
                 }
 
                 final.push(pushing);
@@ -72,4 +85,4 @@ module.exports = (app, utils) => {
             res.status(200).json({ reports: final });
         },
     );
-};
+}

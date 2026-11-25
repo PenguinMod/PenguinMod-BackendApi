@@ -1,20 +1,14 @@
-/**
- * @typedef {Object} Utils
- * @property {import("../../../db/UserManager")} UserManager
- */
+import type { Application } from "express";
+import type { Utils } from "../../../../../index";
+import { requireAuth } from "../../../../../utils/auth";
 
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
+export default function (app: Application, utils: Utils): void {
     app.get(
         "/api/v1/users/getottcode",
-        utils.requireAuth(utils.UserManager),
+        ...requireAuth(utils.manager.auth),
         async function (req, res) {
             const code = await utils.UserManager.genOneTimeTokenCode(
-                req.login.token,
+                res.locals.login.token,
             );
 
             res.status(200);
@@ -22,4 +16,4 @@ module.exports = (app, utils) => {
             res.send({ code });
         },
     );
-};
+}

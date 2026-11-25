@@ -1,15 +1,8 @@
-/**
- * @typedef {Object} Utils
- * @property {import("../../../db/UserManager")} UserManager
- */
+import type { Application } from "express";
+import type { Utils } from "../../../../../index";
 
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
-    app.get("/api/v1/projects/getremixes", async (req, res) => {
+export default function (app: Application, utils: Utils): void {
+    app.get("/api/v1/projects/getremixes", async function (req, res) {
         const packet = req.query;
 
         const projectID = String(packet.projectID);
@@ -27,4 +20,4 @@ module.exports = (app, utils) => {
 
         return res.send(projects);
     });
-};
+}

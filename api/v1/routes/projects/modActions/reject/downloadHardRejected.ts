@@ -1,18 +1,12 @@
-/**
- * @typedef {Object} Utils
- * @property {import("../../../../db/UserManager")} UserManager
- */
+import type { Application } from "express";
+import type { Utils } from "../../../../../../index";
+import { requireAuth } from "../../../../../../utils/auth";
 
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
+export default function (app: Application, utils: Utils): void {
     app.get(
         "/api/v1/projects/downloadHardReject",
-        utils.requireAuth(utils.UserManager),
-        async (req, res) => {
+        ...requireAuth(utils.manager.auth),
+        async function (req, res) {
             const packet = req.query;
 
             const project = String(packet.project);
@@ -21,8 +15,8 @@ module.exports = (app, utils) => {
                 return res.status(400).json({ error: "Missing project" });
             }
 
-            const isAdmin = req.login.isAdmin;
-            const id = req.login.id;
+            const isAdmin = res.locals.login.isAdmin;
+            const id = res.locals.login.id;
 
             if (!(await utils.UserManager.projectExists(project, true))) {
                 return res.status(404).json({ error: "ProjectNotFound" });
@@ -46,4 +40,4 @@ module.exports = (app, utils) => {
             res.status(200).json({ project: projectPB, assets });
         },
     );
-};
+}

@@ -1,25 +1,19 @@
-/**
- * @typedef {Object} Utils
- * @property {import("../../../../db/UserManager")} UserManager
- */
+import type { Application } from "express";
+import type { Utils } from "../../../../../../index";
+import { requireAuth } from "../../../../../../utils/auth";
 
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
+export default function (app: Application, utils: Utils): void {
     app.post(
         "/api/v1/users/follow",
-        utils.requireAuth(utils.UserManager),
+        ...requireAuth(utils.manager.auth),
         async function (req, res) {
             const packet = req.body;
 
             const target = String(packet.target).toLowerCase();
             const toggle = String(packet.toggle) === "true";
 
-            const username = req.login.username;
-            const userID = req.login.id;
+            const username = res.locals.login.username;
+            const userID = res.locals.login.id;
 
             if (username === target) {
                 res.status(400).json({ error: "CannotFollowSelf" });
@@ -81,4 +75,4 @@ module.exports = (app, utils) => {
             res.status(200).json({ success: true });
         },
     );
-};
+}

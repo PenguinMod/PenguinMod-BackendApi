@@ -1,30 +1,24 @@
-/**
- * @typedef {Object} Utils
- * @property {import("../../db/UserManager")} UserManager
- */
+import type { Application } from "express";
+import type { Utils } from "../../../../index";
+import { requireAuth } from "../../../../utils/auth";
 
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
+export default function (app: Application, utils: Utils): void {
     app.post(
         "/api/v1/users/setEmail",
-        utils.requireAuth(utils.UserManager),
-        async (req, res) => {
+        ...requireAuth(utils.manager.auth),
+        async function (req, res) {
             const packet = req.body;
 
             const email = String(packet.email).toLowerCase();
 
-            const username = req.login.username;
+            const username = res.locals.login.username;
 
             if (!utils.UserManager.validateEmail(email)) {
                 res.status(400).json({ error: "InvalidEmail" });
                 return;
             }
 
-            if (email === req.login.email) {
+            if (email === res.locals.login.email) {
                 res.status(200).json({ error: "ThatsTheSameEmailDingus" });
                 return;
             }
@@ -39,4 +33,4 @@ module.exports = (app, utils) => {
             res.status(200).json({ success: true });
         },
     );
-};
+}

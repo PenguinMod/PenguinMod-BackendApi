@@ -1,22 +1,16 @@
-/**
- * @typedef {Object} Utils
- * @property {import("../../../db/UserManager")} UserManager
- */
+import type { Application } from "express";
+import type { Utils } from "../../../../../index";
+import { requireAuth } from "../../../../../utils/auth";
 
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
+export default function (app: Application, utils: Utils): void {
     app.get(
         "/api/v1/users/getunreadmessagecount",
-        utils.requireAuth(utils.UserManager, { allow_banned: true }),
-        async (req, res) => {
-            // TODO: use the fullmeta provided by req.login
+        ...requireAuth(utils.manager.auth, { allow_banned: true }),
+        async function (req, res) {
+            // TODO: use the fullmeta provided by res.locals.login
 
-            const username = req.login.username;
-            const id = req.login.id;
+            const username = res.locals.login.username;
+            const id = res.locals.login.id;
 
             let count = await utils.UserManager.getUnreadMessageCount(id);
 
@@ -41,4 +35,4 @@ module.exports = (app, utils) => {
             res.send({ count: count });
         },
     );
-};
+}

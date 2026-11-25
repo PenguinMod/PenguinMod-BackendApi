@@ -1,25 +1,19 @@
-/**
- * @typedef {Object} Utils
- * @property {import("../../../../db/UserManager")} UserManager
- */
+import type { Application } from "express";
+import type { Utils } from "../../../../../../index";
+import { requireAuth } from "../../../../../../utils/auth";
 
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
+export default function (app: Application, utils: Utils): void {
     app.post(
         "/api/v1/users/removeoauthmethod",
-        utils.requireAuth(utils.UserManager),
+        ...requireAuth(utils.manager.auth),
         async function (req, res) {
             // get the method
             const packet = req.body;
 
             const method = String(packet.method);
 
-            const id = req.login.id;
-            const hasPassword = !!req.login.fullMeta.password;
+            const id = res.locals.login.id;
+            const hasPassword = !!res.locals.login.fullMeta.password;
 
             const methods = await utils.UserManager.getOAuthMethods(id);
 
@@ -29,11 +23,9 @@ module.exports = (app, utils) => {
             }
 
             if (methods.length === 1 && !hasPassword) {
-                return res
-                    .status(400)
-                    .json({
-                        error: "You would get locked out of your account",
-                    });
+                return res.status(400).json({
+                    error: "You would get locked out of your account",
+                });
             }
 
             await utils.UserManager.removeOAuthMethod(id, method);
@@ -41,4 +33,4 @@ module.exports = (app, utils) => {
             res.status(200).json({ success: true });
         },
     );
-};
+}

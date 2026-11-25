@@ -1,17 +1,11 @@
-/**
- * @typedef {Object} Utils
- * @property {import("../../db/UserManager")} UserManager
- */
+import type { Application } from "express";
+import type { Utils } from "../../../../index";
+import { requireAuth } from "../../../../utils/auth";
 
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
+export default function (app: Application, utils: Utils): void {
     app.get(
         "/api/v1/users/hasblocked",
-        utils.requireAuth(utils.UserManager),
+        ...requireAuth(utils.manager.auth),
         async function (req, res) {
             const packet = req.query;
 
@@ -22,7 +16,7 @@ module.exports = (app, utils) => {
                 return res.status(404).json({ error: "Target not found" });
             }
 
-            const user_id = req.login.id;
+            const user_id = res.locals.login.id;
             const target_id = targetMeta.id;
 
             const has_blocked = await utils.UserManager.hasBlocked(
@@ -33,4 +27,4 @@ module.exports = (app, utils) => {
             res.status(200).json({ has_blocked });
         },
     );
-};
+}

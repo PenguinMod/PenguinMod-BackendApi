@@ -1,28 +1,37 @@
-/**
- * @typedef {Object} Utils
- * @property {import("../../db/UserManager")} UserManager
- */
+import type { Application } from "express";
+import type { Utils } from "../../../../index";
+import { requireAuth } from "../../../../utils/auth";
+import { pmUserAuthor, sendAdminLog } from "../../../../utils/logs";
 
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
+export default function (app: Application, utils: Utils): void {
     app.post(
         "/api/v1/misc/setProfanityList",
-        utils.requireAuth(utils.UserManager, { require_admin: true }),
+        ...requireAuth(utils.manager.auth, { require_admin: true }),
         async function (req, res) {
             const packet = req.body;
 
-            const username = req.login.username;
+            const username = res.locals.login.username;
 
             const words = packet.json;
 
-            if (typeof words !== "object") {
-                res.status(400).json({ error: "Invalid Words" });
-                return;
+            function assertStringArrayRecord(
+                value: unknown,
+            ): asserts value is Record<string, string[]> {
+                if (
+                    typeof value !== "object" ||
+                    value === null ||
+                    Array.isArray(value) ||
+                    !Object.values(value).every(
+                        (v) =>
+                            Array.isArray(v) &&
+                            v.every((item) => typeof item === "string"),
+                    )
+                ) {
+                    throw new Error("Invalid record");
+                }
             }
+
+            assertStringArrayRecord(words);
 
             const types = [
                 "illegalWords",
@@ -35,20 +44,6 @@ module.exports = (app, utils) => {
                 "potentiallyUnsafeUsernames",
             ];
             for (const key in words) {
-                // make sure its an array of strings
-                if (typeof words[key] !== "object") {
-                    res.status(400).json({
-                        error: "Invalid inner words object",
-                    });
-                    return;
-                }
-                for (const word of words[key]) {
-                    if (typeof word !== "string") {
-                        res.status(400).json({ error: "Invalid word" });
-                        return;
-                    }
-                }
-
                 if (!types.includes(key)) {
                     res.status(400).json({ error: "Invalid key" });
                     return;
@@ -56,10 +51,14 @@ module.exports = (app, utils) => {
             }
 
             let diff = "```diff\n";
-            const old = await utils.UserManager.getIllegalWords();
+            const old = await utils.manager.misc.getIllegalWords();
             for (const key in words) {
-                const newDiff = words[key].filter((x) => !old[key].includes(x));
-                const oldDiff = old[key].filter((x) => !words[key].includes(x));
+                const newDiff = words[key].filter(
+                    (x) => !old[key as keyof typeof old]?.includes(x),
+                );
+                const oldDiff = old[key as keyof typeof old].filter(
+                    (x) => !words[key].includes(x),
+                );
 
                 if (newDiff.length < 1 && oldDiff.length < 1) {
                     continue;
@@ -77,10 +76,10 @@ module.exports = (app, utils) => {
             diff += "```";
 
             for (const key in words) {
-                await utils.UserManager.setIllegalWords(key, words[key]);
+                await utils.manager.misc.setIllegalWords(key, words[key]);
             }
 
-            utils.logs.sendAdminLog(
+            sendAdminLog(
                 {
                     action: "Profanity list has been set",
                     content: `${username} set the profanity list`,
@@ -89,11 +88,11 @@ module.exports = (app, utils) => {
                         Difference: diff,
                     },
                 },
-                utils.logs.pmUserAuthor(username),
+                pmUserAuthor(username),
                 0x3ddc5b,
             );
 
             res.status(200).json({ success: true });
         },
     );
-};
+}

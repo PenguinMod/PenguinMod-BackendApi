@@ -1,18 +1,12 @@
-/**
- * @typedef {Object} Utils
- * @property {import("../../../../db/UserManager")} UserManager
- */
+import type { Application } from "express";
+import type { Utils } from "../../../../../../index";
+import { requireAuth } from "../../../../../../utils/auth";
 
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
+export default function (app: Application, utils: Utils): void {
     app.post(
         "/api/v1/projects/restore",
-        utils.requireAuth(utils.UserManager, { require_mod: true }),
-        async (req, res) => {
+        ...requireAuth(utils.manager.auth, { require_mod: true }),
+        async function (req, res) {
             const packet = req.body;
 
             const project = String(packet.project);
@@ -21,7 +15,7 @@ module.exports = (app, utils) => {
                 return res.status(400).json({ error: "Missing project" });
             }
 
-            const username = req.login.username;
+            const username = res.locals.login.username;
 
             // TODO: fetch meta once
             if (!(await utils.UserManager.projectExists(project))) {
@@ -62,4 +56,4 @@ module.exports = (app, utils) => {
             res.status(200).json({ success: true });
         },
     );
-};
+}

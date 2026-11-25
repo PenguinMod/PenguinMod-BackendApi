@@ -1,18 +1,11 @@
-/**
- * @typedef {Object} Utils
- * @property {import("../../../db/UserManager")} UserManager
- */
+import type { Application } from "express";
+import type { Utils } from "../../../../../index";
 
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
+export default function (app: Application, utils: Utils): void {
     app.get(
         "/api/v1/projects/getprojectsbyauthor",
-        utils.maybeAuth(utils.UserManager),
-        async (req, res) => {
+        maybeAuth(utils.manager.auth),
+        async function (req, res) {
             const packet = req.query;
 
             const authorUsername = String(packet.authorUsername).toLowerCase();
@@ -25,8 +18,8 @@ module.exports = (app, utils) => {
                 return res.status(404).json({ error: "User not found" });
             }
 
-            const logged_in = !!req.login;
-            const username = logged_in ? req.login.username : null;
+            const logged_in = !!res.locals.login;
+            const username = logged_in ? res.locals.login.username : null;
 
             const target_data =
                 await utils.UserManager.getUserData(authorUsername);
@@ -47,7 +40,7 @@ module.exports = (app, utils) => {
                         .json({ error: "PrivateProfile" });
                 }
 
-                const user_id = req.login.id;
+                const user_id = res.locals.login.id;
                 const is_following = await utils.UserManager.isFollowing(
                     id,
                     user_id,
@@ -86,4 +79,4 @@ module.exports = (app, utils) => {
             return res.send(projects);
         },
     );
-};
+}

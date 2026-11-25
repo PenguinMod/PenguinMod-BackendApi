@@ -1,18 +1,12 @@
-/**
- * @typedef {Object} Utils
- * @property {import("../../../../db/UserManager")} UserManager
- */
+import type { Application } from "express";
+import type { Utils } from "../../../../../../index";
+import { requireAuth } from "../../../../../../utils/auth";
 
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
+export default function (app: Application, utils: Utils): void {
     app.post(
         "/api/v1/users/customization/setCustomization",
-        utils.requireAuth(utils.UserManager),
-        async (req, res) => {
+        ...requireAuth(utils.manager.auth),
+        async function (req, res) {
             const packet = req.body;
 
             const customization = String(packet.customization);
@@ -22,10 +16,10 @@ module.exports = (app, utils) => {
                 return;
             }
 
-            const username = req.login.username;
-            const isMod = req.login.isMod;
+            const username = res.locals.login.username;
+            const isMod = res.locals.login.isMod;
 
-            if (!isMod && !req.login.isDonator) {
+            if (!isMod && !res.locals.login.isDonator) {
                 return res.status(401).json({ error: "Unauthorized" });
             }
 
@@ -62,4 +56,4 @@ module.exports = (app, utils) => {
             res.status(200).json({ success: true });
         },
     );
-};
+}

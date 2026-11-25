@@ -1,18 +1,11 @@
-/**
- * @typedef {Object} Utils
- * @property {import("../../db/UserManager")} UserManager
- */
+import type { Application } from "express";
+import type { Utils } from "../../../../index";
 
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
+export default function (app: Application, utils: Utils): void {
     app.get(
         "/api/v1/projects/getprojects",
-        utils.maybeAuth(utils.UserManager),
-        async (req, res) => {
+        maybeAuth(utils.manager.auth),
+        async function (req, res) {
             if (
                 !(await utils.UserManager.getRuntimeConfigItem(
                     "viewingEnabled",
@@ -25,7 +18,7 @@ module.exports = (app, utils) => {
             const page = utils.handle_page(packet.page);
             const reverse = String(packet.reverse || false) === "true";
 
-            const is_mod = req.login && req.login.isMod;
+            const is_mod = res.locals.login && res.locals.login.isMod;
 
             const projects = await utils.UserManager.getProjects(
                 is_mod,
@@ -42,4 +35,4 @@ module.exports = (app, utils) => {
             res.status(200).json(projects);
         },
     );
-};
+}

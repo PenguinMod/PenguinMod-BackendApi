@@ -1,43 +1,56 @@
-/**
- * @typedef {Object} Utils
- * @property {import("../../../db/UserManager")} UserManager
- */
+import type { Application } from "express";
+import type { Utils } from "../../../../../index";
+import { requireAuth, type AuthHandler } from "../../../../../utils/auth";
+import { handle_page } from "../../../../../utils/misc";
+import { ExtReport } from "../../../db/types";
+import { ProjectId, UserId } from "../../../db/new-types";
 
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
+type ReportResponse = {
+    reporter: ExtReport["reporter"];
+    target: string;
+    targetID: ExtReport["reportee"];
+    report: ExtReport["reason"];
+    author: string;
+    date: ExtReport["date"];
+    type: ExtReport["type"];
+    id: ExtReport["id"];
+};
+
+export default function (app: Application, utils: Utils): void {
     app.get(
         "/api/v1/reports/getReports",
-        utils.requireAuth(utils.UserManager, { require_mod: true }),
-        async (req, res) => {
+        ...requireAuth(utils.manager.auth, { require_mod: true }),
+        async function (req, res): Promise<void> {
             const packet = req.query;
 
-            const type = String(packet.type);
-            const page = utils.handle_page(packet.page);
+            const unsantype = String(packet.type);
+            const page = handle_page(packet.page);
 
-            const reports = type
-                ? await utils.UserManager.getReportsByType(
-                      type,
-                      page,
-                      Number(process.env.PageSize),
-                  )
-                : await utils.UserManager.getReports(
-                      page,
-                      Number(process.env.PageSize),
-                  );
+            let reports: ExtReport[];
 
-            const final = [];
+            switch (unsantype) {
+                case "project":
+                case "user":
+                    reports = await utils.manager.reports.getReportsByType(
+                        unsantype,
+                        page,
+                        Number(process.env.PageSize),
+                    );
+                    break;
+
+                default:
+                    reports = await utils.manager.reports.getReports(
+                        page,
+                        Number(process.env.PageSize),
+                    );
+            }
+
+            const final: ReportResponse[] = [];
 
             for (const report of reports) {
-                // TODO: getting of the username should be done in the DB query
-                const pushing = {
-                    reporter: await utils.UserManager.getUsernameByID(
-                        report.reporter,
-                    ),
-                    target: report.reportee,
+                const pushing: ReportResponse = {
+                    reporter: report.reporter,
+                    target: "",
                     targetID: report.reportee,
                     report: report.reason,
                     author: "",
@@ -46,17 +59,22 @@ module.exports = (app, utils) => {
                     id: report.id,
                 };
 
+                // TODO: maybe move this into db query?
                 if (pushing.type === "user") {
-                    pushing.target = await utils.UserManager.getUsernameByID(
-                        pushing.targetID,
-                    );
+                    pushing.target =
+                        (
+                            await utils.manager.users.getUserDataByID(
+                                pushing.targetID as UserId,
+                            )
+                        )?.username || "";
                 } else {
-                    const metadata = await utils.UserManager.getProjectMetadata(
-                        pushing.targetID,
-                    );
+                    const metadata =
+                        await utils.manager.projects.getProjectMetadata(
+                            pushing.targetID as ProjectId,
+                        );
 
                     if (!metadata) {
-                        await utils.UserManager.resolveReport(pushing.id);
+                        await utils.manager.reports.resolveReport(pushing.id);
                         continue;
                     }
 
@@ -68,6 +86,6 @@ module.exports = (app, utils) => {
             }
 
             res.status(200).json({ reports: final });
-        },
+        } satisfies AuthHandler,
     );
-};
+}

@@ -18,7 +18,7 @@ export interface Login {
     success: boolean;
     username: string;
     token: string;
-    id: string;
+    id: UserId;
     isDonator: boolean;
     isMod: boolean;
     isAdmin: boolean;
@@ -47,7 +47,7 @@ export class Authentication {
             success: false,
             username: "",
             token,
-            id: "",
+            id: userId(""),
             rank: 0,
             isDonator: false,
             isMod: false,

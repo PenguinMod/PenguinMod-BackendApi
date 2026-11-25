@@ -1,3 +1,5 @@
+import { requireAuth } from "../../../../../utils/auth";
+
 const fs = require("fs");
 const path = require("path");
 const sharp = require("sharp");
@@ -16,13 +18,13 @@ const magic = new Magic.Magic(Magic.MAGIC_MIME_TYPE);
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/users/setpfp",
-        utils.requireAuth(utils.UserManager),
+        ...requireAuth(utils.manager.auth),
         utils.upload.single("picture"),
         utils.unlinkMulter,
         async (req, res) => {
             const pictureName = req.file;
 
-            const id = req.login.id;
+            const id = res.locals.login.id;
 
             if (!pictureName) {
                 return res

@@ -1,17 +1,11 @@
-/**
- * @typedef {Object} Utils
- * @property {import("../../../../db/UserManager")} UserManager
- */
+import type { Application } from "express";
+import type { Utils } from "../../../../../../index";
+import { requireAuth } from "../../../../../../utils/auth";
 
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
+export default function (app: Application, utils: Utils): void {
     app.post(
         "/api/v1/users/changeprojectid",
-        utils.requireAuth(utils.UserManager, { require_admin: true }),
+        ...requireAuth(utils.manager.auth, { require_admin: true }),
         async function (req, res) {
             const packet = req.body;
 
@@ -20,7 +14,7 @@ module.exports = (app, utils) => {
             const target = String(packet.target);
             const newId = String(packet.newId);
 
-            const username = req.login.username;
+            const username = res.locals.login.username;
 
             if (
                 !target ||
@@ -57,4 +51,4 @@ module.exports = (app, utils) => {
             res.status(200).json({ success: true });
         },
     );
-};
+}

@@ -1,27 +1,22 @@
-/**
- * @typedef {Object} Utils
- * @property {import("../../db/UserManager")} UserManager
- */
+import type { Application } from "express";
+import type { Utils } from "../../../../index";
+import { maybeAuth } from "../../../../utils/auth";
 
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
+export default function (app: Application, utils: Utils): void {
     app.get(
         "/api/v1/misc/getStats",
-        utils.maybeAuth(utils.UserManager),
-        async (req, res) => {
-            const stats = await utils.UserManager.getStats();
+        maybeAuth(utils.manager.auth),
+        async function (req, res) {
+            const stats: Record<string, unknown> =
+                await utils.manager.misc.getStats();
 
-            if (req.login && req.login.isMod) {
+            if (res.locals.login && res.locals.login.isMod) {
                 // TODO: allow to get arbitrary months back
                 stats.accountsOverTime =
-                    await utils.UserManager.getAccountsOverTime(12);
+                    await utils.manager.misc.getAccountsOverTime(12);
             }
 
             res.status(200).json(stats);
         },
     );
-};
+}

@@ -1,3 +1,5 @@
+import { requireAuth } from "../../../../../utils/auth";
+
 const countryLookup = require("../../../../../static/country-lookup.json");
 /**
  * @typedef {Object} Utils
@@ -12,15 +14,15 @@ const countryLookup = require("../../../../../static/country-lookup.json");
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/users/filloutSafetyDetails",
-        utils.requireAuth(utils.UserManager),
+        ...requireAuth(utils.manager.auth),
         async function (req, res) {
             const packet = req.body;
 
             const birthday = String(packet.birthday);
             const countryCode = String(packet.country);
 
-            const username = req.login.username;
-            const user_meta = req.login.fullMeta;
+            const username = res.locals.login.username;
+            const user_meta = res.locals.login.fullMeta;
 
             const parseBirthday = (birthday) => {
                 if (!birthday) {

@@ -1,3 +1,5 @@
+import { requireAuth } from "../../../../utils/auth";
+
 const fs = require("fs");
 const sharp = require("sharp");
 
@@ -14,7 +16,7 @@ const sharp = require("sharp");
 module.exports = (app, utils) => {
     app.post(
         "/api/v1/projects/updateProject",
-        utils.requireAuth(utils.UserManager),
+        ...requireAuth(utils.manager.auth),
         utils.upload.fields([
             { name: "jsonFile", maxCount: 1 },
             { name: "thumbnail", maxCount: 1 },
@@ -34,9 +36,9 @@ module.exports = (app, utils) => {
 
             const packet = req.body;
 
-            const username = req.login.username;
-            const isDonator = req.login.isDonator;
-            const hasModPerms = req.login.isMod;
+            const username = res.locals.login.username;
+            const isDonator = res.locals.login.isDonator;
+            const hasModPerms = res.locals.login.isMod;
 
             // TODO: just use meta
             const lastUpload = await utils.UserManager.getLastUpload(username);
@@ -51,7 +53,7 @@ module.exports = (app, utils) => {
                     .json({ error: "Uploaded in the last 8 minutes" });
             }
 
-            if (!req.login.emailVerified) {
+            if (!res.locals.login.emailVerified) {
                 return res.status(400).json({
                     error: "You must verify your email to upload a project",
                 });
@@ -96,7 +98,7 @@ module.exports = (app, utils) => {
                         before + "\x1b[31;1m" + illegalWord + "\x1b[0m" + after,
                         illegal,
                         type,
-                        { projectID, username, userID: req.login.id },
+                        { projectID, username, userID: res.locals.login.id },
                     );
 
                     return true;
@@ -126,7 +128,7 @@ module.exports = (app, utils) => {
                         before + "\x1b[33;1m" + illegalWord + "\x1b[0m" + after,
                         trigger,
                         type,
-                        { projectID, username, userID: req.login.id },
+                        { projectID, username, userID: res.locals.login.id },
                         0xffbb00,
                     );
                     return true;
@@ -200,7 +202,7 @@ module.exports = (app, utils) => {
                     await utils.UserManager.validateAreProjectExtensionsAllowed(
                         jsonFile.extensions,
                         jsonFile.extensionURLs,
-                        req.login,
+                        res.locals.login,
                     );
                 if (!areExtensionsAllowed) {
                     return res.status(400).json({

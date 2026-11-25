@@ -1,22 +1,16 @@
+import type { Application } from "express";
+import type { Utils } from "../../../../../../index";
+import { requireAuth } from "../../../../../../utils/auth";
+
 const cached = {
     item: null,
     time: 0,
 };
 
-/**
- * @typedef {Object} Utils
- * @property {import("../../../../db/UserManager")} UserManager
- */
-
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
+export default function (app: Application, utils: Utils): void {
     app.get(
         "/api/v1/users/getuserstats",
-        utils.requireAuth(utils.UserManager, { require_admin: true }),
+        ...requireAuth(utils.manager.auth, { require_admin: true }),
         async function (req, res) {
             const hour = 1000 * 60 * 60;
             const day = hour * 24;
@@ -37,4 +31,4 @@ module.exports = (app, utils) => {
             res.send({ stats });
         },
     );
-};
+}

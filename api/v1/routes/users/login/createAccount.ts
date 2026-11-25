@@ -93,11 +93,9 @@ module.exports = (app, utils) => {
                 packet.birthday === null ||
                 packet.country === null
             ) {
-                return res
-                    .status(400)
-                    .json({
-                        error: "Missing username, password, birthday, or country",
-                    });
+                return res.status(400).json({
+                    error: "Missing username, password, birthday, or country",
+                });
             }
 
             const username = String(packet.username).toLowerCase();

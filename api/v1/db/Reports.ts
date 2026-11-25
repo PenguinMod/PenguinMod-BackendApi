@@ -2,7 +2,7 @@ import { ulid } from "ulid";
 import { DBController } from "./DBController";
 import Manager from "./Manager";
 import { ProjectId, reportId, ReportId, UserId } from "./new-types";
-import { Report, ReportType } from "./types";
+import { ExtReport, Report, ReportType } from "./types";
 
 export class Reports {
     db: DBController;
@@ -54,9 +54,9 @@ export class Reports {
         type: ReportType,
         page: number,
         pageSize: number,
-    ): Promise<Report[]> {
+    ): Promise<ExtReport[]> {
         const result = await this.db.reports
-            .aggregate<Report>([
+            .aggregate<ExtReport>([
                 {
                     $match: { type: type, resolved: { $ne: true } },
                 },
@@ -70,7 +70,25 @@ export class Reports {
                     $limit: pageSize,
                 },
                 {
-                    $unset: "_id",
+                    $lookup: {
+                        from: "users",
+                        localField: "reporter",
+                        foreignField: "id",
+                        as: "reporterInfo",
+                    },
+                },
+                {
+                    $addFields: {
+                        reporter: {
+                            id: "$reporter",
+                            username: {
+                                $arrayElemAt: ["$reporterInfo.username", 0],
+                            },
+                        },
+                    },
+                },
+                {
+                    $unset: "reporterInfo",
                 },
             ])
             .toArray();
@@ -78,21 +96,13 @@ export class Reports {
         return result;
     }
 
-    /**
-     * Get reports by reportee
-     * @param {string} reportee ID of the person/project being reported
-     * @param {number} page The page of reports to get
-     * @param {number} pageSize The amount of reports to get
-     * @returns {Promise<Array<object>>} Array of reports on the specified reportee
-     * @async
-     */
     async getReportsByReportee(
-        reportee: UserId,
+        reportee: UserId | ProjectId,
         page: number,
         pageSize: number,
-    ): Promise<Report[]> {
+    ): Promise<ExtReport[]> {
         const result = await this.db.reports
-            .aggregate<Report>([
+            .aggregate<ExtReport>([
                 {
                     $match: { reportee: reportee, resolved: { $ne: true } },
                 },
@@ -104,6 +114,27 @@ export class Reports {
                 },
                 {
                     $limit: pageSize,
+                },
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "reporter",
+                        foreignField: "id",
+                        as: "reporterInfo",
+                    },
+                },
+                {
+                    $addFields: {
+                        reporter: {
+                            id: "$reporter",
+                            username: {
+                                $arrayElemAt: ["$reporterInfo.username", 0],
+                            },
+                        },
+                    },
+                },
+                {
+                    $unset: "reporterInfo",
                 },
             ])
             .toArray();
@@ -155,7 +186,7 @@ export class Reports {
 
     async hasAlreadyReported(
         reporter: UserId,
-        reportee: UserId,
+        reportee: UserId | ProjectId,
     ): Promise<boolean> {
         const result = await this.db.reports.findOne({
             reporter: reporter,
@@ -165,9 +196,9 @@ export class Reports {
         return result ? true : false;
     }
 
-    async getReports(page: number, pageSize: number): Promise<Report[]> {
+    async getReports(page: number, pageSize: number): Promise<ExtReport[]> {
         const result = await this.db.reports
-            .aggregate<Report>([
+            .aggregate<ExtReport>([
                 {
                     $match: { resolved: { $ne: true } },
                 },
@@ -179,6 +210,27 @@ export class Reports {
                 },
                 {
                     $limit: pageSize,
+                },
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "reporter",
+                        foreignField: "id",
+                        as: "reporterInfo",
+                    },
+                },
+                {
+                    $addFields: {
+                        reporter: {
+                            id: "$reporter",
+                            username: {
+                                $arrayElemAt: ["$reporterInfo.username", 0],
+                            },
+                        },
+                    },
+                },
+                {
+                    $unset: "reporterInfo",
                 },
             ])
             .toArray();

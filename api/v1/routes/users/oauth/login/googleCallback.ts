@@ -1,15 +1,8 @@
-/**
- * @typedef {Object} Utils
- * @property {import("../../../../db/UserManager")} UserManager
- */
+import type { Application } from "express";
+import type { Utils } from "../../../../../../index";
 
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
-    app.get("/api/v1/users/googlecallback/login", async (req, res) => {
+export default function (app: Application, utils: Utils): void {
+    app.get("/api/v1/users/googlecallback/login", async function (req, res) {
         const packet = req.query;
 
         const code = String(packet.code);
@@ -48,7 +41,9 @@ module.exports = (app, utils) => {
         let user;
         const try_user = async (tries) => {
             if (tries > 3) {
-                res.status(500).json({ error: "Google api failed to respond" });
+                res.status(500).json({
+                    error: "Google api failed to respond",
+                });
                 return false;
             }
 
@@ -88,4 +83,4 @@ module.exports = (app, utils) => {
         res.status(200);
         res.redirect(`${process.env.HomeURL}/exchangeottcode?code=${ottCode}`);
     });
-};
+}
