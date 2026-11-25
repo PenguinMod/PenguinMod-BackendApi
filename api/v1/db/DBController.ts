@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { MongoClient } from "mongodb";
 import * as mongodb from "mongodb";
-import Minio from "minio";
+import * as Minio from "minio";
 import { ulid } from "ulid";
 import { createHash } from "node:crypto";
 import { retryIfFailure } from "../../../utils/misc";
