@@ -57,7 +57,7 @@ export default function (app: Application, utils: Utils): void {
                 true,
             );
             if (!data.ok) {
-                res.status(401).json({ error: "InvalidCredentials" });
+                res.status(401).json({ error: data.error });
                 return;
             }
 

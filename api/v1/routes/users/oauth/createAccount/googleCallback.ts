@@ -1,5 +1,7 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../../index";
+import { sendCreationLog } from "../../../../../../utils/logs";
+import { OAuth2Client } from "google-auth-library";
 
 export default function (app: Application, utils: Utils): void {
     app.get(
@@ -15,13 +17,13 @@ export default function (app: Application, utils: Utils): void {
                 return;
             }
 
-            const { valid } = await utils.UserManager.verifyOAuth2State(state);
+            const { valid } = await utils.manager.auth.verifyOAuth2State(state);
             if (!valid) {
                 res.status(400).json({ error: "Invalid state" });
                 return;
             }
 
-            const oauth2Client = new utils.googleOAuth2Client(
+            const oauth2Client = new OAuth2Client(
                 process.env.GoogleOAuthClientID,
                 process.env.GoogleOAuthClientSecret,
                 `${process.env.ApiURL}/api/v1/users/googlecallback/createaccount`,
@@ -42,22 +44,35 @@ export default function (app: Application, utils: Utils): void {
                 "https://people.googleapis.com/v1/people/me?personFields=names,emailAddresses";
             const user = await oauth2Client.request({ url });
 
+            if (
+                typeof user.data !== "object" ||
+                !user.data ||
+                !("resourceName" in user.data) ||
+                typeof user.data.resourceName !== "string" ||
+                !("emailAddresses" in user.data) ||
+                !Array.isArray(user.data.emailAddresses)
+            ) {
+                throw new Error(
+                    `Invalid response from google oauth client: ${user}`,
+                );
+            }
+
             const id = user.data.resourceName.split("/")[1];
             const email = user.data.emailAddresses[0].value;
 
-            const existing_userid = await utils.UserManager.getUserIDByOAuthID(
+            const existing_userid = await utils.manager.auth.getUserIDByOAuthID(
                 "google",
                 id,
             );
             if (existing_userid) {
                 // they are stupid. their account already exists. we'll let them be stupid
                 const token =
-                    await utils.UserManager.newTokenGen(existing_userid);
+                    await utils.manager.auth.newTokenGen(existing_userid);
 
-                await utils.UserManager.addIPID(existing_userid, req.realIP);
+                await utils.manager.users.addIPID(existing_userid, req.realIP);
 
                 const ottCode =
-                    await utils.UserManager.genOneTimeTokenCode(token);
+                    await utils.manager.auth.genOneTimeTokenCode(token);
 
                 res.status(200);
                 res.redirect(
@@ -116,30 +131,23 @@ export default function (app: Application, utils: Utils): void {
 
             const username = `${name1}${name2}${randomNum}`;
 
-            const userdata = await utils.UserManager.makeOAuth2Account(
+            const userdata = await utils.manager.auth.makeOAuth2Account(
                 "google",
-                { id, username, email },
-                utils,
-                res,
+                { oauth_id: id, oauth_username: username, email },
             );
 
-            if (!userdata) {
-                res.status(400).json({ error: "UnknownError" });
+            if (!userdata.ok) {
+                res.status(400).json({ error: userdata.error });
                 return;
             }
 
-            const accountUsername = userdata.username;
-            const token = userdata.token;
+            const accountUsername = userdata.value.username;
+            const token = userdata.value.token;
 
-            await utils.UserManager.addIPID(userdata.id, req.realIP);
-            await utils.logs.sendCreationLog(
-                accountUsername,
-                userdata.id,
-                "",
-                "account",
-            );
+            await utils.manager.users.addIPID(userdata.value.id, req.realIP);
+            sendCreationLog(accountUsername, userdata.value.id, "", "account");
 
-            const ottCode = await utils.UserManager.genOneTimeTokenCode(token);
+            const ottCode = await utils.manager.auth.genOneTimeTokenCode(token);
 
             res.status(200);
             res.redirect(

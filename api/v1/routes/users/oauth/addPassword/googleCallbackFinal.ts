@@ -1,6 +1,7 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../../index";
 import { requireAuth } from "../../../../../../utils/auth";
+import { OAuth2Client } from "google-auth-library";
 
 export default function (app: Application, utils: Utils): void {
     app.post(
@@ -34,7 +35,7 @@ export default function (app: Application, utils: Utils): void {
                 return;
             }
 
-            const oauth2Client = new utils.googleOAuth2Client(
+            const oauth2Client = new OAuth2Client(
                 process.env.GoogleOAuthClientID,
                 process.env.GoogleOAuthClientSecret,
                 `${process.env.ApiURL}/api/v1/users/googlecallback/addpassword`,
@@ -57,28 +58,36 @@ export default function (app: Application, utils: Utils): void {
                 return;
             }
 
+            if (
+                typeof user.data !== "object" ||
+                !user.data ||
+                !("resourceName" in user.data) ||
+                typeof user.data.resourceName !== "string"
+            ) {
+                throw new Error(
+                    `Invalid response from google oauth client: ${user}`,
+                );
+            }
+
             const id = user.data.resourceName.split("/")[1];
 
-            const userid = await utils.UserManager.getUserIDByOAuthID(
+            const userid = await utils.manager.auth.getUserIDByOAuthID(
                 "google",
                 id,
             );
 
             if (!userid) {
-                res.status(400).json({ error: "User not found" });
-                return;
+                return res.status(400).json({ error: "UserNotFound" });
             }
 
-            const username = await utils.UserManager.getUsernameByID(userid);
-
             const [token] = await Promise.all([
-                utils.UserManager.changePassword(username, password),
-                utils.UserManager.addIPID(userid, req.realIP),
+                utils.manager.auth.changePassword(userid, password),
+                utils.manager.users.addIPID(userid, req.realIP),
             ]);
 
             res.status(200);
             res.header("Content-Type", "application/json");
-            res.json({ token, username });
+            res.json({ token });
         },
     );
 }

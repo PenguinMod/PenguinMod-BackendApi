@@ -301,7 +301,7 @@ export class Authentication {
     async getUserIDByOAuthID(
         method: OAuthMethod,
         id: string,
-    ): Promise<string | null> {
+    ): Promise<UserId | null> {
         const result = await this.db.oauthIDs.findOne({
             method,
             code: id,
@@ -325,7 +325,7 @@ export class Authentication {
         return { valid: !!result, data: result ? result.data : undefined };
     }
 
-    async generateOAuth2State(data: string): Promise<string> {
+    async generateOAuth2State(data?: string): Promise<string> {
         const state = randomBytes(32).toString("base64").replaceAll("+", "-");
 
         await this.db.oauthStates.insertOne({
@@ -390,16 +390,10 @@ export class Authentication {
         return null;
     }
 
-    async changePassword(
-        username: string,
-        newPassword: string,
-    ): Promise<string> {
+    async changePassword(id: UserId, newPassword: string): Promise<string> {
         const password = await bcrypt.hash(newPassword, 10);
         const token = randomBytes(32).toString("hex");
-        await this.db.users.updateOne(
-            { username },
-            { $set: { password, token } },
-        );
+        await this.db.users.updateOne({ id }, { $set: { password, token } });
 
         return token;
     }

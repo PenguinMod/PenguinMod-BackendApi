@@ -7,7 +7,7 @@ export default function (app: Application, utils: Utils): void {
         "/api/v1/users/getottcode",
         ...requireAuth(utils.manager.auth),
         async function (req, res) {
-            const code = await utils.UserManager.genOneTimeTokenCode(
+            const code = await utils.manager.auth.genOneTimeTokenCode(
                 res.locals.login.token,
             );
 

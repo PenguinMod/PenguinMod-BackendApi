@@ -26,7 +26,7 @@ export default function (app: Application, utils: Utils): void {
                           id,
                           projs_to_rankup,
                       ),
-                utils.UserManager.getOAuthMethods(id),
+                utils.manager.auth.getOAuthMethods(id),
             ]);
 
             const isDonator = badges.includes("donator");

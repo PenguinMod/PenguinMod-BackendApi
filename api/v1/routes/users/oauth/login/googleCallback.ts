@@ -1,5 +1,6 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../../index";
+import { OAuth2Client } from "google-auth-library";
 
 export default function (app: Application, utils: Utils): void {
     app.get("/api/v1/users/googlecallback/login", async function (req, res) {
@@ -13,13 +14,13 @@ export default function (app: Application, utils: Utils): void {
             return;
         }
 
-        const { valid } = await utils.UserManager.verifyOAuth2State(state);
+        const { valid } = await utils.manager.auth.verifyOAuth2State(state);
         if (!valid) {
             res.status(400).json({ error: "Invalid state" });
             return;
         }
 
-        const oauth2Client = new utils.googleOAuth2Client(
+        const oauth2Client = new OAuth2Client(
             process.env.GoogleOAuthClientID,
             process.env.GoogleOAuthClientSecret,
             `${process.env.ApiURL}/api/v1/users/googlecallback/login`,
@@ -38,8 +39,8 @@ export default function (app: Application, utils: Utils): void {
 
         const url =
             "https://people.googleapis.com/v1/people/me?personFields=names";
-        let user;
-        const try_user = async (tries) => {
+        let user: unknown;
+        const try_user = async (tries: number): Promise<boolean> => {
             if (tries > 3) {
                 res.status(500).json({
                     error: "Google api failed to respond",
@@ -65,20 +66,37 @@ export default function (app: Application, utils: Utils): void {
             return;
         }
 
+        if (
+            !user ||
+            typeof user !== "object" ||
+            !("data" in user) ||
+            typeof user.data !== "object" ||
+            !user.data ||
+            !("resourceName" in user.data) ||
+            typeof user.data.resourceName !== "string"
+        ) {
+            throw new Error(
+                `Invalid response from google oauth client: ${user}`,
+            );
+        }
+
         const id = user.data.resourceName.split("/")[1];
 
-        const userid = await utils.UserManager.getUserIDByOAuthID("google", id);
+        const userid = await utils.manager.auth.getUserIDByOAuthID(
+            "google",
+            id,
+        );
 
         if (!userid) {
             res.status(400).json({ error: "UserID not found" });
             return;
         }
 
-        const token = await utils.UserManager.newTokenGen(userid);
+        const token = await utils.manager.auth.newTokenGen(userid);
 
-        await utils.UserManager.addIPID(userid, req.realIP);
+        await utils.manager.users.addIPID(userid, req.realIP);
 
-        const ottCode = await utils.UserManager.genOneTimeTokenCode(token);
+        const ottCode = await utils.manager.auth.genOneTimeTokenCode(token);
 
         res.status(200);
         res.redirect(`${process.env.HomeURL}/exchangeottcode?code=${ottCode}`);

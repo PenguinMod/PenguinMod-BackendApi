@@ -1,12 +1,13 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../../index";
+import { OAuth2Client } from "google-auth-library";
 
 export default function (app: Application, utils: Utils): void {
     app.get("/api/v1/users/createoauthaccount", async function (req, res) {
         // get the method
         const packet = req.query;
 
-        if (!(await utils.UserManager.canCreateAccount())) {
+        if (!(await utils.manager.auth.canCreateAccount())) {
             return res
                 .status(403)
                 .json({ error: "Account creation is not enabled" });
@@ -19,7 +20,7 @@ export default function (app: Application, utils: Utils): void {
             return;
         }
 
-        const state = await utils.UserManager.generateOAuth2State();
+        const state = await utils.manager.auth.generateOAuth2State();
         switch (method) {
             case "scratch":
                 res.redirect(
@@ -32,7 +33,7 @@ export default function (app: Application, utils: Utils): void {
                 );
                 break;
             case "google": {
-                const oauth2Client = new utils.googleOAuth2Client(
+                const oauth2Client = new OAuth2Client(
                     process.env.GoogleOAuthClientID,
                     process.env.GoogleOAuthClientSecret,
                     `${process.env.ApiURL}/api/v1/users/googlecallback/createaccount`,

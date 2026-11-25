@@ -13,7 +13,7 @@ export default function (app: Application, utils: Utils): void {
             return;
         }
 
-        const state = await utils.UserManager.generateOAuth2State();
+        const state = await utils.manager.auth.generateOAuth2State();
         switch (method) {
             case "scratch":
                 res.redirect(

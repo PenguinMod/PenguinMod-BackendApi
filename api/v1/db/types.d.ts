@@ -185,7 +185,7 @@ export interface Message<Base> {
 
 export interface OAuthState {
     state: string;
-    data: string;
+    data: string | undefined;
     createdAt: Date;
 }
 

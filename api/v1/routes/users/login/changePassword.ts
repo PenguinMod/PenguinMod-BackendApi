@@ -56,7 +56,7 @@ export default function (app: Application, utils: Utils): void {
             }
 
             const newToken = await utils.manager.auth.changePassword(
-                username,
+                res.locals.login.id,
                 new_password,
             );
 

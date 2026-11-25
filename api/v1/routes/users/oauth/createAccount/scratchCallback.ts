@@ -1,5 +1,6 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../../index";
+import { sendCreationLog } from "../../../../../../utils/logs";
 
 export default function (app: Application, utils: Utils): void {
     app.get("/api/v1/users/scratchoauthcreate", async function (req, res) {
@@ -13,14 +14,14 @@ export default function (app: Application, utils: Utils): void {
             return;
         }
 
-        const { valid } = await utils.UserManager.verifyOAuth2State(state);
+        const { valid } = await utils.manager.auth.verifyOAuth2State(state);
         if (!valid) {
             res.status(400).json({ error: "Invalid state" });
             return;
         }
 
         // now make the request
-        const response = await utils.UserManager.makeOAuth2Request(
+        const response = await utils.manager.auth.makeOAuth2Request(
             code,
             "scratch",
         );
@@ -43,7 +44,7 @@ export default function (app: Application, utils: Utils): void {
             })
             .catch((e) => {
                 res.status(500).json({ error: "OAuthServerDidNotRespond" });
-                return false;
+                console.error("OAuth server didn't respond:", e);
             });
 
         if (!username) {
@@ -55,17 +56,17 @@ export default function (app: Application, utils: Utils): void {
             return;
         }
 
-        const existing_userid = await utils.UserManager.getUserIDByOAuthID(
+        const existing_userid = await utils.manager.auth.getUserIDByOAuthID(
             "scratch",
             username.user.user_id,
         );
         if (existing_userid) {
             // they are stupid. their account already exists. we'll let them be stupid
-            const token = await utils.UserManager.newTokenGen(existing_userid);
+            const token = await utils.manager.auth.newTokenGen(existing_userid);
 
-            await utils.UserManager.addIPID(existing_userid, req.realIP);
+            await utils.manager.users.addIPID(existing_userid, req.realIP);
 
-            const ottCode = await utils.UserManager.genOneTimeTokenCode(token);
+            const ottCode = await utils.manager.auth.genOneTimeTokenCode(token);
 
             res.status(200);
             res.redirect(
@@ -75,15 +76,13 @@ export default function (app: Application, utils: Utils): void {
         }
 
         // create the user
-        const userdata = await utils.UserManager.makeOAuth2Account(
-            "scratch",
-            username.user,
-            utils,
-            res,
-        );
+        const userdata = await utils.manager.auth.makeOAuth2Account("scratch", {
+            oauth_username: username.user.user_name,
+            oauth_id: username.user.user_id,
+        });
 
-        if (!userdata) {
-            res.status(400).json({ error: "UnknownError" });
+        if (!userdata.ok) {
+            res.status(400).json({ error: userdata.error });
             return;
         }
 
@@ -93,7 +92,7 @@ export default function (app: Application, utils: Utils): void {
             .then((res) => res.arrayBuffer())
             .catch((e) => {
                 res.status(500).json({ error: "InternalError" });
-                return new Promise((resolve, reject) => resolve());
+                console.error("Trampoline didn't respond:", e);
             });
 
         if (!profilePicture) {
@@ -102,20 +101,18 @@ export default function (app: Application, utils: Utils): void {
 
         const pfp_buffer = Buffer.from(profilePicture);
 
-        await utils.UserManager.setProfilePicture(userdata.id, pfp_buffer);
-
-        const accountUsername = userdata.username;
-        const token = userdata.token;
-
-        await utils.UserManager.addIPID(userdata.id, req.realIP);
-        await utils.logs.sendCreationLog(
-            accountUsername,
-            userdata.id,
-            "",
-            "account",
+        await utils.manager.users.setProfilePicture(
+            userdata.value.id,
+            pfp_buffer,
         );
 
-        const ottCode = await utils.UserManager.genOneTimeTokenCode(token);
+        const accountUsername = userdata.value.username;
+        const token = userdata.value.token;
+
+        await utils.manager.users.addIPID(userdata.value.id, req.realIP);
+        sendCreationLog(accountUsername, userdata.value.id, "", "account");
+
+        const ottCode = await utils.manager.auth.genOneTimeTokenCode(token);
 
         res.status(200);
         res.redirect(`${process.env.HomeURL}/exchangeottcode?code=${ottCode}`);

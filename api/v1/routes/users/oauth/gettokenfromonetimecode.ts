@@ -7,14 +7,18 @@ export default function (app: Application, utils: Utils): void {
 
         const code = String(packet.code);
 
-        const token = await utils.UserManager.exchangeCodeForToken(code);
+        const token = await utils.manager.auth.exchangeCodeForToken(code);
 
         if (!token) {
             return res.status(404).json({ error: "UnknownCode" });
         }
 
-        const username = (await utils.UserManager.loginWithToken(token, true))
-            .username;
+        const username = (await utils.manager.auth.loginWithToken(token, true))
+            ?.username;
+
+        if (!username) {
+            return res.status(400).json({ error: "InvalidToken" });
+        }
 
         res.status(200);
         res.header("Content-Type", "application/json");

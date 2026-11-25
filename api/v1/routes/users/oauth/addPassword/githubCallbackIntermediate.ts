@@ -15,14 +15,14 @@ export default function (app: Application, utils: Utils): void {
                 return;
             }
 
-            const { valid } = await utils.UserManager.verifyOAuth2State(state);
+            const { valid } = await utils.manager.auth.verifyOAuth2State(state);
             if (!valid) {
                 res.status(400).json({ error: "Invalid state" });
                 return;
             }
 
             // now make the request
-            const response = await utils.UserManager.makeOAuth2Request(
+            const response = await utils.manager.auth.makeOAuth2Request(
                 code,
                 "github",
             );

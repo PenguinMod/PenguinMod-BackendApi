@@ -1,5 +1,6 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../../index";
+import { OAuth2Client } from "google-auth-library";
 
 export default function (app: Application, utils: Utils): void {
     app.get(
@@ -15,13 +16,13 @@ export default function (app: Application, utils: Utils): void {
                 return;
             }
 
-            const { valid } = await utils.UserManager.verifyOAuth2State(state);
+            const { valid } = await utils.manager.auth.verifyOAuth2State(state);
             if (!valid) {
                 res.status(400).json({ error: "Invalid state" });
                 return;
             }
 
-            const oauth2Client = new utils.googleOAuth2Client(
+            const oauth2Client = new OAuth2Client(
                 process.env.GoogleOAuthClientID,
                 process.env.GoogleOAuthClientSecret,
                 `${process.env.ApiURL}/api/v1/users/googlecallback/addpassword`,

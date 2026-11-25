@@ -1,5 +1,6 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../../index";
+import { userId } from "../../../../db/new-types";
 
 export default function (app: Application, utils: Utils): void {
     app.get("/api/v1/users/addscratchlogin", async function (req, res) {
@@ -14,15 +15,15 @@ export default function (app: Application, utils: Utils): void {
         }
 
         const { valid, data } =
-            await utils.UserManager.verifyOAuth2State(state);
+            await utils.manager.auth.verifyOAuth2State(state);
         if (!valid) {
             res.status(400).json({ error: "InvalidState" });
             return;
         }
 
-        const userid = data;
+        const userid = userId(String(data));
 
-        const methods = await utils.UserManager.getOAuthMethods(userid);
+        const methods = await utils.manager.auth.getOAuthMethods(userid);
 
         if (methods.includes("scratch")) {
             res.status(400).json({ error: "Method already added" });
@@ -30,7 +31,7 @@ export default function (app: Application, utils: Utils): void {
         }
 
         // now make the request
-        const response = await utils.UserManager.makeOAuth2Request(
+        const response = await utils.manager.auth.makeOAuth2Request(
             code,
             "scratch",
         );
@@ -53,7 +54,7 @@ export default function (app: Application, utils: Utils): void {
             })
             .catch((e) => {
                 res.status(500).json({ error: "OAuthServerDidNotRespond" });
-                return new Promise((resolve, reject) => resolve());
+                console.error("OAuth server didn't respond:", e);
             });
 
         if (!user) {
@@ -66,17 +67,15 @@ export default function (app: Application, utils: Utils): void {
             return;
         }
 
-        const username = await utils.UserManager.getUsernameByID(userid);
-
-        await utils.UserManager.addOAuthMethod(
+        await utils.manager.auth.addOAuthMethod(
             userid,
             "scratch",
             user.user.user_id,
         );
 
-        const token = await utils.UserManager.newTokenGen(userid);
+        const token = await utils.manager.auth.newTokenGen(userid);
 
-        const ottCode = await utils.UserManager.genOneTimeTokenCode(token);
+        const ottCode = await utils.manager.auth.genOneTimeTokenCode(token);
 
         res.status(200);
         res.redirect(`${process.env.HomeURL}/exchangeottcode?code=${ottCode}`);

@@ -1,5 +1,7 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../../index";
+import { OAuth2Client } from "google-auth-library";
+import { userId } from "../../../../db/new-types";
 
 export default function (app: Application, utils: Utils): void {
     app.get(
@@ -16,22 +18,22 @@ export default function (app: Application, utils: Utils): void {
             }
 
             const { valid, data } =
-                await utils.UserManager.verifyOAuth2State(state);
+                await utils.manager.auth.verifyOAuth2State(state);
             if (!valid) {
                 res.status(400).json({ error: "InvalidState" });
                 return;
             }
 
-            const userid = data;
+            const userid = userId(String(data));
 
-            const methods = await utils.UserManager.getOAuthMethods(userid);
+            const methods = await utils.manager.auth.getOAuthMethods(userid);
 
             if (methods.includes("google")) {
                 res.status(400).json({ error: "Method already added" });
                 return;
             }
 
-            const oauth2Client = new utils.googleOAuth2Client(
+            const oauth2Client = new OAuth2Client(
                 process.env.GoogleOAuthClientID,
                 process.env.GoogleOAuthClientSecret,
                 `${process.env.ApiURL}/api/v1/users/googlecallback/addmethod`,
@@ -52,15 +54,24 @@ export default function (app: Application, utils: Utils): void {
                 "https://people.googleapis.com/v1/people/me?personFields=names";
             const user = await oauth2Client.request({ url });
 
-            const id = user.data.resourceName.split("/")[1];
+            if (
+                typeof user.data !== "object" ||
+                !user.data ||
+                !("resourceName" in user.data) ||
+                typeof user.data.resourceName !== "string"
+            ) {
+                throw new Error(
+                    `Invalid response from google oauth client: ${user}`,
+                );
+            }
 
-            const username = await utils.UserManager.getUsernameByID(userid);
+            const id = user.data?.resourceName.split("/")[1];
 
-            await utils.UserManager.addOAuthMethod(userid, "google", id);
+            await utils.manager.auth.addOAuthMethod(userid, "google", id);
 
-            const token = await utils.UserManager.newTokenGen(userid);
+            const token = await utils.manager.auth.newTokenGen(userid);
 
-            const ottCode = await utils.UserManager.genOneTimeTokenCode(token);
+            const ottCode = await utils.manager.auth.genOneTimeTokenCode(token);
 
             res.status(200);
             res.redirect(

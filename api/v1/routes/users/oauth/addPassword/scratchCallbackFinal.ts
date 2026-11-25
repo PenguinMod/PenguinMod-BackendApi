@@ -50,20 +50,23 @@ export default function (app: Application, utils: Utils): void {
                 return;
             }
 
-            const userid = await utils.UserManager.getUserIDByOAuthID(
+            const userid = await utils.manager.auth.getUserIDByOAuthID(
                 "scratch",
                 user.user.user_id,
             );
-            const username = await utils.UserManager.getUsernameByID(userid);
+
+            if (!userid) {
+                return res.status(400).json({ error: "UserNotFound" });
+            }
 
             const [token] = await Promise.all([
-                utils.UserManager.changePassword(username, password),
-                utils.UserManager.addIPID(userid, req.realIP),
+                utils.manager.auth.changePassword(userid, password),
+                utils.manager.users.addIPID(userid, req.realIP),
             ]);
 
             res.status(200);
             res.header("Content-Type", "application/json");
-            res.json({ token, username });
+            res.json({ token });
         },
     );
 }

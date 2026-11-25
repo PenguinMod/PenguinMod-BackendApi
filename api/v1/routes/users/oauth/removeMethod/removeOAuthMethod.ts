@@ -1,6 +1,7 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../../index";
 import { requireAuth } from "../../../../../../utils/auth";
+import { OAuthMethod } from "../../../../db/types";
 
 export default function (app: Application, utils: Utils): void {
     app.post(
@@ -15,9 +16,9 @@ export default function (app: Application, utils: Utils): void {
             const id = res.locals.login.id;
             const hasPassword = !!res.locals.login.fullMeta.password;
 
-            const methods = await utils.UserManager.getOAuthMethods(id);
+            const methods = await utils.manager.auth.getOAuthMethods(id);
 
-            if (!methods.includes(method)) {
+            if (!methods.includes(method as OAuthMethod)) {
                 res.status(404).json({ error: "MethodNotConnected" });
                 return;
             }
@@ -28,7 +29,10 @@ export default function (app: Application, utils: Utils): void {
                 });
             }
 
-            await utils.UserManager.removeOAuthMethod(id, method);
+            await utils.manager.auth.removeOAuthMethod(
+                id,
+                method as OAuthMethod,
+            );
 
             res.status(200).json({ success: true });
         },

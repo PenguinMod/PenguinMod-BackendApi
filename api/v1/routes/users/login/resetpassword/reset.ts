@@ -46,7 +46,7 @@ export default function (app: Application, utils: Utils): void {
             }
 
             const token = await utils.manager.auth.changePassword(
-                userData.username,
+                userData.id,
                 password,
             );
 
