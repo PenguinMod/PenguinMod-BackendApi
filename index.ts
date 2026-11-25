@@ -127,7 +127,7 @@ export interface Utils {
     );
 
     app.get("/robots.txt", function (req, res) {
-        res.sendFile(path.join(__dirname, "robots.txt"));
+        res.sendFile(path.join(__dirname, "static/robots.txt"));
     });
 
     const utils: Utils = {
