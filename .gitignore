@@ -12,3 +12,6 @@ System Volume Information
 
 # Multifile
 tmp
+
+# Typescript
+dist

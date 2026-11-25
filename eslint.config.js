@@ -1,18 +1,35 @@
 const { defineConfig } = require("eslint/config");
 const globals = require("globals");
 const js = require("@eslint/js");
+const tseslint = require("typescript-eslint");
+
+const commonRules = {
+    semi: ["error", "always"],
+    "prefer-const": "error",
+    eqeqeq: ["error", "always"],
+    curly: ["error", "all"],
+    "no-duplicate-imports": "error",
+    "no-debugger": "error",
+};
 
 module.exports = defineConfig([
+    // Ignore generated files and dependencies
     {
+        ignores: ["dist/**", "node_modules/**"],
+    },
+
+    // JavaScript
+    {
+        files: ["**/*.{js,cjs,mjs,jsx}"],
+        extends: [js.configs.recommended],
+        languageOptions: {
+            globals: {
+                ...globals.node,
+            },
+        },
         rules: {
-            semi: "error",
-            "prefer-const": "error",
+            ...commonRules,
             "no-undef": "error",
-            ...js.configs.recommended.rules,
-            eqeqeq: ["error", "always"],
-            curly: ["error", "all"],
-            "no-duplicate-imports": "error",
-            "no-debugger": "error",
             "no-unused-vars": [
                 "warn",
                 {
@@ -21,10 +38,36 @@ module.exports = defineConfig([
                 },
             ],
         },
+    },
+
+    // TypeScript
+    {
+        files: ["**/*.{ts,cts,mts,tsx}"],
+        extends: [js.configs.recommended, tseslint.configs.recommended],
         languageOptions: {
             globals: {
                 ...globals.node,
             },
+            parser: tseslint.parser,
+            parserOptions: {
+                project: "./tsconfig.json",
+                tsconfigRootDir: __dirname,
+            },
+        },
+        rules: {
+            ...commonRules,
+
+            "no-undef": "off",
+            "no-unused-vars": "off",
+
+            "@typescript-eslint/no-unused-vars": [
+                "warn",
+                {
+                    args: "none",
+                    caughtErrors: "none",
+                },
+            ],
+            "@typescript-eslint/explicit-function-return-type": "error",
         },
     },
 ]);

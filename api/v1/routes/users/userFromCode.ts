@@ -1,0 +1,121 @@
+import type { Application } from "express";
+import type { Utils } from "../../../../index";
+import { requireAuth } from "../../../../utils/auth";
+
+export default function (app: Application, utils: Utils): void {
+    app.get(
+        "/api/v1/users/userfromcode",
+        ...requireAuth(utils.manager.auth, { allow_banned: true }),
+        async function (req, res) {
+            const login = res.locals.login;
+
+            const username = login.username;
+            const id = login.id;
+            const user_meta = login.fullMeta;
+            const badges = login.badges;
+
+            const rank = user_meta.rank;
+
+            const projs_to_rankup = 3;
+
+            const [userProjects, loginMethods]: [number, string[]] =
+                await Promise.all([
+                    // avoid doing the check if we're already ranked up
+                    rank > 0
+                        ? projs_to_rankup
+                        : utils.manager.projects.quickProjectCountCheck(
+                              id,
+                              projs_to_rankup,
+                          ),
+                    utils.manager.auth.getOAuthMethods(id),
+                ]);
+
+            const isDonator = badges.includes("donator");
+            const isBanned =
+                user_meta.permBanned || user_meta.unbanTime > Date.now();
+
+            const signUpDate = user_meta.firstLogin;
+
+            const day = 1000 * 60 * 60 * 24;
+
+            const has_enough_projects = userProjects >= projs_to_rankup;
+
+            const canRequestRankUp =
+                (has_enough_projects && // if we have 3 projects and
+                    Date.now() - signUpDate >= day * 5) || // first signed in 5 days ago
+                badges.length > 0; // or we have a badge
+
+            const myFeaturedProject = user_meta.featuredProject;
+            const myFeaturedProjectTitle = user_meta.featuredProjectTitle;
+
+            const isAdmin = user_meta.admin;
+            const isModerator = user_meta.moderator;
+
+            const followers = user_meta.followers;
+
+            const lastPolicyRead = {
+                privacyPolicy: user_meta.lastPrivacyPolicyRead,
+                TOS: user_meta.lastTOSRead,
+                guidelines: user_meta.lastGuidelinesRead,
+            };
+
+            const privateProfile = user_meta.privateProfile;
+            const canFollowingSeeProfile = user_meta.allowFollowingView;
+
+            const standing =
+                user_meta.unbanTime > Date.now()
+                    ? 2
+                    : user_meta.permBanned
+                      ? 3
+                      : 0;
+            // TODO: 1 is limited, not yet implemented
+
+            const email = user_meta.email;
+            const isEmailVerified = user_meta.emailVerified;
+
+            // there doesnt seem to be a particular reason to return the user's birthday at the moment
+            const birthdayEntered = user_meta.birthdayEntered;
+            const countryEntered = user_meta.countryEntered;
+
+            if (user_meta.password) {
+                loginMethods.push("password");
+            }
+
+            const messageCount =
+                await utils.manager.messages.getUnreadMessageCount(id);
+
+            const user = {
+                id,
+                username,
+                real_username: user_meta.real_username,
+                admin: isAdmin,
+                approver: isModerator,
+                isBanned: isBanned,
+                badges,
+                donator: isDonator,
+                rank,
+                myFeaturedProject,
+                myFeaturedProjectTitle,
+                followers: followers,
+                canrankup: canRequestRankUp && rank === 0,
+                viewable: userProjects > 0,
+                loginMethods: loginMethods,
+                lastPolicyRead: lastPolicyRead,
+                privateProfile,
+                canFollowingSeeProfile,
+                standing,
+                email,
+                isEmailVerified,
+                birthdayEntered,
+                countryEntered,
+                country: user_meta.country,
+                messageCount,
+            };
+
+            res.status(200);
+            res.header("Content-Type", "application/json");
+            res.header("Cache-Control", "public, max-age=90");
+            res.send(user);
+        },
+    );
+}

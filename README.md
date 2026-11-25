@@ -1,42 +1,44 @@
-![PenguinMod Logo](icon.png "PenguinMod Logo")
-
-![Stargazers](https://img.shields.io/github/stars/PenguinMod/PenguinMod-BackendApi?style=flat-square "Stars")
-
 # PenguinMod-BackendApi
 
-This is the replacement for PenguinMod-IntermediateBackendApi.
+This is the backend API for PenguinMod.
 
-This is intended to be a major rewrite of the entire API to be organized much better, and use MongoDB & other systems for better scalability.
+## Layout
 
-## Contributing
-
-You can create endpoints by adding folders & files. Please make sure your code is easy to read or at least has comments :D
+The setup for the server is in index.js. The super DB class is in api/v1/db/DBController.js.
+It creates the sub-classes: Authentication.js, Projects.js, Users.js, etc.
 
 ## Vulnerabilities
 
-Please report any security vulnerabilities using GitHub's security tab on the repository, or join the PenguinMod discord on the website and DM a developer.
+Please report any security vulnerabilities using GitHub's security tab on the
+repository, or join the PenguinMod discord on the website and DM a developer.
 
 ## Development
 
-Either setup as you would with prod, or:
+With docker, run `docker compose up -d --build`
+
+Or, if you'd rather have it running on your machine raw, do this:
 
 1. Install MongoDB
     - [Windows](https://docs.mongodb.com/manual/tutorial/install-mongodb-on-windows/)
     - [Mac](https://docs.mongodb.com/manual/tutorial/install-mongodb-on-os-x/)
     - [Linux](https://docs.mongodb.com/manual/administration/install-on-linux/)
 2. Run `mongod` to start mongodb
-3. Run `npm i`. if this doesn't work run it with --force (if you have to use force, make an issue. We want to avoid having to do that)
+3. Run `npm i`
 4. Install minio and start it
-   - [Linux](https://min.io/docs/minio/linux/index.html)
-   - [Mac](https://min.io/docs/minio/macos/index.html)
-   - [Windows](https://min.io/docs/minio/windows/index.html)
+    - [Linux](https://min.io/docs/minio/linux/index.html)
+    - [Mac](https://min.io/docs/minio/macos/index.html)
+    - [Windows](https://min.io/docs/minio/windows/index.html)
 5. Add a `.env` file copied from the .env.template file and fill in the values.
 6. Run `npm run dev` to start the server in development mode.
 
-OR with docker, run `docker compose up -d --build`
-
 ## Deployment
 
-Make sure your env is setup, then use docker-compose to get the containers running.
+Simply use docker as you would with development.
 
-Note: Keep your env PRIVATE!! Do NOT put it in a public repo!! Don't even put it in a private one!!
+You will likely want a Cloudflare tunnel to keep your server more private and isolated.
+
+You should also setup BackBlaze. This is where all your project assets will be stored.
+
+We keep our costs down by using whats called the "Bandwidth Alliance". All this
+means is that our assets are in a public bucket and we access them via a
+Cloudflare proxy. And it saves us a bunch of money.

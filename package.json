@@ -1,7 +1,7 @@
 {
     "name": "penguinmod-backendapi",
     "version": "1.0.0",
-    "description": "![PenguinMod Logo](icon.png \"PenguinMod Logo\")",
+    "description": "The Backend API for PenguinMod",
     "homepage": "https://github.com/PenguinMod/PenguinMod-BackendApi#readme",
     "bugs": {
         "url": "https://github.com/PenguinMod/PenguinMod-BackendApi/issues"
@@ -15,10 +15,12 @@
     "type": "commonjs",
     "main": "index.js",
     "scripts": {
-        "dev": "nodemon index.js",
-        "start": "node index.js",
+        "dev": "tsx watch index.ts",
+        "build": "tsc && cp -r static dist",
+        "start": "node dist/index.js",
+        "typecheck": "tsc --noEmit",
         "lint": "eslint",
-        "lint-fix": "eslint --fix"
+        "gen:routes": "node scripts/gen_routes.js"
     },
     "dependencies": {
         "bcrypt": "^6.0.0",
@@ -33,23 +35,34 @@
         "google-auth-library": "^9.9.0",
         "ipaddr.js": "^2.2.0",
         "jszip": "^3.10.1",
-        "memory-cache": "^0.2.0",
         "minio": "^8.0.7",
         "mmmagic": "^0.5.3",
         "mongodb": "^6.2.0",
         "multer": "^2.3.0",
         "node-mailjet": "^6.0.6",
         "path": "^0.12.7",
-        "pmp-protobuf": "^1.8.8",
+        "pmp-protobuf": "^1.9.0",
         "request-ip": "^3.3.0",
         "sharp": "^0.35.5",
         "ulid": "^3.0.2"
     },
     "devDependencies": {
         "@eslint/js": "^10.0.1",
-        "eslint": "^10.12.0",
+        "@types/bcrypt": "^6.0.0",
+        "@types/cors": "^2.8.19",
+        "@types/disposable-email-domains": "^1.0.6",
+        "@types/express": "^5.0.6",
+        "@types/mmmagic": "^0.4.33",
+        "@types/multer": "^2.3.0",
+        "@types/node": "^26.6.6",
+        "@types/request-ip": "^0.0.41",
+        "eslint": "^10.15.0",
         "globals": "^17.13.0",
         "nodemon": "^3.1.3",
-        "protobufjs-cli": "^1.1.3"
+        "protobufjs-cli": "^1.1.3",
+        "ts-morph": "^28.0.0",
+        "tsx": "^4.23.15",
+        "typescript": "~6.0.3",
+        "typescript-eslint": "^8.74.0"
     }
 }
