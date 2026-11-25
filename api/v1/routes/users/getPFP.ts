@@ -9,13 +9,13 @@ export default function (app: Application, utils: Utils): void {
 
         const pfp = await utils.manager.users.getProfilePicture(username);
 
-        if (!pfp) {
+        if (!pfp.ok) {
             return res.status(404).json({ error: "UserNotFound" });
         }
 
         res.status(200);
         res.header("Content-Type", "image/png");
         res.header("Cache-Control", "public, max-age=90");
-        res.send(pfp);
+        res.send(pfp.value);
     });
 }
