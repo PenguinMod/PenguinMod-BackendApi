@@ -2,6 +2,7 @@ import express from "express";
 import fs from "fs/promises";
 import cors from "cors";
 import disposableDomains from "disposable-email-domains";
+import { AuthenticatedRequest } from "../types/express/AuthenticatedRequest";
 
 export function handle_page(page: number): number {
     return Math.max(0, Number(page) || 0);
@@ -239,4 +240,53 @@ export function validateEmail(email: string): boolean {
 
 export function escapeRegex(input: string): string {
     return String(input).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+export async function file_size_limit(
+    req: AuthenticatedRequest,
+    res: express.Response,
+    next: express.NextFunction,
+): Promise<void> {
+    const multiplier = req.login.isDonator ? 1.75 : 1;
+
+    const maxSingleSize =
+        (Number(process.env.UploadSize) * multiplier || 5) * 1_000_000;
+
+    const maxCombinedSize =
+        (Number(process.env.CumulativeUploadSize) * multiplier || 32) *
+        1_000_000;
+
+    if (!req.files || (Array.isArray(req.files) && req.files.length === 0)) {
+        res.status(400).json({ error: "What??" });
+        return;
+    }
+
+    const files: Express.Multer.File[] = Array.isArray(req.files)
+        ? req.files
+        : Object.values(req.files).flat();
+
+    if (files.length === 0) {
+        res.status(400).json({ error: "What??" });
+        return;
+    }
+
+    let combinedSize = 0;
+
+    for (const file of files) {
+        if (file.size > maxSingleSize) {
+            res.status(400).json({ error: "Asset too big" });
+            return;
+        }
+
+        if (file.fieldname === "jsonFile" || file.fieldname === "assets") {
+            combinedSize += file.size;
+        }
+    }
+
+    if (combinedSize > maxCombinedSize) {
+        res.status(400).json({ error: "Files too big" });
+        return;
+    }
+
+    return next();
 }

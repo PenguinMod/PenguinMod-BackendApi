@@ -1,2 +1,3 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+api/v1/routes/routes.ts linguist-generated=true merge=ours

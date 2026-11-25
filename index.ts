@@ -5,18 +5,14 @@ import cors from "cors";
 import rateLimit from "express-rate-limit";
 import express from "express";
 
-import endpointLoader from "./api/endpointLoader";
-import UserManager from "./api/v1/db/UserManager";
 import Manager from "./api/v1/db/Manager";
-import * as logs from "./utils/logs";
 
 import path from "path";
 import multer from "multer";
 import requestIp from "request-ip";
 
-import { OAuth2Client } from "google-auth-library";
 import ipaddr from "ipaddr.js";
-import { AuthenticatedRequest } from "./types/express/AuthenticatedRequest";
+import { registerRoutes } from "./api/v1/routes/routes";
 
 const app = express();
 if (!process.env.PORT) {
@@ -31,7 +27,6 @@ const upload = multer({
     }, // 5mb - max size per asset
 });
 
-const um = new UserManager();
 const manager = new Manager();
 
 app.use(
@@ -74,7 +69,7 @@ app.use((req, res, next) => {
     next();
 });
 app.use(async (req, res, next) => {
-    if (await um.isIPBanned(req.realIP)) {
+    if (await manager.users.isIPBanned(req.realIP)) {
         return res.status(418).json({ error: "NanananaBooBoo" });
     }
     next();
@@ -113,6 +108,11 @@ console.error = (...args): void => {
     );
 };
 
+export interface Utils {
+    manager: Manager;
+    upload: multer.Multer;
+}
+
 (async function (): Promise<void> {
     await manager.init();
 
@@ -122,76 +122,16 @@ console.error = (...args): void => {
             .green,
     );
 
-    app.get("/robots.txt", (req, res) => {
+    app.get("/robots.txt", function (req, res) {
         res.sendFile(path.join(__dirname, "robots.txt"));
     });
 
-    async function file_size_limit(
-        req: AuthenticatedRequest,
-        res: express.Response,
-        next: express.NextFunction,
-    ): Promise<void> {
-        const multiplier = req.login.isDonator ? 1.75 : 1;
-
-        const maxSingleSize =
-            (Number(process.env.UploadSize) * multiplier || 5) * 1_000_000;
-
-        const maxCombinedSize =
-            (Number(process.env.CumulativeUploadSize) * multiplier || 32) *
-            1_000_000;
-
-        if (
-            !req.files ||
-            (Array.isArray(req.files) && req.files.length === 0)
-        ) {
-            res.status(400).json({ error: "What??" });
-            return;
-        }
-
-        const files: Express.Multer.File[] = Array.isArray(req.files)
-            ? req.files
-            : Object.values(req.files).flat();
-
-        if (files.length === 0) {
-            res.status(400).json({ error: "What??" });
-            return;
-        }
-
-        let combinedSize = 0;
-
-        for (const file of files) {
-            if (file.size > maxSingleSize) {
-                res.status(400).json({ error: "Asset too big" });
-                return;
-            }
-
-            if (file.fieldname === "jsonFile" || file.fieldname === "assets") {
-                combinedSize += file.size;
-            }
-        }
-
-        if (combinedSize > maxCombinedSize) {
-            res.status(400).json({ error: "Files too big" });
-            return;
-        }
-
-        return next();
-    }
-
-    const utils = {
-        UserManager: um,
-        homeDir: path.join(__dirname, "./"),
-        upload: upload,
-        path: path,
-        PORT: PORT,
-        logs,
-        googleOAuth2Client: OAuth2Client,
-        ipaddr,
-        rateLimiter: rateLimit,
-        file_size_limit,
+    const utils: Utils = {
+        manager,
+        upload,
     };
 
-    endpointLoader(app, "v1/routes", utils);
+    registerRoutes(app, utils);
 
     app.use(function (err: Error, req: express.Request, res: express.Response) {
         if (err instanceof multer.MulterError) {

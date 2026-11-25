@@ -1,0 +1,39 @@
+# .github/workflows/ci.yml
+name: CI
+
+on:
+    pull_request:
+    push:
+        branches: [main]
+
+concurrency:
+    group: ci-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    check:
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 20
+                  cache: npm
+
+            - run: npm ci
+
+            - name: Routes registry is up to date
+              run: |
+                  npm run gen:routes
+                  git diff --exit-code api/v1/routes/routes.ts || {
+                    echo "::error::api/v1/routes/routes.ts is stale. Run 'npm run gen:routes' and commit the result."
+                    exit 1
+                  }
+
+            - name: Typecheck
+              run: npm run typecheck
+
+            - name: Lint
+              run: npm run lint

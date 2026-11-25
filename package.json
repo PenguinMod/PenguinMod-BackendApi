@@ -19,7 +19,8 @@
         "build": "tsc",
         "start": "node dist/index.js",
         "typecheck": "tsc --noEmit",
-        "lint": "eslint"
+        "lint": "eslint",
+        "gen:routes": "node scripts/gen_routes.js"
     },
     "dependencies": {
         "bcrypt": "^6.0.0",

@@ -2,7 +2,6 @@
     "compilerOptions": {
         "target": "ES2022",
         "module": "CommonJS",
-        "moduleResolution": "Node",
         "rootDir": ".",
         "outDir": "./dist",
         "strict": true,
@@ -10,6 +9,7 @@
         "skipLibCheck": true,
         "allowJs": true,
         "checkJs": false,
+        "resolveJsonModule": true,
     },
     "include": ["**/*.ts", "**/*.js", "**/*.d.ts"],
     "exclude": ["node_modules", "dist"],
