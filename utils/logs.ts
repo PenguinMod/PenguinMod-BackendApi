@@ -166,7 +166,7 @@ function sendMultiReportLog(
     username: string,
     id: UserId,
     target: string,
-    targetID: UserId,
+    targetID: UserId | ProjectId,
     reason: string,
 ): void {
     postWebhook(webhooks.report, {
@@ -322,7 +322,7 @@ function modMessage(
 
 function sendCreationLog(
     username: string,
-    id: ProjectId,
+    id: ProjectId | UserId,
     name: string,
     type: string,
     color = 0x25da5b,
@@ -342,7 +342,9 @@ function sendCreationLog(
             },
             {
                 name: "URL",
-                value: isAccount ? profileUrl(username) : projectUrl(id),
+                value: isAccount
+                    ? profileUrl(username)
+                    : projectUrl(id as ProjectId),
             },
         ],
         author: pmUserAuthor(username),
@@ -351,7 +353,7 @@ function sendCreationLog(
     };
 
     if (type === "upload" || isProjectUpdate) {
-        embed.image = { url: projectThumbnailUrl(id, true) };
+        embed.image = { url: projectThumbnailUrl(id as ProjectId, true) };
     }
 
     postWebhook(webhooks.creation, {

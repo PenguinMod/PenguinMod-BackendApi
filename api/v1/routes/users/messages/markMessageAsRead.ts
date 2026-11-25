@@ -1,6 +1,7 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../index";
 import { requireAuth } from "../../../../../utils/auth";
+import { messageId } from "../../../db/new-types";
 
 export default function (app: Application, utils: Utils): void {
     app.post(
@@ -9,15 +10,18 @@ export default function (app: Application, utils: Utils): void {
         async function (req, res) {
             const packet = req.body;
 
-            const messageID = String(packet.messageID);
-
-            if (!(await utils.UserManager.messageExists(messageID))) {
-                return res.status(400).json({ error: "Invalid message ID" });
-            }
+            const messageID = messageId(String(packet.messageID));
 
             // TODO: verify user is recipient of message
 
-            await utils.UserManager.markMessageAsRead(messageID, true);
+            if (
+                !(await utils.manager.messages.markMessageAsRead(
+                    messageID,
+                    true,
+                ))
+            ) {
+                return res.status(400).json({ error: "Invalid message ID" });
+            }
 
             res.status(200).json({ success: true });
         },

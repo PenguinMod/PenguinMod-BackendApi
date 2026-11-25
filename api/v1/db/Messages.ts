@@ -8,7 +8,8 @@ import {
     ProjectId,
     UserId,
 } from "./new-types";
-import { BaseMessage, Message } from "./types";
+import { BaseMessage, ExtBaseMessage, Message } from "./types";
+import * as mongodb from "mongodb";
 
 export class Messages {
     db: DBController;
@@ -22,9 +23,9 @@ export class Messages {
     async getRecentDisputes(
         page: number,
         pageSize: number,
-    ): Promise<Message[]> {
+    ): Promise<Message<BaseMessage>[]> {
         return await this.db.messages
-            .aggregate<Message>([
+            .aggregate<Message<BaseMessage>>([
                 {
                     $match: {
                         dispute: { $exists: true, $ne: "" },
@@ -77,7 +78,9 @@ export class Messages {
             .toArray();
     }
 
-    async getMessageThread(messageId: MessageId): Promise<Message[] | null> {
+    async getMessageThread(
+        messageId: MessageId,
+    ): Promise<Message<BaseMessage>[] | null> {
         const message = await this.db.messages.findOne({ id: messageId });
 
         if (!message) {
@@ -94,7 +97,7 @@ export class Messages {
 
     async getMessageThreadPrev(
         messageId: MessageId,
-    ): Promise<Message[] | null> {
+    ): Promise<Message<BaseMessage>[] | null> {
         const message = await this.db.messages.findOne({ id: messageId });
 
         if (!message) {
@@ -111,7 +114,9 @@ export class Messages {
             : [message];
     }
 
-    async getMessageThreadPost(messageId: MessageId): Promise<Message[]> {
+    async getMessageThreadPost(
+        messageId: MessageId,
+    ): Promise<Message<BaseMessage>[]> {
         const message = await this.db.messages.findOne({
             "message.previous": messageId,
         });
@@ -141,27 +146,121 @@ export class Messages {
         return id;
     }
 
+    async _getMessages(
+        page: number,
+        pageSize: number,
+        match: mongodb.Document,
+    ): Promise<Message<ExtBaseMessage>[]> {
+        const join = (
+            from: string,
+            localField: string,
+            as: string,
+        ): mongodb.Document => ({
+            $lookup: { from, localField, foreignField: "id", as },
+        });
+        const project = { id: "$projectID", title: { $first: "$p.title" } };
+
+        return await this.db.messages
+            .aggregate<Message<ExtBaseMessage>>([
+                match,
+                { $sort: { date: -1 } },
+                { $skip: page * pageSize },
+                { $limit: pageSize },
+
+                join("users", "message.user", "u"),
+                join("projects", "projectID", "p"),
+                join("projects", "message.projectID", "op"),
+
+                {
+                    $set: {
+                        message: {
+                            $switch: {
+                                branches: [
+                                    {
+                                        case: {
+                                            $eq: [
+                                                "$message.type",
+                                                "followerAdded",
+                                            ],
+                                        },
+                                        then: {
+                                            type: "$message.type",
+                                            user: {
+                                                id: "$message.user",
+                                                username: {
+                                                    $first: "$u.username",
+                                                },
+                                            },
+                                        },
+                                    },
+                                    {
+                                        case: {
+                                            $in: [
+                                                "$message.type",
+                                                ["projectFeatured", "restored"],
+                                            ],
+                                        },
+                                        then: {
+                                            type: "$message.type",
+                                            project,
+                                        },
+                                    },
+                                    {
+                                        case: {
+                                            $eq: ["$message.type", "reject"],
+                                        },
+                                        then: {
+                                            $mergeObjects: [
+                                                "$message",
+                                                {
+                                                    project: {
+                                                        id: "$projectID",
+                                                        title: {
+                                                            $cond: [
+                                                                "$message.hardReject",
+                                                                "$message.title",
+                                                                {
+                                                                    $first: "$p.title",
+                                                                },
+                                                            ],
+                                                        },
+                                                    },
+                                                },
+                                            ],
+                                        },
+                                    },
+                                    {
+                                        case: {
+                                            $eq: ["$message.type", "remix"],
+                                        },
+                                        then: {
+                                            type: "$message.type",
+                                            oldProject: {
+                                                id: "$message.projectID",
+                                                title: { $first: "$op.title" },
+                                            },
+                                            newProject: project,
+                                        },
+                                    },
+                                ],
+                                default: "$message",
+                            },
+                        },
+                    },
+                },
+                { $unset: ["u", "p", "op"] },
+            ])
+            .toArray();
+    }
+
     async getMessages(
         receiver: UserId,
         page: number,
         pageSize: number,
-    ): Promise<Message[]> {
-        return await this.db.messages
-            .aggregate<Message>([
-                {
-                    $match: { receiver: receiver },
-                },
-                {
-                    $sort: { date: -1 },
-                },
-                {
-                    $skip: page * pageSize,
-                },
-                {
-                    $limit: pageSize,
-                },
-            ])
-            .toArray();
+    ): Promise<Message<ExtBaseMessage>[]> {
+        return await this._getMessages(page, pageSize, {
+            $match: { receiver },
+        });
     }
 
     async getMessageCount(receiver: UserId): Promise<number> {
@@ -170,7 +269,9 @@ export class Messages {
         });
     }
 
-    async getMessage(messageID: MessageId): Promise<Message | null> {
+    async getMessage(
+        messageID: MessageId,
+    ): Promise<Message<BaseMessage> | null> {
         return await this.db.messages.findOne({ id: messageID });
     }
 
@@ -178,23 +279,10 @@ export class Messages {
         receiver: UserId,
         page: number,
         pageSize: number,
-    ): Promise<Message[]> {
-        return await this.db.messages
-            .aggregate<Message>([
-                {
-                    $match: { receiver: receiver, read: false },
-                },
-                {
-                    $sort: { date: -1 },
-                },
-                {
-                    $skip: page * pageSize,
-                },
-                {
-                    $limit: pageSize,
-                },
-            ])
-            .toArray();
+    ): Promise<Message<ExtBaseMessage>[]> {
+        return await this._getMessages(page, pageSize, {
+            $match: { receiver: receiver, read: false },
+        });
     }
 
     async getUnreadMessageCount(receiver: UserId): Promise<number> {
@@ -204,8 +292,15 @@ export class Messages {
         });
     }
 
-    async markMessageAsRead(id: MessageId, read: boolean): Promise<void> {
-        await this.db.messages.updateOne({ id: id }, { $set: { read: read } });
+    async markMessageAsRead(id: MessageId, read: boolean): Promise<boolean> {
+        return (
+            (
+                await this.db.messages.updateOne(
+                    { id: id },
+                    { $set: { read: read } },
+                )
+            ).matchedCount > 0
+        );
     }
 
     async messageExists(id: MessageId): Promise<boolean> {

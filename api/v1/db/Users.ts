@@ -227,13 +227,6 @@ export class Users {
         return await this.db.users.findOne({ email });
     }
 
-    async logout(username: string): Promise<void> {
-        await this.db.users.updateOne(
-            { username: username },
-            { $set: { lastLogin: 0 } },
-        );
-    }
-
     async followUser(
         follower: UserId,
         followee: UserId,
@@ -924,8 +917,8 @@ export class Users {
 
     async setUserBirthdayAndOrCountry(
         username: string,
-        birthday: string | undefined,
-        country: string | undefined,
+        birthday: string | null,
+        country: string | null,
     ): Promise<void> {
         if (!birthday && !country) {
             console.warn("neither birthday nor country entered");

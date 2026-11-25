@@ -1,6 +1,7 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../../index";
 import { requireAuth } from "../../../../../../utils/auth";
+import { validateEmail } from "../../../../../../utils/misc";
 
 export default function (app: Application, utils: Utils): void {
     app.post(
@@ -22,32 +23,32 @@ export default function (app: Application, utils: Utils): void {
                 return;
             }
 
-            if (!utils.UserManager.validateEmail(email)) {
+            if (!validateEmail(email)) {
                 res.status(400).json({ error: "EmailInvalid" });
                 return;
             }
 
             const lastEmailSentID =
-                await utils.UserManager.lastEmailSentByID(userid);
-            const lastEmailSendIP = await utils.UserManager.lastEmailSentByIP(
+                await utils.manager.users.lastEmailSentByID(userid);
+            const lastEmailSendIP = await utils.manager.users.lastEmailSentByIP(
                 req.realIP,
             );
 
             const lastEmailSent =
-                lastEmailSentID > lastEmailSendIP
+                Number(lastEmailSentID) > Number(lastEmailSendIP)
                     ? lastEmailSentID
                     : lastEmailSendIP;
 
             const emailCooldown = Number(process.env.EmailCooldown) || 0;
             if (
-                Date.now() - (lastEmailSent ? lastEmailSent : 0) <
+                Date.now() - (lastEmailSent ? Number(lastEmailSent) : 0) <
                 1000 * 60 * emailCooldown
             ) {
                 res.status(429).json({ error: "Cooldown" });
                 return;
             }
 
-            const state = await utils.UserManager.generatePasswordResetState(
+            const state = await utils.manager.auth.generatePasswordResetState(
                 email,
                 userid,
                 true,
@@ -90,7 +91,7 @@ export default function (app: Application, utils: Utils): void {
 
         PenguinMod`;
 
-            const success = await utils.UserManager.sendEmail(
+            const success = await utils.manager.users.sendEmail(
                 userid,
                 req.realIP,
                 "verify",

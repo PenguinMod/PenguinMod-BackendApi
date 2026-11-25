@@ -1,11 +1,13 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../../index";
+import { corsMW } from "../../../../../../utils/misc";
+import rateLimit from "express-rate-limit";
 
 export default function (app: Application, utils: Utils): void {
     app.post(
         "/api/v1/users/resetpassword/sendEmail",
-        utils.cors(),
-        utils.rateLimiter({
+        corsMW,
+        rateLimit({
             validate: {
                 trustProxy: true,
                 xForwardedForHeader: true,
@@ -53,38 +55,36 @@ export default function (app: Application, utils: Utils): void {
                 );
             }
 
-            // TODO: make this return more info than just username.
-            // we later fetch the id. thats an extra, unneeded db query.
-            const username = await utils.UserManager.getUsernameByEmail(email);
+            const userData = await utils.manager.users.getUserByEmail(email);
 
-            if (!username) {
+            if (!userData) {
                 res.status(400).json({ error: "InvalidEmail" });
                 return;
             }
 
-            const userid = await utils.UserManager.getIDByUsername(username);
+            const userid = userData.id;
             const userip = req.realIP;
 
             const lastEmailSentID =
-                await utils.UserManager.lastEmailSentByID(userid);
+                await utils.manager.users.lastEmailSentByID(userid);
             const lastEmailSendIP =
-                await utils.UserManager.lastEmailSentByIP(userip);
+                await utils.manager.users.lastEmailSentByIP(userip);
 
             const lastEmailSent =
-                lastEmailSentID > lastEmailSendIP
+                Number(lastEmailSentID) > Number(lastEmailSendIP)
                     ? lastEmailSentID
                     : lastEmailSendIP;
 
             const emailCooldown = Number(process.env.EmailCooldown) || 0;
             if (
-                Date.now() - (lastEmailSent ? lastEmailSent : 0) <
+                Date.now() - (lastEmailSent ? lastEmailSent.getDate() : 0) <
                 1000 * 60 * emailCooldown
             ) {
                 res.status(429).json({ error: "Cooldown" });
                 return;
             }
 
-            const state = await utils.UserManager.generatePasswordResetState(
+            const state = await utils.manager.auth.generatePasswordResetState(
                 email,
                 userid,
                 false,
@@ -95,7 +95,7 @@ export default function (app: Application, utils: Utils): void {
             const emailHtml = `<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/REC-html40/loose.dtd">
         <html><body>
         <p style='background-color: #129aeb; color: white; font-size: 48px; font-weight: bold; font-family: "Helvetica Neue", Arial, sans-serif; padding: 60px 10%;' align="center">PenguinMod Password Reset</p>
-            <h1 style='font-family: "Helvetica Neue", Arial, sans-serif;'>Hello ${username}!</h1>
+            <h1 style='font-family: "Helvetica Neue", Arial, sans-serif;'>Hello ${userData.username}!</h1>
             <p style='font-family: "Helvetica Neue", Arial, sans-serif;'>You are getting this email as someone has asked to reset the password for this PenguinMod account.</p>
         <p style='font-family: "Helvetica Neue", Arial, sans-serif;'><a href="${forgotPasswordUrl}">Reset Password</a></p>
         <br>
@@ -107,7 +107,7 @@ export default function (app: Application, utils: Utils): void {
             const emailPlainText = `PenguinMod Password Reset
 
         ********************
-        Hello ${username}!
+        Hello ${userData.username}!
         ********************
 
         You are getting this email as someone has asked to reset the
@@ -124,12 +124,12 @@ export default function (app: Application, utils: Utils): void {
 
         PenguinMod`;
 
-            const success = await utils.UserManager.sendEmail(
+            const success = await utils.manager.users.sendEmail(
                 userid,
                 req.realIP,
                 "reset",
                 email,
-                username,
+                userData.username,
                 "Reset Your Password",
                 emailPlainText,
                 emailHtml,

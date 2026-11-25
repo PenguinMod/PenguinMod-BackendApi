@@ -7,17 +7,17 @@ export default function (app: Application, utils: Utils): void {
         "/api/v1/users/getunreadmessagecount",
         ...requireAuth(utils.manager.auth, { allow_banned: true }),
         async function (req, res) {
-            // TODO: use the fullmeta provided by res.locals.login
-
-            const username = res.locals.login.username;
             const id = res.locals.login.id;
 
-            let count = await utils.UserManager.getUnreadMessageCount(id);
+            let count = await utils.manager.messages.getUnreadMessageCount(id);
 
             const lastPolicyUpdates =
-                await utils.UserManager.getLastPolicyUpdate(username);
-            const lastPolicyReads =
-                await utils.UserManager.getLastPolicyRead(username);
+                await utils.manager.misc.getLastPolicyUpdate();
+            const lastPolicyReads = {
+                privacyPolicy: res.locals.login.fullMeta.lastPrivacyPolicyRead,
+                TOS: res.locals.login.fullMeta.lastTOSRead,
+                guidelines: res.locals.login.fullMeta.lastGuidelinesRead,
+            };
 
             const hasReadTOS = lastPolicyReads.TOS >= lastPolicyUpdates.TOS;
             const hasReadPrivacyPolicy =

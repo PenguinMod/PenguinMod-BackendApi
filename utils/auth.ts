@@ -109,3 +109,19 @@ export const maybeAuth =
 
         next();
     };
+
+export function parseBirthday(birthday: string): string | null {
+    if (!birthday || typeof birthday !== "string") {
+        return null;
+    }
+    try {
+        const date = new Date(birthday);
+        if (isNaN(date.getTime())) {
+            return null;
+        }
+
+        return date.toISOString();
+    } catch {
+        return null;
+    }
+}

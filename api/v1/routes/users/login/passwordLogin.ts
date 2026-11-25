@@ -1,11 +1,13 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../index";
+import { corsMW } from "../../../../../utils/misc";
+import rateLimit from "express-rate-limit";
 
 export default function (app: Application, utils: Utils): void {
     app.post(
         "/api/v1/users/passwordLogin",
-        utils.cors(),
-        utils.rateLimiter({
+        corsMW,
+        rateLimit({
             validate: {
                 trustProxy: true,
                 xForwardedForHeader: true,
@@ -49,21 +51,21 @@ export default function (app: Application, utils: Utils): void {
                 }
             }
 
-            const token = await utils.UserManager.loginWithPassword(
+            const data = await utils.manager.auth.loginWithPassword(
                 username,
                 password,
                 true,
             );
-            if (!token) {
+            if (!data.ok) {
                 res.status(401).json({ error: "InvalidCredentials" });
                 return;
             }
 
-            await utils.UserManager.addIP(username, req.realIP);
+            await utils.manager.users.addIP(data.value.id, req.realIP);
 
             res.status(200);
             res.header("Content-Type", "application/json");
-            res.json({ token: token });
+            res.json({ token: data.value.token });
         },
     );
 }

@@ -62,7 +62,7 @@ export default function (app: Application, utils: Utils): void {
             ) {
                 res.status(200).json({ success: true });
 
-                const server_id = userId("Server");
+                const server_id = userId("system");
                 if (
                     await utils.manager.reports.hasAlreadyReported(
                         server_id,

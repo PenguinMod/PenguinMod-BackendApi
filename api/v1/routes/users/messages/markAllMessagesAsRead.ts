@@ -7,7 +7,9 @@ export default function (app: Application, utils: Utils): void {
         "/api/v1/users/markallmessagesasread",
         ...requireAuth(utils.manager.auth, { allow_banned: true }),
         async function (req, res) {
-            await utils.UserManager.markAllMessagesAsRead(res.locals.login.id);
+            await utils.manager.messages.markAllMessagesAsRead(
+                res.locals.login.id,
+            );
 
             res.status(200).json({ success: true });
         },

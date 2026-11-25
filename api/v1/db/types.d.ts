@@ -87,7 +87,7 @@ export interface ProjectData {
     votes: number;
 }
 
-export interface ExtProjectData extends ProjectData {
+export interface ExtProjectData extends Omit<ProjectData, "author"> {
     fromDonator: boolean;
     author: {
         username: string;
@@ -172,14 +172,14 @@ export interface BaseMessage {
     reason?: string;
 }
 
-export interface Message {
+export interface Message<Base> {
     receiver: UserId;
-    message: BaseMessage;
+    message: Base;
     disputable: boolean;
     date: number;
     read: boolean;
     id: MessageId;
-    projectID: ProejctId;
+    projectID: ProjectId;
     dispute?: string;
 }
 
@@ -231,10 +231,31 @@ export interface Report {
     resolved: boolean;
 }
 
-export interface ExtReport extends Report {
+export interface ExtReport extends Omit<Report, "reporter"> {
     reporter: {
         id: UserId;
         username: string;
+    };
+}
+
+export interface ExtBaseMessage extends Omit<BaseMessage, "user"> {
+    user?:
+        | UserId
+        | {
+              id: UserId;
+              username: string;
+          };
+    project?: {
+        id: ProjectId;
+        title: string;
+    };
+    oldProject?: {
+        id: ProjectId;
+        title: string;
+    };
+    newProject?: {
+        id: ProjectId;
+        title: string;
     };
 }
 

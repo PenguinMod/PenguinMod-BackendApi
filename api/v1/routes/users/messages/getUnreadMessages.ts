@@ -1,6 +1,7 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../index";
 import { requireAuth } from "../../../../../utils/auth";
+import { handle_page } from "../../../../../utils/misc";
 
 // TODO: delete?
 
@@ -11,112 +12,18 @@ export default function (app: Application, utils: Utils): void {
         async function (req, res) {
             const packet = req.query;
 
-            const page = utils.handle_page(packet.page);
+            const page = handle_page(packet.page);
 
             const id = res.locals.login.id;
 
-            const messages = await utils.UserManager.getUnreadMessages(
+            const messages = await utils.manager.messages.getUnreadMessages(
                 id,
                 page,
                 Number(process.env.PageSize),
             );
 
-            const final = [];
-            for (const item of messages) {
-                switch (item.message.type) {
-                    case "followerAdded":
-                        item.message = {
-                            user: {
-                                id: item.message.user,
-                                username:
-                                    await utils.UserManager.getUsernameByID(
-                                        item.message.user,
-                                    ),
-                            },
-                            type: item.message.type,
-                        };
-
-                        final.push(item);
-                        break;
-                    case "projectFeatured":
-                        item.message = {
-                            project: {
-                                id: item.projectID,
-                                title: (
-                                    await utils.manager.projects.getProjectMetadata(
-                                        item.projectID,
-                                    )
-                                ).title,
-                            },
-                            type: item.message.type,
-                        };
-                        final.push(item);
-                        break;
-                    case "reject":
-                        if (!item.message.hardReject) {
-                            item.message = {
-                                project: {
-                                    id: item.projectID,
-                                    title: (
-                                        await utils.manager.projects.getProjectMetadata(
-                                            item.projectID,
-                                        )
-                                    ).title,
-                                },
-                                ...item.message,
-                            };
-                        } else {
-                            item.message.project = {
-                                id: item.projectID,
-                                title: item.message.title,
-                            };
-                        }
-                        final.push(item);
-                        break;
-                    case "remix":
-                        item.message = {
-                            oldProject: {
-                                id: item.message.projectID,
-                                title: (
-                                    await utils.manager.projects.getProjectMetadata(
-                                        String(item.message.projectID),
-                                    )
-                                ).title,
-                            },
-                            newProject: {
-                                id: item.projectID,
-                                title: (
-                                    await utils.manager.projects.getProjectMetadata(
-                                        String(item.projectID),
-                                    )
-                                ).title,
-                            },
-                            type: item.message.type,
-                        };
-                        final.push(item);
-                        break;
-                    case "restored":
-                        item.message = {
-                            project: {
-                                id: item.projectID,
-                                title: (
-                                    await utils.manager.projects.getProjectMetadata(
-                                        item.projectID,
-                                    )
-                                ).title,
-                            },
-                            type: item.message.type,
-                        };
-                        final.push(item);
-                        break;
-                    default:
-                        final.push(item);
-                        break;
-                }
-            }
-
             res.header("Content-type", "application/json");
-            res.send({ messages: final });
+            res.send({ messages });
         },
     );
 }

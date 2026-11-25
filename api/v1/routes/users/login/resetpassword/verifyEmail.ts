@@ -1,10 +1,11 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../../index";
+import { corsMW } from "../../../../../../utils/misc";
 
 export default function (app: Application, utils: Utils): void {
     app.get(
         "/api/v1/resetpassword/verifyemail",
-        utils.cors(),
+        corsMW,
         async function (req, res) {
             const packet = req.query;
 
@@ -12,7 +13,7 @@ export default function (app: Application, utils: Utils): void {
             const state = String(packet.state);
 
             if (
-                !(await utils.UserManager.verifyPasswordResetState(
+                !(await utils.manager.auth.verifyPasswordResetState(
                     state,
                     email,
                     true,
@@ -24,16 +25,16 @@ export default function (app: Application, utils: Utils): void {
                 return;
             }
 
-            const username = await utils.UserManager.getUsernameByEmail(email);
+            const userData = await utils.manager.users.getUserByEmail(email);
 
-            if (!username) {
+            if (!userData) {
                 res.status(400).json({ error: "InvalidEmail" });
                 return;
             }
 
-            await utils.UserManager.setEmailVerified(username, true);
+            await utils.manager.users.setEmailVerified(userData.username, true);
 
-            res.redirect(process.env.HomeURL);
+            res.redirect(String(process.env.HomeURL));
         },
     );
 }

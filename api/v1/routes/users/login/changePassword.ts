@@ -43,21 +43,24 @@ export default function (app: Application, utils: Utils): void {
 
             const username = res.locals.login.username;
             if (
-                !(await utils.UserManager.loginWithPassword(
-                    username,
-                    old_password,
-                ))
+                !(
+                    await utils.manager.auth.loginWithPassword(
+                        username,
+                        old_password,
+                        false,
+                    )
+                ).ok
             ) {
                 res.status(401).json({ error: "Invalid Login" });
                 return;
             }
 
-            const newToken = await utils.UserManager.changePassword(
+            const newToken = await utils.manager.auth.changePassword(
                 username,
                 new_password,
             );
 
-            await utils.UserManager.addIP(username, req.realIP);
+            await utils.manager.users.addIP(res.locals.login.id, req.realIP);
 
             res.status(200).json({ token: newToken });
         },

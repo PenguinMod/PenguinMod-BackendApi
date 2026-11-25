@@ -6,6 +6,7 @@ import { ulid } from "ulid";
 import { createHash } from "node:crypto";
 import { retryIfFailure } from "../../../utils/misc";
 import {
+    BaseMessage,
     BBListFileNames,
     BBUploadURL,
     FeedItem,
@@ -42,7 +43,7 @@ export class DBController {
     runtimeConfig: mongodb.Collection<RuntimeConfigItem>;
     projects: mongodb.Collection<ProjectData>;
     projectStats: mongodb.Collection<ProjectStatItem>;
-    messages: mongodb.Collection<Message>;
+    messages: mongodb.Collection<Message<BaseMessage>>;
     oauthStates: mongodb.Collection<OAuthState>;
     oneTimeTkCodes: mongodb.Collection<OTTCode>;
     userFeed: mongodb.Collection<FeedItem>;

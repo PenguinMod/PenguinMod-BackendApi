@@ -1,17 +1,9 @@
-import { requireAuth } from "../../../../../utils/auth";
+import { parseBirthday, requireAuth } from "../../../../../utils/auth";
+import countryLookup from "../../../../../static/country-lookup.json";
+import { Application } from "express";
+import { Utils } from "../../../../../index";
 
-const countryLookup = require("../../../../../static/country-lookup.json");
-/**
- * @typedef {Object} Utils
- * @property {import("../../../db/UserManager")} UserManager
- */
-
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
+export default function (app: Application, utils: Utils): void {
     app.post(
         "/api/v1/users/filloutSafetyDetails",
         ...requireAuth(utils.manager.auth),
@@ -24,26 +16,7 @@ module.exports = (app, utils) => {
             const username = res.locals.login.username;
             const user_meta = res.locals.login.fullMeta;
 
-            const parseBirthday = (birthday) => {
-                if (!birthday) {
-                    return;
-                }
-                if (typeof birthday !== "string") {
-                    return;
-                }
-                try {
-                    const date = new Date(birthday);
-                    if (isNaN(date.getTime())) {
-                        return; // invalid format
-                    }
-
-                    return date.toISOString();
-                } catch {
-                    return;
-                }
-            };
-
-            const parsedBirthday = parseBirthday(birthday); // will be null if not provided
+            const parsedBirthday = parseBirthday(birthday);
             if (birthday && !parsedBirthday) {
                 res.status(400).json({ error: "InvalidBirthday" });
                 return;
@@ -60,7 +33,7 @@ module.exports = (app, utils) => {
             }
 
             if (!parsedBirthday && !countryCode) {
-                res.status(400).json({ error: "MissingOneField" });
+                res.status(400).json({ error: "GiveMeSomething" });
                 return;
             }
 
@@ -74,7 +47,7 @@ module.exports = (app, utils) => {
                 return;
             }
 
-            await utils.UserManager.setUserBirthdayAndOrCountry(
+            await utils.manager.users.setUserBirthdayAndOrCountry(
                 username,
                 parsedBirthday,
                 countryCode,
@@ -83,4 +56,4 @@ module.exports = (app, utils) => {
             res.status(200).json({ success: true });
         },
     );
-};
+}

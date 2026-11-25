@@ -1,8 +1,18 @@
-const countryLookup = require("../../../../../static/country-lookup.json");
-/**
- * @typedef {Object} Utils
- * @property {import("../../../db/UserManager")} UserManager
- */
+import { Application } from "express";
+import countryLookup from "../../../../../static/country-lookup.json";
+import { Utils } from "../../../../../index";
+import {
+    corsMW,
+    retryIfFailure,
+    validateEmail,
+} from "../../../../../utils/misc";
+import rateLimit from "express-rate-limit";
+import {
+    pmUserAuthor,
+    sendAdminLog,
+    sendCreationLog,
+} from "../../../../../utils/logs";
+import { parseBirthday } from "../../../../../utils/auth";
 
 const global_creation_counter = {
     count: 0,
@@ -10,28 +20,11 @@ const global_creation_counter = {
     ping: false,
 };
 
-/**
- * @param {string} birthday
- * @returns {string|null} ISO string, or null if invalid
- */
-const parseBirthday = (birthday) => {
-    const date = new Date(birthday);
-    if (isNaN(date.getTime())) {
-        return null;
-    }
-    return date.toISOString();
-};
-
-/**
- *
- * @param {import("express").Application} app Express app
- * @param {Utils} utils Utils
- */
-module.exports = (app, utils) => {
+export default function (app: Application, utils: Utils): void {
     app.post(
         "/api/v1/users/createAccount",
-        utils.cors(),
-        utils.rateLimiter({
+        corsMW,
+        rateLimit({
             validate: {
                 trustProxy: true,
                 xForwardedForHeader: true,
@@ -62,14 +55,9 @@ module.exports = (app, utils) => {
                         {
                             action: "actoin",
                             content: `<@790782926785609728> evil doer is doing evil maybe`,
+                            fields: {},
                         },
-                        {
-                            name: "System",
-                            icon_url: String(
-                                `${process.env.ApiURL}/api/v1/users/getpfp?username=system`,
-                            ),
-                            url: `${process.env.HomeURL}/profile?user=system`,
-                        },
+                        pmUserAuthor("system"),
                         0xcc0000,
                     );
 
@@ -81,7 +69,7 @@ module.exports = (app, utils) => {
                     .json({ error: "Please try again later." });
             }
 
-            if (!(await utils.UserManager.canCreateAccount())) {
+            if (!(await utils.manager.auth.canCreateAccount())) {
                 return res
                     .status(403)
                     .json({ error: "Account creation is not enabled" });
@@ -127,7 +115,7 @@ module.exports = (app, utils) => {
                     .json({ error: "MissingRequirementsPassword" });
             }
 
-            if (email && !utils.UserManager.validateEmail(email)) {
+            if (email && !validateEmail(email)) {
                 return res.status(400).json({ error: "InvalidEmail" });
             }
 
@@ -147,16 +135,16 @@ module.exports = (app, utils) => {
                     return res.status(400).json({ error: "InvalidCaptcha" });
                 }
 
-                const captchaBody = {
-                    secret: process.env.CFCaptchaSecret,
+                const captchaBody: Record<string, string> = {
+                    secret: String(process.env.CFCaptchaSecret),
                     response: captcha_token,
                     remoteip: req.realIPPlain,
                 };
 
-                let captchaResult = null;
+                let captchaResult: unknown = null;
 
                 try {
-                    await utils.retryIfFailure(
+                    await retryIfFailure(
                         async () => {
                             const resp = await fetch(
                                 "https://challenges.cloudflare.com/turnstile/v0/siteverify",
@@ -185,11 +173,21 @@ module.exports = (app, utils) => {
                         .json({ error: "CaptchaServiceUnavailable" });
                 }
 
-                if (!captchaResult || !captchaResult.success) {
+                if (
+                    !captchaResult ||
+                    typeof captchaResult !== "object" ||
+                    !("success" in captchaResult) ||
+                    !captchaResult.success
+                ) {
                     console.warn(
                         "Turnstile rejected:",
-                        captchaResult?.["error-codes"],
+                        captchaResult &&
+                            typeof captchaResult === "object" &&
+                            "error-codes" in captchaResult
+                            ? captchaResult["error-codes"]
+                            : undefined,
                     );
+
                     return res.status(400).json({ error: "InvalidCaptcha" });
                 }
             } else {
@@ -198,39 +196,41 @@ module.exports = (app, utils) => {
                 );
             }
 
-            if (await utils.UserManager.existsByUsername(username, true)) {
+            if (await utils.manager.users.getUserData(username)) {
                 return res.status(400).json({ error: "AccountExists" });
             }
 
-            if (email && (await utils.UserManager.emailInUse(email))) {
+            if (email && (await utils.manager.users.getUserByEmail(email))) {
                 return res.status(400).json({ error: "EmailInUse" });
             }
 
-            const info = await utils.UserManager.createAccount(
+            const info = await utils.manager.auth.createAccount(
                 username,
                 real_username,
                 password,
-                email,
+                {
+                    email,
+                    verified: false,
+                },
                 parsedBirthday,
                 countryCode,
                 false,
-                utils,
-                res,
+                true,
             );
 
-            if (!info) {
-                return;
+            if (!info.ok) {
+                return res.status(400).json({ error: info.error });
             }
 
-            const token = info[0];
-            const id = info[1];
+            const token = info.value.token;
+            const id = info.value.id;
 
-            await utils.UserManager.addIPID(id, req.realIP);
-            await utils.logs.sendCreationLog(username, id, "", "account");
+            await utils.manager.users.addIPID(id, req.realIP);
+            sendCreationLog(username, id, "", "account");
 
             global_creation_counter.count++;
 
             res.status(200).json({ token });
         },
     );
-};
+}

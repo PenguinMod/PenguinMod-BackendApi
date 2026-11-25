@@ -1,10 +1,11 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../../index";
+import { corsMW } from "../../../../../../utils/misc";
 
 export default function (app: Application, utils: Utils): void {
     app.post(
         "/api/v1/users/resetpassword/reset",
-        utils.cors(),
+        corsMW,
         async function (req, res) {
             const packet = req.body;
 
@@ -13,7 +14,7 @@ export default function (app: Application, utils: Utils): void {
             const password = String(packet.password);
 
             if (
-                !(await utils.UserManager.verifyPasswordResetState(
+                !(await utils.manager.auth.verifyPasswordResetState(
                     state,
                     email,
                 ))
@@ -37,15 +38,15 @@ export default function (app: Application, utils: Utils): void {
                 return;
             }
 
-            const username = await utils.UserManager.getUsernameByEmail(email);
+            const userData = await utils.manager.users.getUserByEmail(email);
 
-            if (!username) {
+            if (!userData) {
                 res.status(400).json({ error: "InvalidEmail" });
                 return;
             }
 
-            const token = await utils.UserManager.changePassword(
-                username,
+            const token = await utils.manager.auth.changePassword(
+                userData.username,
                 password,
             );
 

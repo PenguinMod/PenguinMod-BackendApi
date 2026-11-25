@@ -86,9 +86,7 @@ export class Authentication {
         username: string,
         password: string,
         allowBanned: boolean,
-    ): Promise<
-        Result<string, "UserNotFound" | "Banned" | "PasswordIncorrect">
-    > {
+    ): Promise<Result<Login, "UserNotFound" | "Banned" | "PasswordIncorrect">> {
         const result = await this.db.users.findOne({ username: username });
 
         if (!result) {
@@ -103,7 +101,21 @@ export class Authentication {
         }
 
         if (await bcrypt.compare(password, result.password)) {
-            return ok(await this.newTokenGen(result.id));
+            const token = await this.newTokenGen(result.id);
+
+            return ok({
+                username: result.username,
+                token,
+                id: result.id,
+                isDonator: result.badges.includes("donator"),
+                isMod: result.moderator || result.admin,
+                isAdmin: result.admin,
+                email: result.email || "",
+                emailVerified: result.emailVerified,
+                badges: result.badges,
+                rank: result.rank,
+                fullMeta: result,
+            });
         } else {
             return err("PasswordIncorrect");
         }
@@ -117,7 +129,7 @@ export class Authentication {
         birthday: string | undefined,
         country: string | undefined,
         is_studio: boolean,
-        check_username: boolean = false,
+        check_username: boolean,
     ): Promise<Result<{ token: string; id: UserId }, AccountCreationError>> {
         const result = await this.db.users.findOne({ username: username });
         if (result) {
@@ -471,5 +483,12 @@ export class Authentication {
         });
 
         return !!result;
+    }
+
+    async logout(username: string): Promise<void> {
+        await this.db.users.updateOne(
+            { username: username },
+            { $set: { lastLogin: 0 } },
+        );
     }
 }
