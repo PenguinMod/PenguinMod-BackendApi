@@ -20,23 +20,11 @@ export default function (app: Application, utils: Utils): void {
             const username = res.locals.login.username;
             const isAdmin = res.locals.login.isAdmin;
 
-            if (!projectID) {
-                return res.status(404).json({ error: "ProjectNotFound" });
-            }
-
-            // TODO: just fetch meta once
-            if (
-                !(await utils.manager.projects.projectExists(projectID, true))
-            ) {
-                return res.status(404).json({ error: "ProjectNotFound" });
-            }
-
             const metadata =
                 await utils.manager.projects.getProjectMetadata(projectID);
 
             if (!metadata) {
-                console.error(`somehow couldn't get metadata for ${projectID}`);
-                return res.status(500).json({ error: "InternalError" });
+                return res.status(404).json({ error: "ProjectNotFound" });
             }
 
             if (metadata.author.username !== username && !isAdmin) {

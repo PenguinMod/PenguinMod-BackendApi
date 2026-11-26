@@ -206,7 +206,7 @@ export class Projects {
             inner = new Set();
             this.proj_id_to_ip_views.set(id, inner);
         } else {
-            new_view = inner.has(ip);
+            new_view = !inner.has(ip);
         }
         inner.add(ip);
 
