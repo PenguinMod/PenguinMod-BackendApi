@@ -153,14 +153,14 @@ export default function (app: Application, utils: Utils): void {
                 }
 
                 if (res.locals.login.rank < 1 && !res.locals.login.isMod) {
-                    const [areExtensionsAllowed, blockedExtension] =
+                    const blockedExtensions =
                         await utils.manager.projects.validateAreProjectExtensionsAllowed(
                             jsonFile.extensions || [],
                             jsonFile.extensionURLs || {},
                         );
-                    if (!areExtensionsAllowed) {
+                    if (blockedExtensions.length > 0) {
                         return res.status(400).json({
-                            error: `Extension not allowed: ${blockedExtension}`,
+                            error: `Extension not allowed: ${JSON.stringify(blockedExtensions)}`,
                         });
                     }
                 }
