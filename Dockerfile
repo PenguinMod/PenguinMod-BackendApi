@@ -15,7 +15,7 @@ RUN --mount=type=cache,target=/root/.npm \
 
 COPY . .
 
-RUN npm run build
+RUN npm run build-prod
 
 FROM node:24 AS production
 

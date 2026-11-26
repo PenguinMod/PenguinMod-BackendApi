@@ -17,7 +17,8 @@
     "scripts": {
         "dev": "tsx watch index.ts",
         "build": "tsc && cp -r static dist",
-        "start": "node dist/index.js",
+        "build-prod": "swc . -d dist --ignore '**/node_modules/**','**/dist/**' && cp -r static dist",
+        "start": "node --enable-source-maps dist/index.js",
         "typecheck": "tsc --noEmit",
         "lint": "eslint",
         "gen:routes": "node scripts/gen_routes.js"
@@ -48,6 +49,8 @@
     },
     "devDependencies": {
         "@eslint/js": "^10.0.1",
+        "@swc/cli": "^0.8.2",
+        "@swc/core": "^1.16.22",
         "@types/bcrypt": "^6.0.0",
         "@types/cors": "^2.8.19",
         "@types/disposable-email-domains": "^1.0.6",
