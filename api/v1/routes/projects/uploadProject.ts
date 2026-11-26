@@ -133,7 +133,9 @@ export default function (app: Application, utils: Utils): void {
             }
 
             const remix_string =
-                !packet.remix || String(packet.remix) === "0"
+                !packet.remix ||
+                String(packet.remix) === "0" ||
+                String(packet.remix) === "undefined"
                     ? ""
                     : String(packet.remix);
             const remix = projectId(remix_string);
