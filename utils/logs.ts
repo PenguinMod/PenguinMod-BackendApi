@@ -49,8 +49,8 @@ function projectThumbnailUrl(id: ProjectId, cacheBust = false): string {
     return cacheBust ? `${base}&rnd=${Math.random()}` : base;
 }
 
-function codeBlock(value: string): string {
-    return `\`\`\`\n${value.replace(/```/g, "'''")}\n\`\`\``;
+function codeBlock(value: string, type?: string): string {
+    return `\`\`\`${type ? type : ""}\n${value.replace(/```/g, "'''")}\n\`\`\``;
 }
 
 function pmUserAuthor(username: string): WebhookAuthor {
@@ -99,7 +99,7 @@ function sendHeatLog(
             {
                 title: "Filter Triggered",
                 color,
-                description: codeBlock(text),
+                description: codeBlock(text, "ansi"),
                 fields: [
                     { name: "Location", value: `\`${location}\`` },
                     { name: "Info", value: `\`${JSON.stringify(user_info)}\`` },
