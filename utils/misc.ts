@@ -177,22 +177,6 @@ export function genHighlightedText(
     needles: NeedleMatch[],
     color: "red" | "yellow",
 ): string {
-    const non_over_needles = [];
-    needles = needles.sort((a, b) => b.length - a.length);
-    while (needles.length > 0) {
-        const cur = needles.pop();
-        if (!cur) {
-            throw "destroy universe";
-        }
-        if (needles.length === 0) {
-            non_over_needles.push(cur);
-            break;
-        }
-        if (needles[needles.length - 1].index <= cur.index + cur.length) {
-            cur.length += needles.pop()?.length || 0;
-        }
-    }
-
     let color_code;
     switch (color) {
         case "red":
@@ -200,13 +184,35 @@ export function genHighlightedText(
             break;
         case "yellow":
             color_code = 33;
+            break;
     }
     const color_start = `\x1b[${color_code};1m`;
     const color_end = "\x1b[0m";
 
+    const sorted = [...needles]
+        .filter((n) => n.length > 0)
+        .sort((a, b) => a.index - b.index);
+
+    const merged: NeedleMatch[] = [];
+
+    for (const needle of sorted) {
+        const last = merged[merged.length - 1];
+
+        if (last && needle.index <= last.index + last.length) {
+            last.length =
+                Math.max(
+                    last.index + last.length,
+                    needle.index + needle.length,
+                ) - last.index;
+        } else {
+            merged.push({ ...needle });
+        }
+    }
+
     let res = "";
     let idx = 0;
-    for (const needle of non_over_needles) {
+
+    for (const needle of merged) {
         res += text.slice(idx, needle.index);
         res += color_start;
         res += text.slice(needle.index, needle.index + needle.length);
@@ -214,7 +220,8 @@ export function genHighlightedText(
 
         idx = needle.index + needle.length;
     }
-    res += text;
+
+    res += text.slice(idx);
 
     return res;
 }
