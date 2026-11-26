@@ -132,7 +132,11 @@ export default function (app: Application, utils: Utils): void {
                 });
             }
 
-            const remix = projectId(String(packet.remix));
+            const remix_string =
+                !packet.remix || String(packet.remix) === "0"
+                    ? ""
+                    : String(packet.remix);
+            const remix = projectId(remix_string);
             let original_remix_project = null;
             if (remix) {
                 original_remix_project =
