@@ -8,7 +8,7 @@ import {
     ProjectId,
     UserId,
 } from "./new-types";
-import { BaseMessage, ExtBaseMessage, Message } from "./types";
+import { BaseMessage, MessageBase, MessageExtBase } from "./types";
 import * as mongodb from "mongodb";
 
 export class Messages {
@@ -23,9 +23,9 @@ export class Messages {
     async getRecentDisputes(
         page: number,
         pageSize: number,
-    ): Promise<Message<BaseMessage>[]> {
+    ): Promise<MessageBase[]> {
         return await this.db.messages
-            .aggregate<Message<BaseMessage>>([
+            .aggregate<MessageBase>([
                 {
                     $match: {
                         dispute: { $exists: true, $ne: "" },
@@ -80,7 +80,7 @@ export class Messages {
 
     async getMessageThread(
         messageId: MessageId,
-    ): Promise<Message<BaseMessage>[] | null> {
+    ): Promise<MessageBase[] | null> {
         const message = await this.db.messages.findOne({ id: messageId });
 
         if (!message) {
@@ -97,7 +97,7 @@ export class Messages {
 
     async getMessageThreadPrev(
         messageId: MessageId,
-    ): Promise<Message<BaseMessage>[] | null> {
+    ): Promise<MessageBase[] | null> {
         const message = await this.db.messages.findOne({ id: messageId });
 
         if (!message) {
@@ -114,9 +114,7 @@ export class Messages {
             : [message];
     }
 
-    async getMessageThreadPost(
-        messageId: MessageId,
-    ): Promise<Message<BaseMessage>[]> {
+    async getMessageThreadPost(messageId: MessageId): Promise<MessageBase[]> {
         const message = await this.db.messages.findOne({
             "message.previous": messageId,
         });
@@ -150,7 +148,7 @@ export class Messages {
         page: number,
         pageSize: number,
         match: mongodb.Document,
-    ): Promise<Message<ExtBaseMessage>[]> {
+    ): Promise<MessageExtBase[]> {
         const join = (
             from: string,
             localField: string,
@@ -161,7 +159,7 @@ export class Messages {
         const project = { id: "$projectID", title: { $first: "$p.title" } };
 
         return await this.db.messages
-            .aggregate<Message<ExtBaseMessage>>([
+            .aggregate<MessageExtBase>([
                 match,
                 { $sort: { date: -1 } },
                 { $skip: page * pageSize },
@@ -257,7 +255,7 @@ export class Messages {
         receiver: UserId,
         page: number,
         pageSize: number,
-    ): Promise<Message<ExtBaseMessage>[]> {
+    ): Promise<MessageExtBase[]> {
         return await this._getMessages(page, pageSize, {
             $match: { receiver },
         });
@@ -269,9 +267,7 @@ export class Messages {
         });
     }
 
-    async getMessage(
-        messageID: MessageId,
-    ): Promise<Message<BaseMessage> | null> {
+    async getMessage(messageID: MessageId): Promise<MessageBase | null> {
         return await this.db.messages.findOne({ id: messageID });
     }
 
@@ -279,7 +275,7 @@ export class Messages {
         receiver: UserId,
         page: number,
         pageSize: number,
-    ): Promise<Message<ExtBaseMessage>[]> {
+    ): Promise<MessageExtBase[]> {
         return await this._getMessages(page, pageSize, {
             $match: { receiver: receiver, read: false },
         });

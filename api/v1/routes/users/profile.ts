@@ -12,7 +12,7 @@ type UserData = {
     donator: boolean;
     rank: number;
     bio: string;
-    myFeaturedProject: ProjectId;
+    myFeaturedProject: ProjectId | -1;
     myFeaturedProjectTitle: number;
     followers: number;
     canrankup: boolean;
