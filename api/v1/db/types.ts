@@ -61,8 +61,8 @@ export const ProjectDataSchema = z.object({
     impressions: z.number(),
     noFeature: z.boolean(),
     authorRank: z.number(),
-    loves: z.number(),
-    votes: z.number(),
+    loves: z.number().optional(),
+    votes: z.number().optional(),
 });
 
 export const ExtProjectDataSchema = ProjectDataSchema.omit({
