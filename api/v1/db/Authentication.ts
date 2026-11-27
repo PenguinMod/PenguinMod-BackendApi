@@ -474,6 +474,6 @@ export class Authentication {
     }
 
     async logout(id: UserId): Promise<void> {
-        await this.db.users.updateOne({ id }, { $set: { token: "" } });
+        await this.newTokenGen(id);
     }
 }
