@@ -589,9 +589,10 @@ export class DBController {
         });
 
         if (!result.ok) {
-            console.error(
-                `FAILED TO DELETE FILE!!!! BIG BAD!!!! ${JSON.stringify(await result.json())}`,
-            );
+            const data = await result.json();
+            if (data.code !== "file_not_present") {
+                console.warn(`Failed to delete file ${JSON.stringify(data)}`);
+            }
         }
     }
 

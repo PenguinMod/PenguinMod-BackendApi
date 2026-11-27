@@ -124,7 +124,7 @@ export default function (app: Application, utils: Utils): void {
 
         PenguinMod`;
 
-            const success = await utils.manager.users.sendEmail(
+            const err = await utils.manager.users.sendEmail(
                 userid,
                 req.realIP,
                 "reset",
@@ -135,8 +135,8 @@ export default function (app: Application, utils: Utils): void {
                 emailHtml,
             );
 
-            if (!success) {
-                res.status(500).json({ error: "EmailFailed" });
+            if (err) {
+                res.status(500).json({ error: err });
                 return;
             }
 
