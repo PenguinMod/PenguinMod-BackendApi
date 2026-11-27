@@ -396,6 +396,7 @@ export class Misc {
                 needles.map((n) => n.needle),
                 location,
                 user_info,
+                0xdd9a25,
             );
         }
         return needles.length > 0;
