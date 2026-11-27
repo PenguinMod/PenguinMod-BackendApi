@@ -4,7 +4,7 @@ import { maybeAuth } from "../../../../utils/auth";
 import { z } from "zod";
 import { validate } from "../../../../utils/validate";
 import { sendValidated } from "../../../../utils/validateResponse";
-import { ProjectDataSchema } from "../../db/types";
+import { ExtProjectDataSchema } from "../../db/types";
 import { EndpointDoc } from "../../../../utils/endpointDoc";
 
 const querySchema = z.object({
@@ -26,7 +26,7 @@ const requestSchema = {
     query: querySchema,
 };
 
-const GetProjectsResponseSchema = z.array(ProjectDataSchema);
+const GetProjectsResponseSchema = z.array(ExtProjectDataSchema);
 const ErrorResponseSchema = z.object({
     error: z.literal("Viewing is disabled"),
 });
