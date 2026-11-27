@@ -13,9 +13,6 @@ export default function (app: Application, utils: Utils): void {
             const birthday = String(packet.birthday);
             const countryCode = String(packet.country);
 
-            const username = res.locals.login.username;
-            const user_meta = res.locals.login.fullMeta;
-
             const parsedBirthday = parseBirthday(birthday);
             if (birthday && !parsedBirthday) {
                 res.status(400).json({ error: "InvalidBirthday" });
@@ -38,17 +35,17 @@ export default function (app: Application, utils: Utils): void {
             }
 
             // ideally people shouldnt just change their birthday or country on a whim
-            if (parsedBirthday && user_meta.birthdayEntered) {
+            if (parsedBirthday && res.locals.login.fullMeta.birthdayEntered) {
                 res.status(400).json({ error: "AlreadyEnteredBirthday" });
                 return;
             }
-            if (countryCode && user_meta.countryEntered) {
+            if (countryCode && res.locals.login.fullMeta.countryEntered) {
                 res.status(400).json({ error: "AlreadyEnteredCountry" });
                 return;
             }
 
             await utils.manager.users.setUserBirthdayAndOrCountry(
-                username,
+                res.locals.login.id,
                 parsedBirthday,
                 countryCode,
             );

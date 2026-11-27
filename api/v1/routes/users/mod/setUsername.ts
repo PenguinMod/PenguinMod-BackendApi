@@ -2,6 +2,7 @@ import type { Application } from "express";
 import type { Utils } from "../../../../../index";
 import { requireAuth } from "../../../../../utils/auth";
 import { sendAdminUserLog } from "../../../../../utils/logs";
+import { makeUsername } from "../../../db/new-types";
 
 export default function (app: Application, utils: Utils): void {
     app.post(
@@ -10,30 +11,29 @@ export default function (app: Application, utils: Utils): void {
         async function (req, res) {
             const packet = req.body;
 
-            const target = String(packet.target).toLowerCase();
-            const newUsername = String(packet.newUsername).toLowerCase();
+            const target = makeUsername(String(packet.target));
 
             const username = res.locals.login.username;
 
-            if (await utils.manager.users.existsByUsername(newUsername, true)) {
+            const targetData = await utils.manager.users.getUserData(target);
+            if (!targetData) {
                 res.status(400).json({ error: "UsernameInUse" });
                 return;
             }
 
             await utils.manager.users.changeUsername(
-                target,
-                newUsername,
+                targetData.id,
                 String(packet.newUsername),
             );
 
             sendAdminUserLog(
                 username,
-                newUsername,
+                String(packet.newUsername),
                 `Admin or mod has updated user's username.`,
                 0xf47420,
                 {
                     "Old Username": target,
-                    "New Username": newUsername,
+                    "New Username": String(packet.newUsername),
                 },
             );
 

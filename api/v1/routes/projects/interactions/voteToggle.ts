@@ -37,13 +37,11 @@ export default function (app: Application, utils: Utils): void {
                 await utils.manager.users.getUserData(metadata.author.username),
             );
 
-            const author_username = metadata.author.username;
-
             if (
                 metadata.votes >= Number(process.env.LoveAmount) &&
                 !authorMeta.badges.includes("votes")
             ) {
-                await utils.manager.users.addBadge(author_username, "votes");
+                await utils.manager.users.addBadge(metadata.author.id, "votes");
                 await utils.manager.messages.sendMessage(
                     metadata.author.id,
                     { type: "newBadge", badge: "votes" },

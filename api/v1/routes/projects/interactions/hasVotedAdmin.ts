@@ -1,7 +1,7 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../index";
 import { requireAuth } from "../../../../../utils/auth";
-import { projectId } from "../../../db/new-types";
+import { makeUsername, projectId } from "../../../db/new-types";
 
 export default function (app: Application, utils: Utils): void {
     app.get(
@@ -10,7 +10,7 @@ export default function (app: Application, utils: Utils): void {
         async function (req, res) {
             const packet = req.query;
 
-            const target = String(packet.target).toLowerCase();
+            const target = makeUsername(String(packet.target));
 
             const projectID = projectId(String(packet.projectID));
 

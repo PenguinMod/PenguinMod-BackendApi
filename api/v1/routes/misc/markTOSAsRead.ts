@@ -7,7 +7,7 @@ export default function (app: Application, utils: Utils): void {
         "/api/v1/misc/markTOSAsRead",
         ...requireAuth(utils.manager.auth),
         async function (req, res) {
-            await utils.manager.users.markTOSAsRead(res.locals.login.username);
+            await utils.manager.users.markTOSAsRead(res.locals.login.id);
 
             res.status(200).json({ success: true });
         },

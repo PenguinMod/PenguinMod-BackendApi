@@ -222,11 +222,14 @@ export default function (app: Application, utils: Utils): void {
 
             sendCreationLog(username, projectID, title, "update", 0x3dc2ad);
 
-            if (await utils.manager.users.isOnWatchlist(username)) {
+            if (res.locals.login.fullMeta.onWatchlist) {
                 watchlist.sendProjectUpdateLog(projectID, title, username);
             }
 
-            await utils.manager.users.setLastUpload(username, Date.now());
+            await utils.manager.users.setLastUpload(
+                res.locals.login.id,
+                Date.now(),
+            );
 
             res.status(200).json({ success: true });
         },

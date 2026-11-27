@@ -2,6 +2,7 @@ import type { Application } from "express";
 import type { Utils } from "../../../../../index";
 import { corsMW } from "../../../../../utils/misc";
 import rateLimit from "express-rate-limit";
+import { makeUsername } from "../../../db/new-types";
 
 export default function (app: Application, utils: Utils): void {
     app.post(
@@ -20,7 +21,7 @@ export default function (app: Application, utils: Utils): void {
         async function (req, res) {
             const packet = req.body;
 
-            const username = String(packet.username).toLowerCase();
+            const username = makeUsername(String(packet.username));
             const password = String(packet.password);
             const captcha_token = String(packet.captcha_token);
 

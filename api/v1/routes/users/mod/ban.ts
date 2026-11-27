@@ -2,6 +2,7 @@ import type { Application } from "express";
 import type { Utils } from "../../../../../index";
 import { requireAuth } from "../../../../../utils/auth";
 import { pmUserAuthor, sendAdminLog } from "../../../../../utils/logs";
+import { makeUsername } from "../../../db/new-types";
 
 export default function (app: Application, utils: Utils): void {
     app.post(
@@ -10,7 +11,7 @@ export default function (app: Application, utils: Utils): void {
         async function (req, res) {
             const packet = req.body;
 
-            const target = String(packet.target).toLowerCase();
+            const target = makeUsername(String(packet.target));
             const toggle = String(packet.toggle) === "true";
             const time = Math.max(Number(packet.time) || 0, 0);
             const reason = String(packet.reason);
@@ -39,9 +40,13 @@ export default function (app: Application, utils: Utils): void {
 
             const isTempBanned = targetData.unbanTime > Date.now();
             if (!toggle && isTempBanned) {
-                await utils.manager.users.unTempBan(target);
+                await utils.manager.users.unTempBan(targetData.id);
             } else if (toggle && time) {
-                await utils.manager.users.tempBanUser(target, reason, time);
+                await utils.manager.users.tempBanUser(
+                    targetData.id,
+                    reason,
+                    time,
+                );
             } else {
                 await utils.manager.users.setPermBanned(
                     targetData.id,

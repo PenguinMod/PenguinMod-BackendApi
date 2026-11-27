@@ -3,7 +3,7 @@ import { requireAuth } from "../../../../../utils/auth";
 import { Utils } from "../../../../../index";
 import { handle_page } from "../../../../../utils/misc";
 import { isValid } from "ulid";
-import { ProjectId, UserId, userId } from "../../../db/new-types";
+import { makeUsername, ProjectId, UserId, userId } from "../../../db/new-types";
 import { ExtReport } from "../../../db/types";
 
 type ReportResponse = {
@@ -29,7 +29,8 @@ export default function (app: Application, utils: Utils): void {
 
             const targetId = isValid(target)
                 ? userId(target) // NOTE: this could be a project or a user, but in this case it doesn't really matter that we only cast it to one
-                : (await utils.manager.users.getUserData(target))?.id;
+                : (await utils.manager.users.getUserData(makeUsername(target)))
+                      ?.id;
 
             if (!targetId) {
                 res.status(404).json({ error: "InvalidID" });

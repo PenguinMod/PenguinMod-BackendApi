@@ -1,7 +1,7 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../index";
 import { maybeAuth } from "../../../../utils/auth";
-import { ProjectId, projectId, UserId } from "../../db/new-types";
+import { makeUsername, ProjectId, projectId, UserId } from "../../db/new-types";
 
 type UserData = {
     success: boolean;
@@ -32,7 +32,7 @@ export default function (app: Application, utils: Utils): void {
         async function (req, res) {
             const packet = req.query;
 
-            const target = String(packet.target).toLowerCase();
+            const target = makeUsername(String(packet.target));
 
             const isMod = res.locals.login?.isMod || false;
             const username = res.locals.login?.username || null;

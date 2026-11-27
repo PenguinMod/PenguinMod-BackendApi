@@ -8,7 +8,7 @@ export default function (app: Application, utils: Utils): void {
         ...requireAuth(utils.manager.auth),
         async function (req, res) {
             await utils.manager.users.markPrivacyPolicyAsRead(
-                res.locals.login.username,
+                res.locals.login.id,
             );
 
             res.status(200).json({ success: true });

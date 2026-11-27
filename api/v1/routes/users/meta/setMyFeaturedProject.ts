@@ -13,8 +13,6 @@ export default function (app: Application, utils: Utils): void {
             const project = projectId(String(packet.project));
             const title = Number(packet.title);
 
-            const username = res.locals.login.username;
-
             if (!(await utils.manager.projects.projectExists(project, false))) {
                 res.status(400).json({ error: "InvalidProject" });
                 return;
@@ -24,8 +22,11 @@ export default function (app: Application, utils: Utils): void {
                 res.status(400).json({ error: "InvalidTitle" });
             }
 
-            await utils.manager.users.setFeaturedProject(username, project);
-            await utils.manager.users.setFeaturedProjectTitle(username, title);
+            await utils.manager.users.setFeaturedProject(
+                res.locals.login.id,
+                project,
+                title,
+            );
 
             res.status(200).json({ success: true });
         },

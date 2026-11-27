@@ -33,7 +33,6 @@ export default function (app: Application, utils: Utils): void {
             }
 
             const authorID = projectMeta.author.id;
-            const authorUsername = projectMeta.author.username;
             const authorMeta = assertNonNull(
                 await utils.manager.users.getUserDataByID(authorID),
             );
@@ -42,7 +41,7 @@ export default function (app: Application, utils: Utils): void {
                 projectMeta.loves >= Number(process.env.LoveAmount) &&
                 !authorMeta.badges.includes("likes")
             ) {
-                await utils.manager.users.addBadge(authorUsername, "likes");
+                await utils.manager.users.addBadge(authorID, "likes");
                 await utils.manager.messages.sendMessage(
                     authorID,
                     { type: "newBadge", badge: "likes" },

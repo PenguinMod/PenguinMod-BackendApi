@@ -44,10 +44,7 @@ export default function (app: Application, utils: Utils): void {
                     await utils.manager.users.getUserDataByID(author.id),
                 );
                 if (!authorMeta.badges.includes("featured")) {
-                    await utils.manager.users.addBadge(
-                        author.username,
-                        "featured",
-                    );
+                    await utils.manager.users.addBadge(author.id, "featured");
                     await utils.manager.messages.sendMessage(
                         author.id,
                         { type: "newBadge", badge: "featured" },
@@ -57,7 +54,7 @@ export default function (app: Application, utils: Utils): void {
                 } else {
                     if (!authorMeta.badges.includes("multifeature")) {
                         await utils.manager.users.addBadge(
-                            author.username,
+                            author.id,
                             "multifeature",
                         );
                         await utils.manager.messages.sendMessage(

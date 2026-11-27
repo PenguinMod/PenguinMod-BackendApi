@@ -27,3 +27,8 @@ export const messageId = createULIDConstructor<MessageId>("MessageId");
 
 export type ReportId = Guid<"report">;
 export const reportId = createULIDConstructor<ReportId>("ReportId");
+
+export type Username = Guid<"username">;
+export function makeUsername(input: string): Username {
+    return input.toLowerCase() as Username;
+}

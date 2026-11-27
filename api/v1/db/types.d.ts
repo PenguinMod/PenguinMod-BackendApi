@@ -1,4 +1,4 @@
-import { MessageId, ProjectId, ReportId, UserId } from "./new-types";
+import { MessageId, ProjectId, ReportId, UserId, Username } from "./new-types";
 
 export interface BBUploadURL {
     url: string;
@@ -29,7 +29,7 @@ export interface BBListFileNames {
 
 export interface UserData {
     id: UserId;
-    username: string;
+    username: Username;
     real_username: string;
     password: string;
     token: string;
@@ -61,7 +61,7 @@ export interface UserData {
     privateProfile: boolean;
     allowFollowingView: boolean;
     is_studio: boolean;
-    onWatchlist: boolean;
+    onWatchlist?: boolean;
 }
 
 export interface ProjectData {
@@ -70,7 +70,8 @@ export interface ProjectData {
     title: string;
     instructions: string;
     notes: string;
-    remix: string;
+    // TODO: run a script to make all "0" remixes become "" remixes or maybe just make it null
+    remix: ProjectId | "" | "0";
     featured: boolean;
     views: number;
     date: number;
@@ -90,7 +91,7 @@ export interface ProjectData {
 export interface ExtProjectData extends Omit<ProjectData, "author"> {
     fromDonator: boolean;
     author: {
-        username: string;
+        username: Username;
         id: UserId;
     };
 }
@@ -105,12 +106,12 @@ export interface FeedItem {
 }
 
 export interface ExtFeedItem extends Omit<FeedItem, "data"> {
-    username: string;
+    username: Username;
     id: UserId;
     data:
         | {
               id: string;
-              username?: string;
+              username?: Username;
               name?: string;
           }
         | string;
@@ -241,7 +242,7 @@ export interface Report {
 export interface ExtReport extends Omit<Report, "reporter"> {
     reporter: {
         id: UserId;
-        username: string;
+        username: Username;
     };
 }
 
@@ -250,7 +251,7 @@ export interface ExtBaseMessage extends Omit<BaseMessage, "user"> {
         | UserId
         | {
               id: UserId;
-              username: string;
+              username: Username;
           };
     project?: {
         id: ProjectId;

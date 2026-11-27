@@ -2,6 +2,7 @@ import type { Application } from "express";
 import type { Utils } from "../../../../../index";
 import { requireAuth } from "../../../../../utils/auth";
 import { sendRenameLog, watchlist } from "../../../../../utils/logs";
+import { makeUsername } from "../../../db/new-types";
 
 export default function (app: Application, utils: Utils): void {
     app.post(
@@ -10,7 +11,7 @@ export default function (app: Application, utils: Utils): void {
         async function (req, res) {
             const packet = req.body;
 
-            const newUsername = String(packet.newUsername).toLowerCase();
+            const newUsername = makeUsername(String(packet.newUsername));
 
             if (!newUsername) {
                 res.status(400).json({ error: "Missing token or newUsername" });
@@ -69,13 +70,12 @@ export default function (app: Application, utils: Utils): void {
 
             sendRenameLog(username, newUsername, id);
 
-            if (await utils.manager.users.isOnWatchlist(username)) {
+            if (res.locals.login.fullMeta.onWatchlist) {
                 watchlist.sendUsernameUpdateLog(username, newUsername, id);
             }
 
             await utils.manager.users.changeUsername(
-                username,
-                newUsername,
+                id,
                 String(packet.newUsername),
             );
 

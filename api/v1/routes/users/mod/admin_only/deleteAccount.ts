@@ -2,6 +2,7 @@ import type { Application } from "express";
 import type { Utils } from "../../../../../../index";
 import { requireAuth } from "../../../../../../utils/auth";
 import { pmUserAuthor, sendAdminLog } from "../../../../../../utils/logs";
+import { makeUsername } from "../../../../db/new-types";
 
 export default function (app: Application, utils: Utils): void {
     app.post(
@@ -10,7 +11,7 @@ export default function (app: Application, utils: Utils): void {
         async function (req, res) {
             const packet = req.body;
 
-            const target = String(packet.target).toLowerCase();
+            const target = makeUsername(String(packet.target));
             const reason = String(packet.reason);
 
             if (reason.length > 512) {
@@ -19,11 +20,14 @@ export default function (app: Application, utils: Utils): void {
 
             const username = res.locals.login.username;
 
-            if (!(await utils.manager.users.existsByUsername(target, true))) {
+            const targetData = await utils.manager.users.getUserData(target);
+            if (!targetData) {
                 return res.status(404).json({ error: "TargetNotFound" });
             }
 
-            const success = await utils.manager.users.deleteAccount(target);
+            const success = await utils.manager.users.deleteAccount(
+                targetData.id,
+            );
 
             sendAdminLog(
                 {

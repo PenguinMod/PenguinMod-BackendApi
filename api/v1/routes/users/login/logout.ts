@@ -7,7 +7,7 @@ export default function (app: Application, utils: Utils): void {
         "/api/v1/users/logout",
         ...requireAuth(utils.manager.auth),
         async function (req, res) {
-            await utils.manager.auth.logout(res.locals.login.username);
+            await utils.manager.auth.logout(res.locals.login.id);
 
             res.status(200).json({ success: true });
         },

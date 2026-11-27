@@ -6,7 +6,7 @@ import path from "path";
 import { DBController } from "./DBController";
 import Manager from "./Manager";
 import { OAuthMethod, UserData } from "./types";
-import { projectId, UserId, userId } from "./new-types";
+import { makeUsername, projectId, UserId, userId, Username } from "./new-types";
 import { err, ok, Result } from "../../../utils/Result";
 const basePFP = readFileSync(
     path.join(__dirname, "../../../static/penguin.png"),
@@ -15,7 +15,7 @@ const basePFP = readFileSync(
 type AccountCreationError = "AccountExists" | "IllegalWordingError";
 
 export interface Login {
-    username: string;
+    username: Username;
     token: string;
     id: UserId;
     isDonator: boolean;
@@ -52,7 +52,7 @@ export class Authentication {
         }
 
         const data: Login = {
-            username: result.real_username,
+            username: result.username,
             token,
             id: result.id,
             rank: result.rank,
@@ -83,7 +83,7 @@ export class Authentication {
     }
 
     async loginWithPassword(
-        username: string,
+        username: Username,
         password: string,
         allowBanned: boolean,
     ): Promise<Result<Login, "UserNotFound" | "Banned" | "PasswordIncorrect">> {
@@ -123,7 +123,6 @@ export class Authentication {
 
     async createAccount(
         username: string,
-        real_username: string,
         password: string | undefined,
         email_data: { email: string; verified: boolean } | undefined,
         birthday: string | undefined,
@@ -131,7 +130,9 @@ export class Authentication {
         is_studio: boolean,
         check_username: boolean,
     ): Promise<Result<{ token: string; id: UserId }, AccountCreationError>> {
-        const result = await this.db.users.findOne({ username: username });
+        const result = await this.db.users.findOne({
+            username: makeUsername(username),
+        });
         if (result) {
             return err("AccountExists");
         }
@@ -170,8 +171,8 @@ export class Authentication {
         const current_time = Date.now();
         await this.db.users.insertOne({
             id,
-            username,
-            real_username,
+            username: makeUsername(username),
+            real_username: username,
             password: hash,
             token: token,
             admin: false,
@@ -223,11 +224,11 @@ export class Authentication {
         data: { oauth_username: string; oauth_id: string; email?: string },
     ): Promise<
         Result<
-            { token: string; username: string; id: UserId },
+            { token: string; username: Username; id: UserId },
             AccountCreationError
         >
     > {
-        let username = data.oauth_username.toLowerCase();
+        let username = makeUsername(data.oauth_username);
         let real_username = data.oauth_username;
         const id = data.oauth_id;
 
@@ -239,14 +240,13 @@ export class Authentication {
         let n = 0;
         const orig_username = username;
         while (await this.manager.users.existsByUsername(username)) {
-            username = `${orig_username}${n}`;
+            username = `${orig_username}${n}` as Username;
             real_username = `${real_username}${n}`;
             n++;
         }
 
         const info = await this.createAccount(
             username,
-            real_username,
             undefined,
             email,
             undefined,
@@ -398,12 +398,6 @@ export class Authentication {
         return token;
     }
 
-    async canPasswordLogin(username: string): Promise<boolean> {
-        const result = await this.db.users.findOne({ username: username });
-
-        return result?.password ? true : false;
-    }
-
     async genOneTimeTokenCode(token: string): Promise<string> {
         const code = randomBytes(32).toString("hex");
 
@@ -479,10 +473,7 @@ export class Authentication {
         return !!result;
     }
 
-    async logout(username: string): Promise<void> {
-        await this.db.users.updateOne(
-            { username: username },
-            { $set: { lastLogin: 0 } },
-        );
+    async logout(id: UserId): Promise<void> {
+        await this.db.users.updateOne({ id }, { $set: { token: "" } });
     }
 }

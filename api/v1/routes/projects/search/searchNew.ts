@@ -1,7 +1,7 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../index";
 import { maybeAuth } from "../../../../../utils/auth";
-import { projectId } from "../../../db/new-types";
+import { makeUsername, projectId } from "../../../db/new-types";
 import { SearchInclude, Sort } from "../../../db/types";
 
 export default function (app: Application, utils: Utils): void {
@@ -54,8 +54,11 @@ export default function (app: Application, utils: Utils): void {
             const featured = tristate(String(packet.featured));
 
             const author = packet.author
-                ? (await utils.manager.users.getUserData(String(packet.author)))
-                      ?.id
+                ? (
+                      await utils.manager.users.getUserData(
+                          makeUsername(String(packet.author)),
+                      )
+                  )?.id
                 : undefined;
 
             const include_raw = String(packet.include);

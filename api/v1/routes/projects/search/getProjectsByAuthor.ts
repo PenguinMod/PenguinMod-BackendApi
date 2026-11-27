@@ -3,6 +3,7 @@ import type { Utils } from "../../../../../index";
 import { maybeAuth } from "../../../../../utils/auth";
 import { handle_page } from "../../../../../utils/misc";
 import { ExtProjectData } from "../../../db/types";
+import { makeUsername } from "../../../db/new-types";
 
 export default function (app: Application, utils: Utils): void {
     app.get(
@@ -11,7 +12,7 @@ export default function (app: Application, utils: Utils): void {
         async function (req, res) {
             const packet = req.query;
 
-            const authorUsername = String(packet.authorUsername).toLowerCase();
+            const authorUsername = makeUsername(String(packet.authorUsername));
             const page = handle_page(packet.page);
 
             const target_data =

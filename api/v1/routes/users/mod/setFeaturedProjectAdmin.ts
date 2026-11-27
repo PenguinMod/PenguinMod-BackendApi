@@ -1,7 +1,7 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../index";
 import { requireAuth } from "../../../../../utils/auth";
-import { projectId } from "../../../db/new-types";
+import { makeUsername, projectId } from "../../../db/new-types";
 import { sendAdminUserLog } from "../../../../../utils/logs";
 
 export default function (app: Application, utils: Utils): void {
@@ -11,7 +11,7 @@ export default function (app: Application, utils: Utils): void {
         async function (req, res) {
             const packet = req.body;
 
-            const target = String(packet.target).toLowerCase();
+            const target = makeUsername(String(packet.target));
             const project = projectId(String(packet.project));
             const title = Number(packet.title);
 
@@ -24,13 +24,19 @@ export default function (app: Application, utils: Utils): void {
 
             // TODO: pretty sure this is not the correct range
             if (title < 0 || title > 500) {
-                res.status(400).json({ error: "InvalidTitleType" });
+                return res.status(400).json({ error: "InvalidTitleType" });
             }
 
-            // TODO: verify user exists
+            const targetData = await utils.manager.users.getUserData(target);
+            if (!targetData) {
+                return res.status(404).json({ error: "UserNotFound" });
+            }
 
-            await utils.manager.users.setFeaturedProject(target, project);
-            await utils.manager.users.setFeaturedProjectTitle(target, title);
+            await utils.manager.users.setFeaturedProject(
+                targetData.id,
+                project,
+                title,
+            );
 
             sendAdminUserLog(
                 username,

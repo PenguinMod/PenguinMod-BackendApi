@@ -6,6 +6,7 @@ import { Application } from "express";
 import { Utils } from "../../../../../../index";
 import { unlinkMulter } from "../../../../../../utils/misc";
 import { pmUserAuthor, sendAdminLog } from "../../../../../../utils/logs";
+import { makeUsername } from "../../../../db/new-types";
 const magic = new Magic.Magic(Magic.MAGIC_MIME_TYPE);
 
 export default function (app: Application, utils: Utils): void {
@@ -17,7 +18,7 @@ export default function (app: Application, utils: Utils): void {
         async function (req, res) {
             const packet = req.body;
 
-            const target = String(packet.target).toLowerCase();
+            const target = makeUsername(String(packet.target));
 
             const pictureName = req.file;
 

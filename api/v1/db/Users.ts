@@ -1,8 +1,7 @@
 import { escapeRegex } from "../../../utils/misc";
-import { err, ok, Result } from "../../../utils/Result";
 import { DBController } from "./DBController";
 import Manager from "./Manager";
-import { ProjectId, UserId } from "./new-types";
+import { makeUsername, ProjectId, UserId, Username } from "./new-types";
 import { EmailType, ExtFeedItem, FeedType, UserData } from "./types";
 import Mailjet from "node-mailjet";
 
@@ -15,8 +14,9 @@ export class Users {
         this.manager = manager;
     }
 
+    // TODO: kill this
     async existsByUsername(
-        username: string,
+        username: Username,
         showBanned: boolean = false,
     ): Promise<boolean> {
         let query: object = { username: username };
@@ -33,7 +33,7 @@ export class Users {
         return !!result;
     }
 
-    async getUserData(username: string): Promise<UserData | null> {
+    async getUserData(username: Username): Promise<UserData | null> {
         return await this.db.users.findOne({ username });
     }
 
@@ -54,31 +54,29 @@ export class Users {
         });
     }
 
-    async changeUsername(
-        username: string,
-        newUsername: string,
-        real_username: string,
-    ): Promise<void> {
+    async changeUsername(id: UserId, username: string): Promise<void> {
         await this.db.users.updateOne(
-            { username: username },
-            { $set: { username: newUsername, real_username } },
+            { id },
+            {
+                $set: {
+                    username: makeUsername(username),
+                    real_username: username,
+                },
+            },
         );
     }
 
-    async setBio(username: string, newBio: string): Promise<void> {
-        await this.db.users.updateOne(
-            { username: username },
-            { $set: { bio: newBio } },
-        );
+    async setBio(id: UserId, newBio: string): Promise<void> {
+        await this.db.users.updateOne({ id }, { $set: { bio: newBio } });
     }
 
     async setFavoriteProject(
-        username: string,
+        userid: UserId,
         type: number,
         id: string,
     ): Promise<void> {
         await this.db.users.updateOne(
-            { username: username },
+            { id: userid },
             { $set: { favoriteProjectType: type, favoriteProjectID: id } },
         );
     }
@@ -91,68 +89,42 @@ export class Users {
         );
     }
 
-    async setLastUpload(username: string, lastUpload: number): Promise<void> {
-        await this.db.users.updateOne({ username }, { $set: { lastUpload } });
+    async setLastUpload(id: UserId, lastUpload: number): Promise<void> {
+        await this.db.users.updateOne({ id }, { $set: { lastUpload } });
     }
 
-    async addBadge(username: string, badge: string): Promise<void> {
-        await this.db.users.updateOne(
-            { username },
-            { $push: { badges: badge } },
-        );
+    async addBadge(id: UserId, badge: string): Promise<void> {
+        await this.db.users.updateOne({ id }, { $push: { badges: badge } });
     }
 
-    async setBadges(username: string, badges: string[]): Promise<void> {
-        await this.db.users.updateOne({ username }, { $set: { badges } });
+    async setBadges(id: UserId, badges: string[]): Promise<void> {
+        await this.db.users.updateOne({ id }, { $set: { badges } });
     }
 
-    async removeBadge(username: string, badge: string): Promise<void> {
-        await this.db.users.updateOne(
-            { username: username },
-            { $pull: { badges: badge } },
-        );
+    async removeBadge(id: UserId, badge: string): Promise<void> {
+        await this.db.users.updateOne({ id }, { $pull: { badges: badge } });
     }
 
-    async setFeaturedProject(username: string, id: ProjectId): Promise<void> {
-        await this.db.users.updateOne(
-            {
-                username: username,
-            },
-            {
-                $set: { featuredProject: id },
-            },
-        );
-    }
-
-    async setFeaturedProjectTitle(
-        username: string,
+    async setFeaturedProject(
+        userid: UserId,
+        id: ProjectId,
         title: number,
     ): Promise<void> {
         await this.db.users.updateOne(
-            {
-                username: username,
-            },
-            {
-                $set: { featuredProjectTitle: title },
-            },
+            { id: userid },
+            { $set: { featuredProject: id, featuredProjectTitle: title } },
         );
     }
 
-    async setAdmin(username: string, admin: boolean): Promise<void> {
-        await this.db.users.updateOne(
-            { username: username },
-            { $set: { admin: admin } },
-        );
+    async setAdmin(id: UserId, admin: boolean): Promise<void> {
+        await this.db.users.updateOne({ id }, { $set: { admin: admin } });
     }
 
-    async setModerator(username: string, moderator: boolean): Promise<void> {
-        await this.db.users.updateOne(
-            { username: username },
-            { $set: { moderator } },
-        );
+    async setModerator(id: UserId, moderator: boolean): Promise<void> {
+        await this.db.users.updateOne({ id }, { $set: { moderator } });
     }
 
-    async getAllAdmins(): Promise<{ id: string; username: string }[]> {
+    async getAllAdmins(): Promise<{ id: string; username: Username }[]> {
         const result = (
             await this.db.users.find({ admin: true }).toArray()
         ).map((admin) => {
@@ -162,7 +134,7 @@ export class Users {
         return result;
     }
 
-    async getAllModerators(): Promise<{ id: string; username: string }[]> {
+    async getAllModerators(): Promise<{ id: string; username: Username }[]> {
         const result = (
             await this.db.users.find({ moderator: true }).toArray()
         ).map((admin) => {
@@ -213,12 +185,12 @@ export class Users {
     }
 
     async setEmail(
-        username: string,
+        id: UserId,
         email: string,
         verify: boolean = false,
     ): Promise<void> {
         await this.db.users.updateOne(
-            { username: username },
+            { id },
             { $set: { email: email, emailVerified: verify } },
         );
     }
@@ -390,22 +362,10 @@ export class Users {
         return !!result;
     }
 
-    async getFollowerCount(username: string): Promise<number | null> {
-        const result = await this.db.users.findOne({ username: username });
-
-        return result ? result.followers : null;
-    }
-
-    async toggleWatchlist(username: string, enabled: boolean): Promise<void> {
+    async toggleWatchlist(id: UserId, enabled: boolean): Promise<void> {
         await this.db.users.updateOne(
-            { username },
+            { id },
             { $set: { onWatchlist: enabled } },
-        );
-    }
-
-    async isOnWatchlist(username: string): Promise<boolean | null> {
-        return (
-            !!(await this.db.users.findOne({ username }))?.onWatchlist || null
         );
     }
 
@@ -646,9 +606,9 @@ export class Users {
             .toArray();
     }
 
-    async setEmailVerified(username: string, toggle: boolean): Promise<void> {
+    async setEmailVerified(id: UserId, toggle: boolean): Promise<void> {
         await this.db.users.updateOne(
-            { username: username },
+            { id },
             { $set: { emailVerified: toggle } },
         );
     }
@@ -744,58 +704,49 @@ export class Users {
         return result?.sentAt || null;
     }
 
-    async setPrivateProfile(username: string, toggle: boolean): Promise<void> {
-        await this.db.users.updateOne(
-            { username: username },
-            { $set: { privateProfile: toggle } },
-        );
-    }
-
-    async setFollowingSeeProfile(
-        username: string,
-        toggle: boolean,
+    async setPrivateProfile(
+        id: UserId,
+        privateProfile: boolean,
+        allowFollowingView: boolean,
     ): Promise<void> {
         await this.db.users.updateOne(
-            { username: username },
-            { $set: { allowFollowingView: toggle } },
+            { id },
+            { $set: { privateProfile, allowFollowingView } },
         );
     }
 
     async tempBanUser(
-        username: string,
+        id: UserId,
         reason: string,
         length: number,
     ): Promise<void> {
         await this.db.users.updateOne(
-            { username: username },
+            { id },
             { $set: { banReason: reason, unbanTime: Date.now() + length } },
         );
     }
 
-    async unTempBan(username: string): Promise<void> {
-        await this.db.users.updateOne(
-            { username: username },
-            { $set: { unbanTime: 0 } },
-        );
+    async unTempBan(id: UserId): Promise<void> {
+        await this.db.users.updateOne({ id }, { $set: { unbanTime: 0 } });
     }
 
-    async markPrivacyPolicyAsRead(username: string): Promise<void> {
+    async markPrivacyPolicyAsRead(id: UserId): Promise<void> {
         await this.db.users.updateOne(
-            { username: username },
+            { id },
             { $set: { lastPrivacyPolicyRead: Date.now() } },
         );
     }
 
-    async markTOSAsRead(username: string): Promise<void> {
+    async markTOSAsRead(id: UserId): Promise<void> {
         await this.db.users.updateOne(
-            { username: username },
+            { id },
             { $set: { lastTOSRead: Date.now() } },
         );
     }
 
-    async markGuidelinesAsRead(username: string): Promise<void> {
+    async markGuidelinesAsRead(id: UserId): Promise<void> {
         await this.db.users.updateOne(
-            { username: username },
+            { id },
             { $set: { lastGuidelinesRead: Date.now() } },
         );
     }
@@ -941,29 +892,21 @@ export class Users {
         await this.db.minioClient.putObject("profile-pictures", id, buffer);
     }
 
-    async getProfilePicture(
-        username: string,
-    ): Promise<Result<Buffer, "UserNotFound" | "ImageNotFound">> {
-        const id = (await this.getUserData(username))?.id;
-
-        if (!id) {
-            return err("UserNotFound");
-        }
-
+    async getProfilePicture(id: UserId): Promise<Buffer | null> {
         const buffer = await this.db.readObjectFromBucket(
             "profile-pictures",
             id,
         );
 
         if (!buffer) {
-            return err("ImageNotFound");
+            return null;
         }
 
-        return ok(buffer);
+        return buffer;
     }
 
     async setUserBirthdayAndOrCountry(
-        username: string,
+        id: UserId,
         birthday: string | null,
         country: string | null,
     ): Promise<void> {
@@ -985,85 +928,56 @@ export class Users {
             updateObj.country = country;
             updateObj.countryEntered = true;
         }
-        await this.db.users.updateOne(
-            { username: username },
-            { $set: updateObj },
-        );
+        await this.db.users.updateOne({ id }, { $set: updateObj });
     }
 
     async searchUsers(
         query: string,
         page: number,
         pageSize: number,
-    ): Promise<{ username: string; real_username: string; id: UserId }[]> {
+    ): Promise<{ username: Username; real_username: string; id: UserId }[]> {
         const result = await this.db.users
-            .aggregate<{ username: string; real_username: string; id: UserId }>(
-                [
-                    {
-                        $match: {
-                            permBanned: false,
-                            username: {
-                                $regex: `.*${escapeRegex(query)}.*`,
-                                $options: "i",
-                            },
+            .aggregate<{
+                username: Username;
+                real_username: string;
+                id: UserId;
+            }>([
+                {
+                    $match: {
+                        permBanned: false,
+                        username: {
+                            $regex: `.*${escapeRegex(query)}.*`,
+                            $options: "i",
                         },
                     },
-                    {
-                        $sort: { followers: -1 },
+                },
+                {
+                    $sort: { followers: -1 },
+                },
+                {
+                    $skip: page * pageSize,
+                },
+                {
+                    $limit: pageSize,
+                },
+                {
+                    $project: {
+                        username: true,
+                        real_username: true,
+                        id: true,
+                        _id: false,
                     },
-                    {
-                        $skip: page * pageSize,
-                    },
-                    {
-                        $limit: pageSize,
-                    },
-                    {
-                        $project: {
-                            username: true,
-                            real_username: true,
-                            id: true,
-                            _id: false,
-                        },
-                    },
-                ],
-            )
+                },
+            ])
             .toArray();
 
         return result;
     }
 
-    async getLastPolicyRead(username: string): Promise<{
-        privacyPolicy: number;
-        TOS: number;
-        guidelines: number;
-    } | null> {
-        const result = await this.db.users.findOne({ username: username });
-        if (!result) {
-            return null;
-        }
-
-        return {
-            privacyPolicy: result.lastPrivacyPolicyRead,
-            TOS: result.lastTOSRead,
-            guidelines: result.lastGuidelinesRead,
-        };
-    }
-
-    async deleteAccount(username: string): Promise<boolean> {
-        const result = await this.db.users.findOne({ username: username });
+    async deleteAccount(id: UserId): Promise<boolean> {
+        const result = await this.db.users.findOneAndDelete({ id });
 
         if (!result) {
-            return false;
-        }
-
-        const deletionSuccess =
-            (
-                await this.db.users.deleteOne({
-                    username: username,
-                })
-            ).deletedCount > 0;
-
-        if (!deletionSuccess) {
             return false;
         }
 

@@ -9,27 +9,16 @@ export default function (app: Application, utils: Utils): void {
         async function (req, res) {
             const packet = req.body;
 
-            const username = res.locals.login.username;
+            const id = res.locals.login.id;
 
             const privateProfile = String(packet.privateProfile) === "true";
             const privateToFollowing =
                 String(packet.privateToFollowing) === "true";
 
-            if (
-                typeof privateProfile !== "boolean" ||
-                typeof privateToFollowing !== "boolean"
-            ) {
-                res.status(400).json({ error: "InvalidBody" });
-                return;
-            }
-
             await utils.manager.users.setPrivateProfile(
-                username,
+                id,
                 privateProfile,
-            );
-            await utils.manager.users.setFollowingSeeProfile(
-                username,
-                privateToFollowing,
+                !privateToFollowing,
             );
 
             res.status(200).json({ success: true });

@@ -2,6 +2,7 @@ import type { Application } from "express";
 import type { Utils } from "../../../../../../index";
 import { requireAuth } from "../../../../../../utils/auth";
 import { sendAdminUserLog } from "../../../../../../utils/logs";
+import { makeUsername } from "../../../../db/new-types";
 
 // TODO: position is spelled wrong here. needs matching frontend change
 
@@ -12,7 +13,7 @@ export default function (app: Application, utils: Utils): void {
         async function (req, res) {
             const packet = req.body;
 
-            const target = String(packet.target).toLowerCase();
+            const target = makeUsername(String(packet.target));
             const admin = String(packet.admin) === "true";
             const approver = String(packet.approver) === "true";
 
@@ -28,8 +29,8 @@ export default function (app: Application, utils: Utils): void {
             const isModerator = targetData.moderator || targetData.admin;
 
             // TODO: combine to one db request
-            await utils.manager.users.setAdmin(target, admin);
-            await utils.manager.users.setModerator(target, approver);
+            await utils.manager.users.setAdmin(targetData.id, admin);
+            await utils.manager.users.setModerator(targetData.id, approver);
 
             const fields: Record<string, string> = {};
 

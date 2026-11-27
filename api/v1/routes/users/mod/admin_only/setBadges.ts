@@ -2,6 +2,7 @@ import type { Application } from "express";
 import type { Utils } from "../../../../../../index";
 import { requireAuth } from "../../../../../../utils/auth";
 import { sendAdminUserLog } from "../../../../../../utils/logs";
+import { makeUsername } from "../../../../db/new-types";
 
 export default function (app: Application, utils: Utils): void {
     app.post(
@@ -10,7 +11,7 @@ export default function (app: Application, utils: Utils): void {
         async function (req, res) {
             const packet = req.body;
 
-            const target = String(packet.target).toLowerCase();
+            const target = makeUsername(String(packet.target));
             const badges = packet.badges;
 
             const username = res.locals.login.username;
@@ -26,7 +27,7 @@ export default function (app: Application, utils: Utils): void {
                 return;
             }
 
-            await utils.manager.users.setBadges(target, badges);
+            await utils.manager.users.setBadges(data.id, badges);
 
             const old_badges = res.locals.login.badges;
 

@@ -12,6 +12,7 @@ export default function (app: Application, utils: Utils): void {
             const bio = String(packet.bio);
 
             const username = res.locals.login.username;
+            const id = res.locals.login.id;
 
             if (bio.length > 2048) {
                 res.status(400).json({ error: "BioTooLong" });
@@ -21,7 +22,7 @@ export default function (app: Application, utils: Utils): void {
             if (
                 await utils.manager.misc.illegalWordingError(bio, "bio", {
                     username,
-                    id: res.locals.login.id,
+                    id,
                 })
             ) {
                 return res.status(400).json({ error: "IllegalWordsUsed" });
@@ -29,10 +30,10 @@ export default function (app: Application, utils: Utils): void {
 
             await utils.manager.misc.maybeIllegalWordingError(bio, "bio", {
                 username,
-                id: res.locals.login.id,
+                id,
             });
 
-            await utils.manager.users.setBio(username, bio);
+            await utils.manager.users.setBio(id, bio);
 
             res.status(200).json({ success: true });
         },

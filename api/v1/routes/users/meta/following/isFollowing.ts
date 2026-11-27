@@ -1,12 +1,13 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../../index";
+import { makeUsername } from "../../../../db/new-types";
 
 export default function (app: Application, utils: Utils): void {
     app.get("/api/v1/users/isfollowing", async function (req, res) {
         const packet = req.query;
 
-        const username = String(packet.username).toLowerCase();
-        const target = String(packet.target).toLowerCase();
+        const username = makeUsername(String(packet.username));
+        const target = makeUsername(String(packet.target));
 
         const agentData = await utils.manager.users.getUserData(username);
         if (!agentData || agentData.permBanned) {

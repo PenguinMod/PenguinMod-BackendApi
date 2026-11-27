@@ -1,6 +1,7 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../index";
 import { requireAuth } from "../../../../utils/auth";
+import { makeUsername } from "../../db/new-types";
 
 export default function (app: Application, utils: Utils): void {
     app.post(
@@ -11,7 +12,7 @@ export default function (app: Application, utils: Utils): void {
 
             const user_id = res.locals.login.id;
 
-            const target = String(packet.target);
+            const target = makeUsername(String(packet.target));
 
             const targetData = await utils.manager.users.getUserData(target);
             if (!targetData) {

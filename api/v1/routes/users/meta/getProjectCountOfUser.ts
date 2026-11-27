@@ -1,11 +1,12 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../index";
+import { makeUsername } from "../../../db/new-types";
 
 export default function (app: Application, utils: Utils): void {
     app.post("/api/v1/users/getprojectcountofuser", async function (req, res) {
         const packet = req.body;
 
-        const target = String(packet.target).toLowerCase();
+        const target = makeUsername(String(packet.target));
 
         const userData = await utils.manager.users.getUserData(target);
         if (!userData || userData.permBanned) {

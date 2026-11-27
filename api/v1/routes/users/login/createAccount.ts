@@ -13,6 +13,7 @@ import {
     sendCreationLog,
 } from "../../../../../utils/logs";
 import { parseBirthday } from "../../../../../utils/auth";
+import { makeUsername } from "../../../db/new-types";
 
 const global_creation_counter = {
     count: 0,
@@ -86,7 +87,7 @@ export default function (app: Application, utils: Utils): void {
                 });
             }
 
-            const username = String(packet.username).toLowerCase();
+            const username = makeUsername(String(packet.username));
             const real_username = String(packet.username);
             const password = String(packet.password);
 
@@ -205,7 +206,6 @@ export default function (app: Application, utils: Utils): void {
             }
 
             const info = await utils.manager.auth.createAccount(
-                username,
                 real_username,
                 password,
                 {

@@ -32,7 +32,7 @@ export default function (app: Application, utils: Utils): void {
                 return;
             }
 
-            await utils.manager.users.setEmailVerified(userData.username, true);
+            await utils.manager.users.setEmailVerified(userData.id, true);
 
             res.redirect(String(process.env.HomeURL));
         },

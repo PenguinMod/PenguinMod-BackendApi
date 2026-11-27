@@ -1,7 +1,13 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../index";
 import { requireAuth } from "../../../../../utils/auth";
-import { projectId, ProjectId, userId, UserId } from "../../../db/new-types";
+import {
+    makeUsername,
+    projectId,
+    ProjectId,
+    userId,
+    UserId,
+} from "../../../db/new-types";
 import { sendMultiReportLog, sendReportLog } from "../../../../../utils/logs";
 
 export default function (app: Application, utils: Utils): void {
@@ -26,7 +32,9 @@ export default function (app: Application, utils: Utils): void {
 
             switch (type) {
                 case "user": {
-                    const data = await utils.manager.users.getUserData(target);
+                    const data = await utils.manager.users.getUserData(
+                        makeUsername(target),
+                    );
                     if (!data) {
                         return res
                             .status(404)

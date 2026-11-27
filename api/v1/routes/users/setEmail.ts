@@ -12,8 +12,6 @@ export default function (app: Application, utils: Utils): void {
 
             const email = String(packet.email).toLowerCase();
 
-            const username = res.locals.login.username;
-
             if (!validateEmail(email)) {
                 res.status(400).json({ error: "InvalidEmail" });
                 return;
@@ -29,7 +27,7 @@ export default function (app: Application, utils: Utils): void {
                 return;
             }
 
-            await utils.manager.users.setEmail(username, email);
+            await utils.manager.users.setEmail(res.locals.login.id, email);
 
             res.status(200).json({ success: true });
         },

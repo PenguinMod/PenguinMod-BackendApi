@@ -46,7 +46,7 @@ export class Projects {
         imageBuffer: Buffer,
         instructions: string,
         notes: string,
-        remix: string,
+        remix: ProjectId | "",
         rating: string,
         priv: boolean = false,
     ): Promise<ProjectId | null> {

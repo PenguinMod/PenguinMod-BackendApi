@@ -2,6 +2,7 @@ import type { Application } from "express";
 import type { Utils } from "../../../../../../index";
 import { requireAuth } from "../../../../../../utils/auth";
 import { modMessage } from "../../../../../../utils/logs";
+import { makeUsername } from "../../../../db/new-types";
 
 export default function (app: Application, utils: Utils): void {
     app.post(
@@ -10,7 +11,7 @@ export default function (app: Application, utils: Utils): void {
         async function (req, res) {
             const packet = req.body;
 
-            const target = String(packet.target);
+            const target = makeUsername(String(packet.target));
             const message = String(packet.message);
 
             const disputable = String(packet.disputable) === "true";

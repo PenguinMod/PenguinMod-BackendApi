@@ -30,13 +30,9 @@ export default function (app: Application, utils: Utils): void {
                 dispute.projectID,
             );
 
-            const disputer = assertNonNull(
-                await utils.manager.users.getUserData(dispute.receiver),
-            ).id;
-
             modResponse(
                 username,
-                disputer,
+                dispute.receiver,
                 id,
                 assertNonNull(dispute.dispute),
                 message,

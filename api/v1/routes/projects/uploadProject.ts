@@ -234,11 +234,14 @@ export default function (app: Application, utils: Utils): void {
 
             sendCreationLog(username, projectID, title, "upload", 0x4a7fb5);
 
-            if (await utils.manager.users.isOnWatchlist(username)) {
+            if (res.locals.login.fullMeta.onWatchlist) {
                 watchlist.sendProjectUploadLog(projectID, title, username);
             }
 
-            await utils.manager.users.setLastUpload(username, Date.now());
+            await utils.manager.users.setLastUpload(
+                res.locals.login.id,
+                Date.now(),
+            );
 
             if (original_remix_project && !priv) {
                 const original_creator = original_remix_project.author.id;
