@@ -76,7 +76,7 @@ export const ProjectDataSchema = z
         }),
 
         impressions: z.number(),
-        noFeature: z.boolean(),
+        noFeature: z.boolean().optional(),
         authorRank: z.number(),
         loves: z.number().optional(),
         votes: z.number().optional(),
