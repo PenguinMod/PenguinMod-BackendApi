@@ -543,6 +543,10 @@ export class Projects {
             return null;
         }
 
+        if (project.authorRank === null) {
+            console.warn(`Found null for project rank in ${id}`);
+        }
+
         const result = {
             ...project,
             fromDonator: authorData.badges.includes("donator"),
