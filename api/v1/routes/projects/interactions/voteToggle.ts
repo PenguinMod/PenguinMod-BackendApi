@@ -38,7 +38,7 @@ export default function (app: Application, utils: Utils): void {
             );
 
             if (
-                metadata.votes >= Number(process.env.LoveAmount) &&
+                Number(metadata.votes) >= Number(process.env.LoveAmount) &&
                 !authorMeta.badges.includes("votes")
             ) {
                 await utils.manager.users.addBadge(metadata.author.id, "votes");

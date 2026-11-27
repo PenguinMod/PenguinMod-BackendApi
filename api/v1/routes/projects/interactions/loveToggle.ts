@@ -38,7 +38,7 @@ export default function (app: Application, utils: Utils): void {
             );
 
             if (
-                projectMeta.loves >= Number(process.env.LoveAmount) &&
+                Number(projectMeta.loves) >= Number(process.env.LoveAmount) &&
                 !authorMeta.badges.includes("likes")
             ) {
                 await utils.manager.users.addBadge(authorID, "likes");
