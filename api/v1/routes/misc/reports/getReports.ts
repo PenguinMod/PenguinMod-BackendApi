@@ -1,38 +1,91 @@
 import type { Application } from "express";
 import type { Utils } from "../../../../../index";
-import { requireAuth, type AuthHandler } from "../../../../../utils/auth";
-import { handle_page } from "../../../../../utils/misc";
-import { ExtReport } from "../../../db/types";
+import { requireAuth } from "../../../../../utils/auth";
+import {
+    ExtReport,
+    ProjectIdSchema,
+    ReportIdSchema,
+    ReportTypeSchema,
+    UserIdSchema,
+    UsernameSchema,
+} from "../../../db/types";
 import { ProjectId, UserId } from "../../../db/new-types";
+import { RouteConfig } from "@asteasolutions/zod-to-openapi";
+import { validate } from "../../../../../utils/validate";
+import { z } from "zod";
 
-type ReportResponse = {
-    reporter: ExtReport["reporter"];
-    target: string;
-    targetID: ExtReport["reportee"];
-    report: ExtReport["reason"];
-    author: string;
-    date: ExtReport["date"];
-    type: ExtReport["type"];
-    id: ExtReport["id"];
-};
+export const ReportResponseSchema = z
+    .object({
+        reporter: z.object({
+            username: UsernameSchema,
+            id: UserIdSchema,
+        }),
+        target: z.string(),
+        targetID: z.union([UserIdSchema, ProjectIdSchema]),
+        report: z.string(),
+        author: z.string(),
+        date: z.number(),
+        type: ReportTypeSchema,
+        id: ReportIdSchema,
+    })
+    .meta({
+        id: "ReportResponse",
+        description:
+            "Information about a report, formatted weird because the frontend SUCKS",
+    });
+
+export type ReportResponse = z.infer<typeof ReportResponseSchema>;
+
+const querySchema = z.object({
+    page: z.coerce.number().int().min(0).default(0).meta({
+        description: "Zero-based page number",
+        example: 0,
+    }),
+    type: ReportTypeSchema.optional(),
+});
+
+export const endpoint = {
+    method: "get",
+    path: "/api/v1/reports/getReports",
+    summary: "Get reports, optionally filtering by type",
+    description:
+        "Get recent reports, sorted by time of report. Optionally filter by type of report",
+    request: {
+        query: querySchema,
+        headers: z.object({
+            Authorization: z.templateLiteral(["Bearer ", z.string()]),
+        }),
+    },
+    responses: {
+        200: {
+            description: "Success",
+            content: {
+                "application/json": {
+                    schema: z.object({
+                        reports: z.array(ReportResponseSchema),
+                    }),
+                },
+            },
+        },
+    },
+} satisfies RouteConfig;
 
 export default function (app: Application, utils: Utils): void {
     app.get(
-        "/api/v1/reports/getReports",
+        endpoint.path,
         ...requireAuth(utils.manager.auth, { require_mod: true }),
-        async function (req, res): Promise<void> {
-            const packet = req.query;
-
-            const unsantype = String(packet.type);
-            const page = handle_page(packet.page);
+        validate(endpoint.request),
+        async function (req, res) {
+            const type = res.locals.valid.query.type;
+            const page = res.locals.valid.query.page;
 
             let reports: ExtReport[];
 
-            switch (unsantype) {
+            switch (type) {
                 case "project":
                 case "user":
                     reports = await utils.manager.reports.getReportsByType(
-                        unsantype,
+                        type,
                         page,
                         Number(process.env.PageSize),
                     );
@@ -85,7 +138,7 @@ export default function (app: Application, utils: Utils): void {
                 final.push(pushing);
             }
 
-            res.status(200).json({ reports: final });
-        } satisfies AuthHandler,
+            return res.status(200).json({ reports: final });
+        },
     );
 }

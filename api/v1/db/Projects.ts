@@ -517,7 +517,7 @@ export class Projects {
 
     async getProjectAssets(
         id: ProjectId,
-    ): Promise<{ id: string; buffer: Buffer }[] | null> {
+    ): Promise<{ id: string; buffer: Buffer }[]> {
         const search_term = `${id}_`;
         const items = this.db.using_backblaze
             ? await this.db.listNamesWithPrefixBackblaze(search_term)
@@ -529,10 +529,6 @@ export class Projects {
             const file = this.db.using_backblaze
                 ? await this.db.downloadFromBackblaze(item)
                 : await this.db.readObjectFromBucket("project-assets", item);
-
-            if (!file) {
-                return null;
-            }
 
             result.push({ id: item.slice(search_term.length), buffer: file });
         }

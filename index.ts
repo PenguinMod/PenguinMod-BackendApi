@@ -14,6 +14,9 @@ import requestIp from "request-ip";
 import ipaddr from "ipaddr.js";
 import { registerRoutes } from "./api/v1/routes/routes";
 
+import { openApiDocument } from "./utils/docs";
+import swaggerUi from "swagger-ui-express";
+
 const app = express();
 if (!process.env.PORT) {
     console.warn("unable to read env probably - do you have a .env file?");
@@ -110,6 +113,12 @@ console.error = (...args): void => {
         ...args.map((arg) => (arg instanceof Error ? arg.stack : arg)),
     );
 };
+
+app.get("/openapi.json", (req, res) => {
+    res.json(openApiDocument);
+});
+
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(openApiDocument));
 
 export interface Utils {
     manager: Manager;

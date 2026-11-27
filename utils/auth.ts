@@ -2,6 +2,7 @@ import { RequestHandler } from "express";
 import type { ParsedQs } from "qs";
 import { Authentication, Login } from "../api/v1/db/Authentication";
 import { corsMW } from "./misc";
+import { z } from "zod";
 
 export interface AuthOptions {
     allow_banned?: boolean;
@@ -10,11 +11,11 @@ export interface AuthOptions {
     require_supporter?: boolean;
 }
 
-type AuthLocals = {
+export type AuthLocals = {
     login: Login;
 };
 
-type MaybeAuthLocals = {
+export type MaybeAuthLocals = {
     login: Login | null;
 };
 
@@ -40,9 +41,8 @@ export const requireAuth = (
         require_admin = false,
         require_supporter = false,
     }: AuthOptions = {},
-): AuthHandler[] => [
-    corsMW as AuthHandler,
-
+): [RequestHandler, AuthHandler] => [
+    corsMW,
     async (req, res, next): Promise<void> => {
         const header = req.get("Authorization");
 
@@ -85,7 +85,7 @@ export const requireAuth = (
 
 export const maybeAuth =
     (
-        um: Authentication,
+        auth: Authentication,
         { allow_banned = false }: Pick<AuthOptions, "allow_banned"> = {},
     ): MaybeAuthHandler =>
     async (req, res, next): Promise<void> => {
@@ -105,7 +105,7 @@ export const maybeAuth =
             return;
         }
 
-        res.locals.login = await um.loginWithToken(token, allow_banned);
+        res.locals.login = await auth.loginWithToken(token, allow_banned);
 
         next();
     };
@@ -125,3 +125,7 @@ export function parseBirthday(birthday: string): string | null {
         return null;
     }
 }
+
+export const AuthHeaderSchema = z.object({
+    Authorization: z.templateLiteral(["Bearer ", z.string()]),
+});

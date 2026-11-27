@@ -15,15 +15,17 @@
     "type": "commonjs",
     "main": "index.js",
     "scripts": {
-        "dev": "tsx watch index.ts",
+        "dev": "tsx watch --import ./zod-extend.ts ./index.ts",
         "build": "tsc && cp -r static dist",
         "build-prod": "swc . -d dist --ignore '**/node_modules/**','**/dist/**' && cp -r static dist",
-        "start": "node --enable-source-maps dist/index.js",
+        "start": "node --require ./dist/zod-extend.js --enable-source-maps ./dist/index.js",
         "typecheck": "tsc --noEmit",
         "lint": "eslint",
         "gen:routes": "node scripts/gen_routes.js"
     },
     "dependencies": {
+        "@asteasolutions/zod-to-openapi": "^9.1.0",
+        "@types/swagger-ui-express": "^4.1.8",
         "bcrypt": "^6.0.0",
         "body-parser": "^1.20.4",
         "colors": "^1.4.0",
@@ -45,6 +47,7 @@
         "pmp-protobuf": "^1.9.0",
         "request-ip": "^3.3.0",
         "sharp": "^0.35.5",
+        "swagger-ui-express": "^5.0.1",
         "ulid": "^3.0.2",
         "zod": "^4.6.7"
     },

@@ -22,7 +22,8 @@ export type ValidHandler<
     ReqQuery = ParsedQs,
     ResBody = unknown,
     RouteParams = Record<string, string>,
-    ExtraLocals extends Record<string, unknown> = Record<string, unknown>,
+    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+    ExtraLocals extends Record<string, unknown> = {},
 > = RequestHandler<
     RouteParams,
     ResBody,

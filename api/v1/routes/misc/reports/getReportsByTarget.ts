@@ -4,18 +4,7 @@ import { Utils } from "../../../../../index";
 import { handle_page } from "../../../../../utils/misc";
 import { isValid } from "ulid";
 import { makeUsername, ProjectId, UserId, userId } from "../../../db/new-types";
-import { ExtReport } from "../../../db/types";
-
-type ReportResponse = {
-    reporter: ExtReport["reporter"];
-    target: string;
-    targetID: ExtReport["reportee"];
-    report: ExtReport["reason"];
-    author: string;
-    date: ExtReport["date"];
-    type: ExtReport["type"];
-    id: ExtReport["id"];
-};
+import { ReportResponse } from "./getReports";
 
 export default function (app: Application, utils: Utils): void {
     app.get(
