@@ -75,7 +75,7 @@ export const ProjectDataSchema = z
             description: "Hard rejection timestamp, or 0 if not rejected",
         }),
 
-        impressions: z.number(),
+        impressions: z.number().optional(),
         noFeature: z.boolean().optional(),
         authorRank: z.number().nullable(),
         loves: z.number().optional(),
