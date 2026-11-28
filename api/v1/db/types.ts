@@ -75,11 +75,11 @@ export const ProjectDataSchema = z
             description: "Hard rejection timestamp, or 0 if not rejected",
         }),
 
-        impressions: z.number().optional(),
+        impressions: z.number(),
         noFeature: z.boolean().optional(),
-        authorRank: z.number().nullable(),
-        loves: z.number().optional(),
-        votes: z.number().optional(),
+        authorRank: z.number(),
+        loves: z.number(),
+        votes: z.number(),
     })
     .meta({
         id: "ProjectData",
