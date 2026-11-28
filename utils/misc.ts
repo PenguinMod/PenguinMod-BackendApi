@@ -121,7 +121,7 @@ export interface NeedleMatch {
 export function findMatches(
     text: string,
     needles: string[],
-    keep: RegExp = /[\p{L}\p{N}]/u,
+    keep: RegExp = /[\p{L}\p{N}+]/u,
 ): NeedleMatch[] {
     const ignoreCase = true;
 
