@@ -77,7 +77,7 @@ export const ProjectDataSchema = z
 
         impressions: z.number(),
         noFeature: z.boolean().optional(),
-        authorRank: z.number().optional(),
+        authorRank: z.number().nullable(),
         loves: z.number().optional(),
         votes: z.number().optional(),
     })

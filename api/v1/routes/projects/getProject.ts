@@ -6,19 +6,10 @@ import { z } from "zod";
 import { ExtProjectDataSchema, ProjectIdSchema } from "../../db/types";
 import { validate } from "../../../../utils/validate";
 
-// --------------------------------------------------
-// Request schema
-// --------------------------------------------------
-
 const querySchema = z.object({
     requestType: z.enum(["metadata", "protobuf", "assets", "thumbnail"]),
     projectID: ProjectIdSchema,
 });
-
-// --------------------------------------------------
-// Runtime response schemas
-// These are used for validation, NOT OpenAPI generation.
-// --------------------------------------------------
 
 const RuntimeBufferSchema = z.instanceof(Buffer);
 
@@ -28,8 +19,6 @@ const RuntimeAssetsSchema = z.array(
         buffer: RuntimeBufferSchema,
     }),
 );
-
-const RuntimeProjectMetadataSchema = ExtProjectDataSchema;
 
 const ServiceUnavailableResponseSchema = z.object({
     error: z.literal("Viewing is disabled"),
@@ -196,7 +185,7 @@ export default function (app: Application, utils: Utils): void {
                 case "metadata": {
                     return res
                         .status(200)
-                        .json(RuntimeProjectMetadataSchema.parse(metadata));
+                        .json(ExtProjectDataSchema.parse(metadata));
                 }
             }
         },
